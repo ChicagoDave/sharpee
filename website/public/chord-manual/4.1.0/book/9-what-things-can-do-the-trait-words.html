@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>What things can do: the trait words</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details open><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li class="active"><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="10-light-dark-and-the-other-senses.html" accesskey="n" rel="next">Light, dark and the other senses</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="8-doors-locks-and-keys.html" accesskey="p" rel="previous">Doors, locks and keys</a>
+</span>
+</div>
+</nav>
+<h1 data-number="9" id="what-things-can-do-the-trait-words"><span
+class="header-section-number">9</span> What things can do: the trait
+words</h1>
+<p>You have met a handful of trait words already: <code>scenery</code>,
+<code>plural</code>, <code>proper</code>, <code>concealed</code>,
+<code>openable</code>, <code>lockable</code>, <code>transparent</code>,
+<code>unlisted</code> and <code>enterable</code>. Each one is an
+adjective after the kind that gives a thing an ability or a manner. This
+chapter is a tour of the ones that let the player do something to a
+thing: wear it, read it, eat it, switch it on, pull it, push it and
+break it.</p>
+<p>The pattern is the same every time, and it is worth stating once. A
+trait word pairs a thing with one of the platform’s standard actions.
+The action already exists, the player already knows its verbs, and all
+of its replies are already written. Your one word says that this thing
+is the kind of thing the action applies to. Without the word, the action
+refuses politely. With it, the action works.</p>
+<p>The list of trait words is closed. You choose from it and cannot add
+to it by typing a new adjective. Chapter 24 shows the proper way to make
+a trait of your own.</p>
+<h2 data-number="9.1" id="wearing"><span
+class="header-section-number">9.1</span> Wearing</h2>
+<p><strong><code>wearable</code></strong> lets a thing be put on and
+taken off.</p>
+<pre class="chord"><code>create the travelling coat
+  aka coat
+  a thing, wearable
+
+  A long coat the colour of the road.</code></pre>
+<p>A person can begin the story wearing something. The line is
+<code>wears</code>, and it sits beside <code>carries</code> in the
+person’s block.</p>
+<pre class="chord"><code>create Ansel
+  a person, proper
+  playable
+  starts in the Lodge
+  carries the wax taper
+  wears the travelling coat</code></pre>
+<pre class="text"><code>&gt; inventory
+You are carrying and wearing:
+
+a wax taper
+
+a travelling coat (worn)
+
+&gt; take off coat
+You take off the travelling coat.
+
+&gt; wear coat
+You put on the travelling coat.</code></pre>
+<p>A bare <code>wearable</code> thing can be worn with anything else. If
+two things ought to compete for the same place, say where each is worn,
+with <code>wearable on the</code> followed by a word of your own for the
+part of the body. The Relighting has one coat and nothing to compete
+with it, so here are a hat and a cap from another story, which has a
+room called the Den:</p>
+<pre class="chord"><code>create the hat
+  a thing, wearable on the head
+  in the Den
+
+  A hat.
+
+create the cap
+  a thing, wearable on the head
+  in the Den
+
+  A cap.</code></pre>
+<pre class="text"><code>&gt; wear hat
+(first taking the hat)
+
+Taken.
+
+You put on the hat.
+
+&gt; wear cap
+You&#39;re already wearing the hat on your head.</code></pre>
+<h2 data-number="9.2" id="reading"><span
+class="header-section-number">9.2</span> Reading</h2>
+<p><strong><code>readable</code></strong> lets a thing be read, and it
+is the first trait word in this chapter that needs a setting. The
+setting is the text, written <code>with text</code> and then the words
+in quotation marks.</p>
+<pre class="chord"><code>create the grimoire
+  aka book, margin, note
+  a thing, readable with text &quot;In the margin, in a small brown hand: gnusto. Came over the water as a working, they say. Meaning lost.&quot;
+  on the reading desk
+
+  A book as long as your forearm, chained to nothing any more. Its pages
+  are blank, or were. Here and there a line of ink has come back, as
+  frost comes onto a window. Someone has written in one margin.</code></pre>
+<p>This is one of the places chapter 1 promised, where quotation marks
+are needed. The text is one line, however long, and it cannot itself
+contain a quotation mark.</p>
+<p>A readable thing has two pieces of prose, and the player reaches them
+with two different verbs. The description is what the thing looks like.
+The text is what it says.</p>
+<pre class="text"><code>&gt; examine book
+A book as long as your forearm, chained to nothing any more. Its pages are blank, or were. Here and there a line of ink has come back, as frost comes onto a window. Someone has written in one margin.
+
+&gt; read book
+(first taking the grimoire)
+
+You take the grimoire from the reading desk.
+
+The grimoire reads:
+In the margin, in a small brown hand: gnusto. Came over the water as a working, they say. Meaning lost.</code></pre>
+<p>The description ends by pointing at the margin, because a player will
+not think to read a blank book unless something tells them to. The same
+goes for the <code>aka</code> line: once the description has said
+“margin”, <code>read margin</code> has to work.</p>
+<p>Always give <code>readable</code> its text. The compiler accepts the
+word alone, and the player is then shown “The notice reads:” with
+nothing after it.</p>
+<p>That word in the margin, by the way, is the only piece of old lore in
+The Relighting. The people of this country say <em>gnusto</em> of
+sunlight, as a blessing and a habit of speech, and the scholars of the
+Hall always held that it came from somewhere else and once meant
+something more.</p>
+<h2 data-number="9.3" id="eating-and-drinking"><span
+class="header-section-number">9.3</span> Eating and drinking</h2>
+<p><strong><code>edible</code></strong> lets a thing be eaten, and
+<strong><code>drinkable</code></strong> lets it be drunk. Once consumed,
+the thing is gone from the story.</p>
+<pre class="chord"><code>create the seed cake
+  aka cake
+  a thing, edible
+  on the chair
+  servings 2
+
+  Half a seed cake on a plate, cut with some care into two pieces.</code></pre>
+<p>The line <code>servings</code>, with a number, says how many times
+the thing can be eaten before it is finished. Without it, one bite is
+the whole thing.</p>
+<pre class="text"><code>&gt; eat cake
+(first taking the seed cake)
+
+You take the seed cake from the chair.
+
+You eat some of the seed cake.
+
+&gt; eat cake
+You eat the seed cake.</code></pre>
+<p>A drinkable thing is written the same way, and <code>servings</code>
+counts its sips.</p>
+<h2 data-number="9.4" id="pulling-and-pushing"><span
+class="header-section-number">9.4</span> Pulling and pushing</h2>
+<p><strong><code>pullable</code></strong> and
+<strong><code>pushable</code></strong> let a thing answer
+<code>pull</code> and <code>push</code>. By themselves they do very
+little: the action succeeds, the player is told so, and nothing in the
+world changes.</p>
+<pre class="chord"><code>create the bell rope
+  aka rope
+  a thing, scenery, pullable
+  in the Bell Stair
+
+  A rope as thick as your wrist, coming down out of the dark.</code></pre>
+<pre class="text"><code>&gt; pull rope
+You pull the bell rope.
+
+&gt; take rope
+The bell rope is fixed in place.</code></pre>
+<p>That is deliberate. Pulling a rope ought to ring a bell, and what a
+pull causes is for you to say. Part III teaches how, and the rope is
+here now so that there is something to attach the consequence to. A
+lever, a cord, a handle and a drawer are all pullable things waiting for
+chapter 14.</p>
+<p>A pushable thing has one ability that needs no further writing. It
+can be pushed from one room to another, if you say between which rooms.
+Nothing in The Relighting travels this way, so here is a trolley from
+the same other story, whose Den has a Yard to the north of it:</p>
+<pre class="chord"><code>create the trolley
+  a thing, pushable
+  in the Den
+
+  A trolley.
+
+  pushing
+    between the Den and the Yard
+  end pushing</code></pre>
+<p>The <code>pushing</code> block lists pairs of rooms. A row beginning
+<code>between</code> allows the push both ways, and a row written
+<code>from the Den to the Yard</code> allows it one way. There must be
+an ordinary exit between the two rooms for the trolley to travel
+along.</p>
+<pre class="text"><code>&gt; push trolley north
+You push the trolley north.
+
+Yard
+The yard.
+
+You can see a trolley here.</code></pre>
+<h2 data-number="9.5" id="breaking"><span
+class="header-section-number">9.5</span> Breaking</h2>
+<p><strong><code>breakable</code></strong> lets a thing be broken by
+attacking it. Add <strong><code>fragile</code></strong> and it also
+breaks when it is dropped.</p>
+<pre class="chord"><code>create the cup
+  aka teacup
+  a thing, breakable, fragile
+  on the chair
+
+  A china cup without a saucer, with a brown ring where the tea stood.</code></pre>
+<pre class="text"><code>&gt; take cup
+You take the cup from the chair.
+
+&gt; drop cup
+The cup hits the floor and breaks.</code></pre>
+<p>A broken thing is still there and can still be examined. Its
+description does not change by itself, which is another matter for Part
+III. A thing may also begin the story broken, with
+<code>starts broken</code> beside <code>breakable</code>.</p>
+<h2 data-number="9.6" id="fixed-to-something"><span
+class="header-section-number">9.6</span> Fixed to something</h2>
+<p><strong><code>attached to the</code></strong>, followed by the name
+of another thing, fixes one thing to another. An attached thing cannot
+be taken. Add <strong><code>detachable</code></strong> and a pull frees
+it. The Relighting fastens nothing in this way, so the tassel is from
+the other story too, and it hangs from a hook in the Den:</p>
+<pre class="chord"><code>create the tassel
+  a thing, attached to the hook, detachable
+  in the Den
+
+  A tassel.</code></pre>
+<pre class="text"><code>&gt; take tassel
+The tassel is fixed to the hook.
+
+&gt; pull tassel
+You pull the tassel free of the hook.
+
+&gt; take tassel
+Taken.</code></pre>
+<p>This differs from <code>scenery</code> in what the player is told and
+in what can change. Scenery is fixed in place for good. An attached
+thing is fixed to a particular other thing, the refusal names it, and
+the attachment can end.</p>
+<h2 data-number="9.7" id="switching-on-and-off"><span
+class="header-section-number">9.7</span> Switching on and off</h2>
+<p><strong><code>switchable</code></strong> gives a thing an on and an
+off. The wireless is the last thing from the other story:</p>
+<pre class="chord"><code>create the wireless
+  a thing, switchable
+  in the Den
+
+  A wireless set.</code></pre>
+<pre class="text"><code>&gt; switch on wireless
+The wireless hums to life.
+
+&gt; switch off wireless
+The wireless powers down with a soft whir.</code></pre>
+<p>Like pulling, switching changes one fact about the thing and leaves
+the consequences to you. A switchable thing begins off unless you write
+<code>starts on</code>. Lanternhall has stood dark for thirty years and
+has nothing in it to switch on, so The Relighting does not use this
+word.</p>
+<h2 data-number="9.8" id="the-ones-that-wait"><span
+class="header-section-number">9.8</span> The ones that wait</h2>
+<p>Five more trait words are on the list, and each depends on something
+this book has not reached. They are named here so that you know they
+exist.</p>
+<ul>
+<li><strong><code>cuttable</code></strong>,
+<strong><code>diggable</code></strong> and
+<strong><code>flammable</code></strong> let a thing be cut, dug or
+burned with a named tool. Each needs you to say what the cutting,
+digging or burning does, which is a clause from chapter 14.</li>
+<li><strong><code>settable</code></strong> makes a thing a dial with
+named positions. The positions are states, from chapter 13.</li>
+<li><strong><code>costs</code></strong> puts a price on a thing. The
+price is paid from a counter, from chapter 18.</li>
+</ul>
+<p>The trait words that concern light and sound have the next chapter to
+themselves, and Appendix B lists every trait word with its settings.</p>
+<h2 data-number="9.9" id="build-and-try-it-5"><span
+class="header-section-number">9.9</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-09</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the lines the chapter did not print
+in full. To make the changes by hand instead, work from this list and
+take the rest from that file: add the coat, the seed cake, the cup, the
+candles and the bell rope, make the grimoire readable, give Ansel the
+<code>wears</code> line, and mention the candles in the Refectory’s
+description.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Then do to each new thing what it is for, and also what it is not
+for. The refusals are as much a part of the story as the successes, and
+you should know what your player will read.</p>
+<pre class="text"><code>&gt; read coat
+There&#39;s nothing written on the travelling coat.
+
+&gt; eat coat
+That&#39;s not something you can eat.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: a trait and its action</strong> ·
+<code>sharpee compose</code></p>
+<p>Each trait word in this chapter adds one trait to the thing, and each
+trait has a standard action that looks for it. <code>wearable</code> is
+read by <code>wearing</code> and <code>taking_off</code>,
+<code>edible</code> by <code>eating</code> and <code>drinking</code>,
+<code>readable</code> by <code>reading</code>, <code>switchable</code>
+by <code>switching_on</code> and <code>switching_off</code>,
+<code>pullable</code> by <code>pulling</code>, and <code>pushable</code>
+by <code>pushing</code>. The action’s first step is to ask whether the
+thing has the trait, and “That’s not something you can eat” is the
+answer when it does not. A setting, such as the text of a readable thing
+or the servings of an edible one, is a field on the trait.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: properties and classes</strong></p>
+<p>An Inform 10 author would write most of this chapter as properties: a
+thing is wearable, edible, pushable between rooms, or switched on. A
+TADS 3 author would reach for classes such as a wearable, a food or a
+switch. Chord’s trait words are closer to the Inform 10 properties in
+how they read and closer to the TADS 3 classes in what they are, since
+each one brings behaviour with it and not only a flag. What neither
+system prepares you for is that the list is closed. In Chord you do not
+add a property to a thing by declaring it. You compose a thing from the
+trait words that exist, and you define a new trait, with its own
+behaviour, when none of them fits.</p>
+</div>
+<h2 data-number="9.10" id="what-you-have-so-far-8"><span
+class="header-section-number">9.10</span> What you have so far</h2>
+<p>Ansel arrives in a coat, Hobb’s cake can be eaten and his cup broken,
+the grimoire can be read, and the bell rope can be pulled to no effect.
+The next chapter turns to the trait words the story is named for: the
+ones that give light.</p>
+<nav class="book-nav-bottom"><a class="prev" href="8-doors-locks-and-keys.html">← Doors, locks and keys</a><a class="next" href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses →</a></nav>
+</body>
+</html>

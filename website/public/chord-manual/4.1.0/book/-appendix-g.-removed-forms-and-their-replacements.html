@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Appendix G. Removed forms and their replacements</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details open><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li class="active"><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-appendix-f.-message-aliases.html" accesskey="p" rel="previous">Appendix F. Message aliases</a>
+</span>
+</div>
+</nav>
+<h1 class="unnumbered"
+id="appendix-g.-removed-forms-and-their-replacements">Appendix G.
+Removed forms and their replacements</h1>
+<p>Forms Chord no longer accepts: 28 of them. The compiler still knows
+each one by name, so a story that uses one gets an error that says what
+to write instead. The table gives each form, its replacement and the
+error’s code; the entries under it show a source that raises the error
+and the compiler’s own words. Generated from the
+<code>@sharpee/chord</code> registry of removed forms (Sharpee 5.7.0 ·
+Chord 4.1.0) by <code>scripts/generate-chord-appendices.cjs</code>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Removed form</th>
+<th>Write instead</th>
+<th>Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>it</code> and <code>its</code> outside
+<code>define trait</code></td>
+<td>the owner’s name</td>
+<td><code>analysis.it-removed</code></td>
+</tr>
+<tr>
+<td>a channel’s <code>from event</code> line</td>
+<td><code>return &lt;construct&gt; from &lt;event&gt;</code></td>
+<td><code>parse.channel-from-removed</code></td>
+</tr>
+<tr>
+<td>a channel’s <code>take</code> line</td>
+<td>a <code>return</code> line</td>
+<td><code>parse.channel-take-removed</code></td>
+</tr>
+<tr>
+<td><code>version:</code>, <code>blurb:</code> and <code>by:</code> in
+the story header</td>
+<td><code>story-version:</code>, <code>description:</code> and
+<code>authors:</code></td>
+<td><code>parse.header-unknown-field</code></td>
+</tr>
+<tr>
+<td>a vehicle’s <code>passage:</code> line</td>
+<td><code>pace: &lt;n&gt; turns</code></td>
+<td><code>parse.passage-is-pace</code></td>
+</tr>
+<tr>
+<td>the one-line <code>passage &lt;command&gt; to &lt;room&gt;</code>,
+<code>… is blocked</code> and <code>… is deadly</code> lines</td>
+<td>a <code>passage to &lt;room&gt;</code> block</td>
+<td><code>parse.passage-line-form</code></td>
+</tr>
+<tr>
+<td>the phrase strategies <code>ordered</code> and
+<code>once</code></td>
+<td><code>stopping</code> and <code>first-time</code></td>
+<td><code>parse.phrase-strategy-retired</code></td>
+</tr>
+<tr>
+<td>phrase text on the same line as its key</td>
+<td>an indented prose block under the key</td>
+<td><code>parse.phrase-text-form</code></td>
+</tr>
+<tr>
+<td><code>define action &lt;name&gt; from …</code></td>
+<td>a <code>define action &lt;name&gt;</code> block with an indented
+body</td>
+<td><code>parse.removed-action-hatch</code></td>
+</tr>
+<tr>
+<td><code>define behavior … from</code></td>
+<td>a <code>define trait</code> with clauses, composed on the
+entity</td>
+<td><code>parse.removed-behavior-hatch</code></td>
+</tr>
+<tr>
+<td><code>with max items</code>, <code>with max weight</code> and
+<code>with capacity</code> on a kind</td>
+<td>a <code>holds &lt;n&gt;</code> line</td>
+<td><code>parse.removed-capacity-setting</code></td>
+</tr>
+<tr>
+<td><code>define chain … from</code></td>
+<td>nothing yet: Chord has no form for this</td>
+<td><code>parse.removed-chain-hatch</code></td>
+</tr>
+<tr>
+<td><code>with key the …</code> and <code>with tool the …</code></td>
+<td><code>with the &lt;thing&gt;</code></td>
+<td><code>parse.removed-config-keyword</code></td>
+</tr>
+<tr>
+<td>a region’s <code>containing</code> line</td>
+<td>an <code>in the &lt;region&gt;</code> line in each room, or
+<code>rooms &lt;name&gt; &lt;first&gt; to &lt;last&gt;</code></td>
+<td><code>parse.removed-containing</code></td>
+</tr>
+<tr>
+<td><code>create the player</code></td>
+<td>a named <code>playable</code> person, given the role in a
+<code>before the game starts</code> block</td>
+<td><code>parse.removed-create-player</code></td>
+</tr>
+<tr>
+<td><code>define verb</code></td>
+<td>an <code>extend action &lt;name&gt;</code> block with a
+<code>grammar</code> line</td>
+<td><code>parse.removed-define-verb</code></td>
+</tr>
+<tr>
+<td>a top-level <code>every N turns</code> rule</td>
+<td>a <code>define sequence</code>, or an <code>on every turn</code>
+clause on the owner</td>
+<td><code>parse.removed-every</code></td>
+</tr>
+<tr>
+<td><code>define flag</code></td>
+<td><code>states:</code> on the owner, or a condition over the
+world</td>
+<td><code>parse.removed-flag</code></td>
+</tr>
+<tr>
+<td>the <code>flag</code> field type in a trait’s data</td>
+<td><code>states:</code> on the trait</td>
+<td><code>parse.removed-flag-field</code></td>
+</tr>
+<tr>
+<td>a clause head that ends in <code>it</code>, as in
+<code>on taking it</code></td>
+<td>a head that names who acts, as in
+<code>on the player taking</code></td>
+<td><code>parse.removed-head-it</code></td>
+</tr>
+<tr>
+<td><code>if</code> blocks</td>
+<td>a <code>must</code> line, a <code>when</code> suffix on a statement,
+or <code>select</code></td>
+<td><code>parse.removed-if</code></td>
+</tr>
+<tr>
+<td>a top-level <code>once &lt;condition&gt;</code> rule</td>
+<td>a <code>, once</code> modifier on a clause of the owner</td>
+<td><code>parse.removed-once</code></td>
+</tr>
+<tr>
+<td><code>define score</code></td>
+<td>a <code>score &lt;name&gt; worth N</code> line on the owner or in
+the story header</td>
+<td><code>parse.removed-score</code></td>
+</tr>
+<tr>
+<td>the <code>(name)</code> and <code>:name</code> slot spellings</td>
+<td><code>the &lt;name&gt;</code></td>
+<td><code>parse.removed-slot-spelling</code></td>
+</tr>
+<tr>
+<td><code>story "Title" by "Author"</code></td>
+<td>a bare <code>story</code> line with indented <code>title:</code> and
+<code>authors:</code> fields</td>
+<td><code>parse.removed-story-header</code></td>
+</tr>
+<tr>
+<td><code>define text … from</code></td>
+<td>a <code>define phrase</code>, with a strategy if the text
+varies</td>
+<td><code>parse.removed-text-hatch</code></td>
+</tr>
+<tr>
+<td>a top-level <code>when</code> rule</td>
+<td>an <code>after the player &lt;verb&gt;</code> clause on the entity
+or room it is about</td>
+<td><code>parse.removed-when</code></td>
+</tr>
+<tr>
+<td>the <code>select</code> strategies <code>ordered</code> and
+<code>once</code></td>
+<td><code>stopping</code> and <code>first-time</code></td>
+<td><code>parse.select-strategy-retired</code></td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="analysis.it-removed"><code>analysis.it-removed</code></h2>
+<pre class="text"><code>create the sword
+  a thing
+
+  on the player taking
+    remove it
+  end on</code></pre>
+<pre class="text"><code>`it` is no longer a form outside `define trait` — name the owner: `the sword`.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.channel-from-removed"><code>parse.channel-from-removed</code></h2>
+<pre class="text"><code>define channel clock
+  mode replace
+  from event estate-clock
+end channel</code></pre>
+<pre class="text"><code>`from event` was removed — the event rides the `return … from &lt;event&gt;` clause: `return &lt;construct&gt; from &lt;event&gt;`.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.channel-take-removed"><code>parse.channel-take-removed</code></h2>
+<pre class="text"><code>define channel clock
+  mode replace
+  take hour
+end channel</code></pre>
+<pre class="text"><code>`take` was removed — a channel `return`s a construct: `return &lt;field&gt; from &lt;event&gt;`, `return &quot;text (slot)&quot; from &lt;event&gt;`, or `return phrase &lt;key&gt; from &lt;event&gt;`.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.header-unknown-field"><code>parse.header-unknown-field</code></h2>
+<pre class="text"><code>story
+  title: The Lamp
+  authors:
+    A. Writer
+  version: 1.0.0</code></pre>
+<pre class="text"><code>`version:` was removed from the story header — use `story-version:` instead.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.passage-is-pace"><code>parse.passage-is-pace</code></h2>
+<pre class="text"><code>create the gondola
+  a vehicle
+  passage: 5 turns</code></pre>
+<pre class="text"><code>`passage:` is retired — a flight vehicle&#39;s trip time is `pace: &lt;n&gt; turns`, the line every moving vehicle uses.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.passage-line-form"><code>parse.passage-line-form</code></h2>
+<pre class="text"><code>create the Trench
+  a room
+  passage climb the rope to the Loft</code></pre>
+<pre class="text"><code>A passage is a block: `passage to &lt;room&gt;`, then `grammar` with one command per line under it, and `end passage`. For example:
+  passage to the Loft
+    grammar
+      climb the rope
+  end passage</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.phrase-strategy-retired"><code>parse.phrase-strategy-retired</code></h2>
+<pre class="text"><code>define phrase hint, ordered
+  One.
+or
+  Two.
+end phrase</code></pre>
+<pre class="text"><code>`ordered` is no longer a strategy adverb — use `stopping`.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.phrase-text-form"><code>parse.phrase-text-form</code></h2>
+<pre class="text"><code>define phrases en-US
+  greet: &quot;Hello.&quot;</code></pre>
+<pre class="text"><code>Phrase text goes in an indented prose block — the same-line form was removed.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-action-hatch"><code>parse.removed-action-hatch</code></h2>
+<pre class="text"><code>define action juggling from &quot;./stunts.ts&quot;</code></pre>
+<pre class="text"><code>`define action juggling from …` was removed — an action is written in Chord. Write it as a `define action juggling` block with an indented body.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-behavior-hatch"><code>parse.removed-behavior-hatch</code></h2>
+<pre class="text"><code>define behavior glowing from &quot;./glow.ts&quot;</code></pre>
+<pre class="text"><code>`define behavior … from` was removed — it had no binding key and could never fire. Author the behavior in Chord: `define trait &lt;name&gt;` with `on the player &lt;verb&gt;` clauses, composed on the entity.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-capacity-setting"><code>parse.removed-capacity-setting</code></h2>
+<pre class="text"><code>create the jar
+  a container with max items 3</code></pre>
+<pre class="text"><code>`with max items` was removed — write the capacity as its own line: `holds 3`.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-chain-hatch"><code>parse.removed-chain-hatch</code></h2>
+<pre class="text"><code>define chain opened-revealed from &quot;./reveal.ts&quot;</code></pre>
+<pre class="text"><code>`define chain … from` was removed — a story cannot replace a standard event chain with its own code. Chord has no form for this yet; the behavior needs support in the language.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-config-keyword"><code>parse.removed-config-keyword</code></h2>
+<pre class="text"><code>create the gate
+  a door
+  lockable with key the brass key</code></pre>
+<pre class="text"><code>`with key the …` was removed — write the entity directly: `with the brass key`.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-containing"><code>parse.removed-containing</code></h2>
+<pre class="text"><code>create the Cellars
+  a region
+  containing the Vault</code></pre>
+<pre class="text"><code>`containing` was removed — a region declares identical rooms with `rooms &lt;name&gt; &lt;first&gt; to &lt;last&gt;`, and any other room joins it with an `in the &lt;region&gt;` line in its own block.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-create-player"><code>parse.removed-create-player</code></h2>
+<pre class="text"><code>create the player
+  a person</code></pre>
+<pre class="text"><code>`create the player` was removed — name the character, mark it `playable`, and assign the role in a `before the game starts` block.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-define-verb"><code>parse.removed-define-verb</code></h2>
+<pre class="text"><code>define verb hang means put the item on the hook</code></pre>
+<pre class="text"><code>`define verb` was removed — add the verb onto the action directly: `extend action &lt;name&gt;` with a `grammar` pattern line (e.g. `extend action putting` → `hook the item on the hook`).</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-every"><code>parse.removed-every</code></h2>
+<pre class="text"><code>every 3 turns
+  phrase drip
+end every</code></pre>
+<pre class="text"><code>Top-level `every N turns` rules were removed — use a story-owned `define sequence`, or an every-turn clause on the owner.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-flag"><code>parse.removed-flag</code></h2>
+<pre class="text"><code>define flag lamp-found</code></pre>
+<pre class="text"><code>`define flag` was removed (Chord has no global booleans) — model the fact as `states:` on its owner, or derive it with a condition over world state.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-flag-field"><code>parse.removed-flag-field</code></h2>
+<pre class="text"><code>define trait sticky
+  data
+    glue: flag starts false
+end trait</code></pre>
+<pre class="text"><code>The `flag` field type was removed (Chord has no booleans at any scope) — declare `states[, reversible]: …` on the trait and name what the thing IS in each state.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-head-it"><code>parse.removed-head-it</code></h2>
+<pre class="text"><code>create the sword
+  a thing
+
+  on taking it
+    phrase sharp
+  end on</code></pre>
+<pre class="text"><code>`on taking it` is no longer a form — name who acts: `on the player taking` (or the actor&#39;s name).</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-if"><code>parse.removed-if</code></h2>
+<pre class="text"><code>create the Hall
+  a room
+
+  on the player entering
+    if the lamp is lit
+      win
+    end if
+  end on</code></pre>
+<pre class="text"><code>`if` was removed — use a `must` requirement for guards (`it must be hungry: already-fed`), a statement `when` suffix for conditionals (`award X when &lt;condition&gt;`), or `select` for branching.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-once"><code>parse.removed-once</code></h2>
+<pre class="text"><code>once the lamp is lit
+  win
+end once</code></pre>
+<pre class="text"><code>Top-level `once &lt;condition&gt;` rules were removed — use a `, once` clause modifier on the owner: `on every turn while &lt;condition&gt;, once`.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-score"><code>parse.removed-score</code></h2>
+<pre class="text"><code>define score treasure worth 10</code></pre>
+<pre class="text"><code>`define score` was removed — attach the score to its earning owner: `score &lt;name&gt; worth N` in the owner&#39;s create/trait/action block or the story header.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-slot-spelling"><code>parse.removed-slot-spelling</code></h2>
+<pre class="text"><code>extend action smelling
+  grammar
+    sniff (something)</code></pre>
+<pre class="text"><code>The `(something)` slot spelling was removed — write `the something`.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-story-header"><code>parse.removed-story-header</code></h2>
+<pre class="text"><code>story &quot;The Lamp&quot; by &quot;A. Writer&quot;</code></pre>
+<pre class="text"><code>`story &quot;Title&quot; by &quot;Author&quot;` was removed — use the fielded form: a bare `story` line, then indented `title: &lt;title&gt;` and an `authors:` list (one name per indented line).</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-text-hatch"><code>parse.removed-text-hatch</code></h2>
+<pre class="text"><code>define text garbled from &quot;./extras.ts&quot;</code></pre>
+<pre class="text"><code>`define text … from` was removed — a story&#39;s text is written in Chord. Write it as a `define phrase`, with a strategy (`cycling`, `first-time`, `randomly`, `sticky`, `stopping`) if it varies.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.removed-when"><code>parse.removed-when</code></h2>
+<pre class="text"><code>when the player takes the lamp
+  win
+end when</code></pre>
+<pre class="text"><code>Top-level `when` rules were removed — attach the rule to its owner: `after the player &lt;verb&gt;` on the entity or room it is about.</code></pre>
+<h2 class="unnumbered unlisted"
+id="parse.select-strategy-retired"><code>parse.select-strategy-retired</code></h2>
+<pre class="text"><code>create the lever
+  a thing
+
+  on the player pulling
+    select ordered
+      phrase first-pull
+    or
+      phrase second-pull
+    end select
+  end on</code></pre>
+<pre class="text"><code>`ordered` is no longer a strategy adverb — use `stopping`.</code></pre>
+<nav class="book-nav-bottom"><a class="prev" href="-appendix-f.-message-aliases.html">← Appendix F. Message aliases</a><span></span></nav>
+</body>
+</html>

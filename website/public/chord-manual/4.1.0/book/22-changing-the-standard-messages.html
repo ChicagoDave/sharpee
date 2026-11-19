@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Changing the standard messages</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details open><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li class="active"><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="23-new-verbs.html" accesskey="n" rel="next">New verbs</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="21-a-things-own-words.html" accesskey="p" rel="previous">A thing’s own words</a>
+</span>
+</div>
+</nav>
+<h1 data-number="22" id="changing-the-standard-messages"><span
+class="header-section-number">22</span> Changing the standard
+messages</h1>
+<p>Most of what a player reads in a small story was not written by its
+author. “Taken.” “Time passes…” “You open the oak press.” Those
+sentences come with the standard actions, and they are plain on purpose,
+so that they fit anywhere. This chapter is about making them fit
+here.</p>
+<p>It also covers the phrasebook, which is the tool for the opposite
+problem: text of your own that should be said one way at one time and
+another way later.</p>
+<h2 data-number="22.1" id="finding-a-message"><span
+class="header-section-number">22.1</span> Finding a message</h2>
+<p>Every standard message has an <strong>alias</strong>, a hyphenated
+name made of the action and the message. The <code>sharpee</code>
+command will list them all.</p>
+<pre class="shell"><code>sharpee messages</code></pre>
+<p>The list is long, 885 messages at this edition, and it is printed as
+data for a program to read: one line that gives the count, and then the
+whole list as a single very long line. Each entry in that line looks
+like this.</p>
+<pre class="text"><code>{&quot;id&quot;:&quot;if.action.taking.taken&quot;,&quot;alias&quot;:&quot;taking-taken&quot;,&quot;template&quot;:&quot;Taken.&quot;}</code></pre>
+<p>The <code>alias</code> is what you will write. The
+<code>template</code> is the text the platform prints, and reading it
+tells you whether you have found the right message. Appendix F is this
+list, sorted by action, and it is the place to look things up. To find a
+message without the appendix, send the list to a file, open the file in
+an editor, and use the editor’s search for a few words of what the game
+printed. A search that prints whole matching lines will print the entire
+list, because the list is one line.</p>
+<h2 data-number="22.2" id="overriding-one-message"><span
+class="header-section-number">22.2</span> Overriding one message</h2>
+<p>Walk into the Undercroft without a light and the platform says
+this.</p>
+<pre class="text"><code>&gt; down
+It is pitch dark. You are likely to be eaten by a grue.</code></pre>
+<p>It is a famous sentence, and it belongs to another country. Nothing
+lives in the dark under Lanternhall. Searching the list for “grue” finds
+the alias.</p>
+<pre class="text"><code>{&quot;id&quot;:&quot;if.action.going.too_dark&quot;,&quot;alias&quot;:&quot;going-too-dark&quot;,&quot;template&quot;:&quot;It is pitch dark. {You} {be} likely to be eaten by a grue.&quot;}</code></pre>
+<p>An override is a block at the top level of the file.</p>
+<pre class="chord"><code>override message going-too-dark
+  You are at the foot of the steps, in the dark, and that is all you
+  can say for certain. You were a student here, and you remember what
+  the Undercroft does to shins.
+end override</code></pre>
+<p>It opens with <code>override message</code> and the alias, holds the
+new text, and closes with <code>end override</code>.</p>
+<pre class="text"><code>&gt; down
+You are at the foot of the steps, in the dark, and that is all you can say for certain. You were a student here, and you remember what the Undercroft does to shins.</code></pre>
+<p>If you mistype an alias, the compiler knows the list as well as you
+do.</p>
+<pre class="text"><code>probe.story:7:1 error [analysis.unknown-message-alias] `taking-takn` is not a standard-action message alias — did you mean `taking-taken`?.</code></pre>
+<h2 data-number="22.3" id="an-override-is-a-phrase"><span
+class="header-section-number">22.3</span> An override is a phrase</h2>
+<p>The body of an override is the body of a <code>define phrase</code>
+block, and the head line takes the same additions. So a standard message
+may have variants and a strategy.</p>
+<pre class="chord"><code>override message waiting-time-passes, cycling
+  You wait. The Hall has had thirty years of practice and is better at
+  it than you are.
+or
+  You wait. Somewhere a shutter knocks, twice, and thinks better of it.
+or
+  You wait.
+end override</code></pre>
+<pre class="text"><code>&gt; wait
+You wait. The Hall has had thirty years of practice and is better at it than you are.
+
+&gt; wait
+You wait. Somewhere a shutter knocks, twice, and thinks better of it.
+
+&gt; wait
+You wait.</code></pre>
+<p>Waiting is a good message to spend this on. A player in a game with a
+clock will wait often, and “Time passes…” thirty times is thirty
+reminders that they are playing a program.</p>
+<h2 data-number="22.4" id="several-at-once"><span
+class="header-section-number">22.4</span> Several at once</h2>
+<p>When you are replacing a number of messages with one plain text each,
+a single block holds them all.</p>
+<pre class="chord"><code>override messages en-US
+  taking-taken:
+    You take it.
+  looking-room-dark:
+    It is dark, and the dark here is old and has no interest in you.</code></pre>
+<p>This is the list form, the counterpart of
+<code>define phrases</code>. It names its language, and each entry is an
+alias, a colon and one paragraph. An entry here cannot have variants. A
+message that needs them gets a block of its own.</p>
+<pre class="text"><code>&gt; take lamp
+You take it.</code></pre>
+<h2 data-number="22.5" id="the-markers-in-a-template"><span
+class="header-section-number">22.5</span> The markers in a template</h2>
+<p>Many templates have markers in them.</p>
+<pre class="text"><code>{&quot;id&quot;:&quot;if.action.lighting.lit&quot;,&quot;alias&quot;:&quot;lighting-lit&quot;,&quot;template&quot;:&quot;{You} {light} {the target}.&quot;}
+{&quot;id&quot;:&quot;if.action.taking.taken_from&quot;,&quot;alias&quot;:&quot;taking-taken-from&quot;,&quot;template&quot;:&quot;{You} {take} {the item} from {the container}.&quot;}</code></pre>
+<p><code>{You}</code> is the player, capitalised because it opens the
+sentence. <code>{light}</code> and <code>{take}</code> are verbs,
+written so that they will agree with whoever is acting.
+<code>{the target}</code> and <code>{the item}</code> are the things in
+the command, by the names the action gives them, and they are the same
+kind of marker as <code>{the thing}</code> in chapter 20.</p>
+<p>Your override may use the markers its template uses.</p>
+<pre class="chord"><code>override message taking-taken-from
+  {You} {take} {the item} out of {the container}.
+end override</code></pre>
+<p>Use them whenever the message is about a thing. An override that says
+“You take the key out of the press” in so many words will say it of the
+lamp as well. And keep to the markers the template shows. Each message
+is given the values it needs and no others, so a marker borrowed from a
+different message has nothing to fill it.</p>
+<h2 data-number="22.6" id="how-much-to-override"><span
+class="header-section-number">22.6</span> How much to override</h2>
+<p>A new author either leaves every standard message alone or sets out
+to replace all 885. Neither is right.</p>
+<p>Replace the messages your players will see most: taking, dropping,
+waiting, the two darkness messages, the refusal for a direction with no
+exit. Replace any message whose tone is wrong for your story, as the
+grue was. Then stop, play the game through, and replace what still jars.
+A story usually settles at a few dozen overrides, and the rest of the
+list goes unread because the player never does the thing that prints
+it.</p>
+<p>Before you override a message to change what one thing says, ask
+whether that thing should say it. The kettle’s refusal is a clause on
+the kettle, and <code>taking-taken</code> was left alone for it. An
+override changes a sentence everywhere. A clause changes it for one
+thing.</p>
+<h2 data-number="22.7" id="phrasebooks"><span
+class="header-section-number">22.7</span> Phrasebooks</h2>
+<p>Now the opposite problem. Two of the story’s own refusals should
+change once the Hall begins to wake. While it sleeps, the grille “does
+not so much as rattle”. Once it is waking, the iron should feel alive.
+The same goes for Hobb and his kettle.</p>
+<p>You could put a <code>when</code> suffix on every
+<code>refuse</code>, except that <code>refuse</code> does not take one.
+You could split each key in two and choose between them in every clause
+that uses them. A <strong>phrasebook</strong> does it without touching a
+clause.</p>
+<p>A phrasebook is a named set of phrases with one condition on the
+whole set.</p>
+<pre class="chord"><code>define phrasebook hall-waking while the story is not asleep
+  kettle-is-hobbs:
+    &quot;Still mine,&quot; says Hobb, with his eye on the ceiling.
+  grille-fixed:
+    It hums under your hand, very faintly, like a rail with a train a
+    long way off. It does not move.
+end phrasebook
+
+define phrasebook hall-asleep
+  kettle-is-hobbs:
+    Hobb does not look round. &quot;That&#39;s mine,&quot; he says.
+  grille-fixed:
+    It does not so much as rattle.
+end phrasebook</code></pre>
+<p>The two books hold the same keys. When a clause asks for
+<code>grille-fixed</code>, the story looks through the phrasebooks in
+the order they appear in the file and takes the entry from the first
+book whose condition holds. A book with no <code>while</code> always
+holds, so it is the book of last resort.</p>
+<pre class="text"><code>&gt; push grille
+It does not so much as rattle.</code></pre>
+<p>After the spark page has been read:</p>
+<pre class="text"><code>&gt; push grille
+It hums under your hand, very faintly, like a rail with a train a long way off. It does not move.
+
+The tower bell strikes once, and the sound goes through the stones under your feet.</code></pre>
+<p>The grille’s clause still says <code>refuse grille-fixed</code>, as
+it has since chapter 14.</p>
+<p>Three rules keep phrasebooks working.</p>
+<p><strong>Order decides.</strong> Put the conditional books first and
+the book with no condition last. If <code>hall-asleep</code> stood first
+it would always be chosen, since it always holds, and the waking book
+would never be reached.</p>
+<p><strong>A key lives in the books or outside them.</strong> A key
+declared by <code>define phrases</code> or <code>define phrase</code>
+always wins over a phrasebook. When you move a key into phrasebooks,
+take its entry out of the <code>define phrases</code> block.</p>
+<p><strong>Books are for your keys.</strong> An entry in a phrasebook
+does not change a standard message. Those are changed by
+<code>override message</code>, and an override has no condition.</p>
+<p>An entry may have variants and a strategy, written as in the list
+form with the strategy after the key:
+<code>kettle-is-hobbs, cycling:</code> and then the variants with
+<code>or</code> between them. What it may not have is a
+<code>while</code> of its own. The condition belongs to the book.</p>
+<h2 data-number="22.8" id="when-to-reach-for-a-phrasebook"><span
+class="header-section-number">22.8</span> When to reach for a
+phrasebook</h2>
+<p>A phrasebook is the right tool when a mood shifts and several pieces
+of text should shift with it: before and after the storm, sober and
+drunk, the Hall asleep and the Hall awake. One line turns the whole set
+over.</p>
+<p>It is the wrong tool for a single thing in a single state, which is a
+<code>detail</code> phrase or a <code>select on</code>. And it is easy
+to overuse. Each book you add is another place a reader has to look to
+find out what a key says. Two or three books is a design. Ten is a
+puzzle.</p>
+<h2 data-number="22.9" id="phrases-in-a-file-of-their-own"><span
+class="header-section-number">22.9</span> Phrases in a file of their
+own</h2>
+<p>A story’s text can outgrow one file. Phrasebooks may be kept in a
+second file and brought in with one line.</p>
+<pre class="chord"><code>import &quot;books&quot;</code></pre>
+<p>The name in quotes is a file beside the story,
+<code>books.chord</code>. The extension is left off. That file holds
+<code>define phrasebook</code> blocks and comments and nothing else, and
+it is not a story by itself: it has no header and cannot be built alone.
+Its books take their place in the order at the point where the
+<code>import</code> line stands.</p>
+<p>A project has one <code>.story</code> file. Everything else it
+imports is a <code>.chord</code> file, and you will meet a second use
+for one in chapter 25.</p>
+<h2 data-number="22.10" id="build-and-try-it-18"><span
+class="header-section-number">22.10</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-22</code> over your own file. It is the story with this
+chapter’s changes made. To make the changes by hand instead, work from
+this list and take the rest from that file: add the override for
+<code>going-too-dark</code>, the override for
+<code>waiting-time-passes</code>, the <code>override messages</code>
+block and the two phrasebooks, and remove <code>kettle-is-hobbs</code>
+and <code>grille-fixed</code> from the <code>define phrases</code>
+block.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Go down into the Undercroft without the lamp, and look.</p>
+<pre class="text"><code>&gt; look
+It is dark, and the dark here is old and has no interest in you.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: ids and aliases</strong> ·
+<code>if.action.going.too_dark</code></p>
+<p>Each entry of <code>sharpee messages</code> has an <code>id</code>
+beside the alias. The id is the platform’s own name for the message, and
+it shows how the platform is arranged: <code>if.action</code>, then the
+action, then the message. The alias is the same name made safe for
+Chord, where a key may not contain a dot. In the compiled IR your
+overrides are stored under <code>messageOverrides</code> by alias, and
+your phrasebooks under <code>phrasebooks</code>, each with its condition
+and its entries.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: library messages</strong></p>
+<p>Inform 10 keeps its standard replies as lettered “responses” attached
+to rules, and you change one with a sentence such as: The can’t take
+yourself rule response (A) is “…”. TADS 3 keeps them in message objects,
+<code>playerActionMessages</code> and its relatives, which you modify.
+Chord’s aliases are the same idea with names in place of rule letters.
+Neither system has a construct quite like the phrasebook. In both you
+would test a condition inside the message itself.</p>
+</div>
+<h2 data-number="22.11" id="what-you-have-so-far-21"><span
+class="header-section-number">22.11</span> What you have so far</h2>
+<p>Lanternhall speaks with one voice. Its darkness is its own, waiting
+has three things to say, and the Hall sounds different once it has begun
+to wake. Every command a player can type is still one the platform
+supplied, though, and this is a story about four words that are not in
+any standard list. The next chapter adds verbs.</p>
+<nav class="book-nav-bottom"><a class="prev" href="21-a-things-own-words.html">← A thing’s own words</a><a class="next" href="23-new-verbs.html">New verbs →</a></nav>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>New kinds of thing</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details open><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li class="active"><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="25-bending-the-standard-grammar.html" accesskey="n" rel="next">Bending the standard grammar</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="23-new-verbs.html" accesskey="p" rel="previous">New verbs</a>
+</span>
+</div>
+</nav>
+<h1 data-number="24" id="new-kinds-of-thing"><span
+class="header-section-number">24</span> New kinds of thing</h1>
+<p>The last chapter ended with four verbs and nothing to use them on.
+The sparking action knows who may spark. It does not know what a flame
+does to a lamp, and it has been forbidden to find out.</p>
+<p>That knowledge goes in a <strong>trait</strong>. You have used traits
+since chapter 6 without defining one: <code>openable</code>,
+<code>wearable</code> and <code>light-source</code> are trait words, and
+each makes a thing answer some standard action. A trait of your own
+makes a thing answer an action of your own. This chapter defines five of
+them, and at the end of it The Relighting can be won.</p>
+<h2 data-number="24.1" id="a-trait-that-answers-a-verb"><span
+class="header-section-number">24.1</span> A trait that answers a
+verb</h2>
+<p>Three things in Lanternhall take a flame: the hand lamp, the
+refectory candles and the Great Lantern. What happens when one of them
+is sparked is the same in each case, so it is written once.</p>
+<pre class="chord"><code>define trait wick
+  on the player sparking
+    refuse when it is lit: already-burning
+    change it to lit
+    phrase sparked
+  end on
+end trait</code></pre>
+<p>A trait is a block that opens with <code>define trait</code> and a
+name and closes with <code>end trait</code>. Inside it is a clause, of
+exactly the kind you have been writing in <code>create</code> blocks
+since chapter 14. The difference is the word <code>it</code>.</p>
+<p>A clause in a thing’s block names the thing, because the block has
+one owner. A trait has many, or will have. So inside a trait,
+<code>it</code> means whichever thing has the trait and is being acted
+on. This is the one place in Chord where <code>it</code> is allowed, as
+chapter 15 promised.</p>
+<p>A thing takes the trait by adding its name to the kind line.</p>
+<pre class="chord"><code>create the hand lamp
+  a thing, light-source, starts unlit, wick
+  in the Lodge
+
+  A tin hand lamp with a wire handle. Its wick is dry and its glass is
+  clean, which is Hobb all over.
+
+  phrase detail while the hand lamp is lit:
+    It is burning with a small flame, and the flame is blue.</code></pre>
+<p>Your trait word sits beside the platform’s, and reads the same way.
+The lamp’s own <code>on the player lighting</code> clause, with its
+requirement about the page, is gone. The sparking action carries that
+requirement now.</p>
+<pre class="text"><code>&gt; spark lamp
+You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
+
+Somewhere above you, old timber takes a weight it had forgotten.
+
+&gt; spark lamp
+It is burning already, and the word slides off it.
+
+A slow draught moves through the Hall, one way and then the other.</code></pre>
+<p>Follow the command through, because this is the centre of the
+language. The player types <code>spark lamp</code>. The sparking action
+checks its own lines: the lamp is reachable and the page has been
+learned. It then asks the lamp for an answer. The lamp has the
+<code>wick</code> trait, and the trait has a clause for sparking, so
+that clause runs with <code>it</code> meaning the lamp. Had the player
+named the grimoire, there would be no such clause, and the action’s
+<code>otherwise refuse</code> line would speak.</p>
+<p>The action never learned what a lamp is. The lamp never learned what
+the player must know. Each holds its own half.</p>
+<p>The line <code>change it to lit</code> deserves a second look.
+<code>lit</code> is not a state you declared. It belongs to
+<code>light-source</code>, and chapter 13 said that such states are read
+and changed like your own. Here is where that matters. A working that
+could only set states of your own invention could never light a real
+lamp, and the Undercroft would stay dark.</p>
+<h2 data-number="24.2" id="one-trait-several-things"><span
+class="header-section-number">24.2</span> One trait, several things</h2>
+<p>The candles and the Great Lantern take the same word.</p>
+<pre class="chord"><code>create the candles
+  aka prickets
+  a thing, scenery, plural, light-source, starts unlit, wick
+  in the Refectory
+  score supper-lit worth 5
+
+  Stubs of tallow in iron prickets down the middle of each table.
+
+  after the player sparking
+    move the unbind page here
+    award supper-lit
+    phrase candles-catch
+  end after</code></pre>
+<p>The candles’ <code>after</code> clause used to say
+<code>lighting</code>. It now says <code>sparking</code>, and it is
+still in the candles’ own block. This is the half of the rule that the
+last chapter’s error message spelled out. A thing may not answer one of
+your actions with an <code>on</code> clause of its own, and it may react
+to one with an <code>after</code> clause. The trait says what sparking
+does to any wick. The candles say what follows when these particular
+wicks catch.</p>
+<pre class="text"><code>&gt; spark candles
+You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
+
+The flame runs down the length of the table, and every cold wick takes it. In the candlelight there is a leaf of paper under the middle pricket that the daylight did not show.
+
+The tower bell tolls.
+
+You have risen to the rank of a Second-Year.</code></pre>
+<h2 data-number="24.3"
+id="a-trait-may-answer-standard-actions-too"><span
+class="header-section-number">24.3</span> A trait may answer standard
+actions too</h2>
+<p>There is a hole in this. <code>light lamp</code> is a standard
+command, the lamp is a <code>light-source</code>, and the standard
+lighting action would light it without any word at all. Until now the
+lamp’s own clause stood in the way. The trait can do the same for every
+wick at once.</p>
+<pre class="chord"><code>define trait wick
+  on the player sparking
+    refuse when it is lit: already-burning
+    change it to lit
+    phrase sparked
+  end on
+
+  on the player lighting
+    refuse light-needs-the-word
+  end on
+end trait</code></pre>
+<pre class="text"><code>&gt; light lamp
+You have no match, and you did not walk here for three days to use one. There is a word for this.
+
+The tower bell strikes once, and the sound goes through the stones under your feet.</code></pre>
+<p>A trait may hold clauses for any actions, standard or your own, and
+several of each kind. The next chapter closes this hole in a better way,
+by teaching the story that <code>light</code> means spark.</p>
+<h2 data-number="24.4" id="a-trait-with-one-thing"><span
+class="header-section-number">24.4</span> A trait with one thing</h2>
+<p>The Great Lantern needs one thing more than the lamp does. It must
+not be sparked without its lens. That used to be a <code>must</code>
+line in the Lantern’s own <code>on the player lighting</code> clause,
+and a thing’s own <code>on</code> clause cannot answer sparking.</p>
+<p>So the requirement becomes a trait, even though only the Lantern will
+ever have it.</p>
+<pre class="chord"><code>define trait lens-seat
+  on the player sparking
+    the lens must be in the Great Lantern: lantern-empty
+  end on
+end trait</code></pre>
+<pre class="chord"><code>create the Great Lantern
+  aka lantern
+  a container, scenery, light-source, starts unlit, lens-seat, wick
+  in the Lantern Gallery
+  holds 1
+  score relit worth 15
+
+  A drum of brass and glass the height of a door, with a seat inside it
+  for a lens and a wick as thick as your arm. Nothing has burned in it
+  for thirty years.
+
+  after the player sparking
+    lose lens-shatters when not lantern-ready
+    change the story to awake when lantern-ready
+    award relit when lantern-ready
+    win lantern-lit when lantern-ready
+  end after</code></pre>
+<p>A trait with a single carrier is ordinary in Chord and nothing to be
+tidied away. It is how a thing answers one of your verbs in a way no
+other thing does.</p>
+<p>The Lantern has two traits that answer sparking, and both of them
+answer. Their clauses are taken in the order the trait words stand on
+the kind line, in two passes. First every clause’s refusals and
+requirements are settled. Only when none of them refuses does any
+clause’s body run. So an empty Lantern is refused before any flame is
+lit, and that is true whichever trait is written first.</p>
+<p>What the order decides is what the player reads. If two traits would
+both refuse, the refusal of the one written first is the one that is
+spoken. When the command goes through, the bodies run in the same order,
+and so do their phrases.</p>
+<pre class="text"><code>&gt; spark lantern
+There is a wick, and there is a seat for a lens with no lens in it. A flame here would light the roof and nothing else.</code></pre>
+<h2 data-number="24.5" id="a-trait-with-states-and-a-score"><span
+class="header-section-number">24.5</span> A trait with states and a
+score</h2>
+<p>A trait can own states. The lens has been <code>cracked</code> or
+<code>sound</code> since chapter 13. That pair is really a fact about
+anything that can be mended, so it moves into the trait.</p>
+<pre class="chord"><code>define trait mendable
+  states: cracked, sound
+  score made-whole worth 5
+  phrases en-US
+    mended:
+      You say the word and mean it. What was broken is whole, and has
+      no memory of having been otherwise.
+
+  on the player mending
+    refuse when it is sound: already-whole
+    change it to sound
+    award made-whole
+    phrase mended
+  end on
+end trait</code></pre>
+<p>Each thing with the trait gets its own copy of the states. Inside the
+trait they are read as <code>it is sound</code>. Outside, they are read
+by the thing’s name, as before: <code>the lens is sound</code>. The
+<code>lantern-ready</code> condition and the lens’s <code>detail</code>
+phrases did not have to change.</p>
+<p>The lens loses its own <code>states</code> line and gains a word.</p>
+<pre class="chord"><code>create the lens
+  a thing, mendable
+  in the crate</code></pre>
+<p>The trait also holds a <code>score</code> line, and a
+<code>phrases</code> block. The block declares a phrase that belongs to
+the trait, in the list form of <code>define phrases</code>, indented
+inside the trait. It keeps the trait’s words beside the trait’s
+clause.</p>
+<h2 data-number="24.6" id="a-things-own-words-again"><span
+class="header-section-number">24.6</span> A thing’s own words,
+again</h2>
+<p>A second thing in Lanternhall has been broken since chapter 6. Hobb’s
+spectacles have one arm held on with thread.</p>
+<pre class="chord"><code>create the spectacles
+  aka glasses
+  a thing, plural, concealed, wearable, mendable
+  in the Lodge
+
+  Wire spectacles. Hobb has been looking for them since the spring.
+
+  phrase detail while the spectacles is cracked:
+    One arm has come away, and is held on with a turn of thread.
+
+  phrase detail while the spectacles is sound:
+    Both arms are sound.</code></pre>
+<p>One word on the kind line, and the mend working mends them.</p>
+<p>The replies in this section were recorded with the bell already
+hushed, which the next section does. Mend anything while it is still
+tolling and the reply ends with the bell.</p>
+<pre class="text"><code>&gt; mend spectacles
+You say the word and mean it. What was broken is whole, and has no memory of having been otherwise.</code></pre>
+<p>That is the trait’s own phrase. It serves for spectacles, and it is
+too plain for the lens, which is the mend the whole game has been
+leading up to. Chapter 21 said that a <code>phrase</code> line in a
+thing’s block is that thing’s own version of a piece of text. Here is
+the general use it promised.</p>
+<pre class="chord"><code>create the lens
+  a thing, mendable
+  in the crate
+
+  A disc of glass as wide as a cartwheel, ground in rings.
+
+  phrase mended:
+    You say the word and mean it. The crack closes from both edges at
+    once, like a mouth deciding not to speak.</code></pre>
+<p>The trait’s clause says <code>phrase mended</code>. For the
+spectacles that is the trait’s text. For the lens it is the lens’s.</p>
+<pre class="text"><code>&gt; mend lens
+You say the word and mean it. The crack closes from both edges at once, like a mouth deciding not to speak.
+
+&gt; examine lens
+A disc of glass as wide as a cartwheel, ground in rings. There is no flaw in it anywhere, and you looked.</code></pre>
+<p>The score was declared once, in the trait, and it is paid once.
+Mending the spectacles earns the five points, and mending the lens
+afterwards earns nothing more. If each mend should score, give each
+thing a <code>score</code> line of its own and award it in an
+<code>after the player mending</code> clause.</p>
+<h2 data-number="24.7" id="the-bell-and-the-grille"><span
+class="header-section-number">24.7</span> The bell and the grille</h2>
+<p>Two traits remain, each with one carrier.</p>
+<pre class="chord"><code>define trait hushable
+  score quieted worth 5
+
+  on the player hushing
+    it must be tolling: already-quiet
+    change it to silent
+    award quieted
+    phrase bell-hushed
+  end on
+end trait
+
+define trait ward
+  score unsealed worth 5
+
+  on the player unbinding
+    refuse when the tower bell is unrung: ward-asleep
+    refuse when the tower bell is tolling: ward-in-the-bell
+    change it to lifted
+    move it offstage
+    award unsealed
+    phrase ward-lifts
+  end on
+end trait</code></pre>
+<p>The tower bell becomes <code>a thing, scenery, hushable</code> and
+the iron grille <code>a thing, scenery, ward</code>. Neither trait
+declares states. They use <code>tolling</code>, <code>silent</code> and
+<code>lifted</code>, which the bell and the grille declare themselves,
+and the compiler checks that every thing with the trait has the states
+the trait changes.</p>
+<p>The <code>ward</code> trait is where the puzzle is. The grille cannot
+be unbound before the bell has rung, because the ward is asleep, and it
+cannot be unbound while the bell is tolling, because the ward is in the
+bell. So the bell must be hushed first, and hushing needs the third
+page.</p>
+<pre class="text"><code>&gt; unbind grille
+The word goes into the iron and comes back out on the next stroke of the bell. Whatever holds the grille is being rung into it.
+
+The bell tolls. You have stopped counting.
+
+&gt; hush bell
+You say the word up into the dark of the tower. The bell swings twice more without a sound, and hangs still.
+
+&gt; unbind grille
+You say the word. The grille is not there, in the manner of a thing that was never there, and the stair goes up.
+
+You have risen to the rank of a Journeyman.</code></pre>
+<p>The bell has stopped at last. Every turn since chapter 19 has ended
+with it. The line about rank comes on whichever of these awards takes
+the score to thirty. Here that was the grille, because the lamp, the
+candles and the other pages had been seen to first and nothing had been
+mended yet. In another order it follows the bell, or a mend.</p>
+<p>The grille is moved offstage, the Bell Stair’s
+<code>{grille-across}</code> marker falls silent because its condition
+is no longer true, and the way up is no longer blocked. Three lines
+written in three different chapters agree, because all three read one
+state.</p>
+<h2 data-number="24.8" id="data-on-a-trait"><span
+class="header-section-number">24.8</span> Data on a trait</h2>
+<p>A trait may give each of its things a value of its own, called a
+<strong>field</strong>. The Relighting has no need of one, so here is a
+brazier from another story.</p>
+<pre class="chord"><code>define trait burner
+  data
+    fuel: one of tallow, oil
+    keeper: optional entity
+
+  on the player stoking
+    phrase fuel-tallow when its fuel is tallow
+    phrase fuel-oil when its fuel is oil
+  end on
+end trait</code></pre>
+<p>The <code>data</code> block lists the fields. Each is a name, a colon
+and a type.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>one of</code> and a list</td>
+<td>one word from the list</td>
+</tr>
+<tr>
+<td><code>number</code></td>
+<td>a whole number</td>
+</tr>
+<tr>
+<td><code>entity</code></td>
+<td>a thing, a person or a room</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>a word of your choosing</td>
+</tr>
+</tbody>
+</table>
+<p>A thing sets its fields on the kind line, after the trait word, with
+<code>with</code> and then <code>and</code> between one field and the
+next.</p>
+<pre class="chord"><code>create the cresset
+  a thing, burner with fuel oil
+  in the Yard
+
+create the brazier
+  a thing, burner with fuel oil and keeper the stub
+  in the Yard</code></pre>
+<p>Inside the trait a field is read as <code>its fuel</code>, and from
+outside as <code>the brazier's keeper</code>. A field is changed with
+<code>set</code>, as in <code>set its brightness to 3</code>.</p>
+<p>Set every field on every thing that has the trait, unless the field
+is marked <code>optional</code> and the trait never reads it without
+checking. A field that was never set has no value to read.</p>
+<p>Reach for a field when things with the trait differ by a value. Reach
+for a state when they differ by a condition that changes during
+play.</p>
+<h2 data-number="24.9" id="is-it-a-wick"><span
+class="header-section-number">24.9</span> Is it a wick?</h2>
+<p>A trait name can be used in a condition, after <code>is a</code>.</p>
+<pre class="chord"><code>define condition cold-wick: it is a wick and it is not lit</code></pre>
+<p><code>the hand lamp is a wick</code> is true, and
+<code>the kettle is a wick</code> is false. With an open condition such
+as <code>cold-wick</code>, the <code>any</code>, <code>no</code> and
+<code>each</code> of chapter 16 can now talk about every thing of a sort
+you defined.</p>
+<p>Because a trait name is used this way, it cannot be a word the
+language already has. You may not call a trait <code>container</code> or
+<code>openable</code>.</p>
+<h2 data-number="24.10" id="build-and-try-it-20"><span
+class="header-section-number">24.10</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-24</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the phrases, which the chapter did
+not print in full. To make the changes by hand instead, work from this
+list and take the rest from that file.</p>
+<p>Add the five traits above the actions. Give <code>wick</code> to the
+lamp, the candles and the Lantern, with <code>lens-seat</code> before it
+on the Lantern. Give <code>mendable</code> to the lens and the
+spectacles, <code>hushable</code> to the bell and <code>ward</code> to
+the grille. Remove the three <code>on the player lighting</code> clauses
+from the lamp, the candles and the Lantern, and change the candles’ and
+the Lantern’s <code>after</code> clauses to <code>sparking</code>.
+Remove the lens’s <code>states</code> line. Lengthen the rank ladder to
+its final form: Journeyman at 30, Lamplighter at 50. There are nine new
+phrases.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>The game can be played to its end for the first time. Read the first
+page. Spark the lamp and the candles. Find the three other pages and
+read them. Hush the bell, unbind the grille, mend the lens, carry it to
+the roof and seat it.</p>
+<pre class="text"><code>&gt; spark lantern
+You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
+
+The lens gathers the flame and sends it out over the valley in one white bar. Down in the Hall, every blank page begins to fill.
+
+You have risen to the rank of a Lamplighter.
+
+[The story has ended. RESTART, RESTORE or UNDO]</code></pre>
+<p>Then play it again and leave the lens cracked.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: capability</strong> · Story IR
+<code>traits</code></p>
+<p>Find <code>wick</code> under <code>traits</code> in the compiled IR
+and look at its sparking clause. One of its fields reads
+<code>"routing": "capability"</code>. That is the platform’s name for
+what this chapter has been doing. A trait declares that it is capable of
+answering an action, and the action asks every trait of the thing that
+answers it, in the order they are written. The standard traits answer
+the standard actions through the same door. Your <code>wick</code> and
+the platform’s <code>openable</code> are the same kind of object, which
+is why they sit side by side on a kind line.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: kinds and classes</strong></p>
+<p>In Inform 10 you would say “A wick is a kind of thing” and write
+rules for sparking a wick. In TADS 3 you would define a
+<code>Wick</code> class and give it a <code>dobjFor(Spark)</code> block,
+and an object could list several classes. Chord’s trait is nearer to the
+TADS class used as a mix-in. A thing has exactly one kind, such as
+<code>a thing</code> or <code>a container</code>, and any number of
+traits. Traits do not inherit from one another. What several traits
+share, they share by being composed on the same thing.</p>
+</div>
+<h2 data-number="24.11" id="what-you-have-so-far-23"><span
+class="header-section-number">24.11</span> What you have so far</h2>
+<p>The four workings work. A thing answers a working by having a trait,
+and each trait says in one place what the working does. The story can be
+won and lost, and the bell can be stopped.</p>
+<p>A player who types <code>light lamp</code> is still told off for it,
+though, and one who types <code>fix lens</code> or
+<code>sit on chair</code> is not understood at all. The last chapter of
+Part IV makes the story’s grammar as forgiving as its prose.</p>
+<nav class="book-nav-bottom"><a class="prev" href="23-new-verbs.html">← New verbs</a><a class="next" href="25-bending-the-standard-grammar.html">Bending the standard grammar →</a></nav>
+</body>
+</html>

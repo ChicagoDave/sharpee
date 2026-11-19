@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>People who act</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details open><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li class="active"><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="27-asking-and-telling.html" accesskey="n" rel="next">Asking and telling</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-part-v.-people.html" accesskey="p" rel="previous">Part V. People</a>
+</span>
+</div>
+</nav>
+<h1 data-number="26" id="people-who-act"><span
+class="header-section-number">26</span> People who act</h1>
+<p>Hobb has been in the Lodge since chapter 6. He is
+<code>a person</code>, he is <code>proper</code>, and he has a
+description and a sentence of his own in the room. In every way that
+matters to the player he is furniture. He never moves, he never does
+anything, and the only verb he answers is <code>give</code>.</p>
+<p>This chapter makes people do things. It covers four tools, in rising
+order of effort: the <code>pronouns</code> line, which lets your prose
+refer to a person correctly; the stock behaviours, which move a person
+about with one word; the acting statement, which has a person perform
+one action when you say so; and the <code>goal</code> block, which gives
+a person a plan to carry out on their own turns.</p>
+<h2 data-number="26.1" id="pronouns"><span
+class="header-section-number">26.1</span> Pronouns</h2>
+<p>A person takes one line that a thing does not.</p>
+<pre class="chord"><code>create Hobb
+  a person, proper
+  pronouns he
+  in the Lodge</code></pre>
+<p>The <code>pronouns</code> line names a pronoun set. Four are
+standard: <code>he</code>, <code>she</code>, <code>it</code> and
+<code>they</code>. The line is allowed only in a person’s block.</p>
+<p>What the line buys you is a marker. Chapter 20 showed that a phrase
+can take a parameter and print it with <code>{the who}</code>. Once a
+person has been named in a phrase, <code>{pronoun:subject}</code> prints
+the right pronoun for whoever that was.</p>
+<pre class="chord"><code>define phrases en-US
+  own-business:
+    {the who} does not stop for you. {capitalize pronoun:subject} has
+    {pronoun:possessive} own day to get through.</code></pre>
+<p>One phrase now serves anybody. The person is passed in where the
+phrase is used.</p>
+<pre class="chord"><code>after the player examining
+  phrase own-business with who = Tamsin Vey
+end after</code></pre>
+<pre class="text"><code>&gt; examine tamsin
+A broad woman in a leather apron, with a pry bar through her belt and brass filings in the creases of her hands. She has the look of someone adding you up.
+
+Tamsin Vey does not stop for you. She has her own day to get through.</code></pre>
+<p>A pronoun marker refers to the person most recently mentioned in the
+same phrase, which is why <code>{the who}</code> comes first. There are
+five cases, and each has a marker.</p>
+<table>
+<thead>
+<tr>
+<th>Marker</th>
+<th>For <code>he</code></th>
+<th>For <code>she</code></th>
+<th>For <code>it</code></th>
+<th>For <code>they</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{pronoun:subject}</code></td>
+<td>he</td>
+<td>she</td>
+<td>it</td>
+<td>they</td>
+</tr>
+<tr>
+<td><code>{pronoun:object}</code></td>
+<td>him</td>
+<td>her</td>
+<td>it</td>
+<td>them</td>
+</tr>
+<tr>
+<td><code>{pronoun:possessive}</code></td>
+<td>his</td>
+<td>her</td>
+<td>its</td>
+<td>their</td>
+</tr>
+<tr>
+<td><code>{pronoun:possessive-pronoun}</code></td>
+<td>his</td>
+<td>hers</td>
+<td>its</td>
+<td>theirs</td>
+</tr>
+<tr>
+<td><code>{pronoun:reflexive}</code></td>
+<td>himself</td>
+<td>herself</td>
+<td>itself</td>
+<td>themselves</td>
+</tr>
+</tbody>
+</table>
+<p>Put <code>capitalize</code> in front of a marker that begins a
+sentence. A person with no <code>pronouns</code> line is spoken of as
+<code>it</code>, or as <code>they</code> if the person is
+<code>plural</code>.</p>
+<h3 data-number="26.1.1" id="a-set-of-your-own"><span
+class="header-section-number">26.1.1</span> A set of your own</h3>
+<p>If the four standard sets do not suit a character, define a
+fifth.</p>
+<pre class="chord"><code>define pronouns ey
+  subject ey
+  object em
+  possessive eir
+  possessive-pronoun eirs
+  reflexive emself
+end pronouns
+
+create Sam
+  a person, proper
+  pronouns ey
+  in the Yard</code></pre>
+<p>The block names the set and gives all five cases, one to a line, in
+any order. Leaving one out is an error. The name may not be one of the
+four standard names.</p>
+<pre class="text"><code>&gt; examine sam
+Sam.
+
+Sam looks back. Ey folds eir arms and keeps the moment to emself.</code></pre>
+<p>The Relighting does not need a set of its own. Hobb is
+<code>he</code>, Tamsin Vey is <code>she</code>, and the third person in
+this chapter is <code>it</code>.</p>
+<h2 data-number="26.2" id="the-stock-behaviours"><span
+class="header-section-number">26.2</span> The stock behaviours</h2>
+<p>The quickest way to make a person move is one word on the kind line.
+The platform ships five behaviours, and each is a word you compose
+exactly as you compose <code>wearable</code> or
+<code>openable</code>.</p>
+<p>The Relighting has a creature for the simplest of them: a scrap of
+returning magic that takes a liking to Ansel.</p>
+<pre class="chord"><code>create the wisp
+  aka light
+  a person, follower
+  pronouns it
+
+  A scrap of light the size of a thumbnail, the same blue as the lamp
+  flame. It keeps a little behind your shoulder, where a dog would.</code></pre>
+<p>A <code>follower</code> goes where the player goes. The wisp has no
+placement line, so it begins the game nowhere, and the hand lamp brings
+it on the first time the lamp is sparked.</p>
+<pre class="chord"><code>after the player sparking, once
+  move the wisp here
+  phrase wisp-arrives
+end after</code></pre>
+<pre class="text"><code>&gt; light lamp
+You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
+
+Something small and blue comes loose from the flame and hangs in the air beside it, undecided. Then it decides.
+
+Somewhere above you, old timber takes a weight it had forgotten.
+
+&gt; east
+Cloister
+A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.
+
+A slow draught moves through the Hall, one way and then the other.
+
+The wisp follows you.</code></pre>
+<p>The line “The wisp follows you.” is the platform’s. From here to the
+end of the game the wisp is in the room with Ansel, and a
+<code>look</code> lists it. On the turn Ansel walks into a room, the
+room’s list is printed before the wisp arrives, so the wisp is not in
+that one.</p>
+<p>A person needs the word <code>person</code>. The wisp is not much of
+a person, but it moves by itself and will later hear things, and those
+are what the kind is for.</p>
+<h3 data-number="26.2.1" id="the-five-words"><span
+class="header-section-number">26.2.1</span> The five words</h3>
+<table>
+<thead>
+<tr>
+<th>Word</th>
+<th>What the person does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>follower</code></td>
+<td>Goes where the player goes, arriving on the same turn.</td>
+</tr>
+<tr>
+<td><code>wanderer</code></td>
+<td>Moves to a neighbouring room at random.</td>
+</tr>
+<tr>
+<td><code>patrol</code></td>
+<td>Walks a fixed route of rooms.</td>
+</tr>
+<tr>
+<td><code>guard</code></td>
+<td>Stays where it is, and says so when the player walks in.</td>
+</tr>
+<tr>
+<td><code>passive</code></td>
+<td>Stays where it is and does nothing.</td>
+</tr>
+</tbody>
+</table>
+<p>A behaviour word takes settings, written with <code>with</code> and
+joined by <code>and</code>, as the settings of chapter 9 were.</p>
+<pre class="chord"><code>create the cat
+  a person, wanderer with move-chance 50 and allowed-rooms [the Yard, the Shed]
+  in the Yard
+
+  A grey cat.
+
+create the watchman
+  a person, patrol with route [the Yard, the Shed] and loop true and wait-turns 1 and announces-movement true
+  pronouns he
+  in the Yard
+
+  A watchman.</code></pre>
+<p>A list of rooms is written in square brackets, with commas. A setting
+that is true or false takes the word <code>true</code> or
+<code>false</code>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Setting</th>
+<th>On</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>move-chance</code></td>
+<td><code>wanderer</code></td>
+<td>The chance of moving each turn, as a number from 0 to 100.</td>
+</tr>
+<tr>
+<td><code>route</code></td>
+<td><code>patrol</code></td>
+<td>The rooms to walk, in order.</td>
+</tr>
+<tr>
+<td><code>loop</code></td>
+<td><code>patrol</code></td>
+<td>Whether to begin the route again at its end.</td>
+</tr>
+<tr>
+<td><code>wait-turns</code></td>
+<td><code>patrol</code></td>
+<td>How many turns to stand in each room.</td>
+</tr>
+<tr>
+<td><code>allowed-rooms</code></td>
+<td>all five</td>
+<td>The only rooms the person may enter.</td>
+</tr>
+<tr>
+<td><code>forbidden-rooms</code></td>
+<td>all five</td>
+<td>Rooms the person may never enter.</td>
+</tr>
+<tr>
+<td><code>can-move</code></td>
+<td>all five</td>
+<td>Set to <code>false</code>, it holds the person still.</td>
+</tr>
+<tr>
+<td><code>announces-movement</code></td>
+<td>all five</td>
+<td>Whether the player is told of comings and goings.</td>
+</tr>
+</tbody>
+</table>
+<p>The last one matters more than it looks. Without it a person who
+moves is simply in the room or not in it, and the player learns of the
+move from the room’s list. With it, the platform reports each move the
+player can see.</p>
+<pre class="text"><code>&gt; look
+Yard
+A yard.
+
+You can see a watchman here.
+
+The watchman leaves to the north.</code></pre>
+<p>Two of the behaviours speak when the player arrives. A wanderer
+“notices you”, and a guard “blocks your way!”. The guard’s line is only
+a line: the player has already walked in. A guard that really stops
+someone is a blocked exit, which is chapter 12.</p>
+<h2 data-number="26.3" id="having-a-person-do-something"><span
+class="header-section-number">26.3</span> Having a person do
+something</h2>
+<p>The stock behaviours move people. To have a person <em>do</em>
+something, write a sentence with the person as its subject.</p>
+<pre class="chord"><code>on every turn while the oak press is open and the library key is not in the oak press
+  Hobb closes the oak press
+end on</code></pre>
+<p><code>Hobb closes the oak press</code> is the <strong>acting
+statement</strong>. It begins with a person’s name, and the rest is a
+command exactly as a player would type it, with the verb in the third
+person. When the statement runs, Hobb performs the closing action. It is
+the same action the player’s <code>close press</code> reaches, with the
+same checks, and the platform reports it.</p>
+<pre class="text"><code>&gt; take key
+You take the library key from the oak press.
+
+Hobb closes the oak press.
+
+&gt; open press
+You open the oak press, which is empty.
+
+Hobb closes the oak press.</code></pre>
+<p>Hobb is a porter. He has spent thirty years shutting things that
+other people left open, and now the story says so in one line.</p>
+<p>Three rules govern the statement.</p>
+<p>The words after the name must be a command the story understands. Any
+standard action will do, and so will an action of your own from chapter
+23: <code>Hobb opens the oak press</code>,
+<code>Nell takes the coin from the box</code>. A verb that no grammar
+has is an error when you build.</p>
+<p>The person performs the action and does not merely have its result.
+This is the difference between <code>move</code> and acting, and it is
+worth a moment. <code>move the library key to Hobb</code> puts the key
+in his hands by decree, from anywhere, with no report. An acting
+statement has the person do the thing as a player would, under the
+action’s own checks, and the platform tells the player it was done.</p>
+<p>The statement is not for the player, whose actions are the player’s
+to type.</p>
+<pre class="text"><code>probe.story:23:5 error [analysis.act-player-actor] `the player takes the bucket` — the player cannot be made to act; an acting statement names a character. Write the character&#39;s own name, or use `move` for an authorial change.</code></pre>
+<p>It also cannot stand in an <code>on the player …</code> clause, which
+runs before an action and exists to permit or refuse it. Write it in an
+<code>after</code> clause, in <code>on every turn</code>, in a
+<code>when</code> clause, or in the conversation rows of the next two
+chapters. A <code>when</code> suffix is allowed, as on most
+statements.</p>
+<h2 data-number="26.4" id="goals"><span
+class="header-section-number">26.4</span> Goals</h2>
+<p>An acting statement is one action at a moment you choose. A person
+who goes somewhere, does three things in order and then stops needs a
+plan, and a plan is a <code>goal</code> block.</p>
+<p>The Relighting’s second person is a salvager.</p>
+<pre class="chord"><code>create Tamsin Vey
+  aka salvager, woman
+  a person, proper, passive with announces-movement true
+  pronouns she
+  in the Refectory
+
+  A broad woman in a leather apron, with a pry bar through her belt and
+  brass filings in the creases of her hands. She has the look of someone
+  adding you up.
+
+  goal rounds, low
+    wait for Ansel is in the Refectory
+    act tamsin-sorts
+    move to the Cloister
+    act tamsin-measures
+    move to the Refectory
+  end goal</code></pre>
+<p>A goal has a name and a priority, and its body is a list of steps.
+The person takes one step on each turn, after the player’s own command.
+This goal waits until Ansel walks in, and then Tamsin goes about her
+business with an audience.</p>
+<pre class="text"><code>&gt; east
+Refectory
+Three long tables, each with its row of candles, and a hearth you could stable a horse in. The benches are stacked against the wall, where someone left them for the holidays. The cloister is back to the west.
+
+You can see Tamsin Vey here.
+
+&gt; examine tamsin
+A broad woman in a leather apron, with a pry bar through her belt and brass filings in the creases of her hands. She has the look of someone adding you up.
+
+Tamsin Vey does not stop for you. She has her own day to get through.
+
+Tamsin Vey turns over a heap of door furniture on the end of a table, and puts two hinges in her apron.
+
+&gt; wait
+You wait. The Hall has had thirty years of practice and is better at it than you are.
+
+Tamsin Vey leaves to the west.</code></pre>
+<p>The line “Tamsin Vey leaves to the west.” is there because of
+<code>announces-movement</code>. That is the reason she is
+<code>passive</code>: the word gives her no movement of its own, and it
+is a place to hang the setting.</p>
+<h3 data-number="26.4.1" id="the-steps"><span
+class="header-section-number">26.4.1</span> The steps</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Step</th>
+<th>What the person does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>move to the &lt;room&gt;</code></td>
+<td>Walks to the room, one room a turn.</td>
+</tr>
+<tr>
+<td><code>seek the &lt;thing&gt;</code></td>
+<td>Walks toward a thing or a person, one room a turn.</td>
+</tr>
+<tr>
+<td><code>wait for &lt;condition&gt;</code></td>
+<td>Stays on this step until the condition holds.</td>
+</tr>
+<tr>
+<td><code>act &lt;phrase&gt;</code></td>
+<td>Prints the phrase, if the player is there to see.</td>
+</tr>
+<tr>
+<td><code>say &lt;phrase&gt;</code></td>
+<td>Prints the phrase as something said.
+<code>say &lt;phrase&gt; to &lt;person&gt;</code> names the hearer.</td>
+</tr>
+<tr>
+<td><code>acquire the &lt;thing&gt;</code></td>
+<td>Waits until the thing is in the room, then takes it.</td>
+</tr>
+<tr>
+<td><code>give the &lt;thing&gt; to &lt;person&gt;</code></td>
+<td>Hands it over, waiting if the other person is not there.</td>
+</tr>
+<tr>
+<td><code>drop the &lt;thing&gt;</code></td>
+<td>Puts it down.</td>
+</tr>
+<tr>
+<td>a command</td>
+<td>Performs that action, as the acting statement does.</td>
+</tr>
+</tbody>
+</table>
+<p>The last row is the general one. Any command the story understands
+may be a step, written without the person’s name, since the goal’s owner
+is the one acting: <code>open the box</code>, <code>go east</code>,
+<code>push the iron grille</code>. If the action is refused, the person
+tries again on the next turn.</p>
+<p>A step has no <code>when</code> suffix. A step that must wait for
+something is preceded by a <code>wait for</code> step.</p>
+<p>Here is a small complete plan, from a story of two rooms.</p>
+<pre class="chord"><code>create Nell
+  a person, proper
+  pronouns she
+  in the Yard
+
+  Nell.
+
+  goal fetch, high
+    active when Pat is in the Shed
+    move to the Shed
+    open the box
+    take the coin from the box
+    act nell-bites
+    wait for Pat is in the Yard
+    seek Pat
+    say nell-done to Pat
+  end goal</code></pre>
+<pre class="text"><code>&gt; look
+Shed
+A shed.
+
+You can see a box and Nell here.
+
+Nell opens the box.
+
+In the box you see a coin.
+
+&gt; look
+Shed
+A shed.
+
+You can see a box and Nell here.
+
+In the box you see a coin.
+
+Nell takes the coin from the box.
+
+&gt; look
+Shed
+A shed.
+
+You can see a box and Nell here.
+
+Nell bites the coin.</code></pre>
+<p><code>acquire</code> takes a thing that is lying loose in the room.
+For a thing inside something, write the command, as Nell’s plan
+does.</p>
+<p>A person’s steps happen whether or not the player is watching.
+Phrases printed by <code>act</code> and <code>say</code> are seen only
+by a player in the same room, and a goal that runs to its end in an
+empty room has still run. A goal is finished when its last step is done,
+and it does not begin again.</p>
+<h3 data-number="26.4.2" id="when-a-goal-is-active"><span
+class="header-section-number">26.4.2</span> When a goal is active</h3>
+<p>A goal may carry one <code>active when</code> line. The goal is
+considered only while its condition holds.</p>
+<pre class="chord"><code>goal the-grille, high
+  active when the tower bell is tolling
+  move to the Bell Stair
+  say tamsin-at-the-grille
+  push the iron grille
+  act tamsin-tries-the-bar
+end goal</code></pre>
+<p>Tamsin now has two goals. The priority, which is one of
+<code>critical</code>, <code>high</code>, <code>medium</code> and
+<code>low</code>, decides between goals that are active at once. While
+the Hall sleeps only <code>rounds</code> is active. When the bell begins
+to toll, <code>the-grille</code> becomes active and outranks it, and
+Tamsin leaves whatever she was doing and walks to the foot of the tower.
+She takes a step a turn, so what you see depends on when you follow.
+This is the view two turns after she comes through the Cloister.</p>
+<pre class="text"><code>&gt; north
+Bell Stair
+The foot of the tower. A stair winds up around the well where the bell rope hangs. The cloister is south. An iron grille stands across its third step.
+
+You can see Tamsin Vey here.
+
+The tower bell tolls.
+
+The wisp follows you.
+
+Tamsin Vey runs a thumb down one bar of the grille and looks at the thumb. &quot;That,&quot; she says, &quot;was not here on Tuesday.&quot;
+
+&gt; wait
+You wait.
+
+The bell tolls again, and the rooks go up off the roof.
+
+Tamsin Vey pushes the iron grille.
+
+&gt; wait
+You wait. The Hall has had thirty years of practice and is better at it than you are.
+
+The bell tolls. You have stopped counting.
+
+Tamsin Vey sets her pry bar to the foot of the grille and leans. The bar bends. The grille does not notice.</code></pre>
+<p>The middle line is the platform’s report of a real push. The grille’s
+own clause from chapter 14 says
+<code>on the player taking, pushing, pulling</code>, and it concerns the
+player only, so Tamsin’s push goes through to the standard action and
+its standard result.</p>
+<p>That is the whole of a second character’s morning in fourteen lines,
+and none of it is a clause on a thing. A goal belongs to the person who
+has it.</p>
+<h2 data-number="26.5" id="build-and-try-it-22"><span
+class="header-section-number">26.5</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-26</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the phrases, which the chapter did
+not print in full. This is the first chapter of Part V, and the copy’s
+<code>story-version</code> is <code>0.5.0</code>. To make the changes by
+hand instead, work from this list and take the rest from that file: add
+<code>pronouns he</code> to Hobb, add the <code>on every turn</code>
+clause to the oak press and the
+<code>after the player sparking, once</code> clause to the hand lamp,
+create Tamsin Vey and the wisp near Hobb, and add their six phrases to
+the phrases block.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Walk to the Refectory and wait a turn or two, then follow Tamsin into
+the Cloister. Read the spark page, light the lamp, and wait in the
+Cloister for the bell. Tamsin comes through on her way to the tower.
+Wait two turns more and then go north, and the Bell Stair reads as it
+does above. Go sooner or later and the same lines come on other
+turns.</p>
+<pre class="text"><code>&gt; wait
+You wait.
+
+The tower bell tolls.
+
+Tamsin Vey enters from the east.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: behaviours and plans</strong> · Story IR
+<code>traits</code>, <code>character.goals</code></p>
+<p>In the compiled IR a behaviour word is one more entry in a person’s
+<code>traits</code> list, beside <code>proper</code>, with its settings
+in a <code>config</code> list: Tamsin has <code>passive</code> there
+with <code>announces-movement</code>. The platform turns each into an
+NPC behaviour that is consulted once a turn. A person’s goals are
+recorded under <code>character.goals</code>, each with its
+<code>priority</code>, its <code>activeWhen</code> condition and its
+<code>steps</code>. A command step such as
+<code>push the iron grille</code> is stored with the action it resolved
+to (<code>pushing</code>) and the pattern it matched
+(<code>push :target</code>), which is why a misspelt command in a goal
+is a build error and not a silent failure at turn forty. When an NPC
+acts, it runs the same standard action a player’s command runs.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: actors acting</strong></p>
+<p>In Inform 10 an action can be tried by another person, with a phrase
+such as “try Hobb closing the oak press”, and the action is then subject
+to the usual action machinery. A person’s routine can be written as
+“Every turn” rules. In TADS 3 a non-player character’s goals are
+<code>AgendaItem</code> objects, each with an <code>isReady</code>
+condition and an <code>invokeItem</code> method that is called when the
+item is carried out. A Chord goal is nearest to a TADS agenda item, with
+the difference that its body is a list of steps taken one a turn and not
+a method.</p>
+</div>
+<h2 data-number="26.6" id="what-you-have-so-far-25"><span
+class="header-section-number">26.6</span> What you have so far</h2>
+<p>Lanternhall has three people in it besides Ansel. Hobb shuts his
+press behind you. Tamsin Vey sorts her brass, measures a bracket in the
+Cloister, and goes to the grille when the bell starts. A wisp follows
+the lamp.</p>
+<p>None of them can be spoken to.</p>
+<pre class="text"><code>&gt; talk to hobb
+Hobb doesn&#39;t respond.</code></pre>
+<p>The next chapter gives them something to say.</p>
+<nav class="book-nav-bottom"><a class="prev" href="-part-v.-people.html">← Part V. People</a><a class="next" href="27-asking-and-telling.html">Asking and telling →</a></nav>
+</body>
+</html>

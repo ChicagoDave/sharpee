@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Appendix A. The grammar</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details open><summary>Appendices</summary><ul><li class="active"><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html" accesskey="n" rel="next">Appendix B. Kinds, trait words, state words and their pairings</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="40-publishing.html" accesskey="p" rel="previous">Publishing</a>
+</span>
+</div>
+</nav>
+<h1 class="unnumbered" id="appendix-a.-the-grammar">Appendix A. The
+grammar</h1>
+<p>The Chord grammar in EBNF, as the compiler implements it: 215 rules
+in 24 sections. The grammar file’s comments are left out, so this is the
+productions alone. Generated from <code>chord.ebnf</code> (Sharpee 5.7.0
+· Chord 4.1.0) by
+<code>scripts/generate-chord-appendices.cjs</code>.</p>
+<pre class="text"><code>Notation:
+  UPPER      = token class          &quot;quoted&quot; = literal word
+  [ x ]      = optional             { x }    = zero or more
+  x | y      = alternatives         ( * … * ) = comment (written without the spaces)
+  NL         = end of source line (Chord is line-oriented)
+  &gt;&gt;&gt;        = an indented block follows (layout; EBNF cannot express
+               indentation — the summary below is the rule)
+
+Layout summary:
+  - Indentation is spaces only; a tab is a lex error.
+  - Blocks open with their header line and close at dedent or their
+    explicit &quot;end &lt;kw&gt;&quot; terminator per the Layout table.
+  - A blank line inside a prose block is a paragraph break; in create
+    blocks a blank line ends the block, but later bare paragraphs
+    append to the description.</code></pre>
+<h2 class="unnumbered unlisted" id="tokens">Tokens</h2>
+<pre class="ebnf"><code>WORD    = letter { letter | digit | &quot;&#39;&quot; | &quot;-&quot; | &quot;_&quot; } ;
+NUMBER  = digit { digit } { &quot;.&quot; digit { digit } } ;
+STRING  = &#39;&quot;&#39; any-except-&#39;&quot;&#39; &#39;&quot;&#39; ;
+MARKER  = &quot;{&quot; content &quot;}&quot; ;
+LOCALE  = WORD ;
+rest-of-line    = any-except-NL ;
+prose-line      = rest-of-line NL ;
+prose-paragraph = prose-line { prose-line } ;
+inline-prose    = &gt;&gt;&gt; prose-paragraph ;</code></pre>
+<h2 class="unnumbered unlisted" id="comments-1">Comments</h2>
+<pre class="ebnf"><code>comment-line = &quot;##&quot; rest-of-line NL ;
+comment-run  = comment-line { comment-line } ;</code></pre>
+<h2 class="unnumbered unlisted" id="top-level">Top level</h2>
+<pre class="ebnf"><code>story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
+grammar-file   = [ comment-run ] grammar-header
+                 { define-action | &quot;import&quot; STRING NL | comment-run } ;
+grammar-header = &quot;grammar&quot; STRING NL ;
+claims-file  = [ comment-run ] claims-block { comment-run } ;
+claims-block = &quot;claims&quot; NL
+                 &gt;&gt;&gt; { needs-line } claim-decl { claim-decl }
+               &quot;end&quot; &quot;claims&quot; NL ;
+needs-line   = &quot;needs&quot; ( &quot;rooms&quot; | &quot;things&quot; ) &quot;:&quot; name { &quot;,&quot; [ &quot;and&quot; ] name } NL
+             | &quot;needs&quot; &quot;verbs&quot; &quot;:&quot; verb-phrase { &quot;,&quot; verb-phrase } NL ;
+verb-phrase  = WORD { WORD } ;
+claim-decl   = &quot;claim&quot; rest-of-line NL
+                 &gt;&gt;&gt; claim-predicate { needs-line } ;
+claim-predicate = &quot;the&quot; &quot;story&quot; &quot;ends&quot; &quot;in&quot; WORD NL
+                | &quot;the&quot; &quot;story&quot; &quot;has&quot; &quot;ended&quot; NL
+                | name &quot;was&quot; &quot;asked&quot; &quot;about&quot; STRING NL
+                | name &quot;has&quot; &quot;been&quot; WORD NL
+                | condition NL ;
+story-header = &quot;story&quot; NL
+               &gt;&gt;&gt; { states-line | score-line | story-on-clause | use-line
+                   | use-phrasebook-line
+                   | timer-clause
+                   | meta-field } ;
+meta-field   = &quot;title&quot; &quot;:&quot; rest-of-line NL
+             | &quot;id&quot; &quot;:&quot; rest-of-line NL
+             | &quot;story-version&quot; &quot;:&quot; rest-of-line NL
+             | &quot;ifid&quot; &quot;:&quot; rest-of-line NL
+             | name-list-field | prose-field
+             | client-config-field ;
+client-config-field
+             = ( &quot;client&quot; | &quot;theme&quot; | &quot;template&quot;
+               | &quot;default-theme&quot; | &quot;storage-prefix&quot; ) &quot;:&quot; rest-of-line NL
+             | &quot;themes&quot; &quot;:&quot; rest-of-line NL ;
+name-list-field = ( &quot;authors&quot; | &quot;testers&quot; ) &quot;:&quot; [ rest-of-line ] NL
+                  { &gt;&gt;&gt; rest-of-line NL } ;
+prose-field  = ( &quot;prologue&quot; | &quot;description&quot; ) &quot;:&quot; [ rest-of-line ] NL
+               { &gt;&gt;&gt; rest-of-line NL } ;
+use-line     = use-scoring-line | use-hunger-line | use-plain-line ;
+use-plain-line = &quot;use&quot; WORD [ announce-suffix ] NL ;
+use-scoring-line = &quot;use&quot; &quot;scoring&quot; [ announce-suffix ] NL
+               &gt;&gt;&gt; { rank-line } ;
+announce-suffix = &quot;,&quot; &quot;announce&quot;
+                  ( &quot;all&quot; | &quot;collapsed&quot; | &quot;combined&quot; | &quot;silent&quot; ) ;
+use-hunger-line = &quot;use&quot; &quot;hunger&quot; [ announce-suffix ] NL
+               &gt;&gt;&gt; { hunger-grows-line
+                   | meter-rung-line
+                   | hunger-fatal-line } ;
+hunger-grows-line = &quot;grows&quot; NUMBER &quot;each&quot; &quot;turn&quot; NL ;
+meter-rung-line = WORD &quot;at&quot; NUMBER [ &quot;says&quot; WORD ] NL ;
+hunger-fatal-line = &quot;fatal&quot; &quot;at&quot; NUMBER NL ;
+rank-line    = &quot;rank&quot; STRING &quot;at&quot; NUMBER [ &quot;says&quot; WORD ] NL ;
+story-on-clause = on-clause ;
+declaration  = create | start-block | opening-block
+             | define-condition | define-phrase | define-phrases
+             | define-trait | define-action
+             | define-sequence
+             | define-counter
+             | define-timer
+             | define-chapters
+             | define-machine
+             | define-fact | define-profile
+             | define-mood | define-personality
+             | define-temperament | define-code
+             | define-honor | define-topic
+             | define-asset | define-channel
+             | define-family-channel
+             | define-topics
+             | define-manner | define-greetings
+             | define-exchange | define-initiative
+             | define-conversation
+             | define-pronouns
+             | define-phrasebook | import-phrasebook
+             | override-message | override-messages
+             | extend-action | remove-from-action ;</code></pre>
+<h2 class="unnumbered unlisted" id="message-overrides">Message
+overrides</h2>
+<pre class="ebnf"><code>override-message    = &quot;override&quot; &quot;message&quot; ALIAS
+                      [ &quot;,&quot; ( STRATEGY | &quot;verbatim&quot; ) ] NL
+                      &gt;&gt;&gt; prose { &quot;or&quot; NL &gt;&gt;&gt; prose }
+                      &quot;end&quot; &quot;override&quot; NL ;
+override-messages   = &quot;override&quot; &quot;messages&quot; LOCALE NL
+                      &gt;&gt;&gt; { ALIAS &quot;:&quot; NL &gt;&gt;&gt; prose } ;
+ALIAS               = WORD ;</code></pre>
+<h2 class="unnumbered unlisted" id="phrasebooks-1">Phrasebooks</h2>
+<pre class="ebnf"><code>define-phrasebook   = &quot;define&quot; &quot;phrasebook&quot; WORD [ &quot;while&quot; condition ] NL
+                      &gt;&gt;&gt; { phrasebook-entry }
+                      &quot;end&quot; &quot;phrasebook&quot; NL ;
+phrasebook-entry    = WORD [ &quot;,&quot; STRATEGY | &quot;,&quot; &quot;verbatim&quot; ] &quot;:&quot; NL
+                      &gt;&gt;&gt; prose { &quot;or&quot; NL &gt;&gt;&gt; prose } ;
+use-phrasebook-line = &quot;use&quot; &quot;phrasebook&quot; WORD [ &quot;while&quot; condition ] NL ;
+import-phrasebook   = &quot;import&quot; &quot;phrasebook&quot; STRING NL ;</code></pre>
+<h2 class="unnumbered unlisted" id="ownership-lines">Ownership
+lines</h2>
+<pre class="ebnf"><code>states-line  = &quot;states&quot; [ &quot;,&quot; &quot;reversible&quot; ] &quot;:&quot; WORD { &quot;,&quot; WORD } NL ;
+score-line   = &quot;score&quot; WORD &quot;worth&quot; NUMBER NL ;
+holds-line   = &quot;holds&quot; NUMBER NL ;
+opens-when-line = &quot;opens&quot; &quot;when&quot; &quot;unlocked&quot; NL ;
+closes-when-line = &quot;closes&quot; &quot;when&quot; &quot;switched&quot; &quot;off&quot; NL ;
+servings-line = &quot;servings&quot; NUMBER NL ;
+vehicle-line = &quot;movement&quot; &quot;:&quot; ( &quot;none&quot; | &quot;line&quot; | &quot;streets&quot;
+                              | &quot;compass&quot; | &quot;flight&quot;
+                              | &quot;open&quot; ) NL
+             | &quot;carries&quot; &quot;:&quot; ( &quot;in&quot; | &quot;on&quot; ) NL
+             | &quot;drive&quot; &quot;:&quot; ( &quot;state&quot; | &quot;control&quot; | &quot;player&quot; ) NL
+             | &quot;commands&quot; &quot;:&quot; WORD { &quot;,&quot; WORD } NL
+             | &quot;stops&quot; &quot;:&quot; name { &quot;,&quot; name } NL
+             | &quot;direction&quot; &quot;:&quot; ( &quot;both&quot; | &quot;one-way&quot; ) NL
+             | &quot;pace&quot; &quot;:&quot; NUMBER ( &quot;turn&quot; | &quot;turns&quot; ) NL
+             | &quot;destinations&quot; &quot;:&quot; name { &quot;,&quot; name } NL
+             | &quot;aboard&quot; &quot;:&quot; name { &quot;,&quot; name } NL
+             | &quot;boarded&quot; &quot;through&quot; &quot;:&quot; name NL
+             | &quot;stride&quot; &quot;:&quot; NUMBER ( &quot;unit&quot; | &quot;units&quot; ) NL
+             | sight-line
+             | seen-from-afar-line
+             | &quot;sails&quot; &quot;:&quot; WORD { &quot;,&quot; WORD } NL
+             | &quot;sails&quot; &quot;start&quot; &quot;:&quot; WORD NL
+             | sailing-block ;
+sailing-block = &quot;sailing&quot; NL
+              &gt;&gt;&gt; { NUMBER &quot;to&quot; NUMBER &quot;degrees&quot; &quot;:&quot; sailing-cells NL
+                  | &quot;calm&quot; &quot;:&quot; sailing-pace NL }
+                &quot;end&quot; &quot;sailing&quot; NL ;
+sailing-cells = sailing-pace
+              | WORD sailing-pace { &quot;,&quot; WORD sailing-pace } ;
+sailing-pace = NUMBER ( &quot;turn&quot; | &quot;turns&quot; ) | &quot;stopped&quot; ;
+sight-line   = &quot;sight&quot; &quot;:&quot; NUMBER NL ;
+seen-from-afar-line = &quot;seen&quot; &quot;from&quot; &quot;afar&quot; &quot;:&quot; rest-of-line NL ;
+expanse-line = &quot;size&quot; &quot;:&quot; NUMBER &quot;by&quot; NUMBER NL
+             | &quot;visibility&quot; &quot;:&quot; NUMBER NL
+             | &quot;wind&quot; &quot;:&quot; ( &quot;from&quot; ( DIRECTION | NUMBER &quot;degrees&quot; )
+                          | &quot;calm&quot; ) NL
+             | &quot;drift&quot; &quot;:&quot; &quot;1&quot; &quot;unit&quot; &quot;every&quot; NUMBER ( &quot;turn&quot; | &quot;turns&quot; ) NL ;
+landmarks-block = &quot;landmarks&quot; NL
+                &gt;&gt;&gt; { name &quot;:&quot; NUMBER &quot;,&quot; NUMBER NL }
+                  &quot;end&quot; &quot;landmarks&quot; NL ;
+admits-line  = &quot;admits&quot; &quot;:&quot; admits-list NL ;
+admits-list  = admits-word { &quot;,&quot; admits-word } ;
+admits-word  = name | &quot;pushing&quot; ;
+pushing-block = &quot;pushing&quot; NL
+               &gt;&gt;&gt; { ( &quot;between&quot; name &quot;and&quot; name | &quot;from&quot; name &quot;to&quot; name ) NL }
+                 &quot;end&quot; &quot;pushing&quot; NL ;
+position-block = &quot;position&quot; NL
+               &gt;&gt;&gt; { &quot;when&quot; condition &quot;:&quot; name NL }
+                   &quot;otherwise&quot; &quot;:&quot; name NL
+                 &quot;end&quot; &quot;position&quot; NL ;
+counter-line = &quot;counter&quot; WORD [ &quot;starts&quot; NUMBER ]
+                         [ &quot;between&quot; NUMBER &quot;and&quot; NUMBER ] NL ;</code></pre>
+<h2 class="unnumbered unlisted" id="on-after-clauses">On / after
+clauses</h2>
+<pre class="ebnf"><code>on-clause    = ( &quot;on&quot; | &quot;after&quot; ) clause-form
+               [ &quot;while&quot; condition | &quot;during&quot; WORD ]
+               { &quot;,&quot; clause-modifier } NL
+               &gt;&gt;&gt; { statement } &quot;end&quot; ( &quot;on&quot; | &quot;after&quot; ) NL ;
+clause-form  = head [ counterpart ]
+               [ &quot;to&quot; WORD
+               | &quot;to&quot; name ]
+               [ &quot;anything&quot; &quot;as&quot; &quot;the&quot; WORD ]
+             | &quot;every&quot; &quot;turn&quot; ;
+head         = actor gerund { &quot;,&quot; gerund }
+             | gerund { &quot;,&quot; gerund }
+             | &quot;hearing&quot; ARTICLE WORD ;
+actor        = &quot;the&quot; &quot;player&quot;
+             | name ;
+gerund       = WORD ;
+counterpart  = [ &quot;at&quot; | &quot;for&quot; | &quot;from&quot; | &quot;about&quot; | &quot;in&quot; ] ARTICLE name
+             | ( &quot;at&quot; | &quot;for&quot; | &quot;from&quot; ) name ;
+clause-modifier = &quot;once&quot;
+             | ( &quot;before&quot; | &quot;after&quot; ) WORD ;</code></pre>
+<h2 class="unnumbered unlisted" id="start-block">Start block</h2>
+<pre class="ebnf"><code>start-block  = &quot;before&quot; &quot;the&quot; &quot;game&quot; &quot;starts&quot; NL &gt;&gt;&gt; { statement } &quot;end&quot; &quot;before&quot; NL ;</code></pre>
+<h2 class="unnumbered unlisted" id="opening-block">Opening block</h2>
+<pre class="ebnf"><code>opening-block   = &quot;when&quot; &quot;the&quot; &quot;game&quot; &quot;starts&quot; NL
+                  &gt;&gt;&gt; { opening-routine NL } &quot;end&quot; &quot;when&quot; NL ;
+opening-routine = &quot;show-prologue&quot;
+                | &quot;show-banner&quot;
+                | &quot;do-first-look&quot; ;</code></pre>
+<h2 class="unnumbered unlisted" id="create">Create</h2>
+<pre class="ebnf"><code>create       = &quot;create&quot; name [ &quot;,&quot; composition { &quot;,&quot; composition } ] NL
+               &gt;&gt;&gt; { create-line } ;
+create-line  = &quot;aka&quot; alias { &quot;,&quot; alias } NL
+             | &quot;pronouns&quot; WORD NL
+             | states-line
+             | score-line
+             | counter-line
+             | holds-line
+             | servings-line
+             | opens-when-line | closes-when-line
+             | vehicle-line
+             | admits-line
+             | position-block
+             | pushing-block
+             | expanse-line
+             | sight-line | seen-from-afar-line
+             | landmarks-block
+             | composition { &quot;,&quot; composition } NL
+             | &quot;playable&quot; NL
+             | placement NL
+             | &quot;wears&quot; name NL
+             | &quot;carries&quot; name NL
+             | landing-line
+             | room-group
+             | exit-table
+             | exit [ &quot;,&quot; &quot;one-way&quot; ]
+               [ &quot;admits&quot; admits-list ] [ &quot;while&quot; condition ] NL
+             | exits-line
+             | passage-block
+             | DIRECTION &quot;is&quot; &quot;blocked&quot; [ &quot;while&quot; condition ] &quot;:&quot; phrase-key NL
+             | DIRECTION &quot;is&quot; &quot;deadly&quot; &quot;:&quot; phrase-key NL
+             | phrase-override
+             | room-name-block
+             | &quot;first&quot; &quot;time&quot; NL &gt;&gt;&gt; prose-paragraph
+             | on-clause
+             | timer-clause | move-clause
+             | mood-line | feels-line | knows-line | thinks-line
+             | spreads-line
+             | resists-line
+             | influence-block
+             | goal-block
+             | temperament-line
+             | &quot;answers&quot; &quot;honestly&quot; NL
+             | honor-line
+             | &quot;burdened&quot; &quot;by&quot; name NL
+             | &quot;code&quot; WORD NL
+             | prose-paragraph ;</code></pre>
+<h2 class="unnumbered unlisted" id="the-character-model">The character
+model</h2>
+<pre class="ebnf"><code>mood-line    = &quot;mood&quot; WORD NL ;
+feels-line   = &quot;feels&quot; disposition [ &quot;toward&quot; ] name NL ;
+disposition  = WORD [ WORD ] ;
+knows-line   = &quot;knows&quot; name { &quot;,&quot; WORD } NL ;
+thinks-line  = &quot;thinks&quot; name &quot;is&quot; name { &quot;,&quot; WORD } NL ;
+spreads-line = &quot;spreads&quot; &quot;nothing&quot; NL
+             | &quot;spreads&quot; [ topic-list ] [ &quot;chatty&quot; ] &quot;to&quot; WORD
+               [ &quot;,&quot; &quot;except&quot; name-ref-list ] NL ;
+topic-list   = name { ( &quot;,&quot; | &quot;and&quot; ) name } ;
+name-ref-list = name { &quot;,&quot; [ &quot;and&quot; ] name | &quot;and&quot; name } ;
+resists-line = &quot;resists&quot; WORD [ &quot;,&quot; &quot;except&quot; &quot;from&quot; name ] NL ;
+influence-block = &quot;influence&quot; WORD { &quot;,&quot; WORD } NL
+               &gt;&gt;&gt; { influence-line }
+               &quot;end&quot; &quot;influence&quot; NL ;
+influence-line = &quot;clouds&quot; &quot;focus&quot; NL
+             | &quot;makes&quot; WORD WORD NL
+             | &quot;phrase&quot; phrase-key &quot;on&quot;
+               ( &quot;witnessed&quot; | &quot;resisted&quot; | &quot;expired&quot; ) NL ;
+define-fact  = &quot;define&quot; &quot;fact&quot; name NL
+               &gt;&gt;&gt; { name-ref-list NL }
+               &quot;end&quot; &quot;fact&quot; NL ;
+define-profile = &quot;define&quot; &quot;profile&quot; WORD NL
+               &gt;&gt;&gt; { WORD WORD NL }
+               &quot;end&quot; &quot;profile&quot; NL ;
+define-mood  = &quot;define&quot; &quot;mood&quot; WORD &quot;like&quot; WORD
+               [ &quot;,&quot; &quot;but&quot; WORD ] NL ;
+define-personality = &quot;define&quot; &quot;personality&quot; WORD NL ;</code></pre>
+<h2 class="unnumbered unlisted" id="the-normative-layer">The normative
+layer</h2>
+<pre class="ebnf"><code>temperament-line = &quot;temperament&quot; WORD [ &quot;with&quot; force-pair { &quot;and&quot; force-pair } ]
+                   [ &quot;while&quot; WORD ] NL
+             | &quot;temperament&quot; force-pair { &quot;and&quot; force-pair }
+               [ &quot;while&quot; WORD ] NL ;
+force-pair   = WORD &quot;over&quot; WORD ;
+never-line   = &quot;never&quot; WORD { WORD }
+               [ &quot;,&quot; &quot;except&quot; [ &quot;to&quot; &quot;protect&quot; ] scope-ref ] NL ;
+protects-line = &quot;protects&quot; scope-ref NL ;
+honor-line   = &quot;honor&quot; [ WORD ] &quot;before&quot; scope-ref
+               [ &quot;,&quot; &quot;except&quot; name-ref-list ] NL ;
+scope-ref    = &quot;anyone&quot; | name ;
+define-temperament = &quot;define&quot; &quot;temperament&quot; WORD NL
+               &gt;&gt;&gt; { force-pair NL }
+               &quot;end&quot; &quot;temperament&quot; NL ;
+define-code  = &quot;define&quot; &quot;code&quot; WORD NL
+               &gt;&gt;&gt; { never-line | protects-line | &quot;answers&quot; &quot;honestly&quot; NL }
+               &quot;end&quot; &quot;code&quot; NL ;
+define-honor = &quot;define&quot; &quot;honor&quot; WORD NL
+               &gt;&gt;&gt; { WORD { WORD } NL }
+               &quot;end&quot; &quot;honor&quot; NL ;
+define-topic = &quot;define&quot; &quot;topic&quot; WORD WORD { WORD } &quot;as&quot; WORD NL ;
+goal-block   = &quot;goal&quot; WORD &quot;,&quot; WORD NL
+               &gt;&gt;&gt; { goal-line }
+               &quot;end&quot; &quot;goal&quot; NL ;
+goal-line    = &quot;active&quot; &quot;when&quot; condition NL
+             | &quot;seek&quot; name [ &quot;in&quot; name ] NL
+             | &quot;acquire&quot; name NL
+             | &quot;wait&quot; &quot;for&quot; condition NL
+             | &quot;move&quot; &quot;to&quot; name NL
+             | &quot;act&quot; phrase-key NL
+             | &quot;say&quot; phrase-key [ &quot;to&quot; name ] NL
+             | &quot;give&quot; name &quot;to&quot; name NL
+             | &quot;drop&quot; name [ &quot;in&quot; name ] NL
+             | verb-words NL ;</code></pre>
+<h2 class="unnumbered unlisted"
+id="chapters-a-use-chapters-extension">Chapters, a
+<code>use chapters</code> extension</h2>
+<pre class="ebnf"><code>define-chapters = &quot;define&quot; &quot;chapters&quot; NL
+                  &gt;&gt;&gt; { chapter-row }
+                  &quot;end&quot; &quot;chapters&quot; NL ;
+chapter-row  = WORD &quot;-&quot; rest-of-line NL
+               &gt;&gt;&gt; [ prose-paragraph ]
+               &quot;begins&quot; &quot;when&quot; chapter-trigger NL ;
+chapter-trigger = &quot;the&quot; &quot;game&quot; &quot;starts&quot;
+             | &quot;the&quot; &quot;player&quot; &quot;visits&quot; name
+               &quot;for&quot; &quot;the&quot; &quot;first&quot; &quot;time&quot;
+             | value-expr &quot;expires&quot;
+             | name &quot;becomes&quot; WORD ;</code></pre>
+<h2 class="unnumbered unlisted" id="timers-places-landings">Timers,
+places, landings</h2>
+<pre class="ebnf"><code>define-timer = &quot;define&quot; &quot;timer&quot; WORD [ &quot;for&quot; name ] NL
+               &gt;&gt;&gt; { timer-line }
+               &quot;end&quot; &quot;timer&quot; NL ;
+timer-line   = WORD NL [ &gt;&gt;&gt; prose-paragraph ]
+             | &quot;meanwhile&quot; [ &quot;,&quot; &quot;one&quot; &quot;chance&quot; &quot;in&quot; NUMBER ] NL
+               &gt;&gt;&gt; { statement }
+             | &quot;interrupted&quot; &quot;one&quot; &quot;chance&quot; &quot;in&quot; NUMBER NL ;
+timer-clause = &quot;when&quot; value-expr &quot;expires&quot;
+               [ [ &quot;,&quot; ] &quot;while&quot; condition ] NL
+               &gt;&gt;&gt; { statement } &quot;end&quot; &quot;when&quot; NL ;
+move-clause  = &quot;when&quot; value-expr &quot;moves&quot;
+               [ [ &quot;,&quot; ] &quot;while&quot; condition ] NL
+               &gt;&gt;&gt; { statement } &quot;end&quot; &quot;when&quot; NL ;
+landing-line = &quot;landing&quot; name NL
+             | &quot;landing&quot; &quot;,&quot; LANDING-STRATEGY &quot;:&quot; name-ref-list NL ;
+LANDING-STRATEGY = &quot;randomly&quot; | &quot;cycling&quot; | &quot;stopping&quot; ;
+phrase-override = &quot;phrase&quot; phrase-key
+                  [ &quot;,&quot; STRATEGY ] [ &quot;while&quot; condition ] &quot;:&quot; NL
+                  variant { &quot;or&quot; NL variant } ;
+room-name-block = &quot;room&quot; &quot;name&quot; [ &quot;while&quot; condition ] &quot;:&quot; NL
+                  &gt;&gt;&gt; prose-paragraph ;
+room-group   = &quot;rooms&quot; stem NUMBER &quot;to&quot; NUMBER NL &gt;&gt;&gt; { group-line } ;
+stem         = WORD { WORD | NUMBER } ;
+group-line   = composition { &quot;,&quot; composition } NL
+             | &quot;aka&quot; alias { &quot;,&quot; alias } NL
+             | admits-line
+             | room-name-block
+             | &quot;first&quot; &quot;time&quot; NL &gt;&gt;&gt; prose-paragraph
+             | prose-paragraph ;
+exit-table   = &quot;exits&quot; [ &quot;,&quot; &quot;one-way&quot; ] NL &gt;&gt;&gt; exit-row { exit-row } ;
+exit-row     = name &quot;:&quot; exit { &quot;,&quot; exit } NL ;
+exits-line   = &quot;exits&quot; [ &quot;,&quot; &quot;one-way&quot; ] &quot;:&quot; exit { &quot;,&quot; exit } NL ;
+passage-block = &quot;passage&quot; &quot;to&quot; ( name | &quot;outside&quot; ) [ &quot;through&quot; name ] NL
+              &gt;&gt;&gt; &quot;grammar&quot; NL
+                  &gt;&gt;&gt; passage-pattern NL { passage-pattern NL }
+                  { passage-line }
+                &quot;end&quot; &quot;passage&quot; NL ;
+passage-pattern = passage-elem { passage-elem } ;
+passage-elem = WORD { &quot;or&quot; WORD } | &quot;[&quot; WORD { &quot;or&quot; WORD } &quot;]&quot; ;
+passage-line = &quot;while&quot; condition NL
+             | &quot;blocked&quot; [ &quot;while&quot; condition ] &quot;:&quot; phrase-key NL
+             | &quot;deadly&quot; &quot;:&quot; phrase-key NL ;
+exit         = DIRECTION &quot;to&quot; ( name | &quot;outside&quot; )
+               [ &quot;through&quot; name ] ;
+composition  = ( ARTICLE KIND-NOUN | WORD )
+               [ &quot;with&quot; setting { &quot;and&quot; setting } ]
+               [ &quot;while&quot; condition ]
+             | &quot;costs&quot; NUMBER WORD
+             | &quot;powered&quot; &quot;by&quot; ARTICLE name
+               { &quot;and&quot; ARTICLE name }
+             | &quot;attached&quot; &quot;to&quot; ARTICLE name
+             | &quot;wearable&quot; &quot;on&quot; ARTICLE WORD { WORD }
+             | &quot;starts&quot; STATE-INIT ;
+STATE-INIT   = &quot;locked&quot; | &quot;unlocked&quot; | &quot;closed&quot; | &quot;open&quot;
+             | &quot;off&quot; | &quot;on&quot; | &quot;broken&quot;
+             | &quot;lit&quot; | &quot;unlit&quot; ;
+KIND-NOUN    = &quot;thing&quot; | &quot;room&quot; | &quot;door&quot; | &quot;person&quot;
+             | &quot;container&quot; | &quot;supporter&quot; | &quot;region&quot;
+             | &quot;vehicle&quot;
+             | &quot;expanse&quot; ;
+setting      = ARTICLE name
+             | WORD { WORD }
+               ( NUMBER | STRING | WORD | name-list-value
+               | ARTICLE name ) ;
+name-list-value = &quot;[&quot; name { &quot;,&quot; name } &quot;]&quot; ;
+placement    = ( &quot;in&quot; | &quot;on&quot; ) ARTICLE name
+               [ &quot;at&quot; NUMBER &quot;,&quot; NUMBER ]
+             | &quot;in&quot; ARTICLE name { &quot;,&quot; ARTICLE name }
+               &quot;and&quot; ARTICLE name
+             | &quot;starts&quot; &quot;in&quot; name ;
+DIRECTION    = &quot;north&quot; | &quot;south&quot; | &quot;east&quot; | &quot;west&quot;
+             | &quot;northeast&quot; | &quot;northwest&quot; | &quot;southeast&quot; | &quot;southwest&quot;
+             | &quot;up&quot; | &quot;down&quot;
+             | &quot;in&quot; | &quot;out&quot; ;</code></pre>
+<h2 class="unnumbered unlisted" id="define">Define</h2>
+<pre class="ebnf"><code>define-condition = &quot;define&quot; &quot;condition&quot; WORD &quot;:&quot; condition NL ;
+define-phrase    = &quot;define&quot; &quot;phrase&quot; phrase-key [ &quot;,&quot; ( STRATEGY | &quot;verbatim&quot; ) ]
+                   [ &quot;while&quot; condition ] NL
+                   variant { &quot;or&quot; NL variant } &quot;end&quot; &quot;phrase&quot; NL ;
+variant          = prose-paragraph ;
+define-phrases   = &quot;define&quot; &quot;phrases&quot; LOCALE NL &gt;&gt;&gt; { phrase-entry } ;
+phrase-entry     = phrase-key &quot;:&quot; NL prose-paragraph ;
+pattern          = pattern-elem { pattern-elem } ;
+pattern-elem     = plain-elem | &quot;[&quot; plain-elem &quot;]&quot;
+                 | &quot;[&quot; &quot;the&quot; &quot;]&quot; ;
+plain-elem       = WORD { &quot;or&quot; WORD } | &quot;the&quot; WORD ;
+STRATEGY        = &quot;randomly&quot; | &quot;cycling&quot; | &quot;stopping&quot; | &quot;sticky&quot; | &quot;first-time&quot; ;</code></pre>
+<h2 class="unnumbered unlisted" id="traits-actions-sequences">Traits,
+actions, sequences</h2>
+<pre class="ebnf"><code>define-trait   = &quot;define&quot; &quot;trait&quot; WORD NL
+                 { trait-line }
+                 &quot;end&quot; &quot;trait&quot; NL ;
+trait-line     = &quot;data&quot; NL &gt;&gt;&gt; { trait-field }
+               | states-line
+               | score-line
+               | &quot;phrases&quot; LOCALE NL &gt;&gt;&gt; { phrase-entry }
+               | on-clause ;
+trait-field    = field-words &quot;:&quot; [ &quot;optional&quot; ]
+                 ( &quot;entity&quot; | &quot;number&quot; | &quot;name&quot;
+                 | &quot;one&quot; &quot;of&quot; WORD { &quot;,&quot; WORD } )
+                 [ &quot;,&quot; &quot;starts&quot; token ] NL ;
+define-action  = &quot;define&quot; &quot;action&quot; WORD [ &quot;while&quot; condition ] NL action-line* ;
+action-line    = &quot;grammar&quot; NL &gt;&gt;&gt; { pattern-line }
+               | &quot;the&quot; WORD &quot;must&quot; &quot;be&quot; WORD NL
+               | &quot;the&quot; WORD &quot;takes&quot; &quot;the&quot; &quot;rest&quot; &quot;of&quot; &quot;the&quot; &quot;line&quot; NL
+               | &quot;the&quot; WORD &quot;is&quot; ( &quot;an&quot; | &quot;a&quot; ) WORD NL
+               | &quot;directions&quot; NL &gt;&gt;&gt; { WORD { &quot;or&quot; WORD } NL }
+               | must-line
+               | score-line
+               | &quot;refuse&quot; &quot;without&quot; WORD &quot;:&quot; phrase-key NL
+               | &quot;refuse&quot; &quot;when&quot; condition &quot;:&quot; phrase-key NL
+               | &quot;otherwise&quot; &quot;refuse&quot; phrase-key NL
+               | topic-row
+               | &quot;phrases&quot; LOCALE NL &gt;&gt;&gt; { phrase-entry }
+               | statement ;
+pattern-line   = pattern [ &quot;→&quot; token { token } ] NL
+                 { &quot;means&quot; WORD WORD NL } ;</code></pre>
+<h2 class="unnumbered unlisted" id="author-alteration-model">Author
+alteration model</h2>
+<pre class="ebnf"><code>extend-action  = &quot;extend&quot; &quot;action&quot; WORD NL action-line* ;
+remove-from-action
+               = &quot;remove&quot; &quot;from&quot; &quot;action&quot; WORD NL
+                 &gt;&gt;&gt; { pattern NL } ;
+define-sequence= &quot;define&quot; &quot;sequence&quot; WORD { WORD } NL
+                 { sequence-step } &quot;end&quot; &quot;sequence&quot; NL ;</code></pre>
+<h2 class="unnumbered unlisted" id="numeric-counters">Numeric
+counters</h2>
+<pre class="ebnf"><code>define-counter = &quot;define&quot; &quot;counter&quot; WORD [ &quot;starts&quot; NUMBER ]
+                          [ &quot;between&quot; NUMBER &quot;and&quot; NUMBER ] NL ;</code></pre>
+<h2 class="unnumbered unlisted" id="state-machine-depth">State-machine
+depth</h2>
+<pre class="ebnf"><code>define-machine = &quot;define&quot; &quot;machine&quot; WORD { WORD } NL
+                 &gt;&gt;&gt; { &quot;role&quot; WORD &quot;is&quot; name NL
+                     | &quot;starts&quot; WORD NL
+                     | machine-state }
+                 &quot;end&quot; &quot;machine&quot; NL ;
+machine-state  = &quot;state&quot; WORD [ &quot;,&quot; &quot;terminal&quot; ] NL
+                 &gt;&gt;&gt; { machine-when | machine-on } ;
+machine-when   = &quot;when&quot; machine-trigger [ &quot;while&quot; condition ] &quot;:&quot; WORD NL ;
+machine-trigger= &quot;event&quot; phrase-key
+               | WORD name
+               | WORD
+               | condition ;
+machine-on     = ( &quot;on&quot; &quot;enter&quot; | &quot;on&quot; &quot;exit&quot; ) NL
+                 &gt;&gt;&gt; { statement } &quot;end&quot; &quot;on&quot; NL ;</code></pre>
+<h2 class="unnumbered unlisted"
+id="declared-assets-custom-channels">Declared assets + custom
+channels</h2>
+<pre class="ebnf"><code>define-asset   = &quot;define&quot; ( &quot;sound&quot; | &quot;image&quot; | &quot;music&quot; )
+                 WORD &quot;from&quot; STRING NL
+               | &quot;define&quot; &quot;sound&quot; WORD NL
+               | &quot;define&quot; &quot;sound&quot; WORD [ &quot;from&quot; STRING ] NL
+                 &gt;&gt;&gt; { sound-line } &quot;end&quot; &quot;sound&quot; NL ;
+sound-line     = &quot;heard&quot; &quot;:&quot; rest-of-line NL
+               | &quot;heard&quot; &quot;from&quot; &quot;afar&quot; &quot;:&quot; rest-of-line NL ;
+define-family-channel
+             = &quot;define&quot; ( &quot;ambient&quot; | &quot;layer&quot; ) WORD NL ;
+define-channel = &quot;define&quot; &quot;channel&quot; WORD NL
+                 &gt;&gt;&gt; { &quot;mode&quot; ( &quot;replace&quot; | &quot;append&quot; | &quot;event&quot; ) NL
+                     | &quot;gated&quot; &quot;by&quot; WORD NL
+                     | &quot;return&quot; channel-return &quot;from&quot; WORD NL
+                       [ channel-record-body ] }
+                 &quot;end&quot; &quot;channel&quot; NL ;
+channel-return = WORD | STRING | &quot;phrase&quot; WORD
+               | &quot;record&quot; ;
+channel-record-body
+             = &gt;&gt;&gt; { channel-record-member }
+               &quot;end&quot; &quot;record&quot; NL ;
+channel-record-member
+             = WORD [ &quot;list&quot; &quot;of&quot; ] channel-return NL ;
+define-topics  = &quot;define&quot; &quot;topics&quot; &quot;for&quot; name NL
+                 &gt;&gt;&gt; { topic-row }
+                 &quot;end&quot; &quot;topics&quot; NL ;
+topic-row      = &quot;about&quot; topic-key &quot;:&quot; ( statement
+                                       | NL &gt;&gt;&gt; { statement } ) ;
+topic-key      = name
+               | STRING { &quot;,&quot; STRING } ;
+define-manner  = &quot;define&quot; &quot;manner&quot; &quot;for&quot; name NL
+                 &gt;&gt;&gt; { manner-row }
+                 &quot;end&quot; &quot;manner&quot; NL ;
+manner-row     = &quot;when&quot; condition &quot;:&quot; NL
+                 &gt;&gt;&gt; { &quot;beat&quot; STRING NL
+                     | &quot;voice&quot; WORD NL } ;
+define-greetings = &quot;define&quot; &quot;greetings&quot; &quot;for&quot; name NL
+                   &gt;&gt;&gt; { greeting-row }
+                   &quot;end&quot; &quot;greetings&quot; NL ;
+greeting-row   = greeting-head &quot;:&quot; ( statement
+                                   | NL &gt;&gt;&gt; { statement } ) ;
+greeting-head  = &quot;first&quot; &quot;time&quot;
+               | &quot;on&quot; &quot;return&quot; [ &quot;,&quot; absence-words ]
+               | &quot;asked&quot; repetition-words
+               | &quot;on&quot; &quot;leaving&quot; ;
+absence-words  = &quot;again&quot; &quot;so&quot; &quot;soon&quot;
+               | &quot;after&quot; &quot;a&quot; &quot;while&quot;
+               | &quot;after&quot; &quot;days&quot; ;
+repetition-words = &quot;once&quot; | &quot;again&quot; | &quot;many&quot; &quot;times&quot; ;
+define-exchange = &quot;define&quot; &quot;exchange&quot; WORD &quot;for&quot; name
+                  [ &quot;,&quot; strength-word ] NL
+                  &gt;&gt;&gt; { exchange-row }
+                  &quot;end&quot; &quot;exchange&quot; NL ;
+exchange-row   = exchange-head &quot;:&quot; ( statement
+                                   | NL &gt;&gt;&gt; { statement } ) ;
+exchange-head  = &quot;answer&quot; topic-key
+               | &quot;on&quot; &quot;silence&quot;
+               | &quot;on&quot; WORD ;
+strength-word  = &quot;passive&quot; | &quot;assertive&quot; | &quot;blocking&quot; ;
+define-initiative = &quot;define&quot; &quot;initiative&quot; &quot;for&quot; name NL
+                    &gt;&gt;&gt; { initiative-row }
+                    &quot;end&quot; &quot;initiative&quot; NL ;
+initiative-row = occasion-head [ &quot;,&quot; &quot;when&quot; condition ]
+                 &quot;:&quot; ( statement | NL &gt;&gt;&gt; { statement } ) ;
+occasion-head  = &quot;on&quot; &quot;an&quot; &quot;open&quot; &quot;floor&quot;
+               | &quot;on&quot; &quot;silence&quot;
+               | &quot;when&quot; &quot;the&quot; &quot;subject&quot; &quot;changes&quot;
+               | &quot;on&quot; WORD ;
+define-conversation = &quot;define&quot; &quot;conversation&quot; WORD &quot;for&quot; name
+                      [ &quot;,&quot; strength-word ] NL
+                      &gt;&gt;&gt; { conversation-row }
+                      &quot;end&quot; &quot;conversation&quot; NL ;
+conversation-row = &quot;about&quot; topic-key NL
+                 | &quot;opens&quot; &quot;when&quot; condition NL
+                 | &quot;beat&quot; [ &quot;,&quot; &quot;when&quot; condition ] &quot;:&quot;
+                   ( statement | NL &gt;&gt;&gt; { statement } )
+                 | &quot;on&quot; transition-word &quot;:&quot;
+                   ( statement | NL &gt;&gt;&gt; { statement } )
+                 | &quot;conclusion&quot; &quot;:&quot;
+                   ( statement | NL &gt;&gt;&gt; { statement } ) ;
+transition-word = &quot;parting&quot; | &quot;resuming&quot; | &quot;refusing&quot; ;
+define-pronouns = &quot;define&quot; &quot;pronouns&quot; WORD NL
+                  &gt;&gt;&gt; { PRONOUN-CASE WORD NL }
+                  &quot;end&quot; &quot;pronouns&quot; NL ;
+PRONOUN-CASE    = &quot;subject&quot; | &quot;object&quot; | &quot;possessive&quot;
+                | &quot;possessive-pronoun&quot; | &quot;reflexive&quot; ;
+sequence-step  = step-anchor NL &gt;&gt;&gt; { statement } ;
+step-anchor    = &quot;at&quot; &quot;turn&quot; NUMBER
+               | NUMBER &quot;turns&quot; &quot;later&quot;
+               | &quot;when&quot; name &quot;becomes&quot; ( WORD | &quot;under&quot; &quot;way&quot; )
+               | &quot;when&quot; name &quot;comes&quot; &quot;into&quot; &quot;sight&quot; ;</code></pre>
+<h2 class="unnumbered unlisted" id="must-requirements">Must
+requirements</h2>
+<pre class="ebnf"><code>must-line    = must-subject &quot;must&quot; infinitive &quot;:&quot; phrase-key NL ;
+must-subject = value-expr ;
+infinitive   = &quot;be&quot; ( ( &quot;a&quot; | &quot;an&quot; ) WORD { WORD }
+                    | &quot;in&quot; name
+                    | &quot;any&quot; WORD
+                    | value-expr )
+             | ( &quot;have&quot; | &quot;hold&quot; | &quot;wear&quot; ) name
+             | ( &quot;see&quot; | &quot;reach&quot; ) name ;</code></pre>
+<h2 class="unnumbered unlisted" id="statements">Statements</h2>
+<pre class="ebnf"><code>statement    = &quot;refuse&quot; phrase-key { param } NL
+             | &quot;refuse&quot; &quot;when&quot; condition &quot;:&quot; phrase-key NL
+             | must-line
+             | &quot;phrase&quot; phrase-key { param } [ stmt-when ] NL [ inline-prose ]
+             | &quot;emit&quot; phrase-key
+               [ &quot;with&quot; emit-field { &quot;and&quot; emit-field } ]
+               [ stmt-when ] NL
+             | media-statement
+             | &quot;set&quot; value-expr &quot;to&quot; value-expr [ stmt-when ] NL
+             | &quot;change&quot; &quot;mood&quot; &quot;to&quot; WORD [ stmt-when ] NL
+             | &quot;change&quot; &quot;feeling&quot; &quot;toward&quot; name &quot;to&quot; disposition
+               [ stmt-when ] NL
+             | &quot;change&quot; &quot;the&quot; &quot;player&quot; &quot;to&quot; name [ stmt-when ] NL
+             | &quot;change&quot; name &quot;to&quot; WORD [ stmt-when ] NL
+             | &quot;move&quot; name ( &quot;to&quot; place | &quot;here&quot; | &quot;offstage&quot; )
+               [ stmt-when ] NL
+             | &quot;make&quot; name ( &quot;wear&quot; | &quot;take&quot; &quot;off&quot; ) name
+               [ stmt-when ] NL
+             | timer-verb value-expr
+               [ &quot;heading&quot; ( DIRECTION | NUMBER &quot;degrees&quot; ) ]
+               [ stmt-when ] NL
+             | &quot;send&quot; name &quot;to&quot; ( name | NUMBER &quot;,&quot; NUMBER )
+               [ stmt-when ] NL
+             | &quot;kill&quot; &quot;the&quot; &quot;player&quot; [ phrase-key ] [ stmt-when ] NL
+               [ &gt;&gt;&gt; prose-paragraph ]
+             | name verb-words [ stmt-when ] NL
+             | &quot;remove&quot; name [ stmt-when ] NL
+             | &quot;award&quot; { token } [ &quot;,&quot; &quot;once&quot; ] [ stmt-when ] NL
+             | ( &quot;raise&quot; | &quot;lower&quot; ) counter-ref &quot;by&quot; NUMBER
+               [ stmt-when ] NL
+             | &quot;win&quot; [ WORD ] [ stmt-when ] NL
+             | &quot;lose&quot; [ WORD ] [ stmt-when ] NL
+             | &quot;then&quot; ( &quot;asks&quot; | &quot;invites&quot; ) WORD NL
+             | &quot;deflect&quot; &quot;to&quot; ( name | STRING ) NL
+             | &quot;leave&quot; NL
+             | &quot;hold&quot; &quot;their&quot; &quot;tongue&quot; NL
+             | select-on | select-strategy | ordinal-block | each-block ;
+stmt-when    = &quot;when&quot; condition ;
+timer-verb   = &quot;start&quot; | &quot;stop&quot; | &quot;restart&quot; | &quot;reset&quot; | &quot;interrupt&quot; ;
+place        = name
+             | name &quot;&#39;s&quot; &quot;location&quot; | &quot;its&quot; &quot;location&quot;
+             | &quot;a&quot; &quot;random&quot; &quot;adjacent&quot; &quot;room&quot; ;
+verb-words   = WORD { WORD | name } ;
+phrase-key   = WORD ;
+param        = &quot;with&quot; WORD { WORD } &quot;=&quot; value-expr ;</code></pre>
+<h2 class="unnumbered unlisted" id="emit-payload-media-sugar">Emit
+payload + media sugar</h2>
+<pre class="ebnf"><code>emit-field   = WORD { WORD } emit-value ;
+emit-value   = NUMBER | STRING
+             | &quot;[&quot; [ emit-value { &quot;,&quot; emit-value } ] &quot;]&quot;
+             | &quot;{&quot; [ emit-field { &quot;,&quot; emit-field } ] &quot;}&quot;
+             | value-expr ;
+media-statement
+             = &quot;play&quot; &quot;sound&quot; WORD [ stmt-when ] NL
+             | &quot;play&quot; &quot;music&quot; WORD [ &quot;looping&quot; ] [ stmt-when ] NL
+             | &quot;play&quot; &quot;ambient&quot; WORD [ &quot;in&quot; WORD ]
+               [ stmt-when ] NL
+             | &quot;stop&quot; &quot;music&quot; [ stmt-when ] NL
+             | &quot;stop&quot; &quot;ambient&quot; [ &quot;in&quot; WORD ]
+               [ stmt-when ] NL
+             | &quot;show&quot; &quot;image&quot; WORD [ &quot;in&quot; WORD ] [ stmt-when ] NL
+             | &quot;hide&quot; &quot;image&quot; [ stmt-when ] NL
+             | &quot;transition&quot; WORD [ stmt-when ] NL
+             | &quot;clear&quot; [ stmt-when ] NL ;
+select-on    = &quot;select&quot; &quot;on&quot; value-expr NL
+               &gt;&gt;&gt; { &quot;when&quot; WORD NL &gt;&gt;&gt; { statement } } &quot;end&quot; &quot;select&quot; NL ;
+select-strategy = &quot;select&quot; STRATEGY NL
+               &gt;&gt;&gt; { statement } { &quot;or&quot; NL &gt;&gt;&gt; { statement } } &quot;end&quot; &quot;select&quot; NL ;
+ordinal-block = ORDINAL &quot;time&quot; NL &gt;&gt;&gt; { statement } ;
+ORDINAL      = &quot;first&quot; | &quot;second&quot; | &quot;third&quot; | &quot;fourth&quot; | &quot;fifth&quot;
+             | &quot;sixth&quot; | &quot;seventh&quot; | &quot;eighth&quot; | &quot;ninth&quot; | &quot;tenth&quot; ;
+each-block   = &quot;each&quot; WORD NL
+               &gt;&gt;&gt; { statement } &quot;end&quot; &quot;each&quot; NL ;</code></pre>
+<h2 class="unnumbered unlisted" id="conditions-1">Conditions</h2>
+<pre class="ebnf"><code>condition    = and-expr { &quot;or&quot; and-expr } ;
+and-expr     = unary { &quot;and&quot; unary } ;
+unary        = &quot;not&quot; unary
+             | &quot;(&quot; condition &quot;)&quot;
+             | &quot;one&quot; &quot;chance&quot; &quot;in&quot; NUMBER
+             | &quot;client&quot; &quot;has&quot; WORD
+             | ( &quot;any&quot; | &quot;no&quot; ) WORD
+             | &quot;the&quot; &quot;subject&quot; &quot;changes&quot;
+             | &quot;asked&quot; repetition-words
+             | ( &quot;during&quot; | &quot;before&quot; | &quot;after&quot; ) WORD
+             | WORD
+             | &quot;the&quot; &quot;story&quot; &quot;is&quot; [ &quot;not&quot; ] WORD
+             | value-expr predicate ;
+predicate    = &quot;is&quot; [ &quot;not&quot; ] ( ( &quot;a&quot; | &quot;an&quot; ) WORD { WORD }
+                              | &quot;in&quot; name
+                              | &quot;here&quot;
+                              | recency-word
+                              | &quot;concluded&quot;
+                              | &quot;under&quot; &quot;way&quot;
+                              | &quot;in&quot; &quot;sight&quot;
+                              | &quot;close&quot; &quot;by&quot;
+                              | &quot;in&quot; &quot;the&quot; &quot;distance&quot;
+                              | &quot;on&quot; &quot;the&quot; &quot;horizon&quot;
+                              | &quot;within&quot; NUMBER &quot;of&quot;
+                                ( name | NUMBER &quot;,&quot; NUMBER )
+                              | &quot;at&quot; name
+                              | &quot;in&quot; &quot;irons&quot;
+                              | &quot;heading&quot; ( DIRECTION
+                                          | NUMBER &quot;degrees&quot; )
+                              | word-compare NUMBER
+                              | value-expr )
+             | &quot;are&quot; [ &quot;not&quot; ] WORD
+             | &quot;has&quot; [ &quot;not&quot; ] ( &quot;started&quot; | &quot;expired&quot; )
+             | ( &quot;has&quot; | &quot;holds&quot; | &quot;wears&quot; ) name
+             | &quot;feels&quot; disposition [ &quot;toward&quot; ] name
+             | &quot;knows&quot; name
+             | &quot;was&quot; &quot;discussed&quot;
+             | &quot;can&quot; ( &quot;see&quot; | &quot;reach&quot; ) name
+             | compare-op NUMBER ;
+recency-word = &quot;fresh&quot; | &quot;recent&quot; | &quot;stale&quot; ;
+word-compare = &quot;at&quot; &quot;least&quot; | &quot;more&quot; &quot;than&quot; | &quot;at&quot; &quot;most&quot; | &quot;less&quot; &quot;than&quot; ;
+compare-op   = &quot;&gt;=&quot; | &quot;&gt;&quot; | &quot;&lt;=&quot; | &quot;&lt;&quot; ;
+counter-ref  = WORD | &quot;its&quot; WORD | name &quot;&#39;s&quot; WORD ;
+value-expr   = NUMBER | STRING
+             | &quot;the&quot; &quot;match&quot;
+             | &quot;its&quot; field-words
+             | name [ &quot;&#39;s&quot; field-words ]
+             | WORD { WORD } ;
+name         = [ ARTICLE ] WORD { WORD } [ NUMBER ] ;
+ARTICLE      = &quot;the&quot; | &quot;a&quot; | &quot;an&quot; ;</code></pre>
+<nav class="book-nav-bottom"><a class="prev" href="40-publishing.html">← Publishing</a><a class="next" href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings →</a></nav>
+</body>
+</html>

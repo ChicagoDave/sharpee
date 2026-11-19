@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Conditions</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details open><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li class="active"><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="17-choosing-between-outcomes.html" accesskey="n" rel="next">Choosing between outcomes</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="15-what-a-clause-can-say-and-do.html" accesskey="p" rel="previous">What a clause can say and do</a>
+</span>
+</div>
+</nav>
+<h1 data-number="16" id="conditions"><span
+class="header-section-number">16</span> Conditions</h1>
+<p>A condition is anything the story can test and find true or false.
+You have been writing them since chapter 12: after <code>while</code> on
+a blocked way, after <code>while</code> on a clause head, after
+<code>when</code> on a statement, and inside <code>must</code> and
+<code>refuse when</code>. All of those places take the same thing. This
+chapter is the whole of what that thing can be.</p>
+<h2 data-number="16.1" id="what-a-condition-can-ask"><span
+class="header-section-number">16.1</span> What a condition can ask</h2>
+<p>The simplest condition has a subject and one test.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>Example</th>
+<th>True when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is</code> a state</td>
+<td><code>the lens is sound</code></td>
+<td>the thing is in that state</td>
+</tr>
+<tr>
+<td><code>is a</code> kind</td>
+<td><code>the crate is a container</code></td>
+<td>the thing is of that kind</td>
+</tr>
+<tr>
+<td><code>is in</code></td>
+<td><code>the lens is in the Great Lantern</code></td>
+<td>the thing is directly in or on the other</td>
+</tr>
+<tr>
+<td><code>is here</code></td>
+<td><code>Hobb is here</code></td>
+<td>the thing is in the room where the player is</td>
+</tr>
+<tr>
+<td><code>has</code></td>
+<td><code>the player has the lamp</code></td>
+<td>the person is carrying or wearing it</td>
+</tr>
+<tr>
+<td><code>holds</code></td>
+<td><code>the player holds the lamp</code></td>
+<td>the same as <code>has</code></td>
+</tr>
+<tr>
+<td><code>wears</code></td>
+<td><code>the player wears the coat</code></td>
+<td>the person has it on</td>
+</tr>
+<tr>
+<td><code>can see</code></td>
+<td><code>the player can see the lens</code></td>
+<td>the thing is in view</td>
+</tr>
+<tr>
+<td><code>can reach</code></td>
+<td><code>the player can reach the lens</code></td>
+<td>the thing can be touched</td>
+</tr>
+</tbody>
+</table>
+<p>Three of these need a note.</p>
+<p><code>is in</code> is used for supporters too. A cup on the chair is
+<code>in the chair</code> as far as a condition is concerned, and there
+is no <code>is on</code>.</p>
+<p><code>is here</code> is generous. A thing the player is carrying is
+here, and so is a thing shut inside a container in the room.</p>
+<p><code>can see</code> and <code>can reach</code> differ in the way you
+would hope. A coin in a closed glass jar can be seen and cannot be
+reached. Open the jar, and it can be both.</p>
+<p>Any <code>is</code> test is made negative with <code>not</code> after
+the <code>is</code>: <code>the lens is not sound</code>,
+<code>Hobb is not here</code>.</p>
+<p>There is one test of a different kind.</p>
+<pre class="chord"><code>  phrase rooks-go-up when one chance in 3</code></pre>
+<p><code>one chance in 3</code> is true about a third of the times it is
+asked. Use it for colour and never for anything the player needs,
+because a player cannot be expected to repeat a command until the dice
+agree.</p>
+<h2 data-number="16.2" id="joining-conditions"><span
+class="header-section-number">16.2</span> Joining conditions</h2>
+<p>Conditions are joined with <code>and</code> and <code>or</code>, and
+turned round with <code>not</code>.</p>
+<pre class="chord"><code>the lens is in the Great Lantern and the lens is sound</code></pre>
+<p><code>not</code> is applied first, then <code>and</code>, then
+<code>or</code>. When that is not the grouping you mean, use
+parentheses.</p>
+<pre class="chord"><code>(the jar is open or the player wears the hat) and not the player has the coin</code></pre>
+<p>A whole condition goes on one line. If a line is getting long, that
+is a sign the condition wants a name.</p>
+<h2 data-number="16.3" id="naming-a-condition"><span
+class="header-section-number">16.3</span> Naming a condition</h2>
+<p>The Great Lantern is ready to be lit when the lens is seated in it
+and the lens is whole. Several lines of the story will want to ask that,
+so it is given a name once, at the top level of the file.</p>
+<pre class="chord"><code>define condition lantern-ready: the lens is in the Great Lantern and the lens is sound</code></pre>
+<p>From then on the bare word <code>lantern-ready</code> is a condition,
+and may be used anywhere a condition goes:
+<code>when lantern-ready</code>, <code>when not lantern-ready</code>,
+<code>while lantern-ready and the story is waking</code>.</p>
+<p>A named condition is worth having for three reasons. It is shorter.
+It says what the test means, where the long form says only how it is
+made. And when the rule changes, because the Lantern turns out to need a
+shutter as well, you change it in one place.</p>
+<p>A named condition is worked out afresh each time it is asked. It
+stores nothing. It is a name for a question, and the answer is always
+current.</p>
+<h2 data-number="16.4" id="conditions-with-a-gap-it"><span
+class="header-section-number">16.4</span> Conditions with a gap: it</h2>
+<p>The pages of the grimoire did not all come back at once. The spark
+page is legible this morning. The other pages are still faded, and the
+ink returns to them when the first working is read. So two more pages
+get a new first state.</p>
+<pre class="chord"><code>create the hush page
+  aka third page
+  a thing, readable
+  in the Stack 3
+  states: faded, legible, learned
+
+  A leaf of the grimoire, shelved by somebody between two blank spines
+  as though it were a book.</code></pre>
+<p>The unbind page under the candles gets the same <code>states</code>
+line. Now the story needs to talk about every faded page, whichever
+pages those are and wherever they have got to. A condition can leave its
+subject open, with the word <code>it</code>.</p>
+<pre class="chord"><code>define condition faded-page: it is faded</code></pre>
+<p>This is a condition with a gap in it. By itself it cannot be true or
+false, because it does not say what <code>it</code> is. It is a
+description, and things either fit it or do not. The hush page fits it.
+The kettle does not.</p>
+<p>An open condition is used in three ways.</p>
+<h2 data-number="16.5" id="any-and-no"><span
+class="header-section-number">16.5</span> Any and no</h2>
+<p><code>any</code> followed by the name is true when at least one thing
+fits. <code>no</code> followed by the name is true when nothing
+does.</p>
+<pre class="chord"><code>create the grimoire
+  aka book, margin, note
+  a thing, readable with text &quot;In the margin, in a small brown hand: gnusto. Came over the water as a working, they say. Meaning lost.&quot;
+  on the reading desk
+
+  A book as long as your forearm, chained to nothing any more. Its pages
+  are blank, or were. Here and there a line of ink has come back, as
+  frost comes onto a window. Someone has written in one margin.
+
+  after the player examining
+    phrase grimoire-waiting when any faded-page
+    phrase grimoire-filling when no faded-page
+  end after</code></pre>
+<pre class="text"><code>&gt; examine grimoire
+A book as long as your forearm, chained to nothing any more. Its pages are blank, or were. Here and there a line of ink has come back, as frost comes onto a window. Someone has written in one margin.
+
+The loose leaves that belong in it are somewhere about the Hall, and you have the feeling they are still as blank as these.</code></pre>
+<p>The grimoire does not know how many pages there are or what they are
+called. It asks whether anything in the story is faded.</p>
+<h2 data-number="16.6" id="each"><span
+class="header-section-number">16.6</span> Each</h2>
+<p>The third use does something to every thing that fits. An
+<code>each</code> block is written inside a clause. It names an open
+condition, and its lines run once for each thing the condition holds
+for. Inside the block, the words <code>the match</code> stand for that
+thing.</p>
+<p>Reading the spark page is what brings the ink back.</p>
+<pre class="chord"><code>  on the player reading
+    phrase spark-known when the spark page is learned
+    phrase spark-learned when the spark page is legible
+    change the story to waking when the spark page is legible
+    change the spark page to learned
+    each faded-page
+      change the match to legible
+    end each
+  end on</code></pre>
+<p>The block closes with <code>end each</code>. When the player reads
+the spark page, the hush page and the unbind page both become
+<code>legible</code>, in the same turn, wherever they are. If a later
+chapter adds a fifth page with a <code>faded</code> state, this clause
+will wake it too, and nobody will have to remember to come back and edit
+it.</p>
+<p>That is the difference between <code>each</code> and writing two
+<code>change</code> lines. The two lines name what is in the story
+today. The block says what you mean.</p>
+<p>A faded page should not be readable, and that is a prohibition on the
+page.</p>
+<pre class="chord"><code>  on the player reading
+    refuse when the hush page is faded: page-blank
+    phrase hush-known when the hush page is learned
+    phrase hush-learned when the hush page is legible
+    change the hush page to learned
+  end on</code></pre>
+<p>A player who goes straight to the stacks finds the page and cannot
+read it.</p>
+<pre class="text"><code>&gt; read hush page
+The leaf is blank on both sides. You hold it up to the light, and it is still blank, but the paper has the look of a held breath.</code></pre>
+<p>After the spark page has been read, the same command works.</p>
+<pre class="text"><code>&gt; read hush page
+(first taking the hush page)
+
+Taken.
+
+The third working is hardly a word at all. It is the breath you take before one.</code></pre>
+<p>The grimoire has noticed as well.</p>
+<pre class="text"><code>&gt; examine grimoire
+A book as long as your forearm, chained to nothing any more. Its pages are blank, or were. Here and there a line of ink has come back, as frost comes onto a window. Someone has written in one margin.
+
+Something has changed in the last hour. Wherever its loose leaves have got to, the ink is on them now.</code></pre>
+<p><code>the match</code> may be used in the block wherever a thing’s
+name could go, and only there. An <code>each</code> block may sit inside
+another, and <code>the match</code> then means the thing of the inner
+one.</p>
+<h2 data-number="16.7" id="what-a-condition-cannot-ask"><span
+class="header-section-number">16.7</span> What a condition cannot
+ask</h2>
+<p>A condition cannot ask who the player is. When a story has more than
+one person the player may be, as chapter 31 describes, the test is made
+on a state of the person concerned.</p>
+<p>A condition cannot count. There is no “at least two faded pages”.
+Counting is done with a counter, which chapter 18 introduces, and a
+counter can be compared with a number.</p>
+<p>And a condition does not remember. <code>the lens is sound</code>
+asks about now. If the story needs to know that something was once true,
+that is a state, and some clause has to set it.</p>
+<h2 data-number="16.8" id="build-and-try-it-12"><span
+class="header-section-number">16.8</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-16</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the phrases and the unbind page’s
+clause, which the chapter did not print. To make the changes by hand
+instead, work from this list and take the rest from that file: add the
+two <code>define condition</code> lines near the top of the file, after
+the header, add the hush page, give the unbind page its states and its
+clause in place of <code>with text</code>, and add the <code>each</code>
+block to the spark page and the <code>after</code> clause to the
+grimoire. There are seven new phrases.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Walk to the third stack before you read anything, try the hush page,
+and then come back for the spark page. The order matters now, and the
+story knows it.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: a condition is a tree</strong> · Story IR
+<code>conditions</code></p>
+<p>Compile to IR with chapter 4’s command,
+<code>sharpee compose relighting.story -o relighting.ir.json</code>, and
+find <code>lantern-ready</code> under <code>conditions</code>. It is
+stored as an <code>and</code> with two branches, each a test with a
+subject and an object. Every <code>while</code>, <code>when</code> and
+<code>must</code> in the file holds a tree of the same shape, or the
+name of one. <code>faded-page</code> is marked <code>open</code>, which
+is the compiler’s word for a condition with <code>it</code> in it, and
+the entries for <code>any</code>, <code>no</code> and <code>each</code>
+refer to it by name.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: descriptions of objects</strong></p>
+<p>Inform 10 has a close relative of the open condition. You write
+“Definition: a page is faded if …” and then say “if any page is faded”
+or “repeat with P running through faded pages”. TADS 3 gives you loops
+over objects and leaves the filtering to ordinary code. Chord’s
+<code>define condition</code>, <code>any</code>, <code>no</code> and
+<code>each</code> cover the same ground in four small forms. The limit
+is that an <code>each</code> block names a condition you have defined.
+You cannot write the test inline.</p>
+</div>
+<h2 data-number="16.9" id="what-you-have-so-far-15"><span
+class="header-section-number">16.9</span> What you have so far</h2>
+<p>Conditions can be joined, named and left open, and one clause can now
+reach every thing of a sort. The reading clauses are getting crowded,
+though. Each has three or four lines ending in <code>when</code>, all
+about the same state. The next chapter gives them a proper shape.</p>
+<nav class="book-nav-bottom"><a class="prev" href="15-what-a-clause-can-say-and-do.html">← What a clause can say and do</a><a class="next" href="17-choosing-between-outcomes.html">Choosing between outcomes →</a></nav>
+</body>
+</html>

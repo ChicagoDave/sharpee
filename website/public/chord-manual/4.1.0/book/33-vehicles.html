@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Vehicles</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details open><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li class="active"><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="34-open-water-and-open-ground.html" accesskey="n" rel="next">Open water and open ground</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="32-machines.html" accesskey="p" rel="previous">Machines</a>
+</span>
+</div>
+</nav>
+<h1 data-number="33" id="vehicles"><span
+class="header-section-number">33</span> Vehicles</h1>
+<!-- PENDING (Phase 4, 2026-11-16): `movement: streets`, `drive: control` on a
+     compass vehicle with `start … heading`, `direction: one-way`, `commands:
+     destinations` and the `is heading` condition were not run and are not
+     taught here. -->
+<p>A chair you can sit in is <code>enterable</code>, and has been since
+chapter 7. A vehicle is an enterable thing that goes somewhere, and
+takes what is in it along.</p>
+<p>Chord’s vehicles are declared, not scripted. You say what kind of
+movement a vehicle has, what drives it, and where it may go, and the
+platform moves it, reports its arrivals, and carries its passengers.
+This chapter builds the simplest useful kind for The Relighting, a hoist
+that goes where its load sends it, and then shows the other kinds in
+short examples.</p>
+<h2 data-number="33.1" id="a-problem-for-a-vehicle"><span
+class="header-section-number">33.1</span> A problem for a vehicle</h2>
+<p>The lens of the Great Lantern is a disc of glass as wide as a
+cartwheel. Since chapter 9 Ansel has carried it up a winding tower stair
+without comment. One line ends that.</p>
+<pre class="chord"><code>create the Bell Stair, a room
+  in the Hall
+  up to the Lantern Gallery
+  up is blocked while the iron grille is standing: stair-sealed
+  up is blocked while Ansel has the lens: lens-too-wide</code></pre>
+<p>A room may have two blocked lines for one direction, each with its
+own condition and its own phrase. While the grille stands, the player
+still reads the grille’s phrase. With the grille lifted and the lens in
+hand:</p>
+<pre class="text"><code>&gt; up
+The lens is as wide as a cartwheel and the stair is as wide as a student. One of you is not going up this way.</code></pre>
+<p>The lens needs another way to the roof. A college with a library on
+the ground floor and readers at the top of a tower has one already.</p>
+<h2 data-number="33.2" id="the-book-hoist"><span
+class="header-section-number">33.2</span> The book hoist</h2>
+<pre class="chord"><code>create the book hoist
+  aka hoist, cage, lift
+  a vehicle
+  in the Undercroft
+  movement: line
+  carries: in
+  drive: state
+  stops: the Undercroft, the Library, the Lantern Gallery
+  direction: both
+
+  A wicker cage on a rope, in a shaft that goes up through the Library
+  floor and on into the tower. It was made to take books to whoever
+  wanted them, and it has never needed telling where that was.
+
+  position
+    when the book hoist holds the lens and the iron grille is lifted: the Lantern Gallery
+    when the book hoist holds the lens: the Library
+    otherwise: the Undercroft
+  end position</code></pre>
+<p><code>a vehicle</code> is a kind, like <code>a container</code>. The
+lines beneath it are its settings, each a word, a colon and a value.</p>
+<p><code>movement:</code> is required on every vehicle and says what
+sort of path it follows. A <code>line</code> is a fixed list of
+stops.</p>
+<p><code>carries:</code> is <code>in</code> or <code>on</code>, and
+decides whether the player gets into the vehicle or onto it. Things can
+be put there too, as into a container or onto a supporter.</p>
+<p><code>drive:</code> says what makes it move. There are three answers.
+<code>state</code> means the story’s own conditions decide where the
+vehicle is. <code>control</code> means statements start, stop and send
+it. <code>player</code> means the player steers.</p>
+<p><code>stops:</code> lists the rooms on the line, in order, and
+<code>direction:</code> is <code>both</code> or
+<code>one-way</code>.</p>
+<h3 data-number="33.2.1" id="where-a-state-driven-vehicle-is"><span
+class="header-section-number">33.2.1</span> Where a state-driven vehicle
+is</h3>
+<p>A <code>drive: state</code> vehicle has a <code>position</code>
+block. After every turn the platform reads its rows from the top, and
+the vehicle is at the stop named by the first row whose condition holds.
+The last row is always <code>otherwise</code>.</p>
+<p>The hoist was made to take books to whoever wanted them. In this
+story it takes the lens to where the lens is wanted. Loaded, it rises to
+the Library. Loaded, with the ward on the stair lifted, it goes all the
+way to the roof. Empty, it comes home.</p>
+<pre class="text"><code>&gt; put lens in hoist
+You put the lens in the book hoist.
+
+The book hoist pulls away.
+
+&gt; look
+Undercroft
+Low vaults on squat pillars, running off under the whole of the hall. The air is cold and smells of stone. The steps go back up.
+
+You can see a crate and a wisp here.</code></pre>
+<p>Ansel walks up, and the hoist is waiting.</p>
+<pre class="text"><code>&gt; look
+Lantern Gallery
+The roof of the tower, open on every side. The Great Lantern stands in the middle of it on a stone drum, taller than you are, its glass thirty years dirty. To the east a low parapet is all there is between you and the court. The stair goes back down.
+
+You can see a book hoist and a wisp here.
+
+In the book hoist you see a lens.
+
+&gt; put lens in lantern
+(first taking the lens)
+
+You take the lens from the book hoist.
+
+You put the lens in the Great Lantern.
+
+The lens drops into its seat with a sound like a coin on a counter.
+
+The book hoist pulls away.</code></pre>
+<p>The hoist is no way round the ward. Its second row sends it only as
+far as the Library while the grille stands, so the player who has not
+unbound the stair finds the lens one floor up and no nearer the
+roof.</p>
+<p>A position block is the least work a vehicle can be. There is no
+control to write and nothing to steer. If the place a vehicle should be
+follows from the state of the story, say so, and let the platform move
+it.</p>
+<h3 data-number="33.2.2" id="riding"><span
+class="header-section-number">33.2.2</span> Riding</h3>
+<p>The player can get into the hoist as well. These replies were
+recorded with the bell hushed. Ride while it is still tolling and each
+ends with the bell.</p>
+<pre class="text"><code>&gt; enter hoist
+You get into the book hoist.
+
+&gt; look
+Undercroft
+Low vaults on squat pillars, running off under the whole of the hall. The air is cold and smells of stone. The steps go back up.
+
+You can see a book hoist, a crate, and a wisp here.
+
+In the book hoist you see Ansel.</code></pre>
+<p>Aboard a vehicle that is <code>carries: in</code> or
+<code>carries: on</code>, the player is still in the room the vehicle is
+in, and <code>look</code> describes that room. When the vehicle moves,
+the player moves with it.</p>
+<h2 data-number="33.3" id="a-vehicle-that-is-driven"><span
+class="header-section-number">33.3</span> A vehicle that is driven</h2>
+<p><code>drive: control</code> puts the vehicle in the hands of
+statements. Here is a tram on a line of three stops.</p>
+<pre class="chord"><code>create the tram
+  a vehicle
+  in the Yard
+  movement: line
+  carries: in
+  drive: control
+  stops: the Yard, the Shed, the Mill
+  direction: both
+  pace: 2 turns
+
+  A tram.
+
+create the lever
+  a thing, scenery, pullable
+  in the tram
+
+  A lever.
+
+  after the player pulling
+    start the tram
+  end after
+
+create the brake
+  a thing, scenery, pushable
+  in the tram
+
+  A brake.
+
+  after the player pushing
+    stop the tram
+  end after</code></pre>
+<p><code>start</code> and <code>stop</code> are the timer verbs of
+chapter 19, given a vehicle’s name. Started, the tram runs along its
+line, taking the number of turns in <code>pace:</code> for each step,
+and stops by itself at the end.</p>
+<pre class="text"><code>&gt; pull lever
+You pull the lever.
+
+&gt; wait
+Time passes...
+
+The tram arrives at the Shed.</code></pre>
+<p>Two conditions read a vehicle. <code>the tram is under way</code> is
+true while it is moving, and <code>the tram is at the Shed</code> is
+true while it stands at that stop. Use them to gate a door, a
+description or a goal.</p>
+<h3 data-number="33.3.1" id="flight"><span
+class="header-section-number">33.3.1</span> Flight</h3>
+<p><code>movement: flight</code> is for a vehicle that goes from any of
+its places to any other without passing through the rooms between.</p>
+<pre class="chord"><code>create the balloon
+  a vehicle
+  in the Yard
+  movement: flight
+  carries: in
+  drive: control
+  destinations: the Yard, the Mill
+  pace: 2 turns
+
+  A balloon.
+
+create the cord
+  a thing, scenery, pullable
+  in the balloon
+
+  A cord.
+
+  after the player pulling
+    send the balloon to the Mill when the balloon is at the Yard
+    send the balloon to the Yard when the balloon is at the Mill
+  end after</code></pre>
+<p><code>destinations:</code> takes the place of <code>stops:</code>,
+and <code>send … to</code> names the one to make for. <code>pace:</code>
+here is the length of the whole trip. While the balloon is in the air it
+is nowhere, and a passenger who looks about sees the vehicle and its
+description.</p>
+<pre class="text"><code>&gt; pull cord
+You pull the cord.
+
+&gt; look
+balloon
+A balloon.
+
+&gt; wait
+Time passes...
+
+The balloon arrives at the Mill.</code></pre>
+<h2 data-number="33.4" id="a-vehicle-the-player-steers"><span
+class="header-section-number">33.4</span> A vehicle the player
+steers</h2>
+<pre class="chord"><code>create the cart
+  a vehicle
+  in the Yard
+  movement: compass
+  carries: on
+  drive: player
+  commands: compass
+  pace: 1 turn
+
+  A cart.</code></pre>
+<p>A <code>compass</code> vehicle moves through the map by the rooms’
+own exits. With <code>drive: player</code> and
+<code>commands: compass</code>, a direction typed by a player who is
+aboard steers the vehicle and does not walk the player off it.</p>
+<pre class="text"><code>&gt; enter cart
+You get onto the cart.
+
+&gt; north
+You steer the cart north.
+
+The cart arrives at the Shed.</code></pre>
+<p>A steered vehicle keeps its heading. The cart goes on north, a step
+for each <code>pace:</code>, until the way ends or the player steers
+again, and then it “comes to a stop”.</p>
+<p>It will not enter a room that has not agreed to it. A room, a
+<code>rooms</code> group or a region says which steered vehicles it lets
+in.</p>
+<pre class="chord"><code>create the Shed, a room
+  admits: the cart</code></pre>
+<p>Without that line the cart stops at the Shed’s door. This is
+deliberate. A story with a cart in it should not have to refuse the cart
+at the top of every staircase.</p>
+<h2 data-number="33.5" id="a-vehicle-with-rooms-inside"><span
+class="header-section-number">33.5</span> A vehicle with rooms
+inside</h2>
+<p>A large vehicle is a place. It has rooms, and the player walks about
+in them while it travels.</p>
+<pre class="chord"><code>create the Cabin, a room
+  up to the Deck
+
+  A cabin.
+
+create the Deck, a room
+  west to outside
+
+  A deck.
+
+create the barge
+  a vehicle
+  in the Yard
+  movement: line
+  drive: control
+  stops: the Yard, the Shed
+  direction: both
+  pace: 1 turn
+  aboard: the Deck, the Cabin
+  boarded through: the Deck
+
+  A barge.</code></pre>
+<p><code>aboard:</code> lists the rooms inside, and
+<code>boarded through:</code> names the one a player arrives in. A
+vehicle with rooms aboard has no <code>carries:</code> line. An exit
+written <code>to outside</code> leads from a room aboard to wherever the
+vehicle is at that moment.</p>
+<pre class="text"><code>&gt; enter barge
+You board the barge.
+
+Deck
+A deck.</code></pre>
+<p>After the barge has run to the Shed, <code>west</code> from the Deck
+leaves it there.</p>
+<p>A vehicle that does not move at all is <code>movement: none</code>,
+with a <code>carries:</code> line and nothing else. It is a way of
+saying that something is a vehicle, for the sake of how it is entered
+and described, before deciding where it goes.</p>
+<h2 data-number="33.6" id="build-and-try-it-29"><span
+class="header-section-number">33.6</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-33</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the one new phrase, which the
+chapter did not print. To make the changes by hand instead, work from
+this list and take the rest from that file: add the second blocked line
+to the Bell Stair, the book hoist to the Undercroft, and one phrase. The
+day’s sequence is longer again, <code>at turn 100</code> and
+<code>60 turns later</code>, to leave room for the extra trip.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Take the lens from the crate and try the stair with it: the grille
+answers until it is lifted, and the lens after. Then give the lens to
+the hoist, before and after the grille is lifted, and see where it
+goes.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: one answer for every mover</strong> · Story
+IR <code>vehicle</code></p>
+<p>A vehicle’s settings compile into a <code>vehicle</code> record on
+its entity, holding the movement type, the drive, and the stops,
+destinations or rooms aboard. The platform has a single rule for whether
+a mover may take a way from one room to another, and the walking player,
+a steered cart and a person on a goal all ask it the same question. That
+is why a blocked exit stops a cart as it stops Ansel, and why
+<code>admits:</code> is a line on the room and not on the vehicle. The
+line “The book hoist pulls away.” and the arrival lines are standard
+messages, and can be overridden like any other.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: vehicles</strong></p>
+<p>Inform 10 has a <code>vehicle</code> kind: an enterable container
+that the player, once inside, moves about the map by typing directions
+exactly as if on foot. That corresponds to Chord’s steered
+<code>compass</code> vehicle. TADS 3 has a <code>Vehicle</code> class, a
+nested room that can move around with actors inside, and its
+documentation suggests building larger vehicles such as ships from one
+or more rooms. Chord’s <code>line</code>, <code>flight</code> and
+<code>position</code> forms, in which a vehicle moves by itself, are not
+described in either manual.</p>
+</div>
+<h2 data-number="33.7" id="what-you-have-so-far-32"><span
+class="header-section-number">33.7</span> What you have so far</h2>
+<p>The lens goes up the tower in a book hoist, which takes it as far as
+the wards allow. The stair will not pass it. A player who wants the
+Lantern lit must now lift the grille for two reasons.</p>
+<p>Everything in the story is still a room, and the next chapter leaves
+rooms behind.</p>
+<nav class="book-nav-bottom"><a class="prev" href="32-machines.html">← Machines</a><a class="next" href="34-open-water-and-open-ground.html">Open water and open ground →</a></nav>
+</body>
+</html>

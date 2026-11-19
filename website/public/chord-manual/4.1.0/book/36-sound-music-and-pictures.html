@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Sound, music and pictures</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details open><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li class="active"><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="37-the-page-the-player-sees.html" accesskey="n" rel="next">The page the player sees</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-part-vii.-presentation.html" accesskey="p" rel="previous">Part VII. Presentation</a>
+</span>
+</div>
+</nav>
+<h1 data-number="36" id="sound-music-and-pictures"><span
+class="header-section-number">36</span> Sound, music and pictures</h1>
+<!-- PENDING (Phase 5, 2026-11-16): `transition` and `clear` are shown only as
+     far as the message each sends; what a page does with them was not seen.
+     `hide image` was run for the default layer only. -->
+<p>Everything the story has said so far, it has said in text. A terminal
+can do nothing else, and a great deal of interactive fiction wants
+nothing else. A browser can do more. It can play a recording, loop a bed
+of sound under a scene, and put a picture on the page.</p>
+<p>Chord treats all of that as something the story offers and the
+player’s program may decline. A story declares its sounds and pictures,
+and says when to play and show them. A client that can do it does it. A
+client that cannot leaves it out, and the story plays on, because
+nothing in the world ever depends on whether a file was heard.</p>
+<p>This chapter gives The Relighting a recording of the bell, the sound
+of a flame catching, water under the skiff, and one picture.</p>
+<h2 data-number="36.1" id="declaring-an-asset"><span
+class="header-section-number">36.1</span> Declaring an asset</h2>
+<p>An <strong>asset</strong> is a name the story uses and a file the
+client fetches.</p>
+<pre class="chord"><code>define sound tolling from &quot;audio/toll.mp3&quot;
+
+define sound lapping from &quot;audio/lapping.mp3&quot;
+
+define image lantern-lit-picture from &quot;img/lantern-lit.png&quot;</code></pre>
+<p><code>define sound</code>, <code>define image</code> and
+<code>define music</code> are top-level lines. Each gives one word as
+the name and one quoted path. The path is relative to a folder called
+<code>assets</code> beside the story file, so the first line above means
+<code>assets/audio/toll.mp3</code>.</p>
+<p>The compiler checks the names and not the files. A statement that
+plays a sound nobody declared is an error, and so is one that shows a
+sound as if it were a picture. A path to a file that does not exist is
+not noticed until the story is built for the browser, in chapter 40. You
+can write this chapter’s lines, and play the story in a terminal, before
+any of the recordings exist.</p>
+<h2 data-number="36.2" id="playing-a-sound"><span
+class="header-section-number">36.2</span> Playing a sound</h2>
+<pre class="chord"><code>on every turn while the tower bell is tolling
+  select cycling
+    phrase toll-near
+  or
+    phrase toll-far
+  or
+    phrase toll-count
+  end select
+  raise tolls by 1
+  play sound tolling
+end on</code></pre>
+<p><code>play sound</code> is a statement, and it goes wherever a
+statement goes. This one is the last line of the header’s
+<code>on every turn</code> block from chapter 19, so the recording is
+played on every turn the bell tolls.</p>
+<p>In a terminal you will see no difference at all. The story’s own
+three sentences about the bell still print, and the recording is offered
+to a client that is not there. That is the right result, and it is why
+the sentences stay. A sound should never be the only way a player learns
+something. Some players have the sound off, some cannot hear it, and
+some are reading your story through a screen reader that is already
+talking.</p>
+<h2 data-number="36.3" id="a-sound-is-also-a-sound-in-the-world"><span
+class="header-section-number">36.3</span> A sound is also a sound in the
+world</h2>
+<p>Chapter 10 said that sound goes further in Chord than a
+<code>loud</code> thing, and this is where. A sound that a story plays
+is two things at once. It is a cue for the client, and it is a noise
+that happens at a place in the story’s world, where people can hear
+it.</p>
+<p>The place is wherever the statement’s owner is. A
+<code>play sound</code> in a thing’s clause sounds in that thing’s room.
+The wisp can be made to notice.</p>
+<pre class="chord"><code>create the wisp
+  aka light
+  a person, follower, listener
+  pronouns it
+
+  A scrap of light the size of a thumbnail, the same blue as the lamp
+  flame. It keeps a little behind your shoulder, where a dog would.
+
+  after hearing the tolling, once
+    phrase wisp-flinches
+  end after</code></pre>
+<p><code>listener</code> is a trait word for a person. A listener is
+told about each sound that reaches the room it is in.
+<code>after hearing the &lt;sound&gt;</code> is a clause that runs when
+one does, and it takes <code>once</code> as other clauses do.</p>
+<pre class="text"><code>&gt; light lamp with taper
+You have no match, and you did not walk here for three days to use one. There is a word for this.
+
+In the lodge, an old man who was not asleep opens his eyes.
+
+You are Hobb, and that is the bell. It has not rung since the night you stopped it. There was a word for stopping it, and you wrote the word down, because you knew you would not keep it in your head, and you put the paper somewhere safe.
+
+The tower bell tolls.
+
+Somewhere in the Hall a small blue light goes flat and dim at the first stroke, like a flame in a draught, and creeps back to its size.</code></pre>
+<p>Read the last sentence again with chapter 31 in mind. On the turn the
+bell first tolls, the story hands the player’s role to Hobb, who is in
+the Lodge. The wisp is in the Library. A clause that runs
+<code>after hearing</code> prints its prose whether or not the player
+can see the listener, so the sentence had to be written to be true from
+anywhere. Write a listener’s reaction as something that could be
+overheard, or keep it to a change of state and let a description report
+it later.</p>
+<h2 data-number="36.4" id="what-a-sound-sounds-like"><span
+class="header-section-number">36.4</span> What a sound sounds like</h2>
+<p>The player hears sounds too. What the player reads is up to the
+sound’s declaration, which may be a block.</p>
+<pre class="chord"><code>define sound catch from &quot;audio/catch.mp3&quot;
+  heard: The wick takes with a small dry sound, like a page turned.
+end sound</code></pre>
+<p>A sound block closes with <code>end sound</code> and may hold a
+<code>heard:</code> line, a <code>heard from afar:</code> line, or both.
+The <code>heard:</code> line is what the player reads when the sound is
+made nearby. This sound belongs to the <code>wick</code> trait of
+chapter 24, so every lamp, candle and lantern in the story now catches
+audibly.</p>
+<pre class="chord"><code>define trait wick
+  on the player sparking
+    refuse when it is lit: already-burning
+    change it to lit
+    phrase sparked
+    play sound catch
+  end on</code></pre>
+<pre class="text"><code>&gt; light lamp
+You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
+
+Something small and blue comes loose from the flame and hangs in the air beside it, undecided. Then it decides.
+
+Somewhere above you, old timber takes a weight it had forgotten.
+
+The wick takes with a small dry sound, like a page turned.</code></pre>
+<p>A sound prints only what its declaration states. The tolling has no
+block, so it prints nothing, and the story’s own bell sentences are not
+doubled. Give a sound a <code>heard:</code> line when the sound is the
+news. Leave it off when some other prose already carries the news and
+the recording is decoration.</p>
+<h2 data-number="36.5" id="from-afar-and-with-no-file"><span
+class="header-section-number">36.5</span> From afar, and with no
+file</h2>
+<p>A sound does not need a recording. Leave out <code>from</code> and
+the sound exists in the world only: listeners hear it, the player reads
+its lines, and no client is asked to play anything.</p>
+<pre class="chord"><code>define sound prising
+  heard: Iron shrieks on iron, close by, and stops.
+  heard from afar: Somewhere in the Hall, iron complains about iron.
+end sound</code></pre>
+<p>When the bell begins, Tamsin Vey goes to the grille on the Bell Stair
+and tries her pry bar on it. Chapter 26 gave her that goal. The grille
+can answer for it.</p>
+<pre class="chord"><code>create the iron grille
+  aka grille
+  a thing, scenery, ward
+  in the Bell Stair
+  states: standing, lifted
+
+  after Tamsin Vey pushing
+    play sound prising
+  end after</code></pre>
+<p>The clause is on the grille, so the sound is made in the Bell Stair.
+What the player reads depends on how far away the player is. In the same
+room, or one open doorway from it, the sound arrives whole and the
+<code>heard:</code> line prints. Further off, or through a closed door,
+it arrives weakened, and the <code>heard from afar:</code> line prints.
+Far enough away, nothing prints.</p>
+<p>The block below is what the player reads on walking from the Cloister
+into the Bell Stair on the turn she pushes. That one turn is easy to
+miss. Wait in the Cloister instead and the last line prints by itself,
+after a <code>wait</code>.</p>
+<pre class="text"><code>&gt; north
+Bell Stair
+The foot of the tower. A stair winds up around the well where the bell rope hangs. The cloister is south. An iron grille stands across its third step.
+
+You can see Tamsin Vey here.
+
+The bell tolls again, and the rooks go up off the roof.
+
+The wisp follows you.
+
+Tamsin Vey pushes the iron grille.
+
+Iron shrieks on iron, close by, and stops.</code></pre>
+<p>Waiting in the Library, two rooms from it:</p>
+<pre class="text"><code>&gt; wait
+You wait.
+
+The bell tolls again, and the rooks go up off the roof.
+
+Somewhere in the Hall, iron complains about iron.</code></pre>
+<p>A sound that states only one of the two lines prints nothing at the
+other distance. That is often what you want. A match being struck has a
+<code>heard:</code> line and no business being heard from the next
+county.</p>
+<h2 data-number="36.6" id="a-bed-of-sound"><span
+class="header-section-number">36.6</span> A bed of sound</h2>
+<p>A sound effect plays once and is over. An <strong>ambient</strong>
+bed loops until the story stops it.</p>
+<pre class="chord"><code>create the skiff
+  aka boat, heron
+  a vehicle
+  in the Mere at 0, 2
+
+  after the player entering
+    play ambient lapping
+  end after
+
+  after the player exiting
+    stop ambient
+  end after</code></pre>
+<p><code>play ambient</code> takes the name of a sound asset, which must
+have a file. <code>stop ambient</code> stops it. Nothing prints for
+either, and nobody in the world hears a bed: it is for the player’s ears
+only, and it says nothing that the description of the Mere has not
+said.</p>
+<h2 data-number="36.7" id="showing-a-picture"><span
+class="header-section-number">36.7</span> Showing a picture</h2>
+<pre class="chord"><code>after the player sparking
+  lose lens-shatters when not lantern-ready
+  change the story to awake when lantern-ready
+  award relit when lantern-ready
+  phrase lantern-lit when lantern-ready
+  show image lantern-lit-picture when lantern-ready
+end after</code></pre>
+<p><code>show image</code> puts a declared image on the page, and
+<code>hide image</code> takes it away. Like every statement, each may
+end in a <code>when</code> condition. The picture of the lit Lantern
+stays up for the crossing of the Mere, and the beacon’s clause hides it
+on the last turn.</p>
+<pre class="chord"><code>after the player sparking
+  award answered
+  hide image
+  win beacon-lit
+end after</code></pre>
+<p>Where the picture appears on the page, and how large, is the page’s
+business. That is the next chapter.</p>
+<h2 data-number="36.8" id="music-named-beds-and-layers"><span
+class="header-section-number">36.8</span> Music, named beds and
+layers</h2>
+<p>The Relighting has no music. A story that does declares it the same
+way and has two statements for it.</p>
+<pre class="chord"><code>define music waltz from &quot;audio/waltz.mp3&quot;
+define sound rain from &quot;audio/rain.mp3&quot;
+define sound hiss from &quot;audio/hiss.mp3&quot;
+define image portrait from &quot;img/portrait.png&quot;
+define image fog from &quot;img/fog.png&quot;
+
+define ambient weather
+define layer window
+
+create the gramophone
+  a thing, scenery, switchable
+  in the Parlour
+
+  A gramophone with a horn like a brass lily.
+
+  after the player switching_on
+    play music waltz looping
+    play ambient hiss
+    phrase needle-down when not client has music
+  end after
+
+  after the player switching_off
+    stop music
+    stop ambient
+  end after</code></pre>
+<p><code>play music</code> starts a track, and <code>looping</code>
+makes it repeat. <code>stop music</code> ends it. There is one music
+track at a time.</p>
+<p>There may be several beds. <code>play ambient hiss</code> uses the
+bed every story has, which is called <code>main</code>.
+<code>define ambient weather</code> declares a second bed by name, and
+<code>play ambient rain in weather</code> and
+<code>stop ambient in weather</code> address it. The two loop together
+and stop separately.</p>
+<p>Pictures have <strong>layers</strong> in the same way. Three exist
+without being declared: <code>background</code>, <code>main</code> and
+<code>overlay</code>. <code>show image</code> with no layer uses
+<code>main</code>. <code>define layer window</code> adds one, and
+<code>show image fog in window</code> shows a picture in it.</p>
+<pre class="chord"><code>create the curtains
+  a thing, scenery, openable
+  in the Parlour
+
+  Heavy curtains.
+
+  after the player opening
+    play ambient rain in weather
+    show image fog in window
+    show image portrait
+  end after
+
+  after the player closing
+    stop ambient in weather
+    transition fade
+    clear
+  end after</code></pre>
+<p>Two more statements are for the page as a whole.
+<code>transition</code> followed by a word asks the client for a visual
+transition of that kind, and <code>clear</code> asks it to clear the
+screen.</p>
+<h2 data-number="36.9" id="asking-what-the-client-can-do"><span
+class="header-section-number">36.9</span> Asking what the client can
+do</h2>
+<p>The gramophone’s clause has a condition in it that reads the client
+and not the world.</p>
+<pre class="chord"><code>phrase needle-down when not client has music</code></pre>
+<p><code>client has</code> is followed by one word from a closed list of
+capabilities, among them <code>sound</code>, <code>music</code>,
+<code>images</code>, <code>transitions</code>, <code>layers</code>,
+<code>split-pane</code>, <code>status-bar</code> and
+<code>sidebar</code>. It is true when the program the player is using
+has said it can do that thing. In a terminal the gramophone prints its
+sentence, because a terminal has no music.</p>
+<pre class="text"><code>&gt; switch on gramophone
+The gramophone hums to life.
+
+The needle comes down, and a waltz gets up out of the crackle.</code></pre>
+<p>This is the pattern for anything a recording was going to carry
+alone: play the recording, and say the same thing in words to a player
+who has no recording.</p>
+<p>One statement may not be made to depend on the client.
+<code>play sound hiss when client has sound</code> is an error,
+<code>analysis.play-sound-client-has</code>. A played sound happens in
+the world, where listeners react to it, and the world must not go
+differently for two players because one of them has speakers. Leave the
+condition off. A client without sound does not play the cue, and that is
+all.</p>
+<h2 data-number="36.10" id="build-and-try-it-32"><span
+class="header-section-number">36.10</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> and the <code>assets</code> folder
+from the companion folder <code>chapter-36</code> into your project, the
+story over your own file and the folder beside it. The story is yours
+with this chapter’s changes made, and the folder holds three short
+recordings and a picture. To make the changes by hand instead, work from
+this list and take the rest from that file: add the five declarations at
+the top of the story, <code>play sound catch</code> to the
+<code>wick</code> trait, <code>play sound tolling</code> to the header’s
+block, the clause to the grille, <code>listener</code> and its clause to
+the wisp, the two clauses to the skiff, and the <code>show image</code>
+and <code>hide image</code> lines.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Light the lamp and read its last line. Then wait in the Library for
+the bell, look in the newspapers as Hobb, and keep waiting as Ansel
+until iron complains about iron. Nothing will play in the terminal.
+Chapter 40 builds the page where it does.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: media events</strong> · event ids
+<code>media.sound.play</code>, <code>media.ambient.play</code>,
+<code>media.image.show</code></p>
+<p>Each statement in this chapter becomes one event with a small
+payload. <code>play sound tolling</code> sends
+<code>media.sound.play</code> with the file’s path as <code>src</code>.
+<code>play ambient lapping</code> sends <code>media.ambient.play</code>
+with the path and the bed’s name, and <code>show image</code> sends
+<code>media.image.show</code> with the path and, when one is named, the
+layer. The stops and the hide are <code>media.ambient.stop</code>,
+<code>media.music.stop</code> and <code>media.image.hide</code>. A
+played sound also raises the world’s own sound event, which carries the
+thing that made it, the room, and the sound’s name, and it is that event
+a listener’s <code>after hearing</code> clause answers. A test tree can
+assert on any of these by name, as chapter 38 shows.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: figures and sounds</strong></p>
+<p>Inform 10 declares a picture with a sentence such as
+<code>Figure of Woodlands is the file "Woodlands.png".</code> and shows
+it with <code>display the Figure of Woodlands;</code>. A sound is
+<code>Sound of rustling leaves is the file "Rustling leaves.ogg".</code>
+and <code>play the sound of rustling leaves;</code>. <em>Writing with
+Inform</em> says both can be used only when the project is compiled to
+the Glulx story file format. TADS 3 does it in the output text, with
+HTML TADS tags: <code>&lt;IMG SRC="picture.jpg"&gt;</code> for a picture
+and a <code>&lt;SOUND&gt;</code> tag for a sound, and a game asks
+<code>systemInfo()</code> what the interpreter can do. In neither system
+is a played sound an event in the story’s world that a character can
+hear, on the pages read for this comparison.</p>
+</div>
+<h2 data-number="36.11" id="what-you-have-so-far-35"><span
+class="header-section-number">36.11</span> What you have so far</h2>
+<p>The Relighting can be heard. The bell has a recording and the wisp
+flinches at its first stroke. A flame catching makes a sound the player
+reads. A pry bar on the grille is heard plainly from the Cloister and
+faintly from the Library. The skiff has water under it, and the lit
+Lantern has a picture.</p>
+<p>None of it has been heard or seen yet, because a terminal cannot. The
+picture needs a place on a page, and the page needs to be told which of
+its features this story uses. The next chapter is about the page.</p>
+<nav class="book-nav-bottom"><a class="prev" href="-part-vii.-presentation.html">← Part VII. Presentation</a><a class="next" href="37-the-page-the-player-sees.html">The page the player sees →</a></nav>
+</body>
+</html>

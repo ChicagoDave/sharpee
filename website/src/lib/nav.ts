@@ -74,6 +74,7 @@ export const NAV: NavSection[] = [
           { title: 'Install', href: '/chord/getting-started/install' },
           { title: 'Your first story', href: '/chord/getting-started/first-story' },
           { title: 'Compose & run', href: '/chord/getting-started/compose-and-run' },
+          { title: 'The Chord Manual', href: '/chord/manual' },
         ],
       },
       {

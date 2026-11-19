@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>The Chord Manual</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<div class="title-page">
+<p><span class="book-title">The Chord Manual</span></p>
+<p><span class="book-subtitle">Writing Interactive Fiction in
+Chord</span></p>
+<p><span class="book-version">Chord 4.1.0, Sharpee 5.7.0</span></p>
+<p><span class="book-author">David Cornelson</span></p>
+</div>
+<div class="copyright-page">
+<p><em>The Chord Manual</em></p>
+<p>Writing Interactive Fiction in Chord</p>
+<p>Published by David Cornelson</p>
+<p>Copyright © 2026 David Cornelson. All rights reserved. No part of
+this book may be reproduced in any form without written permission from
+the publisher, except for brief quotations used in reviews.</p>
+<p>This edition is pinned to Chord 4.1.0, as shipped in Sharpee 5.7.0.
+Every example in it is compiled and played against that release.</p>
+</div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+</span>
+<span class="navlink">
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-preface.html" accesskey="n" rel="next">Preface</a>
+</span>
+<span class="navlink">
+</span>
+</div>
+</nav>
+<header id="title-block-header">
+<h1 class="title">The Chord Manual</h1>
+<p class="subtitle">Writing Interactive Fiction in Chord (Chord 4.1.0,
+Sharpee 5.7.0)</p>
+<p class="author">David Cornelson</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="-preface.html#preface" id="toc-preface">Preface</a>
+<ul>
+<li><a href="-preface.html#what-this-book-promises"
+id="toc-what-this-book-promises"><span
+class="toc-section-number">0.1</span> What this book promises</a></li>
+<li><a href="-preface.html#the-edition" id="toc-the-edition"><span
+class="toc-section-number">0.2</span> The edition</a></li>
+<li><a href="-preface.html#two-kinds-of-reader"
+id="toc-two-kinds-of-reader"><span class="toc-section-number">0.3</span>
+Two kinds of reader</a></li>
+</ul></li>
+<li><a href="-how-to-read-this-book.html#how-to-read-this-book"
+id="toc-how-to-read-this-book">How to read this book</a>
+<ul>
+<li><a href="-how-to-read-this-book.html#where-to-start"
+id="toc-where-to-start"><span class="toc-section-number">0.4</span>
+Where to start</a></li>
+<li><a href="-how-to-read-this-book.html#the-eight-parts"
+id="toc-the-eight-parts"><span class="toc-section-number">0.5</span> The
+eight parts</a></li>
+<li><a href="-how-to-read-this-book.html#the-two-kinds-of-box"
+id="toc-the-two-kinds-of-box"><span
+class="toc-section-number">0.6</span> The two kinds of box</a></li>
+<li><a href="-how-to-read-this-book.html#conventions"
+id="toc-conventions"><span class="toc-section-number">0.7</span>
+Conventions</a></li>
+<li><a href="-how-to-read-this-book.html#build-and-try-it"
+id="toc-build-and-try-it"><span class="toc-section-number">0.8</span>
+Build and try it</a></li>
+<li><a href="-how-to-read-this-book.html#the-companion-folders"
+id="toc-the-companion-folders"><span
+class="toc-section-number">0.9</span> The companion folders</a></li>
+<li><a href="-how-to-read-this-book.html#when-something-is-missing"
+id="toc-when-something-is-missing"><span
+class="toc-section-number">0.10</span> When something is
+missing</a></li>
+</ul></li>
+<li><a href="-part-i.-a-first-story.html#part-i.-a-first-story"
+id="toc-part-i.-a-first-story">Part I. A first story</a></li>
+<li><a href="1-the-shape-of-a-story-file.html#the-shape-of-a-story-file"
+id="toc-the-shape-of-a-story-file"><span
+class="toc-section-number">1</span> The shape of a story file</a>
+<ul>
+<li><a href="1-the-shape-of-a-story-file.html#one-line-one-thing"
+id="toc-one-line-one-thing"><span class="toc-section-number">1.1</span>
+One line, one thing</a></li>
+<li><a
+href="1-the-shape-of-a-story-file.html#indentation-says-what-belongs-to-what"
+id="toc-indentation-says-what-belongs-to-what"><span
+class="toc-section-number">1.2</span> Indentation says what belongs to
+what</a></li>
+<li><a href="1-the-shape-of-a-story-file.html#how-a-block-ends"
+id="toc-how-a-block-ends"><span class="toc-section-number">1.3</span>
+How a block ends</a></li>
+<li><a href="1-the-shape-of-a-story-file.html#blank-lines"
+id="toc-blank-lines"><span class="toc-section-number">1.4</span> Blank
+lines</a></li>
+<li><a href="1-the-shape-of-a-story-file.html#comments"
+id="toc-comments"><span class="toc-section-number">1.5</span>
+Comments</a></li>
+<li><a
+href="1-the-shape-of-a-story-file.html#words-numbers-and-quotation-marks"
+id="toc-words-numbers-and-quotation-marks"><span
+class="toc-section-number">1.6</span> Words, numbers and quotation
+marks</a></li>
+<li><a href="1-the-shape-of-a-story-file.html#what-you-have-so-far"
+id="toc-what-you-have-so-far"><span
+class="toc-section-number">1.7</span> What you have so far</a></li>
+</ul></li>
+<li><a href="2-the-story-header.html#the-story-header"
+id="toc-the-story-header"><span class="toc-section-number">2</span> The
+story header</a>
+<ul>
+<li><a href="2-the-story-header.html#the-two-fields-every-header-needs"
+id="toc-the-two-fields-every-header-needs"><span
+class="toc-section-number">2.1</span> The two fields every header
+needs</a></li>
+<li><a href="2-the-story-header.html#what-the-player-sees"
+id="toc-what-the-player-sees"><span
+class="toc-section-number">2.2</span> What the player sees</a></li>
+<li><a href="2-the-story-header.html#version-description-and-credits"
+id="toc-version-description-and-credits"><span
+class="toc-section-number">2.3</span> Version, description and
+credits</a></li>
+<li><a href="2-the-story-header.html#the-prologue"
+id="toc-the-prologue"><span class="toc-section-number">2.4</span> The
+prologue</a></li>
+<li><a href="2-the-story-header.html#the-two-identifiers"
+id="toc-the-two-identifiers"><span class="toc-section-number">2.5</span>
+The two identifiers</a></li>
+<li><a href="2-the-story-header.html#when-a-field-is-refused"
+id="toc-when-a-field-is-refused"><span
+class="toc-section-number">2.6</span> When a field is refused</a></li>
+<li><a href="2-the-story-header.html#what-you-have-so-far-1"
+id="toc-what-you-have-so-far-1"><span
+class="toc-section-number">2.7</span> What you have so far</a></li>
+</ul></li>
+<li><a href="3-the-player-and-the-start.html#the-player-and-the-start"
+id="toc-the-player-and-the-start"><span
+class="toc-section-number">3</span> The player and the start</a>
+<ul>
+<li><a href="3-the-player-and-the-start.html#making-ansel"
+id="toc-making-ansel"><span class="toc-section-number">3.1</span> Making
+Ansel</a></li>
+<li><a href="3-the-player-and-the-start.html#handing-over-the-role"
+id="toc-handing-over-the-role"><span
+class="toc-section-number">3.2</span> Handing over the role</a></li>
+<li><a
+href="3-the-player-and-the-start.html#what-the-start-block-is-not-for"
+id="toc-what-the-start-block-is-not-for"><span
+class="toc-section-number">3.3</span> What the start block is not
+for</a></li>
+<li><a href="3-the-player-and-the-start.html#the-opening"
+id="toc-the-opening"><span class="toc-section-number">3.4</span> The
+opening</a></li>
+<li><a href="3-the-player-and-the-start.html#when-it-goes-wrong"
+id="toc-when-it-goes-wrong"><span class="toc-section-number">3.5</span>
+When it goes wrong</a></li>
+<li><a href="3-the-player-and-the-start.html#what-you-have-so-far-2"
+id="toc-what-you-have-so-far-2"><span
+class="toc-section-number">3.6</span> What you have so far</a></li>
+</ul></li>
+<li><a href="4-build-play-read-an-error.html#build-play-read-an-error"
+id="toc-build-play-read-an-error"><span
+class="toc-section-number">4</span> Build, play, read an error</a>
+<ul>
+<li><a href="4-build-play-read-an-error.html#installing-the-command"
+id="toc-installing-the-command"><span
+class="toc-section-number">4.1</span> Installing the command</a></li>
+<li><a href="4-build-play-read-an-error.html#a-folder-for-the-story"
+id="toc-a-folder-for-the-story"><span
+class="toc-section-number">4.2</span> A folder for the story</a></li>
+<li><a href="4-build-play-read-an-error.html#checking-the-story"
+id="toc-checking-the-story"><span class="toc-section-number">4.3</span>
+Checking the story</a></li>
+<li><a href="4-build-play-read-an-error.html#playing-the-story"
+id="toc-playing-the-story"><span class="toc-section-number">4.4</span>
+Playing the story</a></li>
+<li><a href="4-build-play-read-an-error.html#reading-an-error"
+id="toc-reading-an-error"><span class="toc-section-number">4.5</span>
+Reading an error</a></li>
+<li><a href="4-build-play-read-an-error.html#when-the-compiler-guesses"
+id="toc-when-the-compiler-guesses"><span
+class="toc-section-number">4.6</span> When the compiler guesses</a></li>
+<li><a href="4-build-play-read-an-error.html#warnings"
+id="toc-warnings"><span class="toc-section-number">4.7</span>
+Warnings</a></li>
+<li><a
+href="4-build-play-read-an-error.html#two-mistakes-with-the-folder"
+id="toc-two-mistakes-with-the-folder"><span
+class="toc-section-number">4.8</span> Two mistakes with the
+folder</a></li>
+<li><a href="4-build-play-read-an-error.html#what-you-have-so-far-3"
+id="toc-what-you-have-so-far-3"><span
+class="toc-section-number">4.9</span> What you have so far</a></li>
+</ul></li>
+<li><a href="-part-ii.-the-world.html#part-ii.-the-world"
+id="toc-part-ii.-the-world">Part II. The world</a></li>
+<li><a href="5-rooms-and-exits.html#rooms-and-exits"
+id="toc-rooms-and-exits"><span class="toc-section-number">5</span> Rooms
+and exits</a>
+<ul>
+<li><a href="5-rooms-and-exits.html#what-create-does"
+id="toc-what-create-does"><span class="toc-section-number">5.1</span>
+What <code>create</code> does</a></li>
+<li><a href="5-rooms-and-exits.html#exits" id="toc-exits"><span
+class="toc-section-number">5.2</span> Exits</a></li>
+<li><a href="5-rooms-and-exits.html#the-way-back-is-free"
+id="toc-the-way-back-is-free"><span
+class="toc-section-number">5.3</span> The way back is free</a></li>
+<li><a href="5-rooms-and-exits.html#one-way-exits"
+id="toc-one-way-exits"><span class="toc-section-number">5.4</span>
+One-way exits</a></li>
+<li><a href="5-rooms-and-exits.html#the-rest-of-lanternhall"
+id="toc-the-rest-of-lanternhall"><span
+class="toc-section-number">5.5</span> The rest of Lanternhall</a></li>
+<li><a href="5-rooms-and-exits.html#the-first-visit"
+id="toc-the-first-visit"><span class="toc-section-number">5.6</span> The
+first visit</a></li>
+<li><a href="5-rooms-and-exits.html#a-heading-of-its-own"
+id="toc-a-heading-of-its-own"><span
+class="toc-section-number">5.7</span> A heading of its own</a></li>
+<li><a href="5-rooms-and-exits.html#build-and-try-it-1"
+id="toc-build-and-try-it-1"><span class="toc-section-number">5.8</span>
+Build and try it</a></li>
+<li><a href="5-rooms-and-exits.html#what-you-have-so-far-4"
+id="toc-what-you-have-so-far-4"><span
+class="toc-section-number">5.9</span> What you have so far</a></li>
+</ul></li>
+<li><a href="6-things.html#things" id="toc-things"><span
+class="toc-section-number">6</span> Things</a>
+<ul>
+<li><a href="6-things.html#a-thing-and-where-it-is"
+id="toc-a-thing-and-where-it-is"><span
+class="toc-section-number">6.1</span> A thing and where it is</a></li>
+<li><a href="6-things.html#things-that-stay-put"
+id="toc-things-that-stay-put"><span
+class="toc-section-number">6.2</span> Things that stay put</a></li>
+<li><a href="6-things.html#more-than-one-and-things-with-names"
+id="toc-more-than-one-and-things-with-names"><span
+class="toc-section-number">6.3</span> More than one, and things with
+names</a></li>
+<li><a href="6-things.html#other-words-for-a-thing"
+id="toc-other-words-for-a-thing"><span
+class="toc-section-number">6.4</span> Other words for a thing</a></li>
+<li><a href="6-things.html#a-thing-in-several-rooms"
+id="toc-a-thing-in-several-rooms"><span
+class="toc-section-number">6.5</span> A thing in several rooms</a></li>
+<li><a href="6-things.html#what-ansel-carries"
+id="toc-what-ansel-carries"><span class="toc-section-number">6.6</span>
+What Ansel carries</a></li>
+<li><a href="6-things.html#hidden-things" id="toc-hidden-things"><span
+class="toc-section-number">6.7</span> Hidden things</a></li>
+<li><a href="6-things.html#build-and-try-it-2"
+id="toc-build-and-try-it-2"><span class="toc-section-number">6.8</span>
+Build and try it</a></li>
+<li><a href="6-things.html#what-you-have-so-far-5"
+id="toc-what-you-have-so-far-5"><span
+class="toc-section-number">6.9</span> What you have so far</a></li>
+</ul></li>
+<li><a href="7-containers-and-supporters.html#containers-and-supporters"
+id="toc-containers-and-supporters"><span
+class="toc-section-number">7</span> Containers and supporters</a>
+<ul>
+<li><a href="7-containers-and-supporters.html#two-kinds-that-hold"
+id="toc-two-kinds-that-hold"><span class="toc-section-number">7.1</span>
+Two kinds that hold</a></li>
+<li><a href="7-containers-and-supporters.html#opening-and-closing"
+id="toc-opening-and-closing"><span class="toc-section-number">7.2</span>
+Opening and closing</a></li>
+<li><a href="7-containers-and-supporters.html#how-much-it-holds"
+id="toc-how-much-it-holds"><span class="toc-section-number">7.3</span>
+How much it holds</a></li>
+<li><a href="7-containers-and-supporters.html#a-cupboard-on-the-wall"
+id="toc-a-cupboard-on-the-wall"><span
+class="toc-section-number">7.4</span> A cupboard on the wall</a></li>
+<li><a
+href="7-containers-and-supporters.html#seeing-through-and-saying-it-yourself"
+id="toc-seeing-through-and-saying-it-yourself"><span
+class="toc-section-number">7.5</span> Seeing through, and saying it
+yourself</a></li>
+<li><a href="7-containers-and-supporters.html#getting-into-things"
+id="toc-getting-into-things"><span class="toc-section-number">7.6</span>
+Getting into things</a></li>
+<li><a href="7-containers-and-supporters.html#build-and-try-it-3"
+id="toc-build-and-try-it-3"><span class="toc-section-number">7.7</span>
+Build and try it</a></li>
+<li><a href="7-containers-and-supporters.html#what-you-have-so-far-6"
+id="toc-what-you-have-so-far-6"><span
+class="toc-section-number">7.8</span> What you have so far</a></li>
+</ul></li>
+<li><a href="8-doors-locks-and-keys.html#doors-locks-and-keys"
+id="toc-doors-locks-and-keys"><span class="toc-section-number">8</span>
+Doors, locks and keys</a>
+<ul>
+<li><a href="8-doors-locks-and-keys.html#a-door" id="toc-a-door"><span
+class="toc-section-number">8.1</span> A door</a></li>
+<li><a href="8-doors-locks-and-keys.html#a-lock-and-its-key"
+id="toc-a-lock-and-its-key"><span class="toc-section-number">8.2</span>
+A lock and its key</a></li>
+<li><a href="8-doors-locks-and-keys.html#playing-it"
+id="toc-playing-it"><span class="toc-section-number">8.3</span> Playing
+it</a></li>
+<li><a href="8-doors-locks-and-keys.html#saving-the-player-a-step"
+id="toc-saving-the-player-a-step"><span
+class="toc-section-number">8.4</span> Saving the player a step</a></li>
+<li><a href="8-doors-locks-and-keys.html#locks-on-other-things"
+id="toc-locks-on-other-things"><span
+class="toc-section-number">8.5</span> Locks on other things</a></li>
+<li><a href="8-doors-locks-and-keys.html#naming-keys"
+id="toc-naming-keys"><span class="toc-section-number">8.6</span> Naming
+keys</a></li>
+<li><a href="8-doors-locks-and-keys.html#build-and-try-it-4"
+id="toc-build-and-try-it-4"><span class="toc-section-number">8.7</span>
+Build and try it</a></li>
+<li><a href="8-doors-locks-and-keys.html#what-you-have-so-far-7"
+id="toc-what-you-have-so-far-7"><span
+class="toc-section-number">8.8</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="9-what-things-can-do-the-trait-words.html#what-things-can-do-the-trait-words"
+id="toc-what-things-can-do-the-trait-words"><span
+class="toc-section-number">9</span> What things can do: the trait
+words</a>
+<ul>
+<li><a href="9-what-things-can-do-the-trait-words.html#wearing"
+id="toc-wearing"><span class="toc-section-number">9.1</span>
+Wearing</a></li>
+<li><a href="9-what-things-can-do-the-trait-words.html#reading"
+id="toc-reading"><span class="toc-section-number">9.2</span>
+Reading</a></li>
+<li><a
+href="9-what-things-can-do-the-trait-words.html#eating-and-drinking"
+id="toc-eating-and-drinking"><span class="toc-section-number">9.3</span>
+Eating and drinking</a></li>
+<li><a
+href="9-what-things-can-do-the-trait-words.html#pulling-and-pushing"
+id="toc-pulling-and-pushing"><span class="toc-section-number">9.4</span>
+Pulling and pushing</a></li>
+<li><a href="9-what-things-can-do-the-trait-words.html#breaking"
+id="toc-breaking"><span class="toc-section-number">9.5</span>
+Breaking</a></li>
+<li><a
+href="9-what-things-can-do-the-trait-words.html#fixed-to-something"
+id="toc-fixed-to-something"><span class="toc-section-number">9.6</span>
+Fixed to something</a></li>
+<li><a
+href="9-what-things-can-do-the-trait-words.html#switching-on-and-off"
+id="toc-switching-on-and-off"><span
+class="toc-section-number">9.7</span> Switching on and off</a></li>
+<li><a
+href="9-what-things-can-do-the-trait-words.html#the-ones-that-wait"
+id="toc-the-ones-that-wait"><span class="toc-section-number">9.8</span>
+The ones that wait</a></li>
+<li><a
+href="9-what-things-can-do-the-trait-words.html#build-and-try-it-5"
+id="toc-build-and-try-it-5"><span class="toc-section-number">9.9</span>
+Build and try it</a></li>
+<li><a
+href="9-what-things-can-do-the-trait-words.html#what-you-have-so-far-8"
+id="toc-what-you-have-so-far-8"><span
+class="toc-section-number">9.10</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="10-light-dark-and-the-other-senses.html#light-dark-and-the-other-senses"
+id="toc-light-dark-and-the-other-senses"><span
+class="toc-section-number">10</span> Light, dark and the other
+senses</a>
+<ul>
+<li><a href="10-light-dark-and-the-other-senses.html#a-dark-room"
+id="toc-a-dark-room"><span class="toc-section-number">10.1</span> A dark
+room</a></li>
+<li><a href="10-light-dark-and-the-other-senses.html#a-light-to-carry"
+id="toc-a-light-to-carry"><span class="toc-section-number">10.2</span> A
+light to carry</a></li>
+<li><a
+href="10-light-dark-and-the-other-senses.html#what-this-does-to-the-story"
+id="toc-what-this-does-to-the-story"><span
+class="toc-section-number">10.3</span> What this does to the
+story</a></li>
+<li><a href="10-light-dark-and-the-other-senses.html#seeing-in-the-dark"
+id="toc-seeing-in-the-dark"><span class="toc-section-number">10.4</span>
+Seeing in the dark</a></li>
+<li><a href="10-light-dark-and-the-other-senses.html#smell-and-sound"
+id="toc-smell-and-sound"><span class="toc-section-number">10.5</span>
+Smell and sound</a></li>
+<li><a href="10-light-dark-and-the-other-senses.html#build-and-try-it-6"
+id="toc-build-and-try-it-6"><span class="toc-section-number">10.6</span>
+Build and try it</a></li>
+<li><a
+href="10-light-dark-and-the-other-senses.html#what-you-have-so-far-9"
+id="toc-what-you-have-so-far-9"><span
+class="toc-section-number">10.7</span> What you have so far</a></li>
+</ul></li>
+<li><a href="11-regions.html#regions" id="toc-regions"><span
+class="toc-section-number">11</span> Regions</a>
+<ul>
+<li><a href="11-regions.html#making-a-region"
+id="toc-making-a-region"><span class="toc-section-number">11.1</span>
+Making a region</a></li>
+<li><a href="11-regions.html#putting-rooms-in-it"
+id="toc-putting-rooms-in-it"><span
+class="toc-section-number">11.2</span> Putting rooms in it</a></li>
+<li><a href="11-regions.html#scenery-for-a-whole-region"
+id="toc-scenery-for-a-whole-region"><span
+class="toc-section-number">11.3</span> Scenery for a whole
+region</a></li>
+<li><a href="11-regions.html#a-run-of-rooms"
+id="toc-a-run-of-rooms"><span class="toc-section-number">11.4</span> A
+run of rooms</a></li>
+<li><a href="11-regions.html#a-table-of-exits"
+id="toc-a-table-of-exits"><span class="toc-section-number">11.5</span> A
+table of exits</a></li>
+<li><a href="11-regions.html#a-backdrop-for-the-stacks"
+id="toc-a-backdrop-for-the-stacks"><span
+class="toc-section-number">11.6</span> A backdrop for the
+stacks</a></li>
+<li><a href="11-regions.html#build-and-try-it-7"
+id="toc-build-and-try-it-7"><span class="toc-section-number">11.7</span>
+Build and try it</a></li>
+<li><a href="11-regions.html#what-you-have-so-far-10"
+id="toc-what-you-have-so-far-10"><span
+class="toc-section-number">11.8</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="12-ways-that-are-closed-hidden-or-strange.html#ways-that-are-closed-hidden-or-strange"
+id="toc-ways-that-are-closed-hidden-or-strange"><span
+class="toc-section-number">12</span> Ways that are closed, hidden or
+strange</a>
+<ul>
+<li><a
+href="12-ways-that-are-closed-hidden-or-strange.html#a-way-that-refuses"
+id="toc-a-way-that-refuses"><span class="toc-section-number">12.1</span>
+A way that refuses</a></li>
+<li><a
+href="12-ways-that-are-closed-hidden-or-strange.html#a-way-that-kills"
+id="toc-a-way-that-kills"><span class="toc-section-number">12.2</span> A
+way that kills</a></li>
+<li><a
+href="12-ways-that-are-closed-hidden-or-strange.html#a-way-that-is-sometimes-there"
+id="toc-a-way-that-is-sometimes-there"><span
+class="toc-section-number">12.3</span> A way that is sometimes
+there</a></li>
+<li><a
+href="12-ways-that-are-closed-hidden-or-strange.html#a-way-with-its-own-command"
+id="toc-a-way-with-its-own-command"><span
+class="toc-section-number">12.4</span> A way with its own
+command</a></li>
+<li><a
+href="12-ways-that-are-closed-hidden-or-strange.html#build-and-try-it-8"
+id="toc-build-and-try-it-8"><span class="toc-section-number">12.5</span>
+Build and try it</a></li>
+<li><a
+href="12-ways-that-are-closed-hidden-or-strange.html#what-you-have-so-far-11"
+id="toc-what-you-have-so-far-11"><span
+class="toc-section-number">12.6</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="-part-iii.-making-things-happen.html#part-iii.-making-things-happen"
+id="toc-part-iii.-making-things-happen">Part III. Making things
+happen</a></li>
+<li><a href="13-states.html#states" id="toc-states"><span
+class="toc-section-number">13</span> States</a>
+<ul>
+<li><a href="13-states.html#declaring-states"
+id="toc-declaring-states"><span class="toc-section-number">13.1</span>
+Declaring states</a></li>
+<li><a href="13-states.html#naming-a-state"
+id="toc-naming-a-state"><span class="toc-section-number">13.2</span>
+Naming a state</a></li>
+<li><a href="13-states.html#reading-a-state"
+id="toc-reading-a-state"><span class="toc-section-number">13.3</span>
+Reading a state</a></li>
+<li><a href="13-states.html#changing-a-state"
+id="toc-changing-a-state"><span class="toc-section-number">13.4</span>
+Changing a state</a></li>
+<li><a href="13-states.html#states-that-go-both-ways"
+id="toc-states-that-go-both-ways"><span
+class="toc-section-number">13.5</span> States that go both ways</a></li>
+<li><a href="13-states.html#the-storys-own-states"
+id="toc-the-storys-own-states"><span
+class="toc-section-number">13.6</span> The story’s own states</a></li>
+<li><a href="13-states.html#the-states-you-do-not-declare"
+id="toc-the-states-you-do-not-declare"><span
+class="toc-section-number">13.7</span> The states you do not
+declare</a></li>
+<li><a href="13-states.html#build-and-try-it-9"
+id="toc-build-and-try-it-9"><span class="toc-section-number">13.8</span>
+Build and try it</a></li>
+<li><a href="13-states.html#what-you-have-so-far-12"
+id="toc-what-you-have-so-far-12"><span
+class="toc-section-number">13.9</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#reacting-to-the-player-on-and-after"
+id="toc-reacting-to-the-player-on-and-after"><span
+class="toc-section-number">14</span> Reacting to the player: on and
+after</a>
+<ul>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#a-thing-that-says-no"
+id="toc-a-thing-that-says-no"><span
+class="toc-section-number">14.1</span> A thing that says no</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#where-a-clause-lives"
+id="toc-where-a-clause-lives"><span
+class="toc-section-number">14.2</span> Where a clause lives</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#speaking-in-the-actions-place"
+id="toc-speaking-in-the-actions-place"><span
+class="toc-section-number">14.3</span> Speaking in the action’s
+place</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#adding-to-an-action-after"
+id="toc-adding-to-an-action-after"><span
+class="toc-section-number">14.4</span> Adding to an action:
+after</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#several-actions-one-clause"
+id="toc-several-actions-one-clause"><span
+class="toc-section-number">14.5</span> Several actions, one
+clause</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#the-other-thing-in-the-command"
+id="toc-the-other-thing-in-the-command"><span
+class="toc-section-number">14.6</span> The other thing in the
+command</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#conditions-and-once"
+id="toc-conditions-and-once"><span
+class="toc-section-number">14.7</span> Conditions and once</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#clauses-about-the-person"
+id="toc-clauses-about-the-person"><span
+class="toc-section-number">14.8</span> Clauses about the person</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#build-and-try-it-10"
+id="toc-build-and-try-it-10"><span
+class="toc-section-number">14.9</span> Build and try it</a></li>
+<li><a
+href="14-reacting-to-the-player-on-and-after.html#what-you-have-so-far-13"
+id="toc-what-you-have-so-far-13"><span
+class="toc-section-number">14.10</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="15-what-a-clause-can-say-and-do.html#what-a-clause-can-say-and-do"
+id="toc-what-a-clause-can-say-and-do"><span
+class="toc-section-number">15</span> What a clause can say and do</a>
+<ul>
+<li><a href="15-what-a-clause-can-say-and-do.html#requirements-must"
+id="toc-requirements-must"><span class="toc-section-number">15.1</span>
+Requirements: must</a></li>
+<li><a
+href="15-what-a-clause-can-say-and-do.html#prohibitions-refuse-when"
+id="toc-prohibitions-refuse-when"><span
+class="toc-section-number">15.2</span> Prohibitions: refuse
+when</a></li>
+<li><a href="15-what-a-clause-can-say-and-do.html#printing-phrase"
+id="toc-printing-phrase"><span class="toc-section-number">15.3</span>
+Printing: phrase</a></li>
+<li><a href="15-what-a-clause-can-say-and-do.html#changing-and-moving"
+id="toc-changing-and-moving"><span
+class="toc-section-number">15.4</span> Changing and moving</a></li>
+<li><a href="15-what-a-clause-can-say-and-do.html#the-when-suffix"
+id="toc-the-when-suffix"><span class="toc-section-number">15.5</span>
+The when suffix</a></li>
+<li><a href="15-what-a-clause-can-say-and-do.html#it-and-its-absence"
+id="toc-it-and-its-absence"><span class="toc-section-number">15.6</span>
+It, and its absence</a></li>
+<li><a href="15-what-a-clause-can-say-and-do.html#build-and-try-it-11"
+id="toc-build-and-try-it-11"><span
+class="toc-section-number">15.7</span> Build and try it</a></li>
+<li><a
+href="15-what-a-clause-can-say-and-do.html#what-you-have-so-far-14"
+id="toc-what-you-have-so-far-14"><span
+class="toc-section-number">15.8</span> What you have so far</a></li>
+</ul></li>
+<li><a href="16-conditions.html#conditions" id="toc-conditions"><span
+class="toc-section-number">16</span> Conditions</a>
+<ul>
+<li><a href="16-conditions.html#what-a-condition-can-ask"
+id="toc-what-a-condition-can-ask"><span
+class="toc-section-number">16.1</span> What a condition can ask</a></li>
+<li><a href="16-conditions.html#joining-conditions"
+id="toc-joining-conditions"><span class="toc-section-number">16.2</span>
+Joining conditions</a></li>
+<li><a href="16-conditions.html#naming-a-condition"
+id="toc-naming-a-condition"><span class="toc-section-number">16.3</span>
+Naming a condition</a></li>
+<li><a href="16-conditions.html#conditions-with-a-gap-it"
+id="toc-conditions-with-a-gap-it"><span
+class="toc-section-number">16.4</span> Conditions with a gap:
+it</a></li>
+<li><a href="16-conditions.html#any-and-no" id="toc-any-and-no"><span
+class="toc-section-number">16.5</span> Any and no</a></li>
+<li><a href="16-conditions.html#each" id="toc-each"><span
+class="toc-section-number">16.6</span> Each</a></li>
+<li><a href="16-conditions.html#what-a-condition-cannot-ask"
+id="toc-what-a-condition-cannot-ask"><span
+class="toc-section-number">16.7</span> What a condition cannot
+ask</a></li>
+<li><a href="16-conditions.html#build-and-try-it-12"
+id="toc-build-and-try-it-12"><span
+class="toc-section-number">16.8</span> Build and try it</a></li>
+<li><a href="16-conditions.html#what-you-have-so-far-15"
+id="toc-what-you-have-so-far-15"><span
+class="toc-section-number">16.9</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="17-choosing-between-outcomes.html#choosing-between-outcomes"
+id="toc-choosing-between-outcomes"><span
+class="toc-section-number">17</span> Choosing between outcomes</a>
+<ul>
+<li><a
+href="17-choosing-between-outcomes.html#choosing-by-state-select-on"
+id="toc-choosing-by-state-select-on"><span
+class="toc-section-number">17.1</span> Choosing by state: select
+on</a></li>
+<li><a href="17-choosing-between-outcomes.html#refusals-stay-outside"
+id="toc-refusals-stay-outside"><span
+class="toc-section-number">17.2</span> Refusals stay outside</a></li>
+<li><a
+href="17-choosing-between-outcomes.html#one-clause-several-answers"
+id="toc-one-clause-several-answers"><span
+class="toc-section-number">17.3</span> One clause, several
+answers</a></li>
+<li><a
+href="17-choosing-between-outcomes.html#choosing-by-turn-select-with-a-strategy"
+id="toc-choosing-by-turn-select-with-a-strategy"><span
+class="toc-section-number">17.4</span> Choosing by turn: select with a
+strategy</a></li>
+<li><a
+href="17-choosing-between-outcomes.html#choosing-by-count-first-time-second-time"
+id="toc-choosing-by-count-first-time-second-time"><span
+class="toc-section-number">17.5</span> Choosing by count: first time,
+second time</a></li>
+<li><a href="17-choosing-between-outcomes.html#which-one-to-use"
+id="toc-which-one-to-use"><span class="toc-section-number">17.6</span>
+Which one to use</a></li>
+<li><a href="17-choosing-between-outcomes.html#build-and-try-it-13"
+id="toc-build-and-try-it-13"><span
+class="toc-section-number">17.7</span> Build and try it</a></li>
+<li><a href="17-choosing-between-outcomes.html#what-you-have-so-far-16"
+id="toc-what-you-have-so-far-16"><span
+class="toc-section-number">17.8</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="18-counting-scoring-and-ending.html#counting-scoring-and-ending"
+id="toc-counting-scoring-and-ending"><span
+class="toc-section-number">18</span> Counting, scoring and ending</a>
+<ul>
+<li><a href="18-counting-scoring-and-ending.html#a-counter-on-a-thing"
+id="toc-a-counter-on-a-thing"><span
+class="toc-section-number">18.1</span> A counter on a thing</a></li>
+<li><a
+href="18-counting-scoring-and-ending.html#a-counter-for-the-story"
+id="toc-a-counter-for-the-story"><span
+class="toc-section-number">18.2</span> A counter for the story</a></li>
+<li><a href="18-counting-scoring-and-ending.html#scoring"
+id="toc-scoring"><span class="toc-section-number">18.3</span>
+Scoring</a></li>
+<li><a href="18-counting-scoring-and-ending.html#ranks"
+id="toc-ranks"><span class="toc-section-number">18.4</span>
+Ranks</a></li>
+<li><a href="18-counting-scoring-and-ending.html#winning-and-losing"
+id="toc-winning-and-losing"><span class="toc-section-number">18.5</span>
+Winning and losing</a></li>
+<li><a href="18-counting-scoring-and-ending.html#trying-the-endings"
+id="toc-trying-the-endings"><span class="toc-section-number">18.6</span>
+Trying the endings</a></li>
+<li><a href="18-counting-scoring-and-ending.html#killing-the-player"
+id="toc-killing-the-player"><span class="toc-section-number">18.7</span>
+Killing the player</a></li>
+<li><a href="18-counting-scoring-and-ending.html#build-and-try-it-14"
+id="toc-build-and-try-it-14"><span
+class="toc-section-number">18.8</span> Build and try it</a></li>
+<li><a
+href="18-counting-scoring-and-ending.html#what-you-have-so-far-17"
+id="toc-what-you-have-so-far-17"><span
+class="toc-section-number">18.9</span> What you have so far</a></li>
+</ul></li>
+<li><a href="19-time.html#time" id="toc-time"><span
+class="toc-section-number">19</span> Time</a>
+<ul>
+<li><a href="19-time.html#every-turn" id="toc-every-turn"><span
+class="toc-section-number">19.1</span> Every turn</a></li>
+<li><a href="19-time.html#timers" id="toc-timers"><span
+class="toc-section-number">19.2</span> Timers</a></li>
+<li><a href="19-time.html#more-about-timers"
+id="toc-more-about-timers"><span class="toc-section-number">19.3</span>
+More about timers</a></li>
+<li><a href="19-time.html#a-sequence" id="toc-a-sequence"><span
+class="toc-section-number">19.4</span> A sequence</a></li>
+<li><a href="19-time.html#chapters" id="toc-chapters"><span
+class="toc-section-number">19.5</span> Chapters</a></li>
+<li><a href="19-time.html#when-something-moves"
+id="toc-when-something-moves"><span
+class="toc-section-number">19.6</span> When something moves</a></li>
+<li><a href="19-time.html#build-and-try-it-15"
+id="toc-build-and-try-it-15"><span
+class="toc-section-number">19.7</span> Build and try it</a></li>
+<li><a href="19-time.html#what-you-have-so-far-18"
+id="toc-what-you-have-so-far-18"><span
+class="toc-section-number">19.8</span> What you have so far</a></li>
+</ul></li>
+<li><a href="-part-iv.-words.html#part-iv.-words"
+id="toc-part-iv.-words">Part IV. Words</a></li>
+<li><a href="20-phrases.html#phrases" id="toc-phrases"><span
+class="toc-section-number">20</span> Phrases</a>
+<ul>
+<li><a href="20-phrases.html#two-ways-to-declare-a-phrase"
+id="toc-two-ways-to-declare-a-phrase"><span
+class="toc-section-number">20.1</span> Two ways to declare a
+phrase</a></li>
+<li><a href="20-phrases.html#variants-and-strategies"
+id="toc-variants-and-strategies"><span
+class="toc-section-number">20.2</span> Variants and strategies</a></li>
+<li><a href="20-phrases.html#the-sayings-of-hobb"
+id="toc-the-sayings-of-hobb"><span
+class="toc-section-number">20.3</span> The sayings of Hobb</a></li>
+<li><a href="20-phrases.html#text-that-keeps-its-shape"
+id="toc-text-that-keeps-its-shape"><span
+class="toc-section-number">20.4</span> Text that keeps its
+shape</a></li>
+<li><a href="20-phrases.html#markers" id="toc-markers"><span
+class="toc-section-number">20.5</span> Markers</a></li>
+<li><a href="20-phrases.html#a-phrase-inside-a-description"
+id="toc-a-phrase-inside-a-description"><span
+class="toc-section-number">20.6</span> A phrase inside a
+description</a></li>
+<li><a href="20-phrases.html#build-and-try-it-16"
+id="toc-build-and-try-it-16"><span
+class="toc-section-number">20.7</span> Build and try it</a></li>
+<li><a href="20-phrases.html#what-you-have-so-far-19"
+id="toc-what-you-have-so-far-19"><span
+class="toc-section-number">20.8</span> What you have so far</a></li>
+</ul></li>
+<li><a href="21-a-things-own-words.html#a-things-own-words"
+id="toc-a-things-own-words"><span class="toc-section-number">21</span> A
+thing’s own words</a>
+<ul>
+<li><a href="21-a-things-own-words.html#detail-a-sentence-that-depends"
+id="toc-detail-a-sentence-that-depends"><span
+class="toc-section-number">21.1</span> Detail: a sentence that
+depends</a></li>
+<li><a href="21-a-things-own-words.html#detail-or-a-clause"
+id="toc-detail-or-a-clause"><span class="toc-section-number">21.2</span>
+Detail or a clause?</a></li>
+<li><a
+href="21-a-things-own-words.html#present-how-a-thing-is-announced"
+id="toc-present-how-a-thing-is-announced"><span
+class="toc-section-number">21.3</span> Present: how a thing is
+announced</a></li>
+<li><a href="21-a-things-own-words.html#disappeared-a-parting-line"
+id="toc-disappeared-a-parting-line"><span
+class="toc-section-number">21.4</span> Disappeared: a parting
+line</a></li>
+<li><a
+href="21-a-things-own-words.html#the-general-rule-a-thing-may-answer-for-itself"
+id="toc-the-general-rule-a-thing-may-answer-for-itself"><span
+class="toc-section-number">21.5</span> The general rule: a thing may
+answer for itself</a></li>
+<li><a href="21-a-things-own-words.html#build-and-try-it-17"
+id="toc-build-and-try-it-17"><span
+class="toc-section-number">21.6</span> Build and try it</a></li>
+<li><a href="21-a-things-own-words.html#what-you-have-so-far-20"
+id="toc-what-you-have-so-far-20"><span
+class="toc-section-number">21.7</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="22-changing-the-standard-messages.html#changing-the-standard-messages"
+id="toc-changing-the-standard-messages"><span
+class="toc-section-number">22</span> Changing the standard messages</a>
+<ul>
+<li><a href="22-changing-the-standard-messages.html#finding-a-message"
+id="toc-finding-a-message"><span class="toc-section-number">22.1</span>
+Finding a message</a></li>
+<li><a
+href="22-changing-the-standard-messages.html#overriding-one-message"
+id="toc-overriding-one-message"><span
+class="toc-section-number">22.2</span> Overriding one message</a></li>
+<li><a
+href="22-changing-the-standard-messages.html#an-override-is-a-phrase"
+id="toc-an-override-is-a-phrase"><span
+class="toc-section-number">22.3</span> An override is a phrase</a></li>
+<li><a href="22-changing-the-standard-messages.html#several-at-once"
+id="toc-several-at-once"><span class="toc-section-number">22.4</span>
+Several at once</a></li>
+<li><a
+href="22-changing-the-standard-messages.html#the-markers-in-a-template"
+id="toc-the-markers-in-a-template"><span
+class="toc-section-number">22.5</span> The markers in a
+template</a></li>
+<li><a
+href="22-changing-the-standard-messages.html#how-much-to-override"
+id="toc-how-much-to-override"><span
+class="toc-section-number">22.6</span> How much to override</a></li>
+<li><a href="22-changing-the-standard-messages.html#phrasebooks"
+id="toc-phrasebooks"><span class="toc-section-number">22.7</span>
+Phrasebooks</a></li>
+<li><a
+href="22-changing-the-standard-messages.html#when-to-reach-for-a-phrasebook"
+id="toc-when-to-reach-for-a-phrasebook"><span
+class="toc-section-number">22.8</span> When to reach for a
+phrasebook</a></li>
+<li><a
+href="22-changing-the-standard-messages.html#phrases-in-a-file-of-their-own"
+id="toc-phrases-in-a-file-of-their-own"><span
+class="toc-section-number">22.9</span> Phrases in a file of their
+own</a></li>
+<li><a href="22-changing-the-standard-messages.html#build-and-try-it-18"
+id="toc-build-and-try-it-18"><span
+class="toc-section-number">22.10</span> Build and try it</a></li>
+<li><a
+href="22-changing-the-standard-messages.html#what-you-have-so-far-21"
+id="toc-what-you-have-so-far-21"><span
+class="toc-section-number">22.11</span> What you have so far</a></li>
+</ul></li>
+<li><a href="23-new-verbs.html#new-verbs" id="toc-new-verbs"><span
+class="toc-section-number">23</span> New verbs</a>
+<ul>
+<li><a href="23-new-verbs.html#declaring-an-action"
+id="toc-declaring-an-action"><span
+class="toc-section-number">23.1</span> Declaring an action</a></li>
+<li><a href="23-new-verbs.html#the-grammar" id="toc-the-grammar"><span
+class="toc-section-number">23.2</span> The grammar</a></li>
+<li><a href="23-new-verbs.html#what-must-be-true-of-the-thing-named"
+id="toc-what-must-be-true-of-the-thing-named"><span
+class="toc-section-number">23.3</span> What must be true of the thing
+named</a></li>
+<li><a href="23-new-verbs.html#what-must-be-true-of-the-player"
+id="toc-what-must-be-true-of-the-player"><span
+class="toc-section-number">23.4</span> What must be true of the
+player</a></li>
+<li><a href="23-new-verbs.html#what-an-action-may-not-ask"
+id="toc-what-an-action-may-not-ask"><span
+class="toc-section-number">23.5</span> What an action may not
+ask</a></li>
+<li><a href="23-new-verbs.html#when-nothing-answers"
+id="toc-when-nothing-answers"><span
+class="toc-section-number">23.6</span> When nothing answers</a></li>
+<li><a href="23-new-verbs.html#the-four-workings"
+id="toc-the-four-workings"><span class="toc-section-number">23.7</span>
+The four workings</a></li>
+<li><a href="23-new-verbs.html#a-verb-that-only-answers"
+id="toc-a-verb-that-only-answers"><span
+class="toc-section-number">23.8</span> A verb that only answers</a></li>
+<li><a href="23-new-verbs.html#verbs-with-a-subject"
+id="toc-verbs-with-a-subject"><span
+class="toc-section-number">23.9</span> Verbs with a subject</a></li>
+<li><a href="23-new-verbs.html#other-kinds-of-slot"
+id="toc-other-kinds-of-slot"><span
+class="toc-section-number">23.10</span> Other kinds of slot</a></li>
+<li><a href="23-new-verbs.html#a-verb-that-comes-and-goes"
+id="toc-a-verb-that-comes-and-goes"><span
+class="toc-section-number">23.11</span> A verb that comes and
+goes</a></li>
+<li><a href="23-new-verbs.html#why-a-thing-cannot-simply-answer"
+id="toc-why-a-thing-cannot-simply-answer"><span
+class="toc-section-number">23.12</span> Why a thing cannot simply
+answer</a></li>
+<li><a href="23-new-verbs.html#build-and-try-it-19"
+id="toc-build-and-try-it-19"><span
+class="toc-section-number">23.13</span> Build and try it</a></li>
+<li><a href="23-new-verbs.html#what-you-have-so-far-22"
+id="toc-what-you-have-so-far-22"><span
+class="toc-section-number">23.14</span> What you have so far</a></li>
+</ul></li>
+<li><a href="24-new-kinds-of-thing.html#new-kinds-of-thing"
+id="toc-new-kinds-of-thing"><span class="toc-section-number">24</span>
+New kinds of thing</a>
+<ul>
+<li><a href="24-new-kinds-of-thing.html#a-trait-that-answers-a-verb"
+id="toc-a-trait-that-answers-a-verb"><span
+class="toc-section-number">24.1</span> A trait that answers a
+verb</a></li>
+<li><a href="24-new-kinds-of-thing.html#one-trait-several-things"
+id="toc-one-trait-several-things"><span
+class="toc-section-number">24.2</span> One trait, several
+things</a></li>
+<li><a
+href="24-new-kinds-of-thing.html#a-trait-may-answer-standard-actions-too"
+id="toc-a-trait-may-answer-standard-actions-too"><span
+class="toc-section-number">24.3</span> A trait may answer standard
+actions too</a></li>
+<li><a href="24-new-kinds-of-thing.html#a-trait-with-one-thing"
+id="toc-a-trait-with-one-thing"><span
+class="toc-section-number">24.4</span> A trait with one thing</a></li>
+<li><a href="24-new-kinds-of-thing.html#a-trait-with-states-and-a-score"
+id="toc-a-trait-with-states-and-a-score"><span
+class="toc-section-number">24.5</span> A trait with states and a
+score</a></li>
+<li><a href="24-new-kinds-of-thing.html#a-things-own-words-again"
+id="toc-a-things-own-words-again"><span
+class="toc-section-number">24.6</span> A thing’s own words,
+again</a></li>
+<li><a href="24-new-kinds-of-thing.html#the-bell-and-the-grille"
+id="toc-the-bell-and-the-grille"><span
+class="toc-section-number">24.7</span> The bell and the grille</a></li>
+<li><a href="24-new-kinds-of-thing.html#data-on-a-trait"
+id="toc-data-on-a-trait"><span class="toc-section-number">24.8</span>
+Data on a trait</a></li>
+<li><a href="24-new-kinds-of-thing.html#is-it-a-wick"
+id="toc-is-it-a-wick"><span class="toc-section-number">24.9</span> Is it
+a wick?</a></li>
+<li><a href="24-new-kinds-of-thing.html#build-and-try-it-20"
+id="toc-build-and-try-it-20"><span
+class="toc-section-number">24.10</span> Build and try it</a></li>
+<li><a href="24-new-kinds-of-thing.html#what-you-have-so-far-23"
+id="toc-what-you-have-so-far-23"><span
+class="toc-section-number">24.11</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="25-bending-the-standard-grammar.html#bending-the-standard-grammar"
+id="toc-bending-the-standard-grammar"><span
+class="toc-section-number">25</span> Bending the standard grammar</a>
+<ul>
+<li><a
+href="25-bending-the-standard-grammar.html#adding-words-to-an-action"
+id="toc-adding-words-to-an-action"><span
+class="toc-section-number">25.1</span> Adding words to an
+action</a></li>
+<li><a
+href="25-bending-the-standard-grammar.html#extending-a-standard-action"
+id="toc-extending-a-standard-action"><span
+class="toc-section-number">25.2</span> Extending a standard
+action</a></li>
+<li><a href="25-bending-the-standard-grammar.html#taking-words-away"
+id="toc-taking-words-away"><span class="toc-section-number">25.3</span>
+Taking words away</a></li>
+<li><a href="25-bending-the-standard-grammar.html#moving-a-word"
+id="toc-moving-a-word"><span class="toc-section-number">25.4</span>
+Moving a word</a></li>
+<li><a href="25-bending-the-standard-grammar.html#what-to-add"
+id="toc-what-to-add"><span class="toc-section-number">25.5</span> What
+to add</a></li>
+<li><a
+href="25-bending-the-standard-grammar.html#a-file-for-the-grammar"
+id="toc-a-file-for-the-grammar"><span
+class="toc-section-number">25.6</span> A file for the grammar</a></li>
+<li><a href="25-bending-the-standard-grammar.html#build-and-try-it-21"
+id="toc-build-and-try-it-21"><span
+class="toc-section-number">25.7</span> Build and try it</a></li>
+<li><a
+href="25-bending-the-standard-grammar.html#what-you-have-so-far-24"
+id="toc-what-you-have-so-far-24"><span
+class="toc-section-number">25.8</span> What you have so far</a></li>
+</ul></li>
+<li><a href="-part-v.-people.html#part-v.-people"
+id="toc-part-v.-people">Part V. People</a></li>
+<li><a href="26-people-who-act.html#people-who-act"
+id="toc-people-who-act"><span class="toc-section-number">26</span>
+People who act</a>
+<ul>
+<li><a href="26-people-who-act.html#pronouns" id="toc-pronouns"><span
+class="toc-section-number">26.1</span> Pronouns</a></li>
+<li><a href="26-people-who-act.html#the-stock-behaviours"
+id="toc-the-stock-behaviours"><span
+class="toc-section-number">26.2</span> The stock behaviours</a></li>
+<li><a href="26-people-who-act.html#having-a-person-do-something"
+id="toc-having-a-person-do-something"><span
+class="toc-section-number">26.3</span> Having a person do
+something</a></li>
+<li><a href="26-people-who-act.html#goals" id="toc-goals"><span
+class="toc-section-number">26.4</span> Goals</a></li>
+<li><a href="26-people-who-act.html#build-and-try-it-22"
+id="toc-build-and-try-it-22"><span
+class="toc-section-number">26.5</span> Build and try it</a></li>
+<li><a href="26-people-who-act.html#what-you-have-so-far-25"
+id="toc-what-you-have-so-far-25"><span
+class="toc-section-number">26.6</span> What you have so far</a></li>
+</ul></li>
+<li><a href="27-asking-and-telling.html#asking-and-telling"
+id="toc-asking-and-telling"><span class="toc-section-number">27</span>
+Asking and telling</a>
+<ul>
+<li><a href="27-asking-and-telling.html#a-table-of-topics"
+id="toc-a-table-of-topics"><span class="toc-section-number">27.1</span>
+A table of topics</a></li>
+<li><a href="27-asking-and-telling.html#looking-things-up"
+id="toc-looking-things-up"><span class="toc-section-number">27.2</span>
+Looking things up</a></li>
+<li><a href="27-asking-and-telling.html#greetings"
+id="toc-greetings"><span class="toc-section-number">27.3</span>
+Greetings</a></li>
+<li><a href="27-asking-and-telling.html#manner" id="toc-manner"><span
+class="toc-section-number">27.4</span> Manner</a></li>
+<li><a href="27-asking-and-telling.html#build-and-try-it-23"
+id="toc-build-and-try-it-23"><span
+class="toc-section-number">27.5</span> Build and try it</a></li>
+<li><a href="27-asking-and-telling.html#what-you-have-so-far-26"
+id="toc-what-you-have-so-far-26"><span
+class="toc-section-number">27.6</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="28-conversations-with-a-shape.html#conversations-with-a-shape"
+id="toc-conversations-with-a-shape"><span
+class="toc-section-number">28</span> Conversations with a shape</a>
+<ul>
+<li><a href="28-conversations-with-a-shape.html#a-thread"
+id="toc-a-thread"><span class="toc-section-number">28.1</span> A
+thread</a></li>
+<li><a href="28-conversations-with-a-shape.html#a-question"
+id="toc-a-question"><span class="toc-section-number">28.2</span> A
+question</a></li>
+<li><a href="28-conversations-with-a-shape.html#the-conclusion"
+id="toc-the-conclusion"><span class="toc-section-number">28.3</span> The
+conclusion</a></li>
+<li><a href="28-conversations-with-a-shape.html#a-way-back"
+id="toc-a-way-back"><span class="toc-section-number">28.4</span> A way
+back</a></li>
+<li><a
+href="28-conversations-with-a-shape.html#what-a-table-can-remember"
+id="toc-what-a-table-can-remember"><span
+class="toc-section-number">28.5</span> What a table can
+remember</a></li>
+<li><a href="28-conversations-with-a-shape.html#speaking-first"
+id="toc-speaking-first"><span class="toc-section-number">28.6</span>
+Speaking first</a></li>
+<li><a href="28-conversations-with-a-shape.html#build-and-try-it-24"
+id="toc-build-and-try-it-24"><span
+class="toc-section-number">28.7</span> Build and try it</a></li>
+<li><a href="28-conversations-with-a-shape.html#what-you-have-so-far-27"
+id="toc-what-you-have-so-far-27"><span
+class="toc-section-number">28.8</span> What you have so far</a></li>
+</ul></li>
+<li><a href="29-inner-lives.html#inner-lives" id="toc-inner-lives"><span
+class="toc-section-number">29</span> Inner lives</a>
+<ul>
+<li><a href="29-inner-lives.html#mood" id="toc-mood"><span
+class="toc-section-number">29.1</span> Mood</a></li>
+<li><a href="29-inner-lives.html#feelings" id="toc-feelings"><span
+class="toc-section-number">29.2</span> Feelings</a></li>
+<li><a href="29-inner-lives.html#what-a-person-knows"
+id="toc-what-a-person-knows"><span
+class="toc-section-number">29.3</span> What a person knows</a></li>
+<li><a href="29-inner-lives.html#build-and-try-it-25"
+id="toc-build-and-try-it-25"><span
+class="toc-section-number">29.4</span> Build and try it</a></li>
+<li><a href="29-inner-lives.html#what-you-have-so-far-28"
+id="toc-what-you-have-so-far-28"><span
+class="toc-section-number">29.5</span> What you have so far</a></li>
+</ul></li>
+<li><a href="30-principles.html#principles" id="toc-principles"><span
+class="toc-section-number">30</span> Principles</a>
+<ul>
+<li><a href="30-principles.html#something-told-in-confidence"
+id="toc-something-told-in-confidence"><span
+class="toc-section-number">30.1</span> Something told in
+confidence</a></li>
+<li><a href="30-principles.html#a-thing-a-person-will-not-do"
+id="toc-a-thing-a-person-will-not-do"><span
+class="toc-section-number">30.2</span> A thing a person will not
+do</a></li>
+<li><a href="30-principles.html#what-decides-between-principles"
+id="toc-what-decides-between-principles"><span
+class="toc-section-number">30.3</span> What decides between
+principles</a></li>
+<li><a href="30-principles.html#honesty" id="toc-honesty"><span
+class="toc-section-number">30.4</span> Honesty</a></li>
+<li><a href="30-principles.html#what-the-lines-add-up-to"
+id="toc-what-the-lines-add-up-to"><span
+class="toc-section-number">30.5</span> What the lines add up to</a></li>
+<li><a href="30-principles.html#build-and-try-it-26"
+id="toc-build-and-try-it-26"><span
+class="toc-section-number">30.6</span> Build and try it</a></li>
+<li><a href="30-principles.html#what-you-have-so-far-29"
+id="toc-what-you-have-so-far-29"><span
+class="toc-section-number">30.7</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="31-more-than-one-protagonist.html#more-than-one-protagonist"
+id="toc-more-than-one-protagonist"><span
+class="toc-section-number">31</span> More than one protagonist</a>
+<ul>
+<li><a
+href="31-more-than-one-protagonist.html#two-people-who-can-be-played"
+id="toc-two-people-who-can-be-played"><span
+class="toc-section-number">31.1</span> Two people who can be
+played</a></li>
+<li><a href="31-more-than-one-protagonist.html#handing-the-role-over"
+id="toc-handing-the-role-over"><span
+class="toc-section-number">31.2</span> Handing the role over</a></li>
+<li><a
+href="31-more-than-one-protagonist.html#the-player-is-whoever-has-the-role"
+id="toc-the-player-is-whoever-has-the-role"><span
+class="toc-section-number">31.3</span> The player is whoever has the
+role</a></li>
+<li><a href="31-more-than-one-protagonist.html#handing-it-back"
+id="toc-handing-it-back"><span class="toc-section-number">31.4</span>
+Handing it back</a></li>
+<li><a href="31-more-than-one-protagonist.html#when-to-do-this"
+id="toc-when-to-do-this"><span class="toc-section-number">31.5</span>
+When to do this</a></li>
+<li><a href="31-more-than-one-protagonist.html#build-and-try-it-27"
+id="toc-build-and-try-it-27"><span
+class="toc-section-number">31.6</span> Build and try it</a></li>
+<li><a href="31-more-than-one-protagonist.html#what-you-have-so-far-30"
+id="toc-what-you-have-so-far-30"><span
+class="toc-section-number">31.7</span> What you have so far</a></li>
+</ul></li>
+<li><a href="-part-vi.-larger-machinery.html#part-vi.-larger-machinery"
+id="toc-part-vi.-larger-machinery">Part VI. Larger machinery</a></li>
+<li><a href="32-machines.html#machines" id="toc-machines"><span
+class="toc-section-number">32</span> Machines</a>
+<ul>
+<li><a href="32-machines.html#the-parts" id="toc-the-parts"><span
+class="toc-section-number">32.1</span> The parts</a></li>
+<li><a href="32-machines.html#the-machine" id="toc-the-machine"><span
+class="toc-section-number">32.2</span> The machine</a></li>
+<li><a href="32-machines.html#moving-between-states"
+id="toc-moving-between-states"><span
+class="toc-section-number">32.3</span> Moving between states</a></li>
+<li><a href="32-machines.html#entering-and-leaving"
+id="toc-entering-and-leaving"><span
+class="toc-section-number">32.4</span> Entering and leaving</a></li>
+<li><a href="32-machines.html#telling-the-world"
+id="toc-telling-the-world"><span class="toc-section-number">32.5</span>
+Telling the world</a></li>
+<li><a href="32-machines.html#build-and-try-it-28"
+id="toc-build-and-try-it-28"><span
+class="toc-section-number">32.6</span> Build and try it</a></li>
+<li><a href="32-machines.html#what-you-have-so-far-31"
+id="toc-what-you-have-so-far-31"><span
+class="toc-section-number">32.7</span> What you have so far</a></li>
+</ul></li>
+<li><a href="33-vehicles.html#vehicles" id="toc-vehicles"><span
+class="toc-section-number">33</span> Vehicles</a>
+<ul>
+<li><a href="33-vehicles.html#a-problem-for-a-vehicle"
+id="toc-a-problem-for-a-vehicle"><span
+class="toc-section-number">33.1</span> A problem for a vehicle</a></li>
+<li><a href="33-vehicles.html#the-book-hoist"
+id="toc-the-book-hoist"><span class="toc-section-number">33.2</span> The
+book hoist</a></li>
+<li><a href="33-vehicles.html#a-vehicle-that-is-driven"
+id="toc-a-vehicle-that-is-driven"><span
+class="toc-section-number">33.3</span> A vehicle that is driven</a></li>
+<li><a href="33-vehicles.html#a-vehicle-the-player-steers"
+id="toc-a-vehicle-the-player-steers"><span
+class="toc-section-number">33.4</span> A vehicle the player
+steers</a></li>
+<li><a href="33-vehicles.html#a-vehicle-with-rooms-inside"
+id="toc-a-vehicle-with-rooms-inside"><span
+class="toc-section-number">33.5</span> A vehicle with rooms
+inside</a></li>
+<li><a href="33-vehicles.html#build-and-try-it-29"
+id="toc-build-and-try-it-29"><span
+class="toc-section-number">33.6</span> Build and try it</a></li>
+<li><a href="33-vehicles.html#what-you-have-so-far-32"
+id="toc-what-you-have-so-far-32"><span
+class="toc-section-number">33.7</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="34-open-water-and-open-ground.html#open-water-and-open-ground"
+id="toc-open-water-and-open-ground"><span
+class="toc-section-number">34</span> Open water and open ground</a>
+<ul>
+<li><a href="34-open-water-and-open-ground.html#turning-the-system-on"
+id="toc-turning-the-system-on"><span
+class="toc-section-number">34.1</span> Turning the system on</a></li>
+<li><a href="34-open-water-and-open-ground.html#an-expanse"
+id="toc-an-expanse"><span class="toc-section-number">34.2</span> An
+expanse</a></li>
+<li><a href="34-open-water-and-open-ground.html#a-vehicle-on-open-water"
+id="toc-a-vehicle-on-open-water"><span
+class="toc-section-number">34.3</span> A vehicle on open water</a></li>
+<li><a href="34-open-water-and-open-ground.html#looking-across-water"
+id="toc-looking-across-water"><span
+class="toc-section-number">34.4</span> Looking across water</a></li>
+<li><a href="34-open-water-and-open-ground.html#wind"
+id="toc-wind"><span class="toc-section-number">34.5</span> Wind</a></li>
+<li><a href="34-open-water-and-open-ground.html#things-adrift"
+id="toc-things-adrift"><span class="toc-section-number">34.6</span>
+Things adrift</a></li>
+<li><a href="34-open-water-and-open-ground.html#the-new-ending"
+id="toc-the-new-ending"><span class="toc-section-number">34.7</span> The
+new ending</a></li>
+<li><a href="34-open-water-and-open-ground.html#build-and-try-it-30"
+id="toc-build-and-try-it-30"><span
+class="toc-section-number">34.8</span> Build and try it</a></li>
+<li><a href="34-open-water-and-open-ground.html#what-you-have-so-far-33"
+id="toc-what-you-have-so-far-33"><span
+class="toc-section-number">34.9</span> What you have so far</a></li>
+</ul></li>
+<li><a href="35-the-opt-in-systems.html#the-opt-in-systems"
+id="toc-the-opt-in-systems"><span class="toc-section-number">35</span>
+The opt-in systems</a>
+<ul>
+<li><a href="35-the-opt-in-systems.html#what-use-means"
+id="toc-what-use-means"><span class="toc-section-number">35.1</span>
+What <code>use</code> means</a></li>
+<li><a href="35-the-opt-in-systems.html#combat" id="toc-combat"><span
+class="toc-section-number">35.2</span> Combat</a></li>
+<li><a href="35-the-opt-in-systems.html#hunger" id="toc-hunger"><span
+class="toc-section-number">35.3</span> Hunger</a></li>
+<li><a href="35-the-opt-in-systems.html#choosing"
+id="toc-choosing"><span class="toc-section-number">35.4</span>
+Choosing</a></li>
+<li><a href="35-the-opt-in-systems.html#build-and-try-it-31"
+id="toc-build-and-try-it-31"><span
+class="toc-section-number">35.5</span> Build and try it</a></li>
+<li><a href="35-the-opt-in-systems.html#what-you-have-so-far-34"
+id="toc-what-you-have-so-far-34"><span
+class="toc-section-number">35.6</span> What you have so far</a></li>
+</ul></li>
+<li><a href="-part-vii.-presentation.html#part-vii.-presentation"
+id="toc-part-vii.-presentation">Part VII. Presentation</a></li>
+<li><a href="36-sound-music-and-pictures.html#sound-music-and-pictures"
+id="toc-sound-music-and-pictures"><span
+class="toc-section-number">36</span> Sound, music and pictures</a>
+<ul>
+<li><a href="36-sound-music-and-pictures.html#declaring-an-asset"
+id="toc-declaring-an-asset"><span class="toc-section-number">36.1</span>
+Declaring an asset</a></li>
+<li><a href="36-sound-music-and-pictures.html#playing-a-sound"
+id="toc-playing-a-sound"><span class="toc-section-number">36.2</span>
+Playing a sound</a></li>
+<li><a
+href="36-sound-music-and-pictures.html#a-sound-is-also-a-sound-in-the-world"
+id="toc-a-sound-is-also-a-sound-in-the-world"><span
+class="toc-section-number">36.3</span> A sound is also a sound in the
+world</a></li>
+<li><a href="36-sound-music-and-pictures.html#what-a-sound-sounds-like"
+id="toc-what-a-sound-sounds-like"><span
+class="toc-section-number">36.4</span> What a sound sounds like</a></li>
+<li><a
+href="36-sound-music-and-pictures.html#from-afar-and-with-no-file"
+id="toc-from-afar-and-with-no-file"><span
+class="toc-section-number">36.5</span> From afar, and with no
+file</a></li>
+<li><a href="36-sound-music-and-pictures.html#a-bed-of-sound"
+id="toc-a-bed-of-sound"><span class="toc-section-number">36.6</span> A
+bed of sound</a></li>
+<li><a href="36-sound-music-and-pictures.html#showing-a-picture"
+id="toc-showing-a-picture"><span class="toc-section-number">36.7</span>
+Showing a picture</a></li>
+<li><a
+href="36-sound-music-and-pictures.html#music-named-beds-and-layers"
+id="toc-music-named-beds-and-layers"><span
+class="toc-section-number">36.8</span> Music, named beds and
+layers</a></li>
+<li><a
+href="36-sound-music-and-pictures.html#asking-what-the-client-can-do"
+id="toc-asking-what-the-client-can-do"><span
+class="toc-section-number">36.9</span> Asking what the client can
+do</a></li>
+<li><a href="36-sound-music-and-pictures.html#build-and-try-it-32"
+id="toc-build-and-try-it-32"><span
+class="toc-section-number">36.10</span> Build and try it</a></li>
+<li><a href="36-sound-music-and-pictures.html#what-you-have-so-far-35"
+id="toc-what-you-have-so-far-35"><span
+class="toc-section-number">36.11</span> What you have so far</a></li>
+</ul></li>
+<li><a href="37-the-page-the-player-sees.html#the-page-the-player-sees"
+id="toc-the-page-the-player-sees"><span
+class="toc-section-number">37</span> The page the player sees</a>
+<ul>
+<li><a href="37-the-page-the-player-sees.html#the-client-fields"
+id="toc-the-client-fields"><span class="toc-section-number">37.1</span>
+The client fields</a></li>
+<li><a href="37-the-page-the-player-sees.html#building-the-page"
+id="toc-building-the-page"><span class="toc-section-number">37.2</span>
+Building the page</a></li>
+<li><a href="37-the-page-the-player-sees.html#a-channel"
+id="toc-a-channel"><span class="toc-section-number">37.3</span> A
+channel</a></li>
+<li><a href="37-the-page-the-player-sees.html#raising-an-event"
+id="toc-raising-an-event"><span class="toc-section-number">37.4</span>
+Raising an event</a></li>
+<li><a href="37-the-page-the-player-sees.html#what-a-channel-may-return"
+id="toc-what-a-channel-may-return"><span
+class="toc-section-number">37.5</span> What a channel may
+return</a></li>
+<li><a href="37-the-page-the-player-sees.html#a-reference-in-a-field"
+id="toc-a-reference-in-a-field"><span
+class="toc-section-number">37.6</span> A reference in a field</a></li>
+<li><a href="37-the-page-the-player-sees.html#the-stylesheet"
+id="toc-the-stylesheet"><span class="toc-section-number">37.7</span> The
+stylesheet</a></li>
+<li><a href="37-the-page-the-player-sees.html#a-page-of-your-own"
+id="toc-a-page-of-your-own"><span class="toc-section-number">37.8</span>
+A page of your own</a></li>
+<li><a href="37-the-page-the-player-sees.html#build-and-try-it-33"
+id="toc-build-and-try-it-33"><span
+class="toc-section-number">37.9</span> Build and try it</a></li>
+<li><a href="37-the-page-the-player-sees.html#what-you-have-so-far-36"
+id="toc-what-you-have-so-far-36"><span
+class="toc-section-number">37.10</span> What you have so far</a></li>
+</ul></li>
+<li><a
+href="-part-viii.-proving-and-shipping.html#part-viii.-proving-and-shipping"
+id="toc-part-viii.-proving-and-shipping">Part VIII. Proving and
+shipping</a></li>
+<li><a href="38-test-trees.html#test-trees" id="toc-test-trees"><span
+class="toc-section-number">38</span> Test trees</a>
+<ul>
+<li><a href="38-test-trees.html#two-ways-to-make-one"
+id="toc-two-ways-to-make-one"><span
+class="toc-section-number">38.1</span> Two ways to make one</a></li>
+<li><a href="38-test-trees.html#the-folder" id="toc-the-folder"><span
+class="toc-section-number">38.2</span> The folder</a></li>
+<li><a href="38-test-trees.html#a-segment-and-its-cards"
+id="toc-a-segment-and-its-cards"><span
+class="toc-section-number">38.3</span> A segment and its cards</a></li>
+<li><a href="38-test-trees.html#reading-what-the-story-says"
+id="toc-reading-what-the-story-says"><span
+class="toc-section-number">38.4</span> Reading what the story
+says</a></li>
+<li><a href="38-test-trees.html#what-a-card-can-assert"
+id="toc-what-a-card-can-assert"><span
+class="toc-section-number">38.5</span> What a card can assert</a></li>
+<li><a href="38-test-trees.html#running-the-tree"
+id="toc-running-the-tree"><span class="toc-section-number">38.6</span>
+Running the tree</a></li>
+<li><a href="38-test-trees.html#a-fork" id="toc-a-fork"><span
+class="toc-section-number">38.7</span> A fork</a></li>
+<li><a href="38-test-trees.html#an-ending" id="toc-an-ending"><span
+class="toc-section-number">38.8</span> An ending</a></li>
+<li><a href="38-test-trees.html#the-whole-tree-and-what-it-covers"
+id="toc-the-whole-tree-and-what-it-covers"><span
+class="toc-section-number">38.9</span> The whole tree, and what it
+covers</a></li>
+<li><a href="38-test-trees.html#build-and-try-it-34"
+id="toc-build-and-try-it-34"><span
+class="toc-section-number">38.10</span> Build and try it</a></li>
+<li><a href="38-test-trees.html#what-you-have-so-far-37"
+id="toc-what-you-have-so-far-37"><span
+class="toc-section-number">38.11</span> What you have so far</a></li>
+</ul></li>
+<li><a href="39-claims.html#claims" id="toc-claims"><span
+class="toc-section-number">39</span> Claims</a>
+<ul>
+<li><a href="39-claims.html#a-fact-worth-keeping"
+id="toc-a-fact-worth-keeping"><span
+class="toc-section-number">39.1</span> A fact worth keeping</a></li>
+<li><a href="39-claims.html#locking-it" id="toc-locking-it"><span
+class="toc-section-number">39.2</span> Locking it</a></li>
+<li><a href="39-claims.html#the-claims-file"
+id="toc-the-claims-file"><span class="toc-section-number">39.3</span>
+The claims file</a></li>
+<li><a href="39-claims.html#what-a-claim-may-state"
+id="toc-what-a-claim-may-state"><span
+class="toc-section-number">39.4</span> What a claim may state</a></li>
+<li><a href="39-claims.html#the-report" id="toc-the-report"><span
+class="toc-section-number">39.5</span> The report</a></li>
+<li><a href="39-claims.html#when-a-lock-breaks"
+id="toc-when-a-lock-breaks"><span class="toc-section-number">39.6</span>
+When a lock breaks</a></li>
+<li><a href="39-claims.html#a-claim-written-by-hand"
+id="toc-a-claim-written-by-hand"><span
+class="toc-section-number">39.7</span> A claim written by hand</a></li>
+<li><a href="39-claims.html#a-claim-no-line-reaches"
+id="toc-a-claim-no-line-reaches"><span
+class="toc-section-number">39.8</span> A claim no line reaches</a></li>
+<li><a href="39-claims.html#the-needs-lines"
+id="toc-the-needs-lines"><span class="toc-section-number">39.9</span>
+The needs lines</a></li>
+<li><a href="39-claims.html#which-claims-to-keep"
+id="toc-which-claims-to-keep"><span
+class="toc-section-number">39.10</span> Which claims to keep</a></li>
+<li><a href="39-claims.html#build-and-try-it-35"
+id="toc-build-and-try-it-35"><span
+class="toc-section-number">39.11</span> Build and try it</a></li>
+<li><a href="39-claims.html#what-you-have-so-far-38"
+id="toc-what-you-have-so-far-38"><span
+class="toc-section-number">39.12</span> What you have so far</a></li>
+</ul></li>
+<li><a href="40-publishing.html#publishing" id="toc-publishing"><span
+class="toc-section-number">40</span> Publishing</a>
+<ul>
+<li><a href="40-publishing.html#the-identifier"
+id="toc-the-identifier"><span class="toc-section-number">40.1</span> The
+identifier</a></li>
+<li><a href="40-publishing.html#the-version" id="toc-the-version"><span
+class="toc-section-number">40.2</span> The version</a></li>
+<li><a href="40-publishing.html#whether-the-source-goes-too"
+id="toc-whether-the-source-goes-too"><span
+class="toc-section-number">40.3</span> Whether the source goes
+too</a></li>
+<li><a href="40-publishing.html#publish" id="toc-publish"><span
+class="toc-section-number">40.4</span> Publish</a></li>
+<li><a href="40-publishing.html#what-ships" id="toc-what-ships"><span
+class="toc-section-number">40.5</span> What ships</a></li>
+<li><a href="40-publishing.html#after-the-first-release"
+id="toc-after-the-first-release"><span
+class="toc-section-number">40.6</span> After the first release</a></li>
+<li><a href="40-publishing.html#build-and-try-it-36"
+id="toc-build-and-try-it-36"><span
+class="toc-section-number">40.7</span> Build and try it</a></li>
+<li><a href="40-publishing.html#what-you-have"
+id="toc-what-you-have"><span class="toc-section-number">40.8</span> What
+you have</a></li>
+</ul></li>
+<li><a href="-appendix-a.-the-grammar.html#appendix-a.-the-grammar"
+id="toc-appendix-a.-the-grammar">Appendix A. The grammar</a></li>
+<li><a
+href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html#appendix-b.-kinds-trait-words-state-words-and-their-pairings"
+id="toc-appendix-b.-kinds-trait-words-state-words-and-their-pairings">Appendix
+B. Kinds, trait words, state words and their pairings</a></li>
+<li><a
+href="-appendix-c.-the-standard-actions-and-their-gerunds.html#appendix-c.-the-standard-actions-and-their-gerunds"
+id="toc-appendix-c.-the-standard-actions-and-their-gerunds">Appendix C.
+The standard actions and their gerunds</a></li>
+<li><a
+href="-appendix-d.-statements-and-conditions.html#appendix-d.-statements-and-conditions"
+id="toc-appendix-d.-statements-and-conditions">Appendix D. Statements
+and conditions</a></li>
+<li><a
+href="-appendix-e.-character-vocabulary.html#appendix-e.-character-vocabulary"
+id="toc-appendix-e.-character-vocabulary">Appendix E. Character
+vocabulary</a></li>
+<li><a
+href="-appendix-f.-message-aliases.html#appendix-f.-message-aliases"
+id="toc-appendix-f.-message-aliases">Appendix F. Message
+aliases</a></li>
+<li><a
+href="-appendix-g.-removed-forms-and-their-replacements.html#appendix-g.-removed-forms-and-their-replacements"
+id="toc-appendix-g.-removed-forms-and-their-replacements">Appendix G.
+Removed forms and their replacements</a></li>
+</ul>
+</nav>
+
+<nav class="book-nav-bottom"><span></span><a class="next" href="-preface.html">Preface →</a></nav>
+</body>
+</html>

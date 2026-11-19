@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Appendix C. The standard actions and their gerunds</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details open><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li class="active"><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-appendix-d.-statements-and-conditions.html" accesskey="n" rel="next">Appendix D. Statements and conditions</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html" accesskey="p" rel="previous">Appendix B. Kinds, trait words, state words and their pairings</a>
+</span>
+</div>
+</nav>
+<h1 class="unnumbered"
+id="appendix-c.-the-standard-actions-and-their-gerunds">Appendix C. The
+standard actions and their gerunds</h1>
+<p>Every action the platform ships: 80 actions, 77 of them with typed
+commands. The heading of each entry is the gerund a clause names
+(<code>on the player taking</code>), and the block under it is that
+action’s entry in the standard grammar, as shipped. Generated from the
+standard grammar (Sharpee 5.7.0 · Chord 4.1.0) by
+<code>scripts/generate-chord-appendices.cjs</code>.</p>
+<h2 class="unnumbered unlisted"
+id="verbs-and-the-actions-they-reach">Verbs and the actions they
+reach</h2>
+<p>The first word of every typed command, and the action or actions it
+can reach.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Verb</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>about</code></td>
+<td><code>about</code></td>
+</tr>
+<tr>
+<td><code>acquire</code></td>
+<td><code>taking</code></td>
+</tr>
+<tr>
+<td><code>activate</code></td>
+<td><code>switching_on</code></td>
+</tr>
+<tr>
+<td><code>adjust</code></td>
+<td><code>setting</code></td>
+</tr>
+<tr>
+<td><code>again</code></td>
+<td><code>again</code></td>
+</tr>
+<tr>
+<td><code>ahead</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>alight</code></td>
+<td><code>exiting</code></td>
+</tr>
+<tr>
+<td><code>answer</code></td>
+<td><code>answering</code></td>
+</tr>
+<tr>
+<td><code>apologise</code></td>
+<td><code>saying_sorry</code></td>
+</tr>
+<tr>
+<td><code>apologize</code></td>
+<td><code>saying_sorry</code></td>
+</tr>
+<tr>
+<td><code>ascend</code></td>
+<td><code>climbing</code></td>
+</tr>
+<tr>
+<td><code>ask</code></td>
+<td><code>asking</code>, <code>asking_for</code></td>
+</tr>
+<tr>
+<td><code>attach</code></td>
+<td><code>tying</code></td>
+</tr>
+<tr>
+<td><code>attack</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>beg</code></td>
+<td><code>asking_for</code></td>
+</tr>
+<tr>
+<td><code>blow</code></td>
+<td><code>extinguishing</code></td>
+</tr>
+<tr>
+<td><code>board</code></td>
+<td><code>entering</code></td>
+</tr>
+<tr>
+<td><code>break</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>burn</code></td>
+<td><code>burning</code></td>
+</tr>
+<tr>
+<td><code>buy</code></td>
+<td><code>buying</code></td>
+</tr>
+<tr>
+<td><code>bye</code></td>
+<td><code>saying_goodbye</code></td>
+</tr>
+<tr>
+<td><code>chat</code></td>
+<td><code>talking</code></td>
+</tr>
+<tr>
+<td><code>check</code></td>
+<td><code>examining</code></td>
+</tr>
+<tr>
+<td><code>chop</code></td>
+<td><code>cutting</code></td>
+</tr>
+<tr>
+<td><code>climb</code></td>
+<td><code>climbing</code>, <code>entering</code>,
+<code>exiting</code></td>
+</tr>
+<tr>
+<td><code>close</code></td>
+<td><code>closing</code></td>
+</tr>
+<tr>
+<td><code>collect</code></td>
+<td><code>taking</code></td>
+</tr>
+<tr>
+<td><code>come</code></td>
+<td><code>revealing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>commands</code></td>
+<td><code>help</code></td>
+</tr>
+<tr>
+<td><code>consult</code></td>
+<td><code>consulting</code></td>
+</tr>
+<tr>
+<td><code>consume</code></td>
+<td><code>eating</code></td>
+</tr>
+<tr>
+<td><code>continue</code></td>
+<td><code>talking</code></td>
+</tr>
+<tr>
+<td><code>converse</code></td>
+<td><code>talking</code></td>
+</tr>
+<tr>
+<td><code>cover</code></td>
+<td><code>closing</code></td>
+</tr>
+<tr>
+<td><code>credits</code></td>
+<td><code>about</code></td>
+</tr>
+<tr>
+<td><code>crouch</code></td>
+<td><code>hiding</code></td>
+</tr>
+<tr>
+<td><code>cut</code></td>
+<td><code>cutting</code></td>
+</tr>
+<tr>
+<td><code>deactivate</code></td>
+<td><code>switching_off</code></td>
+</tr>
+<tr>
+<td><code>descend</code></td>
+<td><code>climbing</code></td>
+</tr>
+<tr>
+<td><code>destroy</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>devour</code></td>
+<td><code>eating</code></td>
+</tr>
+<tr>
+<td><code>dig</code></td>
+<td><code>digging</code></td>
+</tr>
+<tr>
+<td><code>discard</code></td>
+<td><code>dropping</code></td>
+</tr>
+<tr>
+<td><code>disembark</code></td>
+<td><code>exiting</code></td>
+</tr>
+<tr>
+<td><code>display</code></td>
+<td><code>showing</code></td>
+</tr>
+<tr>
+<td><code>doff</code></td>
+<td><code>taking_off</code></td>
+</tr>
+<tr>
+<td><code>don</code></td>
+<td><code>wearing</code></td>
+</tr>
+<tr>
+<td><code>douse</code></td>
+<td><code>extinguishing</code></td>
+</tr>
+<tr>
+<td><code>down</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>doze</code></td>
+<td><code>sleeping</code></td>
+</tr>
+<tr>
+<td><code>drag</code></td>
+<td><code>pulling</code></td>
+</tr>
+<tr>
+<td><code>drink</code></td>
+<td><code>drinking</code></td>
+</tr>
+<tr>
+<td><code>drop</code></td>
+<td><code>dropping</code></td>
+</tr>
+<tr>
+<td><code>duck</code></td>
+<td><code>hiding</code></td>
+</tr>
+<tr>
+<td><code>east</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>eat</code></td>
+<td><code>eating</code></td>
+</tr>
+<tr>
+<td><code>embrace</code></td>
+<td><code>kissing</code></td>
+</tr>
+<tr>
+<td><code>empty</code></td>
+<td><code>emptying</code></td>
+</tr>
+<tr>
+<td><code>enter</code></td>
+<td><code>entering</code></td>
+</tr>
+<tr>
+<td><code>equip</code></td>
+<td><code>wearing</code></td>
+</tr>
+<tr>
+<td><code>examine</code></td>
+<td><code>examining</code></td>
+</tr>
+<tr>
+<td><code>exit</code></td>
+<td><code>exiting</code>, <code>quitting</code></td>
+</tr>
+<tr>
+<td><code>extinguish</code></td>
+<td><code>extinguishing</code></td>
+</tr>
+<tr>
+<td><code>extract</code></td>
+<td><code>removing</code></td>
+</tr>
+<tr>
+<td><code>farewell</code></td>
+<td><code>saying_goodbye</code></td>
+</tr>
+<tr>
+<td><code>fasten</code></td>
+<td><code>tying</code></td>
+</tr>
+<tr>
+<td><code>feel</code></td>
+<td><code>touching</code></td>
+</tr>
+<tr>
+<td><code>fight</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>flip</code></td>
+<td><code>switching_off</code>, <code>switching_on</code></td>
+</tr>
+<tr>
+<td><code>furl</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>g</code></td>
+<td><code>again</code></td>
+</tr>
+<tr>
+<td><code>get</code></td>
+<td><code>entering</code>, <code>exiting</code>, <code>removing</code>,
+<code>taking</code></td>
+</tr>
+<tr>
+<td><code>give</code></td>
+<td><code>giving</code></td>
+</tr>
+<tr>
+<td><code>go</code></td>
+<td><code>entering</code>, <code>exiting</code>, <code>going</code>,
+<code>sleeping</code>, <code>talking</code></td>
+</tr>
+<tr>
+<td><code>goodbye</code></td>
+<td><code>saying_goodbye</code></td>
+</tr>
+<tr>
+<td><code>grab</code></td>
+<td><code>taking</code></td>
+</tr>
+<tr>
+<td><code>hand</code></td>
+<td><code>giving</code></td>
+</tr>
+<tr>
+<td><code>hang</code></td>
+<td><code>putting</code></td>
+</tr>
+<tr>
+<td><code>hard</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>head</code></td>
+<td><code>going</code></td>
+</tr>
+<tr>
+<td><code>hear</code></td>
+<td><code>listening</code></td>
+</tr>
+<tr>
+<td><code>heave</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>help</code></td>
+<td><code>help</code></td>
+</tr>
+<tr>
+<td><code>hide</code></td>
+<td><code>hiding</code></td>
+</tr>
+<tr>
+<td><code>hit</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>hop</code></td>
+<td><code>jumping</code></td>
+</tr>
+<tr>
+<td><code>hug</code></td>
+<td><code>kissing</code></td>
+</tr>
+<tr>
+<td><code>hurl</code></td>
+<td><code>throwing</code></td>
+</tr>
+<tr>
+<td><code>i</code></td>
+<td><code>inventory</code></td>
+</tr>
+<tr>
+<td><code>ignite</code></td>
+<td><code>burning</code></td>
+</tr>
+<tr>
+<td><code>imbibe</code></td>
+<td><code>drinking</code></td>
+</tr>
+<tr>
+<td><code>in</code></td>
+<td><code>going</code>, <code>pushing</code></td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td><code>about</code></td>
+</tr>
+<tr>
+<td><code>inform</code></td>
+<td><code>telling</code></td>
+</tr>
+<tr>
+<td><code>inquire</code></td>
+<td><code>asking</code></td>
+</tr>
+<tr>
+<td><code>insert</code></td>
+<td><code>inserting</code></td>
+</tr>
+<tr>
+<td><code>inspect</code></td>
+<td><code>examining</code></td>
+</tr>
+<tr>
+<td><code>inv</code></td>
+<td><code>inventory</code></td>
+</tr>
+<tr>
+<td><code>inventory</code></td>
+<td><code>inventory</code></td>
+</tr>
+<tr>
+<td><code>jump</code></td>
+<td><code>jumping</code></td>
+</tr>
+<tr>
+<td><code>kill</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>kiss</code></td>
+<td><code>kissing</code></td>
+</tr>
+<tr>
+<td><code>l</code></td>
+<td><code>looking</code></td>
+</tr>
+<tr>
+<td><code>leap</code></td>
+<td><code>jumping</code></td>
+</tr>
+<tr>
+<td><code>leave</code></td>
+<td><code>exiting</code></td>
+</tr>
+<tr>
+<td><code>let</code></td>
+<td><code>dropping</code></td>
+</tr>
+<tr>
+<td><code>lie</code></td>
+<td><code>sleeping</code></td>
+</tr>
+<tr>
+<td><code>lift</code></td>
+<td><code>raising</code></td>
+</tr>
+<tr>
+<td><code>light</code></td>
+<td><code>lighting</code></td>
+</tr>
+<tr>
+<td><code>listen</code></td>
+<td><code>listening</code></td>
+</tr>
+<tr>
+<td><code>load</code></td>
+<td><code>restoring</code></td>
+</tr>
+<tr>
+<td><code>lock</code></td>
+<td><code>locking</code></td>
+</tr>
+<tr>
+<td><code>look</code></td>
+<td><code>consulting</code>, <code>examining</code>,
+<code>looking</code>, <code>looking_under</code>,
+<code>searching</code></td>
+</tr>
+<tr>
+<td><code>lower</code></td>
+<td><code>lowering</code></td>
+</tr>
+<tr>
+<td><code>make</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>move</code></td>
+<td><code>pushing</code>, <code>putting</code></td>
+</tr>
+<tr>
+<td><code>munch</code></td>
+<td><code>eating</code></td>
+</tr>
+<tr>
+<td><code>murder</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>nap</code></td>
+<td><code>sleeping</code></td>
+</tr>
+<tr>
+<td><code>nibble</code></td>
+<td><code>eating</code></td>
+</tr>
+<tr>
+<td><code>no</code></td>
+<td><code>saying_no</code></td>
+</tr>
+<tr>
+<td><code>north</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>northeast</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>northwest</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>observe</code></td>
+<td><code>examining</code></td>
+</tr>
+<tr>
+<td><code>offer</code></td>
+<td><code>giving</code></td>
+</tr>
+<tr>
+<td><code>open</code></td>
+<td><code>opening</code></td>
+</tr>
+<tr>
+<td><code>out</code></td>
+<td><code>going</code>, <code>pushing</code></td>
+</tr>
+<tr>
+<td><code>pat</code></td>
+<td><code>touching</code></td>
+</tr>
+<tr>
+<td><code>pay</code></td>
+<td><code>buying</code></td>
+</tr>
+<tr>
+<td><code>peruse</code></td>
+<td><code>reading</code></td>
+</tr>
+<tr>
+<td><code>pick</code></td>
+<td><code>taking</code></td>
+</tr>
+<tr>
+<td><code>place</code></td>
+<td><code>putting</code></td>
+</tr>
+<tr>
+<td><code>points</code></td>
+<td><code>scoring</code></td>
+</tr>
+<tr>
+<td><code>poke</code></td>
+<td><code>touching</code></td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>power</code></td>
+<td><code>switching_off</code>, <code>switching_on</code></td>
+</tr>
+<tr>
+<td><code>present</code></td>
+<td><code>showing</code></td>
+</tr>
+<tr>
+<td><code>press</code></td>
+<td><code>pushing</code></td>
+</tr>
+<tr>
+<td><code>prod</code></td>
+<td><code>touching</code></td>
+</tr>
+<tr>
+<td><code>pull</code></td>
+<td><code>pulling</code></td>
+</tr>
+<tr>
+<td><code>purchase</code></td>
+<td><code>buying</code></td>
+</tr>
+<tr>
+<td><code>push</code></td>
+<td><code>pushing</code></td>
+</tr>
+<tr>
+<td><code>put</code></td>
+<td><code>dropping</code>, <code>extinguishing</code>,
+<code>inserting</code>, <code>putting</code>, <code>wearing</code></td>
+</tr>
+<tr>
+<td><code>q</code></td>
+<td><code>quitting</code></td>
+</tr>
+<tr>
+<td><code>quaff</code></td>
+<td><code>drinking</code></td>
+</tr>
+<tr>
+<td><code>question</code></td>
+<td><code>asking</code></td>
+</tr>
+<tr>
+<td><code>quit</code></td>
+<td><code>quitting</code></td>
+</tr>
+<tr>
+<td><code>raise</code></td>
+<td><code>raising</code></td>
+</tr>
+<tr>
+<td><code>read</code></td>
+<td><code>consulting</code>, <code>reading</code></td>
+</tr>
+<tr>
+<td><code>release</code></td>
+<td><code>dropping</code></td>
+</tr>
+<tr>
+<td><code>remove</code></td>
+<td><code>removing</code>, <code>taking_off</code></td>
+</tr>
+<tr>
+<td><code>reply</code></td>
+<td><code>answering</code></td>
+</tr>
+<tr>
+<td><code>respond</code></td>
+<td><code>answering</code></td>
+</tr>
+<tr>
+<td><code>rest</code></td>
+<td><code>sleeping</code></td>
+</tr>
+<tr>
+<td><code>restart</code></td>
+<td><code>restarting</code></td>
+</tr>
+<tr>
+<td><code>restore</code></td>
+<td><code>restoring</code></td>
+</tr>
+<tr>
+<td><code>retrieve</code></td>
+<td><code>taking</code></td>
+</tr>
+<tr>
+<td><code>reveal</code></td>
+<td><code>revealing</code></td>
+</tr>
+<tr>
+<td><code>rotate</code></td>
+<td><code>turning</code></td>
+</tr>
+<tr>
+<td><code>rub</code></td>
+<td><code>touching</code></td>
+</tr>
+<tr>
+<td><code>rummage</code></td>
+<td><code>searching</code></td>
+</tr>
+<tr>
+<td><code>run</code></td>
+<td><code>going</code></td>
+</tr>
+<tr>
+<td><code>save</code></td>
+<td><code>saving</code></td>
+</tr>
+<tr>
+<td><code>say</code></td>
+<td><code>answering</code>, <code>saying_goodbye</code></td>
+</tr>
+<tr>
+<td><code>scale</code></td>
+<td><code>climbing</code></td>
+</tr>
+<tr>
+<td><code>score</code></td>
+<td><code>scoring</code></td>
+</tr>
+<tr>
+<td><code>search</code></td>
+<td><code>searching</code></td>
+</tr>
+<tr>
+<td><code>secure</code></td>
+<td><code>locking</code></td>
+</tr>
+<tr>
+<td><code>set</code></td>
+<td><code>burning</code>, <code>setting</code>,
+<code>setting_course</code></td>
+</tr>
+<tr>
+<td><code>shorten</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>shove</code></td>
+<td><code>pushing</code></td>
+</tr>
+<tr>
+<td><code>show</code></td>
+<td><code>showing</code></td>
+</tr>
+<tr>
+<td><code>shut</code></td>
+<td><code>closing</code></td>
+</tr>
+<tr>
+<td><code>sip</code></td>
+<td><code>drinking</code></td>
+</tr>
+<tr>
+<td><code>slay</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>sleep</code></td>
+<td><code>sleeping</code></td>
+</tr>
+<tr>
+<td><code>slice</code></td>
+<td><code>cutting</code></td>
+</tr>
+<tr>
+<td><code>slumber</code></td>
+<td><code>sleeping</code></td>
+</tr>
+<tr>
+<td><code>smash</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>smell</code></td>
+<td><code>smelling</code></td>
+</tr>
+<tr>
+<td><code>sniff</code></td>
+<td><code>smelling</code></td>
+</tr>
+<tr>
+<td><code>snuff</code></td>
+<td><code>extinguishing</code></td>
+</tr>
+<tr>
+<td><code>sorry</code></td>
+<td><code>saying_sorry</code></td>
+</tr>
+<tr>
+<td><code>south</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>southeast</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>southwest</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>speak</code></td>
+<td><code>talking</code></td>
+</tr>
+<tr>
+<td><code>stand</code></td>
+<td><code>revealing</code></td>
+</tr>
+<tr>
+<td><code>starboard</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>start</code></td>
+<td><code>switching_on</code></td>
+</tr>
+<tr>
+<td><code>steer</code></td>
+<td><code>steering</code></td>
+</tr>
+<tr>
+<td><code>stop</code></td>
+<td><code>revealing</code>, <code>switching_off</code></td>
+</tr>
+<tr>
+<td><code>strike</code></td>
+<td><code>attacking</code></td>
+</tr>
+<tr>
+<td><code>stroke</code></td>
+<td><code>touching</code></td>
+</tr>
+<tr>
+<td><code>study</code></td>
+<td><code>reading</code></td>
+</tr>
+<tr>
+<td><code>swallow</code></td>
+<td><code>drinking</code></td>
+</tr>
+<tr>
+<td><code>switch</code></td>
+<td><code>switching_off</code>, <code>switching_on</code></td>
+</tr>
+<tr>
+<td><code>take</code></td>
+<td><code>removing</code>, <code>taking</code>,
+<code>taking_off</code></td>
+</tr>
+<tr>
+<td><code>talk</code></td>
+<td><code>talking</code></td>
+</tr>
+<tr>
+<td><code>tell</code></td>
+<td><code>talking</code>, <code>telling</code></td>
+</tr>
+<tr>
+<td><code>the</code></td>
+<td><code>going</code></td>
+</tr>
+<tr>
+<td><code>throw</code></td>
+<td><code>dropping</code>, <code>throwing</code></td>
+</tr>
+<tr>
+<td><code>tie</code></td>
+<td><code>tying</code></td>
+</tr>
+<tr>
+<td><code>toss</code></td>
+<td><code>throwing</code></td>
+</tr>
+<tr>
+<td><code>touch</code></td>
+<td><code>touching</code></td>
+</tr>
+<tr>
+<td><code>travel</code></td>
+<td><code>going</code></td>
+</tr>
+<tr>
+<td><code>tug</code></td>
+<td><code>pulling</code></td>
+</tr>
+<tr>
+<td><code>turn</code></td>
+<td><code>setting</code>, <code>switching_off</code>,
+<code>switching_on</code>, <code>turning</code></td>
+</tr>
+<tr>
+<td><code>twist</code></td>
+<td><code>turning</code></td>
+</tr>
+<tr>
+<td><code>uncover</code></td>
+<td><code>opening</code></td>
+</tr>
+<tr>
+<td><code>undo</code></td>
+<td><code>undoing</code></td>
+</tr>
+<tr>
+<td><code>unequip</code></td>
+<td><code>taking_off</code></td>
+</tr>
+<tr>
+<td><code>unfasten</code></td>
+<td><code>untying</code></td>
+</tr>
+<tr>
+<td><code>unhide</code></td>
+<td><code>revealing</code></td>
+</tr>
+<tr>
+<td><code>unlock</code></td>
+<td><code>unlocking</code></td>
+</tr>
+<tr>
+<td><code>unsecure</code></td>
+<td><code>unlocking</code></td>
+</tr>
+<tr>
+<td><code>untie</code></td>
+<td><code>untying</code></td>
+</tr>
+<tr>
+<td><code>unwrap</code></td>
+<td><code>opening</code></td>
+</tr>
+<tr>
+<td><code>up</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td><code>version</code></td>
+</tr>
+<tr>
+<td><code>view</code></td>
+<td><code>examining</code></td>
+</tr>
+<tr>
+<td><code>wait</code></td>
+<td><code>waiting</code></td>
+</tr>
+<tr>
+<td><code>wake</code></td>
+<td><code>waking</code></td>
+</tr>
+<tr>
+<td><code>walk</code></td>
+<td><code>going</code></td>
+</tr>
+<tr>
+<td><code>wave</code></td>
+<td><code>waving</code></td>
+</tr>
+<tr>
+<td><code>wear</code></td>
+<td><code>wearing</code></td>
+</tr>
+<tr>
+<td><code>west</code></td>
+<td><code>going</code>, <code>pushing</code>, <code>steering</code></td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td><code>examining</code></td>
+</tr>
+<tr>
+<td><code>yank</code></td>
+<td><code>pulling</code></td>
+</tr>
+<tr>
+<td><code>yes</code></td>
+<td><code>saying_yes</code></td>
+</tr>
+<tr>
+<td><code>z</code></td>
+<td><code>waiting</code></td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="about"><code>about</code></h2>
+<pre class="text"><code>  grammar
+    about
+    info
+    credits</code></pre>
+<h2 class="unnumbered unlisted" id="again"><code>again</code></h2>
+<pre class="text"><code>  grammar
+    again
+    g</code></pre>
+<h2 class="unnumbered unlisted"
+id="answering"><code>answering</code></h2>
+<pre class="text"><code>  grammar
+    answer the response
+    reply the response
+    respond the response
+    say the response
+  the response is a topic</code></pre>
+<h2 class="unnumbered unlisted" id="asking"><code>asking</code></h2>
+<pre class="text"><code>  grammar
+    ask the recipient about the topic
+    question the recipient about the topic
+    inquire of the recipient about the topic
+  the topic is a topic</code></pre>
+<h2 class="unnumbered unlisted"
+id="asking_for"><code>asking_for</code></h2>
+<pre class="text"><code>  grammar
+    ask the recipient for the item
+    beg the recipient for the item</code></pre>
+<h2 class="unnumbered unlisted"
+id="attacking"><code>attacking</code></h2>
+<pre class="text"><code>  grammar
+    attack the target
+    kill the target
+    fight the target
+    slay the target
+    murder the target
+    hit the target
+    strike the target
+    break the target
+    smash the target
+    destroy the target
+    attack the target with or using the weapon
+    kill the target with or using the weapon
+    hit the target with or using the weapon
+    strike the target with or using the weapon
+  the weapon is an instrument</code></pre>
+<h2 class="unnumbered unlisted" id="burning"><code>burning</code></h2>
+<pre class="text"><code>  grammar
+    burn the target
+    burn the target with or using the tool
+    ignite the target
+    set fire to the target
+  the tool is an instrument</code></pre>
+<h2 class="unnumbered unlisted" id="buying"><code>buying</code></h2>
+<pre class="text"><code>  grammar
+    buy the item
+    purchase the item
+    pay for the item</code></pre>
+<h2 class="unnumbered unlisted" id="climbing"><code>climbing</code></h2>
+<pre class="text"><code>  grammar
+    climb the target
+    climb up the target
+    climb down the target
+    scale the target
+    ascend the target
+    descend the target</code></pre>
+<h2 class="unnumbered unlisted" id="closing"><code>closing</code></h2>
+<pre class="text"><code>  grammar
+    close the door
+    shut the door
+    cover the door</code></pre>
+<h2 class="unnumbered unlisted"
+id="consulting"><code>consulting</code></h2>
+<pre class="text"><code>  grammar
+    consult the source about the topic
+    look up the topic in the source
+    read about the topic in the source
+  the topic is a topic</code></pre>
+<h2 class="unnumbered unlisted" id="cutting"><code>cutting</code></h2>
+<pre class="text"><code>  grammar
+    cut the object with or using the tool
+    cut the target
+    slice the target
+    chop the target
+  the tool is an instrument</code></pre>
+<h2 class="unnumbered unlisted" id="digging"><code>digging</code></h2>
+<pre class="text"><code>  grammar
+    dig the location with or using the tool
+    dig the target
+  the tool is an instrument</code></pre>
+<h2 class="unnumbered unlisted" id="drinking"><code>drinking</code></h2>
+<pre class="text"><code>  grammar
+    drink the item
+    sip the item
+    quaff the item
+    swallow the item
+    imbibe the item
+    drink from the target
+    sip from the target</code></pre>
+<h2 class="unnumbered unlisted" id="dropping"><code>dropping</code></h2>
+<pre class="text"><code>  grammar
+    drop the item
+    discard the item
+    release the item
+    put down the item
+    throw away the item
+    let go of the item</code></pre>
+<h2 class="unnumbered unlisted" id="eating"><code>eating</code></h2>
+<pre class="text"><code>  grammar
+    eat the item
+    consume the item
+    devour the item
+    munch the item
+    nibble the item
+    munch on the item
+    nibble on the item</code></pre>
+<h2 class="unnumbered unlisted" id="emptying"><code>emptying</code></h2>
+<pre class="text"><code>  grammar
+    empty the target
+    empty out the target
+    empty the target into or in or onto or on the destination</code></pre>
+<h2 class="unnumbered unlisted" id="entering"><code>entering</code></h2>
+<pre class="text"><code>  grammar
+    enter the portal
+    get in the portal
+    get into the portal
+    climb in the portal
+    climb into the portal
+    go in the portal
+    go into the portal
+    board the vehicle
+      means gesture board
+    get on the vehicle</code></pre>
+<h2 class="unnumbered unlisted"
+id="examining"><code>examining</code></h2>
+<pre class="text"><code>  grammar
+    examine the target
+    x the target
+    inspect the target
+    check the target
+    view the target
+    observe the target
+    look at the target
+    look [carefully] at the target</code></pre>
+<h2 class="unnumbered unlisted" id="exiting"><code>exiting</code></h2>
+<pre class="text"><code>  grammar
+    go out
+    exit
+    get out
+    leave
+    climb out
+    exit the container
+    get out of the container
+    climb out of the container
+    disembark
+    disembark the vehicle
+    get off the vehicle
+    alight</code></pre>
+<h2 class="unnumbered unlisted"
+id="extinguishing"><code>extinguishing</code></h2>
+<pre class="text"><code>  grammar
+    extinguish the target
+    put out the target
+    put the target out
+    blow out the target
+    blow the target out
+    snuff the target
+    snuff out the target
+    douse the target</code></pre>
+<h2 class="unnumbered unlisted" id="giving"><code>giving</code></h2>
+<pre class="text"><code>  grammar
+    give the item to the recipient
+    give the recipient the item
+    offer the item to the recipient
+    hand the item to the recipient
+    hand the recipient the item</code></pre>
+<h2 class="unnumbered unlisted" id="going"><code>going</code></h2>
+<pre class="text"><code>  grammar
+    go the direction
+    walk the direction
+    run the direction
+    head the direction
+    travel the direction
+    the direction
+  directions
+    north or n
+    south or s
+    east or e
+    west or w
+    northeast or ne
+    northwest or nw
+    southeast or se
+    southwest or sw
+    up or u
+    down or d
+    in or inside
+    out or outside</code></pre>
+<h2 class="unnumbered unlisted" id="help"><code>help</code></h2>
+<pre class="text"><code>  grammar
+    help
+    commands</code></pre>
+<h2 class="unnumbered unlisted" id="hiding"><code>hiding</code></h2>
+<pre class="text"><code>  grammar
+    hide behind the target
+      means position behind
+    duck behind the target
+      means position behind
+    crouch behind the target
+      means position behind
+    hide under the target
+      means position under
+    duck under the target
+      means position under
+    crouch under the target
+      means position under
+    hide on the target
+      means position on
+    hide in the target
+      means position inside
+    hide inside the target
+      means position inside
+    duck inside the target
+      means position inside</code></pre>
+<h2 class="unnumbered unlisted"
+id="inserting"><code>inserting</code></h2>
+<pre class="text"><code>  grammar
+    put the item in or into or inside the container
+    insert the item in or into the container</code></pre>
+<h2 class="unnumbered unlisted"
+id="inventory"><code>inventory</code></h2>
+<pre class="text"><code>  grammar
+    inventory
+    inv
+    i</code></pre>
+<h2 class="unnumbered unlisted" id="jumping"><code>jumping</code></h2>
+<pre class="text"><code>  grammar
+    jump
+    leap
+    hop
+    jump up</code></pre>
+<h2 class="unnumbered unlisted" id="kissing"><code>kissing</code></h2>
+<pre class="text"><code>  grammar
+    kiss the target
+    hug the target
+    embrace the target</code></pre>
+<h2 class="unnumbered unlisted" id="lighting"><code>lighting</code></h2>
+<pre class="text"><code>  grammar
+    light the target
+    light the target with or using the tool
+  the tool is an instrument</code></pre>
+<h2 class="unnumbered unlisted"
+id="listening"><code>listening</code></h2>
+<pre class="text"><code>  grammar
+    hear
+    hear the target
+    listen
+    listen to the target</code></pre>
+<h2 class="unnumbered unlisted" id="locking"><code>locking</code></h2>
+<pre class="text"><code>  grammar
+    lock the target
+    lock the target with or using the key
+    secure the target
+  the key is an instrument</code></pre>
+<h2 class="unnumbered unlisted" id="looking"><code>looking</code></h2>
+<pre class="text"><code>  grammar
+    look
+    l
+    look [around]</code></pre>
+<h2 class="unnumbered unlisted"
+id="looking_under"><code>looking_under</code></h2>
+<pre class="text"><code>  grammar
+    look under the target
+    look beneath the target
+    look underneath the target</code></pre>
+<h2 class="unnumbered unlisted" id="lowering"><code>lowering</code></h2>
+<pre class="text"><code>  grammar
+    lower the target</code></pre>
+<h2 class="unnumbered unlisted" id="opening"><code>opening</code></h2>
+<pre class="text"><code>  grammar
+    open the door
+    open the container with or using the tool
+    unwrap the door
+    uncover the door
+    open up the door
+  the tool is an instrument</code></pre>
+<h2 class="unnumbered unlisted" id="pulling"><code>pulling</code></h2>
+<pre class="text"><code>  grammar
+    pull the target
+    drag the target
+    yank the target
+    tug the target</code></pre>
+<h2 class="unnumbered unlisted" id="pushing"><code>pushing</code></h2>
+<pre class="text"><code>  grammar
+    push the target
+    press the target
+    shove the target
+    move the target
+    push the target the direction
+    shove the target the direction
+    move the target the direction
+  directions
+    north or n
+    south or s
+    east or e
+    west or w
+    northeast or ne
+    northwest or nw
+    southeast or se
+    southwest or sw
+    up or u
+    down or d
+    in or inside
+    out or outside</code></pre>
+<h2 class="unnumbered unlisted" id="putting"><code>putting</code></h2>
+<pre class="text"><code>  grammar
+    put the item on or onto the supporter
+    hang the item on the hook
+    move the item to the destination
+    place the item in or into or inside the container
+    place the item on or onto the supporter</code></pre>
+<h2 class="unnumbered unlisted" id="quitting"><code>quitting</code></h2>
+<pre class="text"><code>  grammar
+    quit
+    q
+    exit game</code></pre>
+<h2 class="unnumbered unlisted" id="raising"><code>raising</code></h2>
+<pre class="text"><code>  grammar
+    raise the target
+    lift the target</code></pre>
+<h2 class="unnumbered unlisted" id="reading-1"><code>reading</code></h2>
+<pre class="text"><code>  grammar
+    read the target
+    peruse the target
+    study the target</code></pre>
+<h2 class="unnumbered unlisted" id="removing"><code>removing</code></h2>
+<pre class="text"><code>  grammar
+    take the item from the container
+    get the item from the container
+    take the item from the container with or using the tool
+    remove the item from the container
+    extract the item from the container
+  the tool is an instrument</code></pre>
+<h2 class="unnumbered unlisted"
+id="restarting"><code>restarting</code></h2>
+<pre class="text"><code>  grammar
+    restart</code></pre>
+<h2 class="unnumbered unlisted"
+id="restoring"><code>restoring</code></h2>
+<pre class="text"><code>  grammar
+    restore
+    load
+    load game
+    restore game</code></pre>
+<h2 class="unnumbered unlisted"
+id="revealing"><code>revealing</code></h2>
+<pre class="text"><code>  grammar
+    stand up
+    come out
+    reveal myself
+    unhide
+    stop hiding</code></pre>
+<h2 class="unnumbered unlisted" id="saving"><code>saving</code></h2>
+<pre class="text"><code>  grammar
+    save
+    save game</code></pre>
+<h2 class="unnumbered unlisted"
+id="saying_goodbye"><code>saying_goodbye</code></h2>
+<pre class="text"><code>  grammar
+    goodbye
+    bye
+    farewell
+    say goodbye
+    say farewell
+    goodbye to the person
+    say goodbye to the person
+    say farewell to the person</code></pre>
+<h2 class="unnumbered unlisted"
+id="saying_no"><code>saying_no</code></h2>
+<pre class="text"><code>  grammar
+    no</code></pre>
+<h2 class="unnumbered unlisted"
+id="saying_sorry"><code>saying_sorry</code></h2>
+<pre class="text"><code>  grammar
+    sorry
+    apologize
+    apologise</code></pre>
+<h2 class="unnumbered unlisted"
+id="saying_yes"><code>saying_yes</code></h2>
+<pre class="text"><code>  grammar
+    yes</code></pre>
+<h2 class="unnumbered unlisted" id="scoring-1"><code>scoring</code></h2>
+<pre class="text"><code>  grammar
+    score
+    points</code></pre>
+<h2 class="unnumbered unlisted"
+id="searching"><code>searching</code></h2>
+<pre class="text"><code>  grammar
+    search [carefully]
+    search the target
+    look in or inside the target
+    look through the target
+    rummage in or through the target</code></pre>
+<h2 class="unnumbered unlisted" id="setting"><code>setting</code></h2>
+<pre class="text"><code>  grammar
+    set the target to the value
+    turn the target to the value
+    adjust the target to the value
+    set the target
+  the value is a topic</code></pre>
+<h2 class="unnumbered unlisted"
+id="setting_course"><code>setting_course</code></h2>
+<pre class="text"><code>  grammar
+    set course for the destination
+    set a course for the destination
+  the destination is a topic</code></pre>
+<h2 class="unnumbered unlisted" id="showing"><code>showing</code></h2>
+<pre class="text"><code>  grammar
+    show the item to the recipient
+    show the recipient the item
+    display the item to the recipient
+    present the item to the recipient</code></pre>
+<h2 class="unnumbered unlisted" id="sleeping"><code>sleeping</code></h2>
+<pre class="text"><code>  grammar
+    sleep
+    go to sleep
+    go to bed
+    lie down
+    nap
+    doze
+    rest
+    slumber</code></pre>
+<h2 class="unnumbered unlisted" id="smelling"><code>smelling</code></h2>
+<pre class="text"><code>  grammar
+    smell
+    sniff
+    smell the target
+    sniff the target</code></pre>
+<h2 class="unnumbered unlisted" id="steering"><code>steering</code></h2>
+<pre class="text"><code>  grammar
+    steer the direction
+    heave to
+      means gesture heave-to
+    port the turn
+      means gesture port
+    starboard the turn
+      means gesture starboard
+    port
+      means gesture port
+    starboard
+      means gesture starboard
+    hard to port
+      means gesture hard-port
+    hard to starboard
+      means gesture hard-starboard
+    ahead
+      means gesture ahead
+    come about
+      means gesture come-about
+    make sail
+      means gesture make-sail
+    shorten sail
+      means gesture shorten-sail
+    furl [the] sails
+      means gesture furl-sails
+  the turn is a topic
+  directions
+    north or n
+    south or s
+    east or e
+    west or w
+    northeast or ne
+    northwest or nw
+    southeast or se
+    southwest or sw
+    up or u
+    down or d</code></pre>
+<h2 class="unnumbered unlisted"
+id="switching_off"><code>switching_off</code></h2>
+<pre class="text"><code>  grammar
+    turn off the device
+    switch off the device
+    flip off the device
+    turn the device off
+    deactivate the device
+    stop the device
+    power off the device</code></pre>
+<h2 class="unnumbered unlisted"
+id="switching_on"><code>switching_on</code></h2>
+<pre class="text"><code>  grammar
+    turn on the device
+    switch on the device
+    flip on the device
+    turn the device on
+    activate the device
+    start the device
+    power on the device</code></pre>
+<h2 class="unnumbered unlisted" id="taking"><code>taking</code></h2>
+<pre class="text"><code>  grammar
+    take the item
+    get the item
+    grab the item
+    acquire the item
+    collect the item
+    pick up the item
+    take up the item
+    retrieve the item</code></pre>
+<h2 class="unnumbered unlisted"
+id="taking_off"><code>taking_off</code></h2>
+<pre class="text"><code>  grammar
+    remove the item
+    doff the item
+    unequip the item
+    take off the item
+    take the item off</code></pre>
+<h2 class="unnumbered unlisted" id="talking"><code>talking</code></h2>
+<pre class="text"><code>  grammar
+    talk to or with the target
+    speak to or with the target
+    chat with the target
+    converse with the target
+    tell me more
+    continue
+    go on</code></pre>
+<h2 class="unnumbered unlisted" id="telling"><code>telling</code></h2>
+<pre class="text"><code>  grammar
+    tell the recipient about the topic
+    inform the recipient about the topic
+  the topic is a topic</code></pre>
+<h2 class="unnumbered unlisted" id="throwing"><code>throwing</code></h2>
+<pre class="text"><code>  grammar
+    throw the item at the target
+    throw the item
+    toss the item
+    hurl the item
+    throw the item to the recipient
+    toss the item at the target
+    toss the item to the recipient
+    hurl the item at the target
+    hurl the item to the recipient</code></pre>
+<h2 class="unnumbered unlisted" id="touching"><code>touching</code></h2>
+<pre class="text"><code>  grammar
+    touch the target
+    rub the target
+    feel the target
+    pat the target
+    stroke the target
+    poke the target
+    prod the target</code></pre>
+<h2 class="unnumbered unlisted" id="turning"><code>turning</code></h2>
+<pre class="text"><code>  grammar
+    turn the target
+    rotate the target
+    twist the target</code></pre>
+<h2 class="unnumbered unlisted" id="tying"><code>tying</code></h2>
+<pre class="text"><code>  grammar
+    tie the item to the anchor
+    fasten the item to the anchor
+    attach the item to the anchor
+    tie the item</code></pre>
+<h2 class="unnumbered unlisted" id="undoing"><code>undoing</code></h2>
+<pre class="text"><code>  grammar
+    undo</code></pre>
+<h2 class="unnumbered unlisted"
+id="unlocking"><code>unlocking</code></h2>
+<pre class="text"><code>  grammar
+    unlock the door with or using the key
+    unlock the target
+    unsecure the target
+  the key is an instrument</code></pre>
+<h2 class="unnumbered unlisted" id="untying"><code>untying</code></h2>
+<pre class="text"><code>  grammar
+    untie the item
+    untie the item from the anchor
+    unfasten the item</code></pre>
+<h2 class="unnumbered unlisted" id="version"><code>version</code></h2>
+<pre class="text"><code>  grammar
+    version</code></pre>
+<h2 class="unnumbered unlisted" id="waiting"><code>waiting</code></h2>
+<pre class="text"><code>  grammar
+    wait
+    z</code></pre>
+<h2 class="unnumbered unlisted" id="waking"><code>waking</code></h2>
+<pre class="text"><code>  grammar
+    wake
+    wake up</code></pre>
+<h2 class="unnumbered unlisted" id="waving"><code>waving</code></h2>
+<pre class="text"><code>  grammar
+    wave
+    wave hands
+    wave hand
+    wave the target</code></pre>
+<h2 class="unnumbered unlisted" id="wearing-1"><code>wearing</code></h2>
+<pre class="text"><code>  grammar
+    wear the item
+    don the item
+    equip the item
+    put on the item</code></pre>
+<h2 class="unnumbered unlisted"
+id="actions-with-no-typed-command-of-their-own">Actions with no typed
+command of their own</h2>
+<p>The standard grammar gives these no command: <code>breaking</code>,
+<code>entering_room</code>, <code>tasting</code>.</p>
+<nav class="book-nav-bottom"><a class="prev" href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">← Appendix B. Kinds, trait words, state words and their pairings</a><a class="next" href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions →</a></nav>
+</body>
+</html>

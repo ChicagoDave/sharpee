@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Things</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details open><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li class="active"><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="7-containers-and-supporters.html" accesskey="n" rel="next">Containers and supporters</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="5-rooms-and-exits.html" accesskey="p" rel="previous">Rooms and exits</a>
+</span>
+</div>
+</nav>
+<h1 data-number="6" id="things"><span
+class="header-section-number">6</span> Things</h1>
+<p>The rooms of Lanternhall describe a lamp, a kettle, a chair, a gate
+and a hearth, and the player can touch none of them. This chapter makes
+them. It also gives Ansel something to carry and puts the first other
+person in the story.</p>
+<h2 data-number="6.1" id="a-thing-and-where-it-is"><span
+class="header-section-number">6.1</span> A thing and where it is</h2>
+<p>Anything in the world that is not a room, a door, a person, a
+container, a supporter or a region is <code>a thing</code>. A thing
+needs two facts: its kind, and its place.</p>
+<pre class="chord"><code>create the kettle
+  a thing
+  in the Lodge
+
+  A black iron kettle, still warm.</code></pre>
+<p>The line <code>in the Lodge</code> is the thing’s
+<strong>placement</strong>. It is the word <code>in</code>, an article,
+and the name of a room. The paragraph after the blank line is the
+thing’s description, which the player reads by examining it.</p>
+<p>That is all a thing needs in order to be seen, examined, picked up,
+carried about and put down. You wrote none of those abilities. They come
+with being a thing.</p>
+<pre class="text"><code>You can see a kettle, a hand lamp, and Hobb here.
+
+&gt; examine lamp
+A tin hand lamp with a wire handle. Its wick is dry and its glass is clean, which is Hobb all over.
+
+&gt; take lamp
+Taken.</code></pre>
+<p>The line beginning “You can see” is the story’s own. After a room’s
+description it lists the things in the room that the description has not
+accounted for, and it chooses “a” or “an” for each one. The kettle and
+the hand lamp are listed because they are loose things a player might
+pick up.</p>
+<p>A description is optional here too. A thing without one answers an
+examination with a stock line, which for the kettle would be “The kettle
+is just a kettle.”</p>
+<h2 data-number="6.2" id="things-that-stay-put"><span
+class="header-section-number">6.2</span> Things that stay put</h2>
+<p>The Lodge’s description has already told the player about the chair
+and the newspapers. They should not be listed a second time, and nobody
+should walk off with the porter’s chair. Both problems have one answer,
+which is the word <code>scenery</code>.</p>
+<pre class="chord"><code>create the chair
+  a thing, scenery
+  in the Lodge
+
+  A wing chair that has taken the shape of one man.</code></pre>
+<p><code>scenery</code> is the first of the <strong>trait
+words</strong>. A trait word is an adjective that follows the kind,
+after a comma, and changes what the thing is like. This one says two
+things about the chair: it is part of the room’s description, so the
+room does not list it, and it cannot be taken.</p>
+<pre class="text"><code>&gt; take chair
+The chair is fixed in place.</code></pre>
+<p>Scenery is how you keep the promises a room description makes. Read
+each of your descriptions as a player would, note every noun in it, and
+make a scenery thing for each one that a player might reasonably
+examine. The Relighting now does this for the blue flame on the sill,
+the chair, the newspapers, the gate, the hearth in the Refectory and the
+Great Lantern on the roof.</p>
+<h2 data-number="6.3" id="more-than-one-and-things-with-names"><span
+class="header-section-number">6.3</span> More than one, and things with
+names</h2>
+<p>Two more trait words are about grammar, the player’s and the
+story’s.</p>
+<p><strong><code>plural</code></strong> says that the thing’s name is a
+plural noun. The story then leaves out the “a” it would otherwise put in
+front of the name, so that a room lists “newspapers” and not “a
+newspapers”.</p>
+<pre class="chord"><code>create the newspapers
+  aka papers
+  a thing, scenery, plural
+  in the Lodge
+
+  The top one is from last week. The bottom one reports the Dimming, in
+  the small type newspapers use for things they do not yet believe.</code></pre>
+<p><strong><code>proper</code></strong> says that the name is a proper
+name, one that takes no article. It is most often needed for people.</p>
+<pre class="chord"><code>create Hobb
+  a person, proper
+  in the Lodge
+
+  The porter of Lanternhall, who was old when you were a student and has
+  not troubled to change since.</code></pre>
+<p>Without <code>proper</code> the Lodge would report that you can see
+“a Hobb” here. With it, he is listed as Hobb, and the story’s own
+messages use his name correctly:</p>
+<pre class="text"><code>&gt; take hobb
+You can&#39;t take Hobb.</code></pre>
+<p>Hobb is a person, not a thing, and people are placed the same way
+things are. He does nothing yet except stand in the Lodge and be
+examined. Part V is his.</p>
+<h2 data-number="6.4" id="other-words-for-a-thing"><span
+class="header-section-number">6.4</span> Other words for a thing</h2>
+<p>The player will not always use your name for a thing. An
+<code>aka</code> line lists the other words they might use, separated by
+commas. It goes directly under the header, above the kind.</p>
+<pre class="chord"><code>create the gate
+  aka gates, arch, letters, motto
+  a thing, scenery
+  in the Lodge and the Gate Court</code></pre>
+<p>Now <code>examine arch</code> and <code>examine motto</code> both
+find the gate. Give a thing an <code>aka</code> for every noun your own
+prose uses about it. The Gate Court’s description speaks of “a line of
+cut letters”, so <code>letters</code> is on the list.</p>
+<p>Be careful with the opposite problem. When two things in the same
+place can be meant by the same word, the story has to ask which one the
+player means, and it does so every time. If the Lodge held both a brass
+key and an iron key, then <code>take key</code> would be answered with a
+question. The cure is to choose names that do not share their last word,
+or to make sure the two things are never in the same place. This book
+called the lamp on the sill <code>the blue flame</code> for exactly that
+reason: there is a hand lamp in the same room, and the word
+<code>lamp</code> should mean only one of them.</p>
+<h2 data-number="6.5" id="a-thing-in-several-rooms"><span
+class="header-section-number">6.5</span> A thing in several rooms</h2>
+<p>Look again at the gate’s placement.</p>
+<pre class="chord"><code>  in the Lodge and the Gate Court</code></pre>
+<p>The gate can be seen from both rooms, so it is placed in both. A
+thing placed in more than one room is called a
+<strong>backdrop</strong>. With three or more rooms the list is written
+as English writes it, <code>in the A, the B and the C</code>.</p>
+<p>A backdrop must be <code>scenery</code>. A thing the player could
+pick up cannot be in two places, and the compiler explains as much if
+you forget:</p>
+<pre class="text"><code>relighting.story:134:3 error [analysis.backdrop-not-scenery] `gate` is placed in several rooms — only scenery can be in more than one place (a thing the player could take cannot). Add `scenery`, or name one room.</code></pre>
+<p>Backdrops are for the sky, the river, the distant tower, and anything
+else that a player in several rooms would expect to be able to look
+at.</p>
+<h2 data-number="6.6" id="what-ansel-carries"><span
+class="header-section-number">6.6</span> What Ansel carries</h2>
+<p>A person can begin the story holding things. The line
+<code>carries</code>, in the person’s own block, names one.</p>
+<pre class="chord"><code>create the wax taper
+  aka taper
+  a thing
+
+  Half a wax taper. Last week you lit it to read by, and its flame
+  leaned toward your hand like a cat. You have carried it since.
+
+create Ansel
+  a person
+  playable
+  starts in the Lodge
+  carries the wax taper</code></pre>
+<p>The taper has no placement line of its own. Ansel’s
+<code>carries</code> line places it. Write one <code>carries</code> line
+for each thing.</p>
+<pre class="text"><code>&gt; inventory
+You are carrying:
+
+a wax taper</code></pre>
+<p>A thing with no placement at all, and that nobody carries, is not an
+error. It exists and is nowhere. That is useful later, for things that
+enter the story part of the way through, and chapter 15 shows how to
+bring one on.</p>
+<h2 data-number="6.7" id="hidden-things"><span
+class="header-section-number">6.7</span> Hidden things</h2>
+<p>One more trait word belongs here. A thing that is
+<strong><code>concealed</code></strong> is in its room but cannot be
+seen, examined or taken until the player finds it by searching.</p>
+<pre class="chord"><code>create the spectacles
+  aka glasses
+  a thing, plural, concealed
+  in the Lodge
+
+  Wire spectacles with one arm mended in thread. Hobb has been looking
+  for them since the spring.</code></pre>
+<pre class="text"><code>&gt; examine spectacles
+You can&#39;t see any such thing.
+
+&gt; search
+Hidden here, you discover: spectacles.
+
+&gt; take glasses
+Taken.</code></pre>
+<p>Once found, a concealed thing is an ordinary thing. Use this
+sparingly as well. A player has no reason to type <code>search</code>
+unless your prose gives them one, and thirty years of newspapers is the
+Lodge’s hint.</p>
+<p>The companion word is <strong><code>hiding-spot</code></strong>,
+which marks a thing the player can hide behind. The Relighting has no
+use for one, so here is a curtain from another story:</p>
+<pre class="chord"><code>create the curtain
+  a thing, scenery, hiding-spot
+  in the Den
+
+  A heavy curtain.</code></pre>
+<pre class="text"><code>&gt; hide behind curtain
+You slip behind the curtain.</code></pre>
+<h2 data-number="6.8" id="build-and-try-it-2"><span
+class="header-section-number">6.8</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-06</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the things and descriptions the
+chapter did not print in full, the hand lamp, the blue flame, the hearth
+and the Great Lantern among them. Check it and play it.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Take the hand lamp, carry it north, and put it down in the Gate
+Court.</p>
+<pre class="text"><code>&gt; drop lamp
+Dropped.
+
+&gt; look
+Gate Court
+A square of worn flagstones between the gate and the cloister arch. Grass has come up through the joints and been left to get on with it. Over the gate, a line of cut letters says that the craft needs a light to come home to.
+
+You can see a hand lamp here.</code></pre>
+<p>Then examine everything a description mentions, in every room. Where
+the answer is “You can’t see any such thing”, you have found a promise
+the story is not yet keeping. Some of those are deliberate, because the
+Library’s desks and the bell rope have chapters of their own coming.
+Others stay unkept in The Relighting, which makes scenery only of what
+the game uses. Nothing in this step needs fixing. In a story of your
+own, each of them is a line to write.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: traits</strong> ·
+<code>sharpee compose</code></p>
+<p>A kind and its trait words become <strong>traits</strong> on the
+platform, which are the units of ability it builds everything from.
+<code>scenery</code> is the scenery trait, and the standard
+<code>taking</code> action refuses anything that has it, which is where
+“fixed in place” comes from. <code>a person</code> brings the actor
+trait, and <code>taking</code> refuses that as well, with a different
+sentence. The words you write are a closed list. You cannot invent a
+trait word by typing one, and a word the compiler does not know is
+reported as <code>analysis.trait-not-declared</code>. Chapter 24 shows
+how to declare traits of your own.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: scenery and backdrops</strong></p>
+<p>Both ideas will be familiar. Inform 10 has scenery as a property of a
+thing and a backdrop as a kind of its own, placed in several rooms or in
+a region. TADS 3 has a class for a thing that must exist in more than
+one place at a time. In Chord, scenery is a trait word, and a backdrop
+is not a kind at all. It is simply scenery whose placement names more
+than one room. The other difference is that Chord does not let a thing
+be portable by declaration and immovable by rule: <code>scenery</code>
+is the one switch, and it covers both the listing and the taking.</p>
+</div>
+<h2 data-number="6.9" id="what-you-have-so-far-5"><span
+class="header-section-number">6.9</span> What you have so far</h2>
+<p>The Lodge has a porter, his chair, his papers, his kettle and two
+lamps. Ansel is carrying a taper. The gate can be seen from both sides,
+and the hearth and the Great Lantern can be examined. Nothing yet can be
+opened, and nothing can be put on or in anything else. That is the next
+chapter.</p>
+<nav class="book-nav-bottom"><a class="prev" href="5-rooms-and-exits.html">← Rooms and exits</a><a class="next" href="7-containers-and-supporters.html">Containers and supporters →</a></nav>
+</body>
+</html>

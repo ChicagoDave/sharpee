@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Phrases</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details open><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li class="active"><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="21-a-things-own-words.html" accesskey="n" rel="next">A thing’s own words</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-part-iv.-words.html" accesskey="p" rel="previous">Part IV. Words</a>
+</span>
+</div>
+</nav>
+<h1 data-number="20" id="phrases"><span
+class="header-section-number">20</span> Phrases</h1>
+<p>Every sentence a player reads in a Chord story is a
+<strong>phrase</strong>: a piece of text with a key. You have been
+writing them since chapter 12, in the one form that chapter needed, a
+key and its text in the <code>define phrases</code> block.</p>
+<p>A phrase can be more than that. It can have several versions and a
+rule for choosing between them. It can keep its line breaks. It can
+leave a gap to be filled when it is printed, and it can be dropped into
+a room’s description and appear there only when it is true. This chapter
+covers all four.</p>
+<h2 data-number="20.1" id="two-ways-to-declare-a-phrase"><span
+class="header-section-number">20.1</span> Two ways to declare a
+phrase</h2>
+<p>The block you know is a list.</p>
+<pre class="chord"><code>define phrases en-US
+  stair-sealed:
+    The grille stands across the stair, and there is no way round it.
+  over-the-parapet:
+    You step up onto the parapet to see the court. The court comes up to
+    meet you.</code></pre>
+<p>Each entry is one key and one paragraph. A story has one such block
+for each language it is written in, and <code>en-US</code> names the
+language. Most of your phrases will live here for the whole life of the
+story.</p>
+<p>The second way declares one phrase in a block of its own.</p>
+<pre class="chord"><code>define phrase gate-motto
+  The craft needs a light to come home to.
+end phrase</code></pre>
+<p>It opens with <code>define phrase</code> and the key, and closes with
+<code>end phrase</code>. For a plain phrase the two ways are equal. The
+block form exists because its head line has room for more.</p>
+<p>A key belongs to one phrase. Declaring the same key twice, in either
+form or one of each, is an error.</p>
+<h2 data-number="20.2" id="variants-and-strategies"><span
+class="header-section-number">20.2</span> Variants and strategies</h2>
+<p>Three things in The Relighting refuse with the same key,
+<code>no-such-word</code>: the lamp, the candles and the Lantern. A
+player without the first working will read that sentence several times.
+Give it three versions.</p>
+<pre class="chord"><code>define phrase no-such-word, cycling
+  You reach for the word and find only the place where it was.
+or
+  The shape of it is there, as a name is on the tip of the tongue. The
+  word is not.
+or
+  Nothing comes. You would need to read it first.
+end phrase</code></pre>
+<p>The versions are <strong>variants</strong>, separated by a line that
+says <code>or</code>. The word after the comma on the head line is the
+strategy, and the five strategies are the ones chapter 17 listed for
+<code>select</code>: <code>cycling</code>, <code>stopping</code>,
+<code>randomly</code>, <code>sticky</code> and
+<code>first-time</code>.</p>
+<pre class="text"><code>&gt; light lamp
+You reach for the word and find only the place where it was.
+
+&gt; light lamp
+The shape of it is there, as a name is on the tip of the tongue. The word is not.
+
+&gt; light lamp
+Nothing comes. You would need to read it first.</code></pre>
+<p>No clause had to change. The three things still say
+<code>no-such-word</code>, and the phrase has become richer underneath
+them. Notice also that the cycle is shared. If the player tries the
+lamp, then the candles, then the lamp again, they get the first, second
+and third variants, because it is one phrase keeping one place.</p>
+<p>This is the short way promised in chapter 17. When all you want is to
+vary some text, put the variants in the phrase. Keep <code>select</code>
+with a strategy for alternatives that do different things.</p>
+<p>Remove the entry for <code>no-such-word</code> from the
+<code>define phrases</code> block when you add this one, or the key is
+declared twice.</p>
+<h2 data-number="20.3" id="the-sayings-of-hobb"><span
+class="header-section-number">20.3</span> The sayings of Hobb</h2>
+<p>The people of this country have a word they say about sunlight. They
+say it on opening the shutters and on parting, and they say it of anyone
+who is all cleverness and no warmth. The word is <em>gnusto</em>. Hobb
+says it the way other people clear their throats.</p>
+<pre class="chord"><code>define phrase hobb-saying, cycling
+  &quot;Gnusto on the sill,&quot; says Hobb, without turning round. It is what
+  people here say for good morning.
+or
+  &quot;Gnusto keeps what the dark forgets,&quot; Hobb remarks, to the kettle.
+or
+  &quot;All lamp and no gnusto, some people,&quot; says Hobb. He does not say
+  which people.
+end phrase</code></pre>
+<p>He says one each time Ansel comes into the Lodge, unless the bell is
+tolling, in which case nobody can hear him.</p>
+<pre class="chord"><code>create the Lodge, a room
+  in the Grounds
+  north to the Gate Court
+
+  room name:
+    The Porter&#39;s Lodge
+
+  The porter&#39;s lodge is one small room built into the thickness of the
+  gate arch. A chair, a kettle and thirty years of newspapers have filled
+  most of it. On the sill a lamp is burning with a steady blue flame, and
+  an oak press hangs on the wall beside it. The door to the court is
+  north.
+
+  after the player entering
+    phrase hobb-saying when the tower bell is not tolling
+    phrase hobb-deafened when the tower bell is tolling
+  end after</code></pre>
+<pre class="text"><code>&gt; south
+The Porter&#39;s Lodge
+The porter&#39;s lodge is one small room built into the thickness of the gate arch. A chair, a kettle and thirty years of newspapers have filled most of it. On the sill a lamp is burning with a steady blue flame, and an oak press hangs on the wall beside it. The door to the court is north.
+
+You can see a kettle and Hobb here.
+
+On the chair you see a seed cake and a cup.
+
+&quot;Gnusto keeps what the dark forgets,&quot; Hobb remarks, to the kettle.</code></pre>
+<h2 data-number="20.4" id="text-that-keeps-its-shape"><span
+class="header-section-number">20.4</span> Text that keeps its shape</h2>
+<p>Chord treats the text of a phrase as a paragraph. It joins your lines
+into one and lets the player’s screen wrap them. That is right for prose
+and wrong for anything whose line breaks matter, such as an
+inscription.</p>
+<p>The letters cut over the gate of Lanternhall are in three lines,
+centred.</p>
+<pre class="chord"><code>define phrase gate-motto, verbatim
+        THE CRAFT
+     NEEDS A LIGHT
+    TO COME HOME TO
+end phrase</code></pre>
+<p><code>verbatim</code> takes the place of a strategy. A verbatim
+phrase is printed line for line, and the indentation of each line
+relative to the others is kept. It has one variant and takes no
+<code>or</code>.</p>
+<pre class="chord"><code>create the gate
+  aka gates, arch, letters, motto
+  a thing, scenery
+  in the Lodge and the Gate Court
+
+  The great gate of Lanternhall, shut for thirty years and opened this
+  morning by one leaf. There is a line of cut letters over the arch.
+
+  after the player examining
+    phrase gate-motto
+  end after</code></pre>
+<pre class="text"><code>&gt; examine gate
+The great gate of Lanternhall, shut for thirty years and opened this morning by one leaf. There is a line of cut letters over the arch.
+
+    THE CRAFT
+ NEEDS A LIGHT
+TO COME HOME TO</code></pre>
+<p>The line that sits furthest left in the file sits at the margin on
+the screen, and the others keep their distance from it.</p>
+<h2 data-number="20.5" id="markers"><span
+class="header-section-number">20.5</span> Markers</h2>
+<p>A <strong>marker</strong> is a pair of braces in the text of a
+phrase, with something inside that is filled in when the phrase is
+printed.</p>
+<p>The simplest marker is <code>{br}</code>, which is a line break
+inside an ordinary paragraph.</p>
+<p>The most useful markers take a value handed over by the clause. The
+<code>phrase</code> statement can pass one, with the word
+<code>with</code>, a name for it, an equals sign and the value.</p>
+<pre class="chord"><code>create the tower bell
+  aka bell
+  a thing, scenery
+  in the Bell Stair
+  states: unrung, tolling, silent
+
+  You cannot see the bell from here, only the dark it hangs in.
+
+  after the player examining
+    phrase bell-count with count = tolls when the tower bell is tolling
+  end after</code></pre>
+<pre class="chord"><code>define phrases en-US
+  bell-count:
+    By your count that makes {verbatim:count}, and it is not tired.</code></pre>
+<p>The statement passes the counter <code>tolls</code> under the name
+<code>count</code>, and the marker <code>{verbatim:count}</code> prints
+it as it stands.</p>
+<pre class="text"><code>&gt; examine bell
+You cannot see the bell from here, only the dark it hangs in.
+
+By your count that makes 3, and it is not tired.
+
+The tower bell tolls.</code></pre>
+<p>When the value is a thing, the marker can ask for its name in the
+form the sentence needs.</p>
+<table>
+<thead>
+<tr>
+<th>Marker</th>
+<th>Prints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{the thing}</code></td>
+<td>the lamp</td>
+</tr>
+<tr>
+<td><code>{a thing}</code></td>
+<td>a lamp</td>
+</tr>
+<tr>
+<td><code>{capitalize the thing}</code></td>
+<td>The lamp</td>
+</tr>
+<tr>
+<td><code>{verbatim:count}</code></td>
+<td>a number or a piece of text, unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>Here <code>thing</code> and <code>count</code> are the names given
+after <code>with</code>. The statement that goes with the first three
+would be <code>phrase named with thing = the hand lamp</code>.</p>
+<p>Markers of this kind matter most in a phrase that several things
+share, and you will use them in earnest in chapter 23, where one refusal
+has to name whichever thing the player typed.</p>
+<p>One caution. A marker with a plain lower-case word and nothing else,
+such as <code>{count}</code>, is not read as a value. It is read as the
+key of another phrase, which is the subject of the next section, and the
+compiler will tell you that no such phrase exists.</p>
+<h2 data-number="20.6" id="a-phrase-inside-a-description"><span
+class="header-section-number">20.6</span> A phrase inside a
+description</h2>
+<p>A room’s description is fixed text, and by chapter 19 that had become
+a problem. The Bell Stair’s description says that an iron grille stands
+across the third step. One day the grille will be gone, and the
+description will go on saying so.</p>
+<p>A marker in a room’s description may name a phrase. The phrase’s text
+is set into the description at that point.</p>
+<pre class="chord"><code>create the Bell Stair, a room
+  in the Hall
+  up to the Lantern Gallery
+  up is blocked while the iron grille is standing: stair-sealed
+
+  The foot of the tower. A stair winds up around the well where the bell
+  rope hangs. The cloister is south. {grille-across}</code></pre>
+<p>And the phrase can carry a condition on its head line.</p>
+<pre class="chord"><code>define phrase grille-across while the iron grille is standing
+  An iron grille stands across its third step.
+end phrase</code></pre>
+<p>While the grille is standing, the room reads as it always did.</p>
+<pre class="text"><code>&gt; north
+Bell Stair
+The foot of the tower. A stair winds up around the well where the bell rope hangs. The cloister is south. An iron grille stands across its third step.</code></pre>
+<p>When the grille is lifted, the sentence is simply absent, and nothing
+in the room’s block had to know.</p>
+<p>A phrase set into a description may have variants and a strategy as
+well, and then the description changes a little each time the player
+looks.</p>
+<p>Three things to know about this form.</p>
+<p>It works in the description of a room. A marker in the description of
+a thing is not filled in. For a thing, the tool is the
+<code>detail</code> phrase of the next chapter.</p>
+<p>The <code>while</code> on a phrase’s head governs its appearance in a
+description. It does not stop a clause from printing the phrase with a
+<code>phrase</code> statement. To make a statement conditional, use the
+<code>when</code> suffix, as the Lodge’s clause does.</p>
+<p>Put the marker at the end of a paragraph when you can. A marker in
+the middle leaves its two spaces behind when the phrase is absent.</p>
+<h2 data-number="20.7" id="build-and-try-it-16"><span
+class="header-section-number">20.7</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-20</code> over your own file. It is the story with this
+chapter’s changes made. To make the changes by hand instead, work from
+this list and take the rest from that file. This is the first chapter of
+Part IV, so raise <code>story-version</code> to <code>0.4.0</code>. Add
+the four <code>define phrase</code> blocks near the top of the file and
+remove <code>no-such-word</code> from the <code>define phrases</code>
+block. Add the clauses to the Lodge, the gate and the tower bell, change
+the gate’s description, put the marker in the Bell Stair’s description,
+and add the two new entries <code>bell-count</code> and
+<code>hobb-deafened</code>.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Walk in and out of the Lodge three times to hear all of Hobb’s
+sayings. Then read the page, wait for the bell, and go back.</p>
+<pre class="text"><code>&gt; south
+The Porter&#39;s Lodge
+The porter&#39;s lodge is one small room built into the thickness of the gate arch. A chair, a kettle and thirty years of newspapers have filled most of it. On the sill a lamp is burning with a steady blue flame, and an oak press hangs on the wall beside it. The door to the court is north.
+
+You can see a kettle and Hobb here.
+
+On the chair you see a seed cake and a cup.
+
+Hobb has his hands over his ears. He says something, and the bell says something louder.
+
+The tower bell tolls.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: one table of phrases</strong> · Story IR
+<code>phrases</code></p>
+<p>Both ways of declaring a phrase end up in one table in the compiled
+IR, keyed by language and then by phrase key. Each entry has a
+<code>strategy</code>, which is empty for a plain phrase, and a list of
+<code>variants</code>, each with its text and the markers found in it.
+Descriptions are in the same table under keys the compiler makes up,
+such as <code>spark-page.description</code>, which is why a description
+and a phrase can be treated so alike.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: text substitutions</strong></p>
+<p>Inform 10 puts substitutions in square brackets inside the text, and
+“[the noun]” and “[The noun]” do what <code>{the thing}</code> and
+<code>{capitalize the thing}</code> do here. TADS 3 uses “{the
+dobj/him}” style parameters in message strings, and
+<code>&lt;&lt;expression&gt;&gt;</code> to embed a value. The idea is
+common to all three. Chord differs in keeping its text out of the code
+entirely: a clause names a key, and the words are somewhere else, where
+a writer or a translator can work on them without reading a single
+clause.</p>
+</div>
+<h2 data-number="20.8" id="what-you-have-so-far-19"><span
+class="header-section-number">20.8</span> What you have so far</h2>
+<p>Phrases can vary, keep their shape, take values and appear in a
+room’s description only while they are true. All of that is about text
+the story prints when something happens. The next chapter is about the
+words a thing carries around with it.</p>
+<nav class="book-nav-bottom"><a class="prev" href="-part-iv.-words.html">← Part IV. Words</a><a class="next" href="21-a-things-own-words.html">A thing’s own words →</a></nav>
+</body>
+</html>

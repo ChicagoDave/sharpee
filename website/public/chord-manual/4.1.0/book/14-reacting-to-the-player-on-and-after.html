@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Reacting to the player: on and after</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details open><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li class="active"><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="15-what-a-clause-can-say-and-do.html" accesskey="n" rel="next">What a clause can say and do</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="13-states.html" accesskey="p" rel="previous">States</a>
+</span>
+</div>
+</nav>
+<h1 data-number="14" id="reacting-to-the-player-on-and-after"><span
+class="header-section-number">14</span> Reacting to the player: on and
+after</h1>
+<p>Every command a player types becomes an <strong>action</strong>:
+taking, opening, reading, pulling. Chapter 9 called these the standard
+actions, and so far they have done all the work. The player types
+<code>take kettle</code> and the taking action takes the kettle.</p>
+<p>A <strong>clause</strong> is how a thing gets a say in that. It is a
+small block inside a <code>create</code> block that names an action and
+holds the lines to run when the player does that action to this thing.
+There are two kinds. An <code>on</code> clause runs before the action
+and can stop it or speak in its place. An <code>after</code> clause runs
+once the action has succeeded and adds to it.</p>
+<h2 data-number="14.1" id="a-thing-that-says-no"><span
+class="header-section-number">14.1</span> A thing that says no</h2>
+<p>Hobb’s kettle has been sitting in the Lodge since chapter 6, and any
+player could walk off with it. It belongs to Hobb, and Hobb is four feet
+away.</p>
+<pre class="chord"><code>create the kettle
+  a thing
+  in the Lodge
+
+  A black iron kettle, still warm.
+
+  on the player taking while Hobb is here
+    refuse kettle-is-hobbs
+  end on</code></pre>
+<p>Read the first line of the clause as a sentence: on the player
+taking, while Hobb is here. The word after <code>the player</code> is a
+<strong>gerund</strong>, the “-ing” form of a verb, and it names the
+action. The clause belongs to the kettle because it is written in the
+kettle’s block, so it concerns the player taking the kettle and nothing
+else.</p>
+<p>The line inside is a statement. <code>refuse</code> stops the action
+and prints a phrase, and the phrase goes in the
+<code>define phrases</code> block with the others.</p>
+<pre class="chord"><code>define phrases en-US
+  kettle-is-hobbs:
+    Hobb does not look round. &quot;That&#39;s mine,&quot; he says.</code></pre>
+<p>The clause closes with <code>end on</code>.</p>
+<pre class="text"><code>&gt; take kettle
+Hobb does not look round. &quot;That&#39;s mine,&quot; he says.</code></pre>
+<p>The kettle is still on the floor of the Lodge. The taking action
+never ran.</p>
+<h2 data-number="14.2" id="where-a-clause-lives"><span
+class="header-section-number">14.2</span> Where a clause lives</h2>
+<p>A clause is written on the thing it is about. This is the most
+important habit in Chord, and the language holds you to it. There is no
+place in a story file for a rule that says “when the player takes the
+kettle”. There is only the kettle, and what the kettle does about being
+taken.</p>
+<p>The gain shows as a story grows. Everything that can happen to the
+kettle is in the kettle’s block, and to find out why the grille will not
+move you read the grille.</p>
+<h2 data-number="14.3" id="speaking-in-the-actions-place"><span
+class="header-section-number">14.3</span> Speaking in the action’s
+place</h2>
+<p>An <code>on</code> clause does not have to refuse. If it prints a
+phrase and lets the action go on, the phrase replaces what the action
+would have said.</p>
+<p>The spark page was <code>readable with text</code> in the last
+chapter, and reading it printed the standard sentence followed by that
+text. Take the text away and give the page a clause.</p>
+<pre class="chord"><code>create the spark page
+  aka first page, leaf
+  a thing, readable
+  on the reading desk
+  states: legible, learned
+
+  A leaf that has worked loose from the grimoire. The ink on it is
+  complete.
+
+  on the player reading
+    change the spark page to learned
+    phrase spark-learned
+  end on</code></pre>
+<pre class="chord"><code>define phrases en-US
+  spark-learned:
+    You read the line once, and it reads you back. The word for waking a
+    flame settles into the place it left thirty years ago, as if it had
+    only stepped out.</code></pre>
+<p>The clause has two statements. The first is the <code>change</code>
+you met in the last chapter, now in a place where it runs during play.
+The second, <code>phrase</code>, prints a piece of text.</p>
+<pre class="text"><code>&gt; read page
+(first taking the spark page)
+
+You take the spark page from the reading desk.
+
+You read the line once, and it reads you back. The word for waking a flame settles into the place it left thirty years ago, as if it had only stepped out.</code></pre>
+<p>The page’s state is now <code>learned</code>. Something in
+Lanternhall has changed because of what the player did, for the first
+time.</p>
+<h2 data-number="14.4" id="adding-to-an-action-after"><span
+class="header-section-number">14.4</span> Adding to an action:
+after</h2>
+<p>An <code>after</code> clause leaves the action alone and speaks once
+it is done. The bell rope is <code>pullable</code>, and pulling it
+prints the standard sentence. The rope then adds its own.</p>
+<pre class="chord"><code>create the bell rope
+  aka rope
+  a thing, scenery, pullable
+  in the Bell Stair
+
+  A rope as thick as your wrist, coming down out of the dark.
+
+  after the player pulling
+    phrase rope-nothing
+  end after</code></pre>
+<pre class="text"><code>&gt; pull rope
+You pull the bell rope.
+
+Nothing answers. The bell has not been rung in thirty years and sees no reason to start for you.</code></pre>
+<p>Both lines are printed, the action’s first and the clause’s second.
+An <code>after</code> clause closes with <code>end after</code>.</p>
+<p>Because it runs when the action has already happened, an
+<code>after</code> clause cannot refuse. If you write
+<code>refuse</code> in one, the compiler explains:</p>
+<pre class="text"><code>probe.story:23:5 error [parse.react-refusal] Refusals (`refuse`, `must`) cannot appear in an `after` clause — reactions run after the action succeeded. Use an `on` clause to intercept.</code></pre>
+<p>The choice between the two is the choice between those two sentences.
+Use <code>on</code> when the thing should prevent the action or tell it
+differently. Use <code>after</code> when the action should happen as
+usual and the thing has something to add.</p>
+<h2 data-number="14.5" id="several-actions-one-clause"><span
+class="header-section-number">14.5</span> Several actions, one
+clause</h2>
+<p>The grille cannot be taken, pushed or pulled, and it says the same
+thing to all three. A clause head may list gerunds, separated by
+commas.</p>
+<pre class="chord"><code>create the iron grille
+  aka grille
+  a thing, scenery
+  in the Bell Stair
+  states: standing, lifted
+
+  Wrought iron, floor to vault, with no lock, no latch and no hinges.
+  It was not built. It was put there.
+
+  on the player taking, pushing, pulling
+    refuse grille-fixed
+  end on</code></pre>
+<pre class="text"><code>&gt; push grille
+It does not so much as rattle.
+
+&gt; pull grille
+It does not so much as rattle.</code></pre>
+<p>A list is a shorthand for one clause per gerund, each with the same
+lines. It is not a way to have two clauses for one action. A thing takes
+one <code>on</code> clause and one <code>after</code> clause for each
+gerund, and a second is an error:</p>
+<pre class="text"><code>probe.story:26:17 error [analysis.duplicate-clause] A `on taking` clause is already declared on lamp at line 22 — a second one would silently mask it. Merge the bodies (or split intercept/react across `on`/`after`).</code></pre>
+<p>When a thing needs to answer one action in more than one way, it does
+so inside one clause. Chapter 17 shows how.</p>
+<h2 data-number="14.6" id="the-other-thing-in-the-command"><span
+class="header-section-number">14.6</span> The other thing in the
+command</h2>
+<p>Some actions involve two things. The player gives the spectacles to
+Hobb, or puts the lens in the Lantern. A clause on one of them may name
+the other, and then it runs only for that pairing.</p>
+<pre class="chord"><code>create the spectacles
+  aka glasses
+  a thing, plural, concealed
+  in the Lodge
+
+  Wire spectacles with one arm mended in thread. Hobb has been looking
+  for them since the spring.
+
+  after the player giving to Hobb
+    phrase spectacles-given
+  end after</code></pre>
+<pre class="text"><code>&gt; give spectacles to hobb
+You give the spectacles to Hobb.
+
+Hobb hooks them over his ears and looks at you properly for the first time. &quot;Ansel,&quot; he says, after a while. &quot;You were always late.&quot;</code></pre>
+<p>The words <code>to Hobb</code> are the <strong>counterpart</strong>.
+Giving the spectacles to anyone else would not run the clause. The lens
+has one of the same kind, for the day it reaches the roof:</p>
+<pre class="chord"><code>  after the player inserting in the Great Lantern
+    phrase lens-seated
+  end after</code></pre>
+<p>Two gerunds are easy to confuse here. <code>putting</code> is putting
+a thing on a supporter, and <code>inserting</code> is putting a thing in
+a container. The Great Lantern is a container, so the lens is inserted.
+Appendix C lists every standard action with its gerund.</p>
+<p>A <code>settable</code> thing has a tail of a different kind. Its
+clause may name the position being chosen, and then it runs for that
+position only.</p>
+<pre class="chord"><code>  on the player setting to high
+    phrase dial-high
+  end on</code></pre>
+<pre class="text"><code>&gt; set dial to high
+The needle swings over to high, and something below you starts to hum.</code></pre>
+<h2 data-number="14.7" id="conditions-and-once"><span
+class="header-section-number">14.7</span> Conditions and once</h2>
+<p>A clause head may end with <code>while</code> and a condition, as the
+kettle’s does. The clause then runs only when the condition is true. If
+Hobb ever leaves the Lodge, the kettle can be taken.</p>
+<p>A head may also end with a comma and the word <code>once</code>. The
+clause then runs one time in the whole story and never again.</p>
+<pre class="chord"><code>create the Library, a room
+  in the Hall
+
+  The reading room of Lanternhall, with its desks in rows and its
+  galleries of shelves. The stacks run back to the north, out of the
+  light. The cloister is east.
+
+  after the player entering, once
+    phrase library-ink
+  end after</code></pre>
+<pre class="text"><code>&gt; west
+Library
+The reading room of Lanternhall, with its desks in rows and its galleries of shelves. The stacks run back to the north, out of the light. The cloister is east.
+
+On the reading desk you see a grimoire and a spark page.
+
+There is a smell in here that was not here thirty years ago, or was here and you had forgotten it. It is wet ink.</code></pre>
+<p>This clause is on a room, and on a room the gerund
+<code>entering</code> means the player’s arrival there. On anything else
+it means the player getting into the thing, as with Hobb’s chair.</p>
+<h2 data-number="14.8" id="clauses-about-the-person"><span
+class="header-section-number">14.8</span> Clauses about the person</h2>
+<p>Every clause so far has been about something done to the thing that
+owns it. A person’s block may also hold a clause about what that person
+does. The head then has no actor, only the gerund.</p>
+<pre class="chord"><code>create Ansel
+  a person, proper
+  playable
+  starts in the Lodge
+  carries the wax taper
+  wears the travelling coat
+
+  You were a student here once, for a term. You have the same hands and
+  not much else.
+
+  after eating
+    phrase cake-eaten
+  end after</code></pre>
+<p>This runs after Ansel eats anything at all. The only food in
+Lanternhall is Hobb’s cake.</p>
+<pre class="text"><code>&gt; eat cake
+(first taking the seed cake)
+
+You take the seed cake from the chair.
+
+You eat some of the seed cake.
+
+It tastes of caraway, and of being nineteen.</code></pre>
+<p>A head with no actor is allowed only in a person’s block. The actor
+in the other heads does not have to be the player, either.
+<code>after Hobb taking</code> would be a clause about Hobb taking the
+thing, and it waits for chapter 26, where people act by themselves.</p>
+<h2 data-number="14.9" id="build-and-try-it-10"><span
+class="header-section-number">14.9</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-14</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the phrases, which the chapter did
+not print in full. To make the changes by hand instead, work from this
+list and take the phrases from that file: add the clauses to the kettle,
+the spectacles, the Library, the spark page, the bell rope, the grille,
+the lens and Ansel, add their eight phrases, and remove
+<code>with text</code> and its string from the spark page.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Find the spectacles first. They are <code>concealed</code>, so the
+command is <code>search</code>.</p>
+<pre class="text"><code>&gt; search
+Hidden here, you discover: spectacles.
+
+&gt; take spectacles
+Taken.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: the phases of an action</strong> ·
+<code>if.action.taking</code></p>
+<p>A standard action runs in phases. It first checks whether it may
+happen, then changes the world, then reports what it did. An
+<code>on</code> clause is consulted at the start, before the check,
+which is why it can refuse and why a phrase it prints stands in for the
+report. An <code>after</code> clause runs when the report is already
+written. <code>sharpee test</code> lists every clause it found by owner
+and gerund, such as “kettle · on taking”, and that list is a quick way
+to see what your story has attached to which action. The command needs a
+test tree beside the story, which chapter 38 teaches you to write, and
+your own folder has none yet. The companion folder
+<code>chapter-14</code> has one. Go into that folder and run
+<code>sharpee test .</code> to see the list, under the heading that
+begins “Derived rule tests”.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: rules about actions</strong></p>
+<p>Inform 10 gives you rulebooks that sit around every action: Instead,
+Before, Check, Carry out, After and Report rules, each of which may name
+the object it applies to. TADS 3 puts the handling on the object, in
+<code>dobjFor</code> blocks with <code>verify</code>, <code>check</code>
+and <code>action</code> methods. Chord is closer to the second. It has
+two hooks where Inform has six, and it will not let you write either of
+them anywhere but on the thing concerned.</p>
+</div>
+<h2 data-number="14.10" id="what-you-have-so-far-13"><span
+class="header-section-number">14.10</span> What you have so far</h2>
+<p>Lanternhall answers back. A kettle refuses, a page teaches, a rope
+and a room add a sentence, and the porter knows your name. Each of those
+clauses holds one or two statements, and you have met three statements
+in all: <code>refuse</code>, <code>phrase</code> and
+<code>change</code>. The next chapter is about the rest.</p>
+<nav class="book-nav-bottom"><a class="prev" href="13-states.html">← States</a><a class="next" href="15-what-a-clause-can-say-and-do.html">What a clause can say and do →</a></nav>
+</body>
+</html>

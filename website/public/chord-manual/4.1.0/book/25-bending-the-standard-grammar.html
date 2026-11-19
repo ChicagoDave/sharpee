@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Bending the standard grammar</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details open><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li class="active"><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-part-v.-people.html" accesskey="n" rel="next">Part V. People</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="24-new-kinds-of-thing.html" accesskey="p" rel="previous">New kinds of thing</a>
+</span>
+</div>
+</nav>
+<h1 data-number="25" id="bending-the-standard-grammar"><span
+class="header-section-number">25</span> Bending the standard
+grammar</h1>
+<p>A player does not know which words you chose. They will type
+<code>fix lens</code> where you wrote <code>mend</code>,
+<code>sit on chair</code> where the platform knows <code>enter</code>,
+and <code>light lamp</code> where the whole point of your story is that
+lamps are sparked. A story that answers “I don’t understand that” to a
+reasonable sentence has lost a little of the player’s trust each
+time.</p>
+<p>This chapter is about the grammar of actions that already exist:
+adding words to them, taking words away, and moving a word from one
+action to another. It is the shortest chapter in Part IV, and it has a
+large effect on how a story feels to play.</p>
+<h2 data-number="25.1" id="adding-words-to-an-action"><span
+class="header-section-number">25.1</span> Adding words to an action</h2>
+<p><code>extend action</code> adds patterns to an action. The action may
+be one of your own.</p>
+<pre class="chord"><code>extend action mending
+  grammar
+    fix or repair the target
+
+extend action hushing
+  grammar
+    quiet or silence the target</code></pre>
+<p>The block names the action and holds a <code>grammar</code> block,
+written as in <code>define action</code>. Now <code>fix</code>,
+<code>repair</code> and <code>mend</code> are one verb, with one set of
+requirements and one trait answering it.</p>
+<pre class="text"><code>&gt; fix spectacles
+You say the word and mean it. What was broken is whole, and has no memory of having been otherwise.</code></pre>
+<p>You could have written all three words in the action’s own
+<code>grammar</code> block, and for a new action that is often tidier.
+<code>extend action</code> earns its place when the action is not yours
+to edit.</p>
+<h2 data-number="25.2" id="extending-a-standard-action"><span
+class="header-section-number">25.2</span> Extending a standard
+action</h2>
+<p>Hobb’s chair has been <code>enterable</code> since chapter 7, and
+chapter 7 had to admit that the command for sitting in it was
+<code>enter chair</code>. In the story as chapter 24 left it, the
+plainer command gets this reply:</p>
+<pre class="text"><code>&gt; sit on chair
+I don&#39;t understand that.</code></pre>
+<p>The standard action is called <code>entering</code>, and it can be
+extended like any other.</p>
+<pre class="chord"><code>extend action entering
+  grammar
+    sit on or in the portal
+    sit down on or in the portal</code></pre>
+<p>With that in the story, which is how this chapter’s companion file
+has it:</p>
+<pre class="text"><code>&gt; sit on chair
+You get into the chair.
+
+&gt; exit
+You get out of the chair.</code></pre>
+<p>The slot is called <code>the portal</code> here because that is what
+the standard entering action calls it. When you extend a standard
+action, use its own slot names, so that the rest of the action knows
+which thing your pattern means. Appendix C gives the patterns of every
+standard action, and the slot names are there to be read off:
+<code>the item</code> for taking, <code>the target</code> for lighting,
+<code>the portal</code> for entering.</p>
+<p>The reply still says “get into”, which is the standard message
+<code>entering-entered</code>. You know from chapter 22 how to change
+that.</p>
+<p>An <code>extend action</code> block adds grammar and nothing else. It
+cannot add a requirement, a refusal or a statement to the action.
+Behaviour belongs to things and traits, by the rule of the last two
+chapters, and the compiler refuses a behaviour line in an
+<code>extend action</code> block.</p>
+<h2 data-number="25.3" id="taking-words-away"><span
+class="header-section-number">25.3</span> Taking words away</h2>
+<p><code>remove from action</code> takes a pattern out of a standard
+action.</p>
+<pre class="chord"><code>remove from action lighting
+  light the target</code></pre>
+<p>The block names the action, and each line beneath is a pattern to
+remove, written exactly as the standard grammar has it. The pattern must
+be one the action really has. Removing a pattern that is not there is an
+error and not a silent success, and the message lists the patterns the
+action does have.</p>
+<pre class="text"><code>relighting.story:192:1 error [analysis.unmatched-removal-pattern] `remove from action lighting` — no standard rule matches `ignite :target`. The action&#39;s standard patterns are: `light :target`, `light :target with|using :tool`.</code></pre>
+<p>After this block, <code>light lamp</code> is not a command at all.
+The standard lighting action still exists, with its other pattern,
+<code>light the target with the tool</code>. It has lost only the words
+you named.</p>
+<p>By itself that would make the story worse. It is one half of a
+move.</p>
+<h2 data-number="25.4" id="moving-a-word"><span
+class="header-section-number">25.4</span> Moving a word</h2>
+<p>The last chapter left a hole and a patch. <code>light lamp</code>
+reached the standard lighting action, and the <code>wick</code> trait
+refused it with a sentence about matches. That is a fair answer, and a
+better one is to let the player be right. In this story, to light a
+thing is to spark it.</p>
+<pre class="chord"><code>remove from action lighting
+  light the target
+
+extend action sparking
+  grammar
+    light the target</code></pre>
+<p>The first block frees the pattern. The second gives it to sparking.
+Write both. An <code>extend action</code> block is allowed to add a
+pattern that a standard action also has, and the story would then have
+two actions claiming one command. Removing the pattern first leaves no
+doubt about which you mean.</p>
+<pre class="text"><code>&gt; light lamp
+You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
+
+Somewhere above you, old timber takes a weight it had forgotten.</code></pre>
+<p>And before the page has been read, <code>light lamp</code> is refused
+by the sparking action, in the words the story uses for a working that
+has not been learned.</p>
+<pre class="text"><code>&gt; light lamp
+You reach for the word and find only the place where it was.</code></pre>
+<p>The <code>wick</code> trait keeps its
+<code>on the player lighting</code> clause. It now guards the one
+pattern the lighting action has left.</p>
+<pre class="text"><code>&gt; light lamp with taper
+You have no match, and you did not walk here for three days to use one. There is a word for this.
+
+A slow draught moves through the Hall, one way and then the other.</code></pre>
+<p>This is the right order in which to think about any standard verb
+that your story changes the meaning of. First decide what the player
+will type. Then make sure every reasonable way of typing it arrives at
+the same action.</p>
+<h2 data-number="25.5" id="what-to-add"><span
+class="header-section-number">25.5</span> What to add</h2>
+<p>Play your story as someone who has never seen the source, or better,
+watch someone else play it. Each time a sensible command is not
+understood, write it down. Most of the entries on that list are one line
+in an <code>extend action</code> block.</p>
+<p>A few habits help.</p>
+<p>Add the plain word beside the coloured one. Your verb is
+<code>spark</code>, and the player’s is <code>light</code>. Your verb is
+<code>unbind</code>, and theirs may be <code>open</code>. The Relighting
+does not give <code>open</code> to unbinding, because the grille has no
+door in it and “open grille” deserves the standard refusal, but it is
+the kind of question to ask of every working.</p>
+<p>Add the prepositions people actually use. <code>sit on</code>,
+<code>sit in</code> and <code>sit down on</code> are one pattern each,
+or one pattern with <code>or</code> in it.</p>
+<p>Do not add a synonym that means something else elsewhere in the
+story. If <code>ring</code> is a noun in your game, think before making
+it a verb.</p>
+<p>And do not take away a standard pattern merely because your story has
+no use for it. A command that is understood and politely refused is
+better than one that is not understood.</p>
+<h2 data-number="25.6" id="a-file-for-the-grammar"><span
+class="header-section-number">25.6</span> A file for the grammar</h2>
+<p>The synonym blocks are not part of the story’s design. They are a
+list that grows with testing, and they can live in a file of their
+own.</p>
+<pre class="chord"><code>import &quot;synonyms&quot;</code></pre>
+<p>This is the <code>import</code> line of chapter 22, and the file it
+names is <code>synonyms.chord</code>, beside the story.</p>
+<pre class="chord"><code>## Plain words for the workings, and a way to sit down. This file is a
+## fragment: The Relighting imports it, and it is not a story by itself.
+
+extend action mending
+  grammar
+    fix or repair the target
+
+extend action hushing
+  grammar
+    quiet or silence the target
+
+extend action entering
+  grammar
+    sit on or in the portal
+    sit down on or in the portal</code></pre>
+<p>The blocks are read as though they stood in the story at the line
+where the <code>import</code> is. The Relighting keeps the
+<code>light</code> move in the main file, because that one is a decision
+about what the story means, and puts the rest in the fragment.</p>
+<p>The standard grammar is itself a file of this kind, written in the
+same <code>define action</code> blocks you learned in chapter 23.
+Appendix C prints it in full. Reading it is the quickest way to learn
+what your players can already say.</p>
+<h2 data-number="25.7" id="build-and-try-it-21"><span
+class="header-section-number">25.7</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> and <code>synonyms.chord</code>
+from the companion folder <code>chapter-25</code> into your project, the
+first over your own file and the second beside it. They are the story
+with this chapter’s changes made. To make the changes by hand instead,
+work from this list: add the <code>remove from action</code> block, the
+<code>extend action sparking</code> block and the <code>import</code>
+line near the workings, and create <code>synonyms.chord</code> beside
+the story with the three blocks above.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Play the winning walk once more with the plain words:
+<code>light lamp</code>, <code>quiet bell</code>,
+<code>fix spectacles</code>, <code>repair lens</code>. The grille has no
+plain word, so <code>unbind grille</code> is typed as before. Leave it
+until after <code>fix spectacles</code>.</p>
+<pre class="text"><code>&gt; quiet bell
+You say the word up into the dark of the tower. The bell swings twice more without a sound, and hangs still.</code></pre>
+<p>One of the replies on this walk ends with the line about the rank of
+a Journeyman. It is whichever takes the score to thirty, and in the
+order given here that is <code>fix spectacles</code>.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: two lists</strong> · Story IR
+<code>grammarRemovals</code>, <code>grammarExtensions</code></p>
+<p>The compiled IR records these blocks in two lists.
+<code>grammarRemovals</code> has one entry, for lighting, holding the
+pattern that was taken away. <code>grammarExtensions</code> has four,
+for sparking, mending, hushing and entering, and it does not say which
+file they came from. When the story loads, the platform starts from the
+standard grammar, removes the first list, and adds the second and your
+own actions. The parser that reads the player’s command never sees your
+source. It sees one grammar, which is the standard one as your story has
+bent it.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: Understand lines</strong></p>
+<p>In Inform 10 the same three jobs are done by “Understand” sentences:
+“Understand ‘fix [something]’ as mending” adds a pattern, and
+“Understand the command ‘light’ as something new” clears a verb so that
+you can assign it again. In TADS 3 you add a <code>VerbRule</code> for
+the new wording. Chord’s two blocks correspond closely to the two Inform
+forms. The difference is that Chord removes one pattern at a time, where
+Inform’s “as something new” clears every use of the word.</p>
+</div>
+<h2 data-number="25.8" id="what-you-have-so-far-24"><span
+class="header-section-number">25.8</span> What you have so far</h2>
+<p>That is Part IV, and with it the game has its centre. The Relighting
+has four workings that can be typed three or four ways each, things that
+answer them through traits, prose that varies and belongs to its
+speakers, and a standard library that has been taught this story’s
+manners. A player can win it, lose it two ways, or run out of day.</p>
+<p>What Lanternhall does not have is anybody in it. Hobb stands in his
+doorway and says a word about sunlight when you come in, and he cannot
+be asked a single question. Part V is about people.</p>
+<nav class="book-nav-bottom"><a class="prev" href="24-new-kinds-of-thing.html">← New kinds of thing</a><a class="next" href="-part-v.-people.html">Part V. People →</a></nav>
+</body>
+</html>

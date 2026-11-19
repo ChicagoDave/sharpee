@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>The story header</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details open><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li class="active"><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="3-the-player-and-the-start.html" accesskey="n" rel="next">The player and the start</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="1-the-shape-of-a-story-file.html" accesskey="p" rel="previous">The shape of a story file</a>
+</span>
+</div>
+</nav>
+<h1 data-number="2" id="the-story-header"><span
+class="header-section-number">2</span> The story header</h1>
+<p>Every story begins by saying what it is. In Chord that is the job of
+the <code>story</code> block, which this book calls the header. It holds
+the facts about the story as a whole: what it is called, who wrote it,
+which version this is, and the words the player reads before anything
+else happens.</p>
+<p>Here is the header of The Relighting again.</p>
+<pre class="chord"><code>story
+  title: The Relighting
+  id: relighting
+  story-version: 0.1.0
+  authors:
+    The Sharpee Project
+  description: Thirty years after the magic went out of the world, a lamp burns blue.
+  prologue:
+    You were here for one term, thirty years ago, and you would have said
+    you remembered none of it. Then last week a candle leaned toward your
+    hand, and you started walking.</code></pre>
+<p>The first line is the single word <code>story</code>. Everything
+indented beneath it is a <strong>field</strong>: a key, a colon, and a
+value. The header takes a fixed set of fields and no others, so you
+cannot invent one. This chapter covers the eight that describe the
+story. The rest belong to later chapters, most of them to Part VII,
+where the story is given its look in a browser.</p>
+<h2 data-number="2.1" id="the-two-fields-every-header-needs"><span
+class="header-section-number">2.1</span> The two fields every header
+needs</h2>
+<p>A header must have a <code>title:</code> and an <code>authors:</code>
+list. Nothing else is required. This is the smallest header the compiler
+accepts:</p>
+<pre class="chord"><code>story
+  title: The Relighting
+  authors:
+    The Sharpee Project</code></pre>
+<p>The <strong>title</strong> is everything after the colon, to the end
+of the line. It is not quoted, and it may contain any punctuation you
+like.</p>
+<p>The <strong>authors</strong> are a list, even when there is only one.
+The key stands on a line by itself, and each name goes on its own line
+beneath it, indented one level further. A second author is a second
+line:</p>
+<pre class="chord"><code>  authors:
+    Hobb
+    Tamsin Vey</code></pre>
+<p>You may not put a name on the same line as <code>authors:</code>. The
+compiler asks for the list form:</p>
+<pre class="text"><code>relighting.story:3:3 error [parse.header-inline-list] `authors:` takes no inline name — list one name per line, indented under `authors:`.</code></pre>
+<p>Leave either field out and the compiler names the one that is
+missing:</p>
+<pre class="text"><code>relighting.story:1:1 error [parse.story-title] The story block requires a `title:` field.</code></pre>
+<h2 data-number="2.2" id="what-the-player-sees"><span
+class="header-section-number">2.2</span> What the player sees</h2>
+<p>When a story starts, the player is shown the title, the description
+if there is one, the authors and the version, and then the first room.
+With the smallest header above, and a first room cut down to one
+sentence so that the header’s lines stand out, the opening looks like
+this. It is here to be read. Nothing in this chapter is built.</p>
+<pre class="text"><code>The Relighting
+By The Sharpee Project
+Story v0.0.0
+
+Lodge
+The porter&#39;s lodge is one small room.</code></pre>
+<p>With two authors the second line reads
+<code>By Hobb, Tamsin Vey</code>. The version reads <code>0.0.0</code>
+because the header did not give one. The next section fixes that.</p>
+<h2 data-number="2.3" id="version-description-and-credits"><span
+class="header-section-number">2.3</span> Version, description and
+credits</h2>
+<p><strong><code>story-version:</code></strong> is the version of your
+story, written as three numbers separated by full stops. It is yours to
+count however you please. This book gives The Relighting the version
+<code>0.1.0</code> at the end of Part I and raises the middle number
+with each Part.</p>
+<p><strong><code>description:</code></strong> is one line that says what
+the story is about. It appears under the title when the story starts,
+and again whenever the player types <code>about</code>.</p>
+<p><strong><code>testers:</code></strong> is a second list of names,
+written exactly like <code>authors:</code>. It is a place to record the
+people who played your story before it was finished.</p>
+<p>With the version and the description added, typing <code>about</code>
+prints this:</p>
+<pre class="text"><code>&gt; about
+The Relighting
+Version 0.1.0
+By The Sharpee Project
+
+Thirty years after the magic went out of the world, a lamp burns blue.</code></pre>
+<h2 data-number="2.4" id="the-prologue"><span
+class="header-section-number">2.4</span> The prologue</h2>
+<p>The <strong>prologue</strong> is the text the player reads first,
+before the title. It is where a story sets its scene.</p>
+<pre class="chord"><code>  prologue:
+    You were here for one term, thirty years ago, and you would have said
+    you remembered none of it. Then last week a candle leaned toward your
+    hand, and you started walking.</code></pre>
+<p>The key stands alone on its line and the text follows beneath it,
+indented one level further. This is prose, so it wraps wherever you like
+and the player sees one paragraph. A blank line starts a second
+paragraph. The opening of The Relighting now reads:</p>
+<pre class="text"><code>You were here for one term, thirty years ago, and you would have said you remembered none of it. Then last week a candle leaned toward your hand, and you started walking.
+
+The Relighting
+Thirty years after the magic went out of the world, a lamp burns blue.
+By The Sharpee Project
+Story v0.1.0
+
+Lodge
+The porter&#39;s lodge is one small room built into the thickness of the gate arch. A chair, a kettle and thirty years of newspapers have filled most of it. On the sill a lamp is burning with a steady blue flame.</code></pre>
+<p>A short value may also sit on the same line as its key, which is how
+<code>description:</code> is written above. Both
+<code>description:</code> and <code>prologue:</code> accept either
+form.</p>
+<p>There is one trap in the short form. If the value is a single word
+made of letters and hyphens, such as
+<code>prologue: opening-words</code>, the compiler does not print that
+word. It takes it as the name of a phrase, which is a piece of text
+defined elsewhere in the file, and it reports an error if no phrase has
+that name. Chapter 20 teaches phrases. Until then, write your prologue
+as a sentence and the trap cannot catch you.</p>
+<h2 data-number="2.5" id="the-two-identifiers"><span
+class="header-section-number">2.5</span> The two identifiers</h2>
+<p><strong><code>id:</code></strong> is a short name for the story,
+written in lower-case letters with hyphens between the words. The player
+never sees it. The tools use it to name the things they make from your
+story, such as the folder that holds its tests and the folder that holds
+its browser build. Give every story an <code>id:</code>, and do not
+change it once you have chosen it.</p>
+<p><strong><code>ifid:</code></strong> is the story’s Interactive
+Fiction Identifier, a long code that identifies one work of interactive
+fiction to archives and catalogues. You do not need to write one. The
+Relighting’s header has none, and chapter 40 shows where the build puts
+the one it makes for you.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: the header in the Story IR</strong> ·
+<code>sharpee compose</code></p>
+<p>The header compiles to the <code>meta</code> section of the Story IR.
+The title is its own entry, and every other field you wrote is collected
+under <code>fields</code>:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;meta&quot;</span><span class="er">:</span> <span class="fu">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;The Relighting&quot;</span><span class="fu">,</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;fields&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;authors&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;The Sharpee Project&quot;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;testers&quot;</span><span class="fu">:</span> <span class="ot">[]</span><span class="fu">,</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;themes&quot;</span><span class="fu">:</span> <span class="ot">[]</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>That is the smallest header from earlier in this chapter. A field you
+did not write is simply absent, which is why the version was printed as
+<code>0.0.0</code>.</p>
+</div>
+<h2 data-number="2.6" id="when-a-field-is-refused"><span
+class="header-section-number">2.6</span> When a field is refused</h2>
+<p>Because the set of fields is fixed, a key the header does not know is
+an error, and the error lists every key it does know:</p>
+<pre class="text"><code>relighting.story:5:3 error [parse.header-unknown-field] Unknown story-header field `genre:` — the header takes exactly: title, authors, testers, ifid, id, story-version, prologue, description, client, theme, template, themes, default-theme, storage-prefix, publish-source, auto-assertion (plus states/score/use/on lines).</code></pre>
+<p>The words in parentheses at the end are not fields. They are other
+kinds of line that a header may hold, and each has its own chapter:
+<code>states</code> in chapter 13, <code>score</code> and
+<code>use</code> in chapter 18, and <code>on</code> in chapter 19.</p>
+<p>Three keys from earlier versions of Chord are refused by name, and
+the error for each one tells you its replacement. <code>version:</code>
+is now <code>story-version:</code>, <code>blurb:</code> is now
+<code>description:</code>, and <code>by:</code> is now
+<code>authors:</code>.</p>
+<p>The compiler is strict about which fields exist and relaxed about
+what you put in them. If you write <code>title:</code> twice, the second
+one wins and nothing warns you. An <code>id:</code> with spaces or
+capital letters in it is accepted as written. It is worth reading your
+header once more before you move on.</p>
+<div class="from-another-system">
+<p><strong>From another system: bibliographic data</strong></p>
+<p>Inform 10 lets the first line of the source give the title and the
+author, as an abbreviation, and sets the rest by sentences about the
+story, such as its description and its release number. TADS 3 keeps the
+same facts as properties of one object that describes the game. Chord’s
+header is nearer to the TADS 3 arrangement, with one difference worth
+knowing early. The header is a closed form. You fill in the fields it
+has, and a fact it has no field for belongs somewhere else in the
+story.</p>
+</div>
+<h2 data-number="2.7" id="what-you-have-so-far-1"><span
+class="header-section-number">2.7</span> What you have so far</h2>
+<p>Your <code>relighting.story</code> begins with a header that names
+the story, credits its author, gives it a version and a description, and
+sets the scene. The header says nothing yet about who the player is.
+That is the next chapter.</p>
+<nav class="book-nav-bottom"><a class="prev" href="1-the-shape-of-a-story-file.html">← The shape of a story file</a><a class="next" href="3-the-player-and-the-start.html">The player and the start →</a></nav>
+</body>
+</html>

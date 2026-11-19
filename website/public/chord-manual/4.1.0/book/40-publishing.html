@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Publishing</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details open><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li class="active"><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-appendix-a.-the-grammar.html" accesskey="n" rel="next">Appendix A. The grammar</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="39-claims.html" accesskey="p" rel="previous">Claims</a>
+</span>
+</div>
+</nav>
+<h1 data-number="40" id="publishing"><span
+class="header-section-number">40</span> Publishing</h1>
+<!-- PENDING (Phase 5, 2026-11-17): the Chord Writer steps (the Publish tab)
+     are pending under D-3. `--no-menu` and `--out` are named from the
+     command's usage and were not run. A config file deleted while the header
+     still carries an `ifid:` line was not run. -->
+<p>The Relighting has been a folder on your machine for thirty-nine
+chapters. This one turns it into a single file that you can give to
+someone who has never heard of Chord, and who will open it in a browser
+and play.</p>
+<p>There is little left to write. Publishing is mostly a matter of
+deciding what the story is called for good, what number it carries, and
+whether its source goes with it.</p>
+<h2 data-number="40.1" id="the-identifier"><span
+class="header-section-number">40.1</span> The identifier</h2>
+<p>Chapter 2 mentioned a header field called <code>ifid:</code> and said
+that you do not need to write one. Chapter 37 built the page for the
+first time, and the build’s first line was this.</p>
+<pre class="text"><code>  ✓ Minted the story&#39;s ifid into relighting.config.json</code></pre>
+<p>An <strong>IFID</strong> is an Interactive Fiction Identifier: a long
+code that belongs to one work of interactive fiction and to no other.
+Archives and catalogues file a story under it. The title of a story can
+change, and two stories can share a title. The identifier is what stays
+the same from the first release to the last.</p>
+<p>The first build made one, and wrote it to a small file beside the
+story.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ifid&quot;</span><span class="fu">:</span> <span class="st">&quot;C24E29F8-C36B-4F55-9FE9-B6D75AE7133D&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;version&quot;</span><span class="fu">:</span> <span class="dv">1</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>That file, <code>relighting.config.json</code>, is where the
+identifier lives. The <code>version</code> in it is the version of the
+file’s own layout and has nothing to do with your story. The build also
+wrote a line into the story’s header, under <code>id:</code>.</p>
+<pre class="chord"><code>story
+  title: The Relighting
+  id: relighting
+  ifid: C24E29F8-C36B-4F55-9FE9-B6D75AE7133D</code></pre>
+<p>The header’s line is a copy, put there so that you can see the
+identifier where you see the title. The file is the original. If the two
+ever differ, the next build writes the file’s value back into the
+header, and says nothing about it.</p>
+<p>Three rules follow, and they are the whole of what you need to
+know.</p>
+<p>Keep <code>relighting.config.json</code> with the story. If you keep
+your story under version control, the file goes in. If you copy the
+story to another machine, the file is copied too.</p>
+<p>Never make a second identifier for the same story. A new release of
+The Relighting is still The Relighting.</p>
+<p>Do make a new one for a different story. If you copy this folder to
+begin a story of your own, delete the config file and the header’s
+<code>ifid:</code> line from the copy, and let its first build mint a
+fresh one.</p>
+<p>The command line has a small tool for the rare day when you need an
+identifier by itself.</p>
+<pre class="shell"><code>sharpee ifid generate</code></pre>
+<pre class="text"><code>C6ABD976-A999-4F4F-92A8-B393F82127A6</code></pre>
+<h2 data-number="40.2" id="the-version"><span
+class="header-section-number">40.2</span> The version</h2>
+<p><code>story-version:</code> has stood at <code>0.7.0</code> since
+Part VII. The number is yours to count as you please, and the player
+sees it. The published page prints it under the title when it opens. The
+terminal prints the same four lines with the version last.</p>
+<pre class="text"><code>The Relighting
+Story v1.0.0
+Thirty years after the magic went out of the world, a lamp burns blue.
+By The Sharpee Project</code></pre>
+<p>A common habit is to keep the first number at 0 while the story is
+unfinished, and to make it 1 on the day you first hand the story to
+strangers. Today is that day.</p>
+<pre class="chord"><code>  story-version: 1.0.0</code></pre>
+<p>After that, raise the last number when you mend something, and the
+middle number when you add something. The reason to be careful about it
+is practical. When a player writes to say that the grille will not lift,
+the first thing you will ask is which version they are playing.</p>
+<p>The identifier and the version answer different questions. The
+identifier says which story this is, and it never changes. The version
+says which release of it, and it changes every time.</p>
+<h2 data-number="40.3" id="whether-the-source-goes-too"><span
+class="header-section-number">40.3</span> Whether the source goes
+too</h2>
+<p>By default a published story carries no source. The page holds the
+compiled story, and your <code>.story</code> file stays at home. One
+header line changes that.</p>
+<pre class="chord"><code>  publish-source: yes</code></pre>
+<p>The line goes in the story header with the other fields, and its
+place among them does not matter. With the line, the <code>.story</code>
+file is copied into the published folder under its own name, and the
+fragments it imports go with it. The Relighting is a teaching story and
+it takes the line. For your own story the choice is yours, and leaving
+the line out is a perfectly good answer.</p>
+<h2 data-number="40.4" id="publish"><span
+class="header-section-number">40.4</span> Publish</h2>
+<p>Before you publish, run the tree one last time and read the claims. A
+story that is about to go to strangers should hold every claim you made
+for it.</p>
+<pre class="shell"><code>sharpee test .</code></pre>
+<pre class="text"><code>claims: 3 of 3 held (seed 42)</code></pre>
+<p>Then publish.</p>
+<pre class="shell"><code>sharpee publish relighting.story</code></pre>
+<pre class="text"><code>📦 Publishing relighting
+
+  Story: The Relighting (relighting)
+  ✓ Validated relighting.story (gate-clean) and shipped its source (`publish-source: yes`)
+  ✓ Shipped 1 import fragment(s) → imports.json
+  ✓ Story IR → dist/relighting.ir.json
+  Generated browser entry from template
+  ✓ Embedded the compiled story IR into the bundle
+  Bundling game.js...
+
+  dist/web/relighting/game.js  1.9mb ⚠️
+
+⚡ Done in 66ms
+  ✓ Built game.js
+  ✓ Copied index.html
+  ✓ Copied index-testing.html (IDE testing surface — excluded from publish)
+  ✓ Copied platform engine CSS (base, engine, decorations)
+  ✓ Wired 2 theme(s): paper, modern-dark
+  ✓ Copied relighting.css
+  ✓ Copied assets/ (2 entries)
+
+✅ Build complete! (game.js 1907.7 KB)
+Output: dist/web/relighting/
+
+  IFID:   C24E29F8-C36B-4F55-9FE9-B6D75AE7133D
+  Output: dist/relighting.zip (0.7 MB)
+
+  Unzip anywhere and open index.html, or upload the zip to itch.io.</code></pre>
+<p>Most of that is the build of chapter 37, and <code>publish</code>
+does run a build. It differs from <code>sharpee build</code> in four
+ways.</p>
+<p>It empties <code>dist/web/relighting</code> first, so that nothing
+left over from an earlier build can travel with the story.</p>
+<p>It leaves out the source map, the file <code>game.js.map</code> that
+chapter 37’s build wrote beside <code>game.js</code>. A source map is
+for finding faults, and a player has no use for it.</p>
+<p>It refuses a story that has no identifier. A build will mint one. A
+publish never will, because publishing is the one moment when inventing
+a second identifier for an existing story would do real harm.</p>
+<pre class="text"><code>publish: relighting.story has no identity — no story config and no `ifid:` header. If this story ever had one, restore its `&lt;story-name&gt;.config.json` from version control; otherwise run `sharpee build` once (or open the story in Chord Writer) to mint it.</code></pre>
+<p>And it writes the zip.</p>
+<h2 data-number="40.5" id="what-ships"><span
+class="header-section-number">40.5</span> What ships</h2>
+<p><code>dist/relighting.zip</code> is the whole published story, in
+fourteen files.</p>
+<pre class="text"><code>audio/catch.mp3
+audio/lapping.mp3
+audio/toll.mp3
+base.css
+decorations.css
+engine.css
+game.js
+img/lantern-lit.png
+imports.json
+index.html
+relighting.css
+relighting.story
+themes/modern-dark.css
+themes/paper.css</code></pre>
+<p><code>index.html</code> is the page, and it is at the top of the
+archive, where a site that hosts web games expects to find it.
+<code>game.js</code> is the story and everything needed to run it. The
+three platform stylesheets, the two themes from the header’s
+<code>themes:</code> line, and the story’s own
+<code>relighting.css</code> follow. The <code>audio</code> and
+<code>img</code> folders are the <code>assets</code> folder of chapter
+36. <code>relighting.story</code> and <code>imports.json</code> are
+there because of <code>publish-source: yes</code>, and without that line
+the archive has twelve files.</p>
+<p>Look also at what is not there. The test tree is not in it, and
+neither is the claims file. Those are your instruments, and they stay
+with you. The page <code>index-testing.html</code>, which the build
+makes for Chord Writer, is left out as the report says.</p>
+<p>The command’s last line tells you what to do with the zip. Anyone who
+unzips it has the folder that chapter 37 served with
+<code>npx serve</code>. Any place that will hand out files will hold it:
+a folder on a website of your own, or a site that hosts web games and
+takes a zip with an <code>index.html</code> at its top.</p>
+<p>Two options are worth knowing. <code>--out</code> followed by a path
+writes the zip somewhere other than <code>dist</code>.
+<code>--no-menu</code> publishes a page without the menu that carries
+Save, Restore, Restart and Quit, for an author whose own page supplies
+them.</p>
+<h2 data-number="40.6" id="after-the-first-release"><span
+class="header-section-number">40.6</span> After the first release</h2>
+<p>A story is seldom finished on the day it is published. Somebody will
+find the thing you missed.</p>
+<p>When they do, mend the story, and add a card to the tree that would
+have caught the fault. Raise <code>story-version:</code>. Run
+<code>sharpee test .</code> and read the claims. Run
+<code>sharpee publish</code> again and put the new zip where the old one
+was. The identifier does not change, so the archives know it for the
+same story, and the version tells the two releases apart.</p>
+<h2 data-number="40.7" id="build-and-try-it-36"><span
+class="header-section-number">40.7</span> Build and try it</h2>
+<p>Set <code>story-version:</code> to <code>1.0.0</code> in your own
+copy. The Relighting ships its source, so write
+<code>publish-source: yes</code> in the header; the report and the list
+of files in this chapter are those of a story that has the line. Run the
+tree. Then publish, and unzip <code>dist/relighting.zip</code> into an
+empty folder. Any unzipping tool will do. From a terminal in the project
+folder:</p>
+<pre class="shell"><code>unzip dist/relighting.zip -d ../relighting-published</code></pre>
+<p>Serve that folder with <code>npx serve .</code> from inside it, and
+play the story you wrote from the lodge to the beacon, as a stranger
+will.</p>
+<pre class="shell"><code>sharpee publish relighting.story</code></pre>
+<p>The companion folder <code>chapter-40</code> holds the story as it
+was published for this book.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: identity and the artifact</strong> ·
+<code>relighting.config.json</code>,
+<code>dist/relighting.zip</code></p>
+<p>The story config is the tool’s own file. A build creates it when it
+is missing and copies its identifier into the header, and nothing else
+in the toolchain writes to it: <code>compose</code>, <code>test</code>
+and <code>play</code> only read the story. <code>publish</code> runs the
+same compile gate as <code>compose --check</code>, then the browser
+build with the source map turned off, and then zips
+<code>dist/web/&lt;id&gt;</code> with <code>index.html</code> at the
+root of the archive. The compiled story is the Story IR of chapter 2,
+embedded in <code>game.js</code>, and a copy is left at
+<code>dist/relighting.ir.json</code> for tools to read.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: identifiers and releases</strong></p>
+<p>The IFID is common ground. <em>Writing with Inform</em> says that
+“each new project created by Inform is allocated a unique identification
+number called its IFID”, and that “The IFID is the equivalent for IF of
+the ISBN of a printed book.” A TADS 3 game states its own in its
+<code>versionInfo</code> object, in a line such as
+<code>IFID = '...'</code>, beside <code>version = '1.0'</code>. Inform
+10 numbers releases with a sentence,
+<code>The release number is 7.</code>, where Chord has
+<code>story-version:</code>.</p>
+<p>For the artifact, Inform 10 compiles a story file, and a
+<code>Release along with</code> sentence lists what goes out beside it.
+The list may include <code>a website</code>, and
+<code>Release along with an interpreter.</code> adds what <em>Writing
+with Inform</em> calls “A playable web page”. TADS 3 compiles source
+into an image file, which its System Manual calls “the T3 executable
+file that you run using the TADS 3 interpreter”. Chord has no story file
+and no separate interpreter. The published page is the only artifact,
+and the interpreter is inside it.</p>
+</div>
+<h2 data-number="40.8" id="what-you-have"><span
+class="header-section-number">40.8</span> What you have</h2>
+<p>You have a story with an identifier that will follow it for good, a
+version that says which release a player holds, and a zip that plays in
+any browser.</p>
+<p>That is the whole of the road this book set out on. You began with a
+header and one room. You have since written rooms and the things in
+them, states and the clauses that change them, phrases, new verbs,
+people who talk and act for themselves, a boat and a beacon, sound and a
+page to hear it on, a tree that plays the story for you, and three
+sentences that say what it is for.</p>
+<p>The appendices that follow are for looking things up: the grammar,
+the kinds and trait words, the standard actions, and the rest. The next
+story is yours.</p>
+<nav class="book-nav-bottom"><a class="prev" href="39-claims.html">← Claims</a><a class="next" href="-appendix-a.-the-grammar.html">Appendix A. The grammar →</a></nav>
+</body>
+</html>

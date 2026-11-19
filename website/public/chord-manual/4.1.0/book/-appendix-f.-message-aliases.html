@@ -1,0 +1,4916 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Appendix F. Message aliases</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details open><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li class="active"><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-appendix-g.-removed-forms-and-their-replacements.html" accesskey="n" rel="next">Appendix G. Removed forms and their replacements</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-appendix-e.-character-vocabulary.html" accesskey="p" rel="previous">Appendix E. Character vocabulary</a>
+</span>
+</div>
+</nav>
+<h1 class="unnumbered" id="appendix-f.-message-aliases">Appendix F.
+Message aliases</h1>
+<p>Every standard message a story can replace with
+<code>override message</code>: 885 aliases in 78 groups, one group per
+action, each alias beside the text the platform prints by default. A
+<code>\n</code> marks a line break in the text. Generated from the
+output of <code>sharpee messages</code> (Sharpee 5.7.0 · Chord 4.1.0,
+locale en-US) by <code>scripts/generate-chord-appendices.cjs</code>.</p>
+<h2 class="unnumbered unlisted" id="about-1"><code>about</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>about-about-compact</code></td>
+<td>{verbatim:title} v{version} by {verbatim:author}</td>
+</tr>
+<tr>
+<td><code>about-about-footer</code></td>
+<td>Thank you for playing!</td>
+</tr>
+<tr>
+<td><code>about-about-header</code></td>
+<td>About {verbatim:title}</td>
+</tr>
+<tr>
+<td><code>about-acknowledgments</code></td>
+<td>Acknowledgments: {acknowledgments}</td>
+</tr>
+<tr>
+<td><code>about-contact</code></td>
+<td>Contact: {contact}</td>
+</tr>
+<tr>
+<td><code>about-copyright</code></td>
+<td>Copyright {copyright}</td>
+</tr>
+<tr>
+<td><code>about-credits-header</code></td>
+<td>Credits:</td>
+</tr>
+<tr>
+<td><code>about-credits-list</code></td>
+<td>{credits}</td>
+</tr>
+<tr>
+<td><code>about-dedication</code></td>
+<td>Dedication: {dedication}</td>
+</tr>
+<tr>
+<td><code>about-description</code></td>
+<td>Description: {verbatim:description}</td>
+</tr>
+<tr>
+<td><code>about-engine-info</code></td>
+<td>Powered by {engine} version {verbatim:engineVersion}</td>
+</tr>
+<tr>
+<td><code>about-enjoy-game</code></td>
+<td>We hope you enjoy playing {verbatim:title}!</td>
+</tr>
+<tr>
+<td><code>about-game-info</code></td>
+<td>{verbatim:title} <code>\n</code> Version {verbatim:version}
+<code>\n</code> By {verbatim:author} <code>\n</code> Released:
+{releaseDate}</td>
+</tr>
+<tr>
+<td><code>about-game-info-simple</code></td>
+<td>{verbatim:title} by {verbatim:author}</td>
+</tr>
+<tr>
+<td><code>about-license</code></td>
+<td>License: {license}</td>
+</tr>
+<tr>
+<td><code>about-play-stats</code></td>
+<td>Current Session: <code>\n</code> Time played: {playTime}
+<code>\n</code> Moves made: {sessionMoves}</td>
+</tr>
+<tr>
+<td><code>about-session-info</code></td>
+<td>You've been playing for {playTime} and made {sessionMoves}
+moves.</td>
+</tr>
+<tr>
+<td><code>about-special-thanks</code></td>
+<td>Special Thanks: {specialThanks}</td>
+</tr>
+<tr>
+<td><code>about-success</code></td>
+<td>{verbatim:title} <code>\n</code> Version {verbatim:version}
+<code>\n</code> By {verbatim:author} <code>\n</code> <code>\n</code>
+{verbatim:description}</td>
+</tr>
+<tr>
+<td><code>about-technical-info</code></td>
+<td>Technical Information: <code>\n</code> Engine: {engine}
+v{verbatim:engineVersion} <code>\n</code> Platform: Interactive
+Fiction</td>
+</tr>
+<tr>
+<td><code>about-website</code></td>
+<td>Website: {website}</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="again-1"><code>again</code></h2>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>again-nothing-to-repeat</code></td>
+<td>There is nothing to repeat.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="answering-1"><code>answering</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>answering-answered</code></td>
+<td>{You} {answer}, "{verbatim:response}."</td>
+</tr>
+<tr>
+<td><code>answering-no-question</code></td>
+<td>No one has asked {you} anything.</td>
+</tr>
+<tr>
+<td><code>answering-no-response</code></td>
+<td>Answer what?</td>
+</tr>
+<tr>
+<td><code>answering-not-an-answer</code></td>
+<td>{capitalize the target} {verb:waits target} for an answer to the
+question.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="asking-1"><code>asking</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asking-already-told</code></td>
+<td>{capitalize the target} {verb:says target}, "I already told you
+about that."</td>
+</tr>
+<tr>
+<td><code>asking-confused</code></td>
+<td>{capitalize the target} looks confused.</td>
+</tr>
+<tr>
+<td><code>asking-earned-trust</code></td>
+<td>{capitalize the target} {verb:says target}, "Since you've proven
+yourself, I'll tell you..."</td>
+</tr>
+<tr>
+<td><code>asking-explains</code></td>
+<td>{capitalize the target} {verb:explains target} about
+{verbatim:topic}.</td>
+</tr>
+<tr>
+<td><code>asking-must-do-first</code></td>
+<td>{capitalize the target} {verb:says target}, "There's something you
+need to do first."</td>
+</tr>
+<tr>
+<td><code>asking-no-idea</code></td>
+<td>{capitalize the target} {verb:says target}, "No idea what you're
+talking about."</td>
+</tr>
+<tr>
+<td><code>asking-no-target</code></td>
+<td>Ask whom?</td>
+</tr>
+<tr>
+<td><code>asking-no-topic</code></td>
+<td>Ask about what?</td>
+</tr>
+<tr>
+<td><code>asking-not-actor</code></td>
+<td>{You} can only ask questions of people.</td>
+</tr>
+<tr>
+<td><code>asking-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>asking-not-yet</code></td>
+<td>{capitalize the target} {verb:says target}, "I can't tell you about
+that yet."</td>
+</tr>
+<tr>
+<td><code>asking-remembers</code></td>
+<td>{capitalize the target} {verb:says target}, "Ah yes, about
+{verbatim:topic}..."</td>
+</tr>
+<tr>
+<td><code>asking-responds</code></td>
+<td>{capitalize the target} {verb:tells target} {you} about
+{verbatim:topic}.</td>
+</tr>
+<tr>
+<td><code>asking-shrugs</code></td>
+<td>{capitalize the target} shrugs.</td>
+</tr>
+<tr>
+<td><code>asking-too-far</code></td>
+<td>{capitalize the target} {verb:is target} too far away.</td>
+</tr>
+<tr>
+<td><code>asking-unknown-topic</code></td>
+<td>{capitalize the target} {verb:says target}, "I don't know anything
+about that."</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="asking_for-1"><code>asking_for</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asking-for-already-have</code></td>
+<td>{You} already {have} {the item}.</td>
+</tr>
+<tr>
+<td><code>asking-for-no-item</code></td>
+<td>Ask {the recipient} for what?</td>
+</tr>
+<tr>
+<td><code>asking-for-no-target</code></td>
+<td>Ask whom?</td>
+</tr>
+<tr>
+<td><code>asking-for-not-actor</code></td>
+<td>{You} can only ask people for things.</td>
+</tr>
+<tr>
+<td><code>asking-for-not-visible</code></td>
+<td>{You} {can't} see {the recipient}.</td>
+</tr>
+<tr>
+<td><code>asking-for-refused</code></td>
+<td>{capitalize the recipient} {verb:doesn't recipient} seem inclined to
+hand over {the item}.</td>
+</tr>
+<tr>
+<td><code>asking-for-self</code></td>
+<td>{You} can't ask {yourself} for things.</td>
+</tr>
+<tr>
+<td><code>asking-for-too-far</code></td>
+<td>{capitalize the recipient} {verb:is recipient} too far away.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="attacking-1"><code>attacking</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>attacking-already-dead</code></td>
+<td>{capitalize the target} {verb:is target} already dead.</td>
+</tr>
+<tr>
+<td><code>attacking-attack-ineffective</code></td>
+<td>{Your} attack has no effect on {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-attack-invulnerable</code></td>
+<td>{capitalize the target} cannot be damaged.</td>
+</tr>
+<tr>
+<td><code>attacking-attack-requires-weapon</code></td>
+<td>{You} {need} a weapon to damage {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-attack-wrong-weapon-type</code></td>
+<td>That weapon won't work on {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-attacked</code></td>
+<td>{You} {attack} {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-attacked-with</code></td>
+<td>{You} {attack} {the target} with {the weapon}.</td>
+</tr>
+<tr>
+<td><code>attacking-broke</code></td>
+<td>{You} {break} {the target}!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-already-dead</code></td>
+<td>{capitalize the target} {verb:is target} already dead.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-attack-hit</code></td>
+<td>{You} {hit} {the target} for {damage} damage.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-attack-hit-heavy</code></td>
+<td>{You} {land} a solid blow on {the target}, dealing {damage}
+damage!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-attack-hit-light</code></td>
+<td>{You} {graze} {the target}, doing {damage} damage.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-attack-killed</code></td>
+<td>{You} {have} slain {the target}!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-attack-knocked-out</code></td>
+<td>{capitalize the target} collapses, unconscious!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-attack-missed</code></td>
+<td>{You} {swing} at {the target} but miss!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-cannot-attack</code></td>
+<td>{You} {can't} attack {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-defend-blocked</code></td>
+<td>{capitalize the target} blocks {your} attack!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-defend-dodged</code></td>
+<td>{capitalize the target} dodges out of the way!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-defend-parried</code></td>
+<td>{capitalize the target} parries {your} attack!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-ended</code></td>
+<td>The battle is over.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-health-badly-wounded</code></td>
+<td>{capitalize the target} {verb:is target} badly wounded.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-health-dead</code></td>
+<td>{capitalize the target} {verb:is target} dead.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-health-healthy</code></td>
+<td>{capitalize the target} appears uninjured.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-health-near-death</code></td>
+<td>{capitalize the target} {verb:is target} barely clinging to
+life!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-health-unconscious</code></td>
+<td>{capitalize the target} lies unconscious.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-health-wounded</code></td>
+<td>{capitalize the target} {verb:has target} been wounded.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-need-weapon</code></td>
+<td>{You} {need} a weapon to attack effectively.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-no-target</code></td>
+<td>Attack what?</td>
+</tr>
+<tr>
+<td><code>attacking-combat-not-hostile</code></td>
+<td>{capitalize the target} {verb:isn't target} hostile.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-player-died</code></td>
+<td>{You} {have} been slain!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-player-resurrected</code></td>
+<td>{You} {feel} life return to {your} body.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-special-blessed-weapon</code></td>
+<td>{Your} blessed weapon burns the undead!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-special-sword-glows</code></td>
+<td>{Your} sword glows brightly!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-special-sword-stops-glowing</code></td>
+<td>{Your} sword's glow fades.</td>
+</tr>
+<tr>
+<td><code>attacking-combat-started</code></td>
+<td>Combat has begun!</td>
+</tr>
+<tr>
+<td><code>attacking-combat-target-unconscious</code></td>
+<td>{capitalize the target} {verb:is target} already unconscious.</td>
+</tr>
+<tr>
+<td><code>attacking-debris-created</code></td>
+<td>Debris from {the target} litters the area.</td>
+</tr>
+<tr>
+<td><code>attacking-defends</code></td>
+<td>{capitalize the target} defends against {your} attack.</td>
+</tr>
+<tr>
+<td><code>attacking-destroyed</code></td>
+<td>{You} {destroy} {the target}!</td>
+</tr>
+<tr>
+<td><code>attacking-dodges</code></td>
+<td>{capitalize the target} dodges {your} attack.</td>
+</tr>
+<tr>
+<td><code>attacking-flees</code></td>
+<td>{capitalize the target} flees from {you}!</td>
+</tr>
+<tr>
+<td><code>attacking-hit-blindly</code></td>
+<td>{You} {swing} wildly, hitting nothing.</td>
+</tr>
+<tr>
+<td><code>attacking-hit-target</code></td>
+<td>{You} {hit} {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-hit-with</code></td>
+<td>{You} {hit} {the target} with {the weapon}.</td>
+</tr>
+<tr>
+<td><code>attacking-indestructible</code></td>
+<td>{capitalize the target} {verb:is target} far too solid to
+damage.</td>
+</tr>
+<tr>
+<td><code>attacking-items-spilled</code></td>
+<td>{capitalize the target}'s possessions spill onto the ground.</td>
+</tr>
+<tr>
+<td><code>attacking-kicked</code></td>
+<td>{You} {kick} {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-killed-blindly</code></td>
+<td>Something dies in the darkness.</td>
+</tr>
+<tr>
+<td><code>attacking-killed-target</code></td>
+<td>{You} {have} defeated {the target}!</td>
+</tr>
+<tr>
+<td><code>attacking-need-weapon-to-damage</code></td>
+<td>{capitalize the target} requires a weapon to damage.</td>
+</tr>
+<tr>
+<td><code>attacking-no-fighting</code></td>
+<td>Fighting won't solve this problem.</td>
+</tr>
+<tr>
+<td><code>attacking-no-target</code></td>
+<td>Attack what?</td>
+</tr>
+<tr>
+<td><code>attacking-not-holding-weapon</code></td>
+<td>{You} aren't holding {the weapon}.</td>
+</tr>
+<tr>
+<td><code>attacking-not-reachable</code></td>
+<td>{You} {can't} reach {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-passage-revealed</code></td>
+<td>A hidden passage is revealed!</td>
+</tr>
+<tr>
+<td><code>attacking-peaceful-solution</code></td>
+<td>Violence isn't necessary here.</td>
+</tr>
+<tr>
+<td><code>attacking-punched</code></td>
+<td>{You} {punch} {the target}.</td>
+</tr>
+<tr>
+<td><code>attacking-retaliates</code></td>
+<td>{capitalize the target} fights back!</td>
+</tr>
+<tr>
+<td><code>attacking-self</code></td>
+<td>Violence against {yourself} isn't the answer.</td>
+</tr>
+<tr>
+<td><code>attacking-shattered</code></td>
+<td>{capitalize the target} shatters!</td>
+</tr>
+<tr>
+<td><code>attacking-smashed</code></td>
+<td>{You} {smash} {the target} to pieces!</td>
+</tr>
+<tr>
+<td><code>attacking-struck</code></td>
+<td>{You} {strike} {the target}!</td>
+</tr>
+<tr>
+<td><code>attacking-struck-with</code></td>
+<td>{You} {strike} {the target} with {the weapon}!</td>
+</tr>
+<tr>
+<td><code>attacking-target-broke</code></td>
+<td>{capitalize the target} breaks!</td>
+</tr>
+<tr>
+<td><code>attacking-target-damaged</code></td>
+<td>{capitalize the target} shows signs of damage. ({damage} damage
+dealt)</td>
+</tr>
+<tr>
+<td><code>attacking-target-destroyed</code></td>
+<td>{capitalize the target} {verb:is target} utterly destroyed!</td>
+</tr>
+<tr>
+<td><code>attacking-target-shattered</code></td>
+<td>{capitalize the target} shatters into pieces!</td>
+</tr>
+<tr>
+<td><code>attacking-unarmed-attack</code></td>
+<td>{You} {attack} {the target} with {your} bare hands.</td>
+</tr>
+<tr>
+<td><code>attacking-unnecessary-violence</code></td>
+<td>That seems unnecessarily violent.</td>
+</tr>
+<tr>
+<td><code>attacking-violence-not-the-answer</code></td>
+<td>Violence is not the answer.</td>
+</tr>
+<tr>
+<td><code>attacking-wrong-weapon-type</code></td>
+<td>{capitalize the target} can't be damaged with that type of
+weapon.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="burning-1"><code>burning</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>burning-burned</code></td>
+<td>{You} {set} fire to {the item}.</td>
+</tr>
+<tr>
+<td><code>burning-cant-burn</code></td>
+<td>Burning {the item} would achieve nothing here.</td>
+</tr>
+<tr>
+<td><code>burning-needs-tool</code></td>
+<td>{You} {need} {the tool} to burn {the item}.</td>
+</tr>
+<tr>
+<td><code>burning-no-target</code></td>
+<td>Burn what?</td>
+</tr>
+<tr>
+<td><code>burning-no-tool</code></td>
+<td>{You} {need} something to burn {the item} with.</td>
+</tr>
+<tr>
+<td><code>burning-not-flammable</code></td>
+<td>{capitalize the item} isn't something {you} can burn.</td>
+</tr>
+<tr>
+<td><code>burning-tool-not-held</code></td>
+<td>{You} {aren't} holding {the tool}.</td>
+</tr>
+<tr>
+<td><code>burning-wrong-tool</code></td>
+<td>{capitalize the tool} won't burn {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="buying-1"><code>buying</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>buying-already-have</code></td>
+<td>{You} already {have} {the target}.</td>
+</tr>
+<tr>
+<td><code>buying-bought</code></td>
+<td>{You} {buy} {the target}.</td>
+</tr>
+<tr>
+<td><code>buying-cant-afford</code></td>
+<td>{You} can't afford {the target}.</td>
+</tr>
+<tr>
+<td><code>buying-no-target</code></td>
+<td>Buy what?</td>
+</tr>
+<tr>
+<td><code>buying-not-for-sale</code></td>
+<td>{capitalize the target} {verb:isn't target} for sale.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="climbing-1"><code>climbing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>climbing-already-there</code></td>
+<td>{You're} already on {the place}.</td>
+</tr>
+<tr>
+<td><code>climbing-cant-go-that-way</code></td>
+<td>{You} {can't} climb {direction:direction} from here.</td>
+</tr>
+<tr>
+<td><code>climbing-climb-nowhere</code></td>
+<td>Climbing {the object} would get {you} nowhere.</td>
+</tr>
+<tr>
+<td><code>climbing-climbed-down</code></td>
+<td>{You} {climb} down.</td>
+</tr>
+<tr>
+<td><code>climbing-climbed-onto</code></td>
+<td>{You} {climb} onto {the target}.</td>
+</tr>
+<tr>
+<td><code>climbing-climbed-up</code></td>
+<td>{You} {climb} up.</td>
+</tr>
+<tr>
+<td><code>climbing-need-equipment</code></td>
+<td>{You}'d need climbing equipment for that.</td>
+</tr>
+<tr>
+<td><code>climbing-no-target</code></td>
+<td>What do {you} want to climb?</td>
+</tr>
+<tr>
+<td><code>climbing-not-climbable</code></td>
+<td>{You} {can't} climb {the object}.</td>
+</tr>
+<tr>
+<td><code>climbing-nothing-to-climb</code></td>
+<td>There's nothing to climb here.</td>
+</tr>
+<tr>
+<td><code>climbing-too-dangerous</code></td>
+<td>That looks too dangerous to climb.</td>
+</tr>
+<tr>
+<td><code>climbing-too-high</code></td>
+<td>That's too high to climb.</td>
+</tr>
+<tr>
+<td><code>climbing-too-slippery</code></td>
+<td>It's too slippery to climb.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="closing-1"><code>closing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>closing-already-closed</code></td>
+<td>{capitalize the item} {verb:is item} already closed.</td>
+</tr>
+<tr>
+<td><code>closing-cant-reach</code></td>
+<td>{You} {can't} reach {the item}.</td>
+</tr>
+<tr>
+<td><code>closing-closed</code></td>
+<td>{You} {close} {the item}.</td>
+</tr>
+<tr>
+<td><code>closing-no-target</code></td>
+<td>Close what?</td>
+</tr>
+<tr>
+<td><code>closing-not-closable</code></td>
+<td>{capitalize the item} can't be closed.</td>
+</tr>
+<tr>
+<td><code>closing-prevents-closing</code></td>
+<td>{You} {can't} close {the item} while {obstacle} {verb:is obstacle}
+in the way.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="consulting-1"><code>consulting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>consulting-no-target</code></td>
+<td>Consult what?</td>
+</tr>
+<tr>
+<td><code>consulting-no-topic</code></td>
+<td>Look up what in {the source}?</td>
+</tr>
+<tr>
+<td><code>consulting-not-consultable</code></td>
+<td>{capitalize the source} {verb:isn't source} something {you} can look
+things up in.</td>
+</tr>
+<tr>
+<td><code>consulting-nothing-found</code></td>
+<td>{You} {find} nothing about that in {the source}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="cutting-1"><code>cutting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cutting-cant-cut</code></td>
+<td>Cutting {the item} would achieve nothing here.</td>
+</tr>
+<tr>
+<td><code>cutting-cut</code></td>
+<td>{You} {cut} {the item}.</td>
+</tr>
+<tr>
+<td><code>cutting-needs-tool</code></td>
+<td>{You} {need} {the tool} to cut {the item}.</td>
+</tr>
+<tr>
+<td><code>cutting-no-target</code></td>
+<td>Cut what?</td>
+</tr>
+<tr>
+<td><code>cutting-no-tool</code></td>
+<td>{You} {need} something to cut {the item} with.</td>
+</tr>
+<tr>
+<td><code>cutting-not-cuttable</code></td>
+<td>{capitalize the item} {verb:is item} not something {you} can
+cut.</td>
+</tr>
+<tr>
+<td><code>cutting-tool-not-held</code></td>
+<td>{You} {need} to be holding {the tool}.</td>
+</tr>
+<tr>
+<td><code>cutting-wrong-tool</code></td>
+<td>{capitalize the tool} won't cut {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="digging-1"><code>digging</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>digging-cant-dig</code></td>
+<td>Digging {the item} would achieve nothing here.</td>
+</tr>
+<tr>
+<td><code>digging-dug</code></td>
+<td>{You} {dig} {the item}.</td>
+</tr>
+<tr>
+<td><code>digging-needs-tool</code></td>
+<td>{You} {need} {the tool} to dig {the item}.</td>
+</tr>
+<tr>
+<td><code>digging-no-target</code></td>
+<td>Dig what?</td>
+</tr>
+<tr>
+<td><code>digging-no-tool</code></td>
+<td>{You} {need} something to dig {the item} with.</td>
+</tr>
+<tr>
+<td><code>digging-not-diggable</code></td>
+<td>{capitalize the item} {verb:is item} not something {you} can
+dig.</td>
+</tr>
+<tr>
+<td><code>digging-tool-not-held</code></td>
+<td>{You} {need} to be holding {the tool}.</td>
+</tr>
+<tr>
+<td><code>digging-wrong-tool</code></td>
+<td>{capitalize the tool} won't dig {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="drinking-1"><code>drinking</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>drinking-already-consumed</code></td>
+<td>There's nothing left to drink.</td>
+</tr>
+<tr>
+<td><code>drinking-bitter</code></td>
+<td>{You} {drink} {the item}. It's quite bitter.</td>
+</tr>
+<tr>
+<td><code>drinking-container-closed</code></td>
+<td>{You} {need} to open {the item} first.</td>
+</tr>
+<tr>
+<td><code>drinking-drunk</code></td>
+<td>{You} {drink} {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-drunk-all</code></td>
+<td>{You} {drink} all of {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-drunk-from</code></td>
+<td>{You} {drink} from {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-drunk-some</code></td>
+<td>{You} {drink} some of {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-empty-now</code></td>
+<td>{You} {drink} the last of the {liquidType}.</td>
+</tr>
+<tr>
+<td><code>drinking-from-container</code></td>
+<td>{You} {drink} the {liquidType} from {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-gulped</code></td>
+<td>{You} {gulp} down {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-healing</code></td>
+<td>{You} {drink} {the item}. {You} {feel} better!</td>
+</tr>
+<tr>
+<td><code>drinking-magical-effects</code></td>
+<td>{You} {drink} {the item}. {You} {feel} strange...</td>
+</tr>
+<tr>
+<td><code>drinking-no-item</code></td>
+<td>Drink what?</td>
+</tr>
+<tr>
+<td><code>drinking-not-drinkable</code></td>
+<td>That's not something {you} can drink.</td>
+</tr>
+<tr>
+<td><code>drinking-not-reachable</code></td>
+<td>{You} {can't} reach {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-not-visible</code></td>
+<td>{You} {can't} see {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-quaffed</code></td>
+<td>{You} {quaff} {the item} heartily.</td>
+</tr>
+<tr>
+<td><code>drinking-refreshing</code></td>
+<td>{You} {drink} {the item}. How refreshing!</td>
+</tr>
+<tr>
+<td><code>drinking-satisfying</code></td>
+<td>{You} {drink} {the item}. That hits the spot.</td>
+</tr>
+<tr>
+<td><code>drinking-sipped</code></td>
+<td>{You} {take} a sip of {the item}.</td>
+</tr>
+<tr>
+<td><code>drinking-some-remains</code></td>
+<td>{You} {drink} some {liquidType}. Some remains.</td>
+</tr>
+<tr>
+<td><code>drinking-still-thirsty</code></td>
+<td>{You} {drink} {the item}, but {you're} still thirsty.</td>
+</tr>
+<tr>
+<td><code>drinking-strong</code></td>
+<td>{You} {drink} {the item}. It's strong!</td>
+</tr>
+<tr>
+<td><code>drinking-sweet</code></td>
+<td>{You} {drink} {the item}. It's sweet.</td>
+</tr>
+<tr>
+<td><code>drinking-thirst-quenched</code></td>
+<td>{You} {drink} {the item}. {Your} thirst is quenched.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="dropping-1"><code>dropping</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dropping-dropped</code></td>
+<td>Dropped.</td>
+</tr>
+<tr>
+<td><code>dropping-dropped-afloat</code></td>
+<td>{capitalize the item} {verb:floats item} where {verb:it item}
+{verb:falls item}.</td>
+</tr>
+<tr>
+<td><code>dropping-dropped-breaks</code></td>
+<td>{capitalize the item} {verb:hits item} the floor and {verb:breaks
+item}.</td>
+</tr>
+<tr>
+<td><code>dropping-dropped-in</code></td>
+<td>{You} {put} {the item} in {the container}.</td>
+</tr>
+<tr>
+<td><code>dropping-dropped-multi</code></td>
+<td>{item}: Dropped.</td>
+</tr>
+<tr>
+<td><code>dropping-dropped-on</code></td>
+<td>{You} {put} {the item} on {the surface}.</td>
+</tr>
+<tr>
+<td><code>dropping-lost-overboard</code></td>
+<td>{capitalize the item} drifts away.</td>
+</tr>
+<tr>
+<td><code>dropping-no-target</code></td>
+<td>Drop what?</td>
+</tr>
+<tr>
+<td><code>dropping-not-held</code></td>
+<td>{You} aren't holding {the item}.</td>
+</tr>
+<tr>
+<td><code>dropping-nothing-to-drop</code></td>
+<td>{You} aren't carrying anything.</td>
+</tr>
+<tr>
+<td><code>dropping-still-worn</code></td>
+<td>{You}'ll need to take off {the item} first.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="eating-1"><code>eating</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eating-already-consumed</code></td>
+<td>There's nothing left of {the item} to eat.</td>
+</tr>
+<tr>
+<td><code>eating-awful</code></td>
+<td>{You} {eat} {the item}. It tastes awful!</td>
+</tr>
+<tr>
+<td><code>eating-bland</code></td>
+<td>{You} {eat} {the item}. It's rather bland.</td>
+</tr>
+<tr>
+<td><code>eating-delicious</code></td>
+<td>{You} {eat} {the item}. Delicious!</td>
+</tr>
+<tr>
+<td><code>eating-devoured</code></td>
+<td>{You} {devour} {the item} hungrily.</td>
+</tr>
+<tr>
+<td><code>eating-eaten</code></td>
+<td>{You} {eat} {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-eaten-all</code></td>
+<td>{You} {eat} all of {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-eaten-portion</code></td>
+<td>{You} {eat} a portion of {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-eaten-some</code></td>
+<td>{You} {eat} some of {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-filling</code></td>
+<td>{You} {eat} {the item}. That was filling.</td>
+</tr>
+<tr>
+<td><code>eating-is-drink</code></td>
+<td>{You} should drink {the item}, not eat it.</td>
+</tr>
+<tr>
+<td><code>eating-munched</code></td>
+<td>{You} {munch} on {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-nibbled</code></td>
+<td>{You} {nibble} on {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-no-item</code></td>
+<td>Eat what?</td>
+</tr>
+<tr>
+<td><code>eating-not-edible</code></td>
+<td>That's not something {you} can eat.</td>
+</tr>
+<tr>
+<td><code>eating-not-reachable</code></td>
+<td>{You} {can't} reach {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-not-visible</code></td>
+<td>{You} {can't} see {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-poisonous</code></td>
+<td>{You} {eat} {the item}. It tastes strange...</td>
+</tr>
+<tr>
+<td><code>eating-satisfying</code></td>
+<td>{You} {eat} {the item}. Very satisfying!</td>
+</tr>
+<tr>
+<td><code>eating-still-hungry</code></td>
+<td>{You} {eat} {the item}, but {you're} still hungry.</td>
+</tr>
+<tr>
+<td><code>eating-tasted</code></td>
+<td>{You} {taste} {the item}.</td>
+</tr>
+<tr>
+<td><code>eating-tasty</code></td>
+<td>{You} {eat} {the item}. It's quite tasty.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="emptying-1"><code>emptying</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>emptying-already-empty</code></td>
+<td>{capitalize the target} {verb:is target} already empty.</td>
+</tr>
+<tr>
+<td><code>emptying-cant-empty-into</code></td>
+<td>{You} {can't} empty {the target} into {the destination}.</td>
+</tr>
+<tr>
+<td><code>emptying-container-closed</code></td>
+<td>{capitalize the target} {verb:is target} closed.</td>
+</tr>
+<tr>
+<td><code>emptying-destination-closed</code></td>
+<td>{capitalize the destination} {verb:is destination} closed.</td>
+</tr>
+<tr>
+<td><code>emptying-destination-full</code></td>
+<td>{capitalize the destination} {verb:has destination} no room for {the
+item}.</td>
+</tr>
+<tr>
+<td><code>emptying-emptied-here</code></td>
+<td>{You} {empty} {the target} onto the floor: {items}.</td>
+</tr>
+<tr>
+<td><code>emptying-emptied-into</code></td>
+<td>{You} {empty} {the target} into {the destination}: {items}.</td>
+</tr>
+<tr>
+<td><code>emptying-into-itself</code></td>
+<td>{You} {can't} empty {the target} into itself.</td>
+</tr>
+<tr>
+<td><code>emptying-no-target</code></td>
+<td>Empty what?</td>
+</tr>
+<tr>
+<td><code>emptying-not-a-container</code></td>
+<td>{You} {can't} empty {the target}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="entering-1"><code>entering</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>entering-already-inside</code></td>
+<td>{You're} already in {the place}.</td>
+</tr>
+<tr>
+<td><code>entering-boarded</code></td>
+<td>{You} {board} {the vehicle}.</td>
+</tr>
+<tr>
+<td><code>entering-cant-enter</code></td>
+<td>{You} {can't} enter {the place}: {reason}.</td>
+</tr>
+<tr>
+<td><code>entering-container-closed</code></td>
+<td>{capitalize the container} {verb:is container} closed.</td>
+</tr>
+<tr>
+<td><code>entering-entered</code></td>
+<td>{You} {get} into {the place}.</td>
+</tr>
+<tr>
+<td><code>entering-entered-on</code></td>
+<td>{You} {get} onto {the place}.</td>
+</tr>
+<tr>
+<td><code>entering-no-target</code></td>
+<td>Enter what?</td>
+</tr>
+<tr>
+<td><code>entering-not-enterable</code></td>
+<td>{You} {can't} enter {the place}.</td>
+</tr>
+<tr>
+<td><code>entering-not-here</code></td>
+<td>{You} {don't} see {the place} here.</td>
+</tr>
+<tr>
+<td><code>entering-occupied</code></td>
+<td>{capitalize the place} {verb:is place} already occupied.</td>
+</tr>
+<tr>
+<td><code>entering-too-full</code></td>
+<td>{capitalize the place} {verb:is place} full (maximum {max}
+occupants).</td>
+</tr>
+<tr>
+<td><code>entering-too-small</code></td>
+<td>{capitalize the place} {verb:is place} too small for {you} to
+enter.</td>
+</tr>
+<tr>
+<td><code>entering-vehicle-not-boardable</code></td>
+<td>{You} {can't} board {the vehicle}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="examining-1"><code>examining</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>examining-brief-description</code></td>
+<td>{verbatim:description}</td>
+</tr>
+<tr>
+<td><code>examining-cant-see</code></td>
+<td>{You} {can't} see {the item} here.</td>
+</tr>
+<tr>
+<td><code>examining-container-closed</code></td>
+<td>{capitalize the item} {verb:is item} closed.</td>
+</tr>
+<tr>
+<td><code>examining-container-contents</code></td>
+<td>In {the container} {you} {see} {items}.</td>
+</tr>
+<tr>
+<td><code>examining-container-empty</code></td>
+<td>{capitalize the item} {verb:is item} empty.</td>
+</tr>
+<tr>
+<td><code>examining-container-open</code></td>
+<td>{capitalize the item} {verb:is item} open.</td>
+</tr>
+<tr>
+<td><code>examining-default-description</code></td>
+<td>{capitalize the item} {verb:is item} just {a
+item}.{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-default-description-self</code></td>
+<td>As good-looking as ever.</td>
+</tr>
+<tr>
+<td><code>examining-description</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined-container</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined-door</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined-readable</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined-self</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined-supporter</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined-switchable</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined-wall</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-examined-wearable</code></td>
+<td>{verbatim:description}{slot:detail}</td>
+</tr>
+<tr>
+<td><code>examining-no-description</code></td>
+<td>{You} {see} nothing special about {the item}.</td>
+</tr>
+<tr>
+<td><code>examining-no-target</code></td>
+<td>Examine what?</td>
+</tr>
+<tr>
+<td><code>examining-not-visible</code></td>
+<td>{You} {can't} see {the item} here.</td>
+</tr>
+<tr>
+<td><code>examining-nothing-special</code></td>
+<td>{You} {see} nothing special about {the item}.</td>
+</tr>
+<tr>
+<td><code>examining-seen-from-afar</code></td>
+<td>{verbatim:description}</td>
+</tr>
+<tr>
+<td><code>examining-surface-contents</code></td>
+<td>On {the surface} {you} {see} {items}.</td>
+</tr>
+<tr>
+<td><code>examining-worn-by-other</code></td>
+<td>{actor} {verb:is actor} wearing {the item}.</td>
+</tr>
+<tr>
+<td><code>examining-worn-by-you</code></td>
+<td>{You} {are} wearing {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="exiting-1"><code>exiting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>exiting-already-outside</code></td>
+<td>{You're} not inside anything.</td>
+</tr>
+<tr>
+<td><code>exiting-cant-exit</code></td>
+<td>{You} {can't} exit {the place}.</td>
+</tr>
+<tr>
+<td><code>exiting-container-closed</code></td>
+<td>{capitalize the container} {verb:is container} closed.</td>
+</tr>
+<tr>
+<td><code>exiting-exit-blocked</code></td>
+<td>The way out is blocked.</td>
+</tr>
+<tr>
+<td><code>exiting-exited</code></td>
+<td>{You} {get} out of {the place}.</td>
+</tr>
+<tr>
+<td><code>exiting-exited-from</code></td>
+<td>{You} {get} {preposition} {the place}.</td>
+</tr>
+<tr>
+<td><code>exiting-must-stand-first</code></td>
+<td>{You}'ll need to stand up first.</td>
+</tr>
+<tr>
+<td><code>exiting-not-in-that</code></td>
+<td>But {you} {aren't} in {the container}.</td>
+</tr>
+<tr>
+<td><code>exiting-not-on-that</code></td>
+<td>But {you} {aren't} on {the container}.</td>
+</tr>
+<tr>
+<td><code>exiting-nowhere-to-go</code></td>
+<td>There's nowhere to go from here.</td>
+</tr>
+<tr>
+<td><code>exiting-outside-ambiguous</code></td>
+<td>{You} ponder the reality of being outside...</td>
+</tr>
+<tr>
+<td><code>exiting-vehicle-not-at-hatch</code></td>
+<td>There's no way off from here.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="extinguishing-1"><code>extinguishing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>extinguishing-extinguished</code></td>
+<td>{You} {put} out {the target}.</td>
+</tr>
+<tr>
+<td><code>extinguishing-extinguished-into-darkness</code></td>
+<td>{You} {put} out {the target}, and darkness closes in.</td>
+</tr>
+<tr>
+<td><code>extinguishing-no-target</code></td>
+<td>Put out what?</td>
+</tr>
+<tr>
+<td><code>extinguishing-not-light-source</code></td>
+<td>{capitalize the target} isn't something {you} can put out.</td>
+</tr>
+<tr>
+<td><code>extinguishing-not-lit</code></td>
+<td>{capitalize the target} {verb:isn't target} lit.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="giving-1"><code>giving</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>giving-accepts</code></td>
+<td>{capitalize the recipient} accepts {the item}.</td>
+</tr>
+<tr>
+<td><code>giving-given</code></td>
+<td>{You} {give} {the item} to {the recipient}.</td>
+</tr>
+<tr>
+<td><code>giving-gratefully-accepts</code></td>
+<td>{capitalize the recipient} gratefully accepts {the item}.</td>
+</tr>
+<tr>
+<td><code>giving-inventory-full</code></td>
+<td>{capitalize the recipient} says, "I can't carry any more."</td>
+</tr>
+<tr>
+<td><code>giving-no-item</code></td>
+<td>Give what?</td>
+</tr>
+<tr>
+<td><code>giving-no-recipient</code></td>
+<td>Give it to whom?</td>
+</tr>
+<tr>
+<td><code>giving-not-actor</code></td>
+<td>{You} can only give things to people.</td>
+</tr>
+<tr>
+<td><code>giving-not-holding</code></td>
+<td>{You} aren't holding {the item}.</td>
+</tr>
+<tr>
+<td><code>giving-not-interested</code></td>
+<td>{capitalize the recipient} {verb:doesn't recipient} seem interested
+in {the item}.</td>
+</tr>
+<tr>
+<td><code>giving-recipient-not-reachable</code></td>
+<td>{capitalize the recipient} {verb:is recipient} too far away.</td>
+</tr>
+<tr>
+<td><code>giving-recipient-not-visible</code></td>
+<td>{You} {can't} see {the recipient}.</td>
+</tr>
+<tr>
+<td><code>giving-refuses</code></td>
+<td>{capitalize the recipient} politely declines.</td>
+</tr>
+<tr>
+<td><code>giving-reluctantly-accepts</code></td>
+<td>{capitalize the recipient} reluctantly takes {the item}.</td>
+</tr>
+<tr>
+<td><code>giving-self</code></td>
+<td>{You} already {have} {the item}!</td>
+</tr>
+<tr>
+<td><code>giving-too-heavy</code></td>
+<td>{capitalize the recipient} says, "That's too heavy for me."</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="going-1"><code>going</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>going-already-there</code></td>
+<td>{You're} already there.</td>
+</tr>
+<tr>
+<td><code>going-arrived</code></td>
+<td>{You} {arrive}.</td>
+</tr>
+<tr>
+<td><code>going-arrives</code></td>
+<td>{You} {enter} from the {direction:direction}.</td>
+</tr>
+<tr>
+<td><code>going-cant-go</code></td>
+<td>{You} {can't} go that way.</td>
+</tr>
+<tr>
+<td><code>going-cant-go-through</code></td>
+<td>{You} {can't} go through {obstacle}.</td>
+</tr>
+<tr>
+<td><code>going-contents-list</code></td>
+<td>{You} can {see} {items} here.</td>
+</tr>
+<tr>
+<td><code>going-departs</code></td>
+<td>{You} {leave} to the {direction:direction}.</td>
+</tr>
+<tr>
+<td><code>going-destination-not-found</code></td>
+<td>{You} {can't} go that way.</td>
+</tr>
+<tr>
+<td><code>going-door-closed</code></td>
+<td>{capitalize the door} {verb:is door} closed.</td>
+</tr>
+<tr>
+<td><code>going-door-locked</code></td>
+<td>{capitalize the door} {verb:is door} locked.</td>
+</tr>
+<tr>
+<td><code>going-expanse-edge</code></td>
+<td>{You} can go no farther that way.</td>
+</tr>
+<tr>
+<td><code>going-moved</code></td>
+<td>{You} {go} {direction:direction}.</td>
+</tr>
+<tr>
+<td><code>going-movement-blocked</code></td>
+<td>{verbatim:message}</td>
+</tr>
+<tr>
+<td><code>going-need-light</code></td>
+<td>It's too dark to go that way safely.</td>
+</tr>
+<tr>
+<td><code>going-no-direction</code></td>
+<td>{You}'ll have to say which direction to go.</td>
+</tr>
+<tr>
+<td><code>going-no-exit</code></td>
+<td>{You} {can't} go that way.</td>
+</tr>
+<tr>
+<td><code>going-no-exit-that-way</code></td>
+<td>{You} {can't} go that way.</td>
+</tr>
+<tr>
+<td><code>going-no-exits</code></td>
+<td>There are no obvious exits.</td>
+</tr>
+<tr>
+<td><code>going-not-in-room</code></td>
+<td>{You're} not in a place where {you} can go anywhere.</td>
+</tr>
+<tr>
+<td><code>going-nowhere-to-go</code></td>
+<td>{You}'ll have to say which compass direction to go in.</td>
+</tr>
+<tr>
+<td><code>going-room-description</code></td>
+<td>{name} <code>\n</code> {verbatim:description}</td>
+</tr>
+<tr>
+<td><code>going-sailing-edge</code></td>
+<td>Wind and sea drive {you} back.</td>
+</tr>
+<tr>
+<td><code>going-stays-by-vehicle</code></td>
+<td>{You} {stay} where {you} {are}, by the vehicle.</td>
+</tr>
+<tr>
+<td><code>going-thing-drifted</code></td>
+<td>{capitalize the thing} drifts.</td>
+</tr>
+<tr>
+<td><code>going-thing-washed-up</code></td>
+<td>{capitalize the thing} washes up here.</td>
+</tr>
+<tr>
+<td><code>going-too-dark</code></td>
+<td>It is pitch dark. {You} {be} likely to be eaten by a grue.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-alongside</code></td>
+<td>{capitalize the vehicle} comes alongside {the thing}.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-arrived</code></td>
+<td>{capitalize the vehicle} arrives at {the stop}.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-at-end</code></td>
+<td>{capitalize the vehicle} is at the end of its line.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-cannot-go</code></td>
+<td>{capitalize the vehicle} {can't} go that way.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-cannot-walk</code></td>
+<td>{You} {can't} go anywhere from {the vehicle}.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-departed</code></td>
+<td>{capitalize the vehicle} pulls away.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-in-irons</code></td>
+<td>{capitalize the vehicle} {verb:is vehicle} in irons.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-ride</code></td>
+<td>{You're} riding, not walking.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-stopped</code></td>
+<td>{capitalize the vehicle} comes to a stop.</td>
+</tr>
+<tr>
+<td><code>going-vehicle-under-way</code></td>
+<td>{capitalize the vehicle} is under way.</td>
+</tr>
+<tr>
+<td><code>going-went</code></td>
+<td>{You} {go} {direction:direction}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="help-1"><code>help</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>help-first-time</code></td>
+<td>New to Interactive Fiction? Try these commands to get started:
+<code>\n</code> - LOOK to see where you are <code>\n</code> - INVENTORY
+to see what you're carrying <code>\n</code> - EXAMINE interesting
+objects <code>\n</code> - Go in compass directions (NORTH, SOUTH,
+etc.)</td>
+</tr>
+<tr>
+<td><code>help-general</code></td>
+<td>Welcome to Interactive Fiction! <code>\n</code> <code>\n</code>
+Basic commands: <code>\n</code> - LOOK (L): Examine your surroundings
+<code>\n</code> - INVENTORY (I): List what you're carrying
+<code>\n</code> - EXAMINE (X) [object]: Look at something closely
+<code>\n</code> - TAKE/DROP [object]: Pick up or put down items
+<code>\n</code> - GO [direction] or just [direction]: Move around
+<code>\n</code> <code>\n</code> For more help on a specific topic, type
+HELP [topic].</td>
+</tr>
+<tr>
+<td><code>help-help-footer</code></td>
+<td>For a complete list of commands, consult the game
+documentation.</td>
+</tr>
+<tr>
+<td><code>help-help-movement</code></td>
+<td>Movement commands: <code>\n</code> - GO NORTH/SOUTH/EAST/WEST (or
+just N/S/E/W) <code>\n</code> - UP/DOWN (U/D) <code>\n</code> - IN/OUT
+<code>\n</code> - ENTER [place] <code>\n</code> - EXIT</td>
+</tr>
+<tr>
+<td><code>help-help-objects</code></td>
+<td>Object commands: <code>\n</code> - TAKE/GET [object] <code>\n</code>
+- DROP [object] <code>\n</code> - EXAMINE/LOOK AT [object]
+<code>\n</code> - OPEN/CLOSE [object] <code>\n</code> - PUT [object]
+IN/ON [container] <code>\n</code> - WEAR/REMOVE [clothing]</td>
+</tr>
+<tr>
+<td><code>help-help-special</code></td>
+<td>Special commands: <code>\n</code> - SAVE/RESTORE: Save and load your
+game <code>\n</code> - SCORE: Check your progress <code>\n</code> - WAIT
+(Z): Let time pass <code>\n</code> - AGAIN (G): Repeat last command
+<code>\n</code> - QUIT: Exit the game</td>
+</tr>
+<tr>
+<td><code>help-stuck-help</code></td>
+<td>If you're stuck, try: <code>\n</code> - LOOK around carefully
+<code>\n</code> - EXAMINE everything <code>\n</code> - Check your
+INVENTORY <code>\n</code> - Try different verbs with objects</td>
+</tr>
+<tr>
+<td><code>help-topic</code></td>
+<td>Help on {verbatim:topic}:</td>
+</tr>
+<tr>
+<td><code>help-unknown-topic</code></td>
+<td>No help available on '{verbatim:topic}'. Type HELP for general
+help.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="hiding-1"><code>hiding</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hiding-already-hidden</code></td>
+<td>{You're} already hidden.</td>
+</tr>
+<tr>
+<td><code>hiding-behind</code></td>
+<td>{You} {slip} behind {the target}.</td>
+</tr>
+<tr>
+<td><code>hiding-cant-hide-there-behind</code></td>
+<td>{You} {can't} hide behind {the target}.</td>
+</tr>
+<tr>
+<td><code>hiding-cant-hide-there-inside</code></td>
+<td>{You} {can't} hide inside {the target}.</td>
+</tr>
+<tr>
+<td><code>hiding-cant-hide-there-on</code></td>
+<td>{You} {can't} hide on {the target}.</td>
+</tr>
+<tr>
+<td><code>hiding-cant-hide-there-under</code></td>
+<td>{You} {can't} hide under {the target}.</td>
+</tr>
+<tr>
+<td><code>hiding-inside</code></td>
+<td>{You} {climb} into {the target}, concealing {yourself}.</td>
+</tr>
+<tr>
+<td><code>hiding-nothing-to-hide</code></td>
+<td>{You} {can't} hide there.</td>
+</tr>
+<tr>
+<td><code>hiding-on</code></td>
+<td>{You} {crouch} on {the target}, out of sight.</td>
+</tr>
+<tr>
+<td><code>hiding-under</code></td>
+<td>{You} {crawl} under {the target}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="hunger-1"><code>hunger</code></h2>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hunger-crossed</code></td>
+<td>The hunger sharpens.</td>
+</tr>
+<tr>
+<td><code>hunger-starved</code></td>
+<td>{You} {have} starved to death.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="inserting-1"><code>inserting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inserting-already-there</code></td>
+<td>{capitalize the item} {verb:is item} already in {the
+destination}.</td>
+</tr>
+<tr>
+<td><code>inserting-container-closed</code></td>
+<td>{capitalize the container} {verb:is container} closed.</td>
+</tr>
+<tr>
+<td><code>inserting-inserted</code></td>
+<td>{You} {insert} {the item} into {the container}.</td>
+</tr>
+<tr>
+<td><code>inserting-no-destination</code></td>
+<td>Insert {the item} into what?</td>
+</tr>
+<tr>
+<td><code>inserting-no-room</code></td>
+<td>There's no room in {the container}.</td>
+</tr>
+<tr>
+<td><code>inserting-no-target</code></td>
+<td>Insert what?</td>
+</tr>
+<tr>
+<td><code>inserting-not-container</code></td>
+<td>{You} {can't} insert things into {the destination}.</td>
+</tr>
+<tr>
+<td><code>inserting-not-held</code></td>
+<td>{You} {need} to be holding {the item} first.</td>
+</tr>
+<tr>
+<td><code>inserting-not-insertable</code></td>
+<td>{capitalize the item} can't be inserted into things.</td>
+</tr>
+<tr>
+<td><code>inserting-wont-fit</code></td>
+<td>{capitalize the item} won't fit in {the container}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="inventory-1"><code>inventory</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inventory-burden-heavy</code></td>
+<td>{You're} carrying quite a load.</td>
+</tr>
+<tr>
+<td><code>inventory-burden-light</code></td>
+<td>{You're} traveling light.</td>
+</tr>
+<tr>
+<td><code>inventory-burden-overloaded</code></td>
+<td>{You're} weighed down with everything {you're} carrying.</td>
+</tr>
+<tr>
+<td><code>inventory-carrying</code></td>
+<td>{You} {be} carrying:</td>
+</tr>
+<tr>
+<td><code>inventory-carrying-and-wearing</code></td>
+<td>{You} {be} carrying and wearing:</td>
+</tr>
+<tr>
+<td><code>inventory-carrying-count</code></td>
+<td>{You} {be} carrying {holdingCount} item(s).</td>
+</tr>
+<tr>
+<td><code>inventory-empty</code></td>
+<td>{You} aren't carrying anything.</td>
+</tr>
+<tr>
+<td><code>inventory-hands-empty</code></td>
+<td>{Your} hands are empty.</td>
+</tr>
+<tr>
+<td><code>inventory-holding-list</code></td>
+<td>{items}</td>
+</tr>
+<tr>
+<td><code>inventory-inventory-empty</code></td>
+<td>{You} aren't carrying anything.</td>
+</tr>
+<tr>
+<td><code>inventory-inventory-header</code></td>
+<td>{You} {be} carrying:</td>
+</tr>
+<tr>
+<td><code>inventory-item-list</code></td>
+<td>{item}</td>
+</tr>
+<tr>
+<td><code>inventory-nothing-at-all</code></td>
+<td>{You} aren't carrying anything at all.</td>
+</tr>
+<tr>
+<td><code>inventory-pockets-empty</code></td>
+<td>{Your} pockets are empty.</td>
+</tr>
+<tr>
+<td><code>inventory-wearing</code></td>
+<td>{You} {be} wearing:</td>
+</tr>
+<tr>
+<td><code>inventory-wearing-count</code></td>
+<td>{You} {be} wearing {wearingCount} item(s).</td>
+</tr>
+<tr>
+<td><code>inventory-worn-list</code></td>
+<td>{items} (worn)</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="jumping-1"><code>jumping</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>jumping-jumped</code></td>
+<td>{You} {jump} on the spot. Nothing comes of it.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="kissing-1"><code>kissing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kissing-kissed-person</code></td>
+<td>{capitalize the target} {verb:is target} having none of that.</td>
+</tr>
+<tr>
+<td><code>kissing-kissed-thing</code></td>
+<td>{You} {kiss} {the target}. Nothing comes of it.</td>
+</tr>
+<tr>
+<td><code>kissing-no-target</code></td>
+<td>Kiss what?</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="lighting-1"><code>lighting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lighting-already-lit</code></td>
+<td>{capitalize the target} {verb:is target} already lit.</td>
+</tr>
+<tr>
+<td><code>lighting-lit</code></td>
+<td>{You} {light} {the target}.</td>
+</tr>
+<tr>
+<td><code>lighting-lit-in-darkness</code></td>
+<td>{You} {light} {the target}, and the darkness draws back.</td>
+</tr>
+<tr>
+<td><code>lighting-needs-tool</code></td>
+<td>{You} {need} {the tool} to light {the item}.</td>
+</tr>
+<tr>
+<td><code>lighting-no-fuel</code></td>
+<td>{capitalize the target} won't light; it has nothing left to
+burn.</td>
+</tr>
+<tr>
+<td><code>lighting-no-target</code></td>
+<td>Light what?</td>
+</tr>
+<tr>
+<td><code>lighting-no-tool</code></td>
+<td>{You} {need} something to light {the item} with.</td>
+</tr>
+<tr>
+<td><code>lighting-not-light-source</code></td>
+<td>{capitalize the target} isn't something {you} can light.</td>
+</tr>
+<tr>
+<td><code>lighting-tool-not-held</code></td>
+<td>{You} {aren't} holding {the tool}.</td>
+</tr>
+<tr>
+<td><code>lighting-wrong-tool</code></td>
+<td>{capitalize the tool} won't light {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="listening-1"><code>listening</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>listening-active-devices</code></td>
+<td>{You} can {hear} {devices} operating nearby.</td>
+</tr>
+<tr>
+<td><code>listening-ambient-sounds</code></td>
+<td>{You} {hear} the usual ambient sounds.</td>
+</tr>
+<tr>
+<td><code>listening-container-sounds</code></td>
+<td>{You} {hear} faint sounds from inside {the target}.</td>
+</tr>
+<tr>
+<td><code>listening-device-off</code></td>
+<td>{capitalize the target} {verb:is target} silent.</td>
+</tr>
+<tr>
+<td><code>listening-device-running</code></td>
+<td>{capitalize the target} {verb:is target} making a soft humming
+sound.</td>
+</tr>
+<tr>
+<td><code>listening-liquid-sounds</code></td>
+<td>{You} {hear} liquid sloshing in {the target}.</td>
+</tr>
+<tr>
+<td><code>listening-listened-environment</code></td>
+<td>{You} {listen} carefully.</td>
+</tr>
+<tr>
+<td><code>listening-listened-to</code></td>
+<td>{You} {listen} carefully to {the target}.</td>
+</tr>
+<tr>
+<td><code>listening-no-sound</code></td>
+<td>{capitalize the target} {verb:isn't target} making any sound.</td>
+</tr>
+<tr>
+<td><code>listening-not-visible</code></td>
+<td>{You} {can't} see {the target} well enough to focus on its
+sounds.</td>
+</tr>
+<tr>
+<td><code>listening-silence</code></td>
+<td>{You} {hear} nothing out of the ordinary.</td>
+</tr>
+<tr>
+<td><code>listening-sounds-from-target</code></td>
+<td>{capitalize the target} {verb:is target} making a noise.</td>
+</tr>
+<tr>
+<td><code>listening-sounds-nearby</code></td>
+<td>{You} {hear} {sources}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="locking-1"><code>locking</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>locking-already-locked</code></td>
+<td>{capitalize the item} {verb:is item} already locked.</td>
+</tr>
+<tr>
+<td><code>locking-cant-reach</code></td>
+<td>{You} {can't} reach {the item}.</td>
+</tr>
+<tr>
+<td><code>locking-key-not-held</code></td>
+<td>{You} {need} to be holding {the key}.</td>
+</tr>
+<tr>
+<td><code>locking-locked</code></td>
+<td>{You} {lock} {the item}.</td>
+</tr>
+<tr>
+<td><code>locking-locked-with</code></td>
+<td>{You} {lock} {the item} with {the key}.</td>
+</tr>
+<tr>
+<td><code>locking-no-key</code></td>
+<td>What do {you} want to lock it with?</td>
+</tr>
+<tr>
+<td><code>locking-no-target</code></td>
+<td>Lock what?</td>
+</tr>
+<tr>
+<td><code>locking-not-closed</code></td>
+<td>{You} {need} to close {the item} first.</td>
+</tr>
+<tr>
+<td><code>locking-not-lockable</code></td>
+<td>{capitalize the item} can't be locked.</td>
+</tr>
+<tr>
+<td><code>locking-wrong-key</code></td>
+<td>{capitalize the key} doesn't fit {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="looking-1"><code>looking</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>looking-container-contents</code></td>
+<td>In {the container} {you} {see} {items}.</td>
+</tr>
+<tr>
+<td><code>looking-contents-list</code></td>
+<td>{You} can {see} {items} here.</td>
+</tr>
+<tr>
+<td><code>looking-examine-surroundings</code></td>
+<td>{name} <code>\n</code> {verbatim:description}</td>
+</tr>
+<tr>
+<td><code>looking-hidden-at</code></td>
+<td>({You're} hiding {verbatim:position} {the spot}.)</td>
+</tr>
+<tr>
+<td><code>looking-in-container</code></td>
+<td>{You} {be} in {the container}.</td>
+</tr>
+<tr>
+<td><code>looking-nothing-special</code></td>
+<td>{You} {see} nothing special.</td>
+</tr>
+<tr>
+<td><code>looking-on-supporter</code></td>
+<td>{You} {be} on {the supporter}.</td>
+</tr>
+<tr>
+<td><code>looking-room-dark</code></td>
+<td>It's pitch dark, and {you} {can't} see a thing.</td>
+</tr>
+<tr>
+<td><code>looking-room-description</code></td>
+<td>{name} <code>\n</code> {verbatim:description}</td>
+</tr>
+<tr>
+<td><code>looking-sighting-close-by</code></td>
+<td>{capitalize the thing}, close by, to the {direction:direction}.</td>
+</tr>
+<tr>
+<td><code>looking-sighting-here</code></td>
+<td>{capitalize the thing}, right here.</td>
+</tr>
+<tr>
+<td><code>looking-sighting-in-the-distance</code></td>
+<td>{capitalize the thing}, in the distance, to the
+{direction:direction}.</td>
+</tr>
+<tr>
+<td><code>looking-sighting-on-the-horizon</code></td>
+<td>{capitalize the thing}, on the horizon, to the
+{direction:direction}.</td>
+</tr>
+<tr>
+<td><code>looking-surface-contents</code></td>
+<td>On {the surface} {you} {see} {items}.</td>
+</tr>
+<tr>
+<td><code>looking-you-see</code></td>
+<td>{You} can {see} {items} here.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="looking_under-1"><code>looking_under</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>looking-under-found-under</code></td>
+<td>Under {the target} {you} {find} {items}.</td>
+</tr>
+<tr>
+<td><code>looking-under-no-target</code></td>
+<td>Look under what?</td>
+</tr>
+<tr>
+<td><code>looking-under-nothing-under</code></td>
+<td>{You} {find} nothing under {the target}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="lowering-1"><code>lowering</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lowering-already-down</code></td>
+<td>That's already lowered.</td>
+</tr>
+<tr>
+<td><code>lowering-cant-lower-that</code></td>
+<td>{You} {can't} lower {the target}.</td>
+</tr>
+<tr>
+<td><code>lowering-lowered</code></td>
+<td>{You} {lower} {the target}.</td>
+</tr>
+<tr>
+<td><code>lowering-no-target</code></td>
+<td>Lower what?</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="opening-1"><code>opening</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>opening-already-open</code></td>
+<td>{capitalize the item} {verb:is item} already open.</td>
+</tr>
+<tr>
+<td><code>opening-cant-reach</code></td>
+<td>{You} {can't} reach {the item}.</td>
+</tr>
+<tr>
+<td><code>opening-its-empty</code></td>
+<td>{You} {open} {the container}, which is empty.</td>
+</tr>
+<tr>
+<td><code>opening-locked</code></td>
+<td>{capitalize the item} {verb:is item} locked.</td>
+</tr>
+<tr>
+<td><code>opening-needs-tool</code></td>
+<td>{You} {need} {the tool} to open {the item}.</td>
+</tr>
+<tr>
+<td><code>opening-no-target</code></td>
+<td>Open what?</td>
+</tr>
+<tr>
+<td><code>opening-no-tool</code></td>
+<td>{You} {need} something to open {the item} with.</td>
+</tr>
+<tr>
+<td><code>opening-not-openable</code></td>
+<td>{capitalize the item} can't be opened.</td>
+</tr>
+<tr>
+<td><code>opening-opened</code></td>
+<td>{You} {open} {the item}.</td>
+</tr>
+<tr>
+<td><code>opening-revealing</code></td>
+<td>Opening {the container} reveals {items}.</td>
+</tr>
+<tr>
+<td><code>opening-tool-not-held</code></td>
+<td>{You} {need} to be holding {the tool}.</td>
+</tr>
+<tr>
+<td><code>opening-wrong-tool</code></td>
+<td>{capitalize the tool} won't open {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="pulling-1"><code>pulling</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pulling-cant-pull-that</code></td>
+<td>{capitalize the target} {verb:is target} not something {you} can
+pull.</td>
+</tr>
+<tr>
+<td><code>pulling-detached</code></td>
+<td>{You} {pull} {the target} free of {the anchor}.</td>
+</tr>
+<tr>
+<td><code>pulling-no-target</code></td>
+<td>Pull what?</td>
+</tr>
+<tr>
+<td><code>pulling-not-reachable</code></td>
+<td>{You} {can't} reach {the target}.</td>
+</tr>
+<tr>
+<td><code>pulling-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>pulling-pulled</code></td>
+<td>{You} {pull} {the target}.</td>
+</tr>
+<tr>
+<td><code>pulling-wont-budge</code></td>
+<td>{capitalize the target} won't budge.</td>
+</tr>
+<tr>
+<td><code>pulling-worn</code></td>
+<td>{You} {can't} pull {the target} while wearing it.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="pushing-1"><code>pushing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pushing-button-clicks</code></td>
+<td>{You} {press} {the target}. Click!</td>
+</tr>
+<tr>
+<td><code>pushing-button-pushed</code></td>
+<td>{You} {push} {the target}.</td>
+</tr>
+<tr>
+<td><code>pushing-cannot-push-that-way</code></td>
+<td>{You} {can't} push {the target} that way.</td>
+</tr>
+<tr>
+<td><code>pushing-carrying-it</code></td>
+<td>{You} {can't} push {the target} while carrying it.</td>
+</tr>
+<tr>
+<td><code>pushing-fixed-in-place</code></td>
+<td>{capitalize the target} {verb:is target} fixed in place.</td>
+</tr>
+<tr>
+<td><code>pushing-no-target</code></td>
+<td>Push what?</td>
+</tr>
+<tr>
+<td><code>pushing-not-reachable</code></td>
+<td>{You} {can't} reach {the target}.</td>
+</tr>
+<tr>
+<td><code>pushing-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>pushing-pushed-direction</code></td>
+<td>{You} {push} {the target} {direction:direction}.</td>
+</tr>
+<tr>
+<td><code>pushing-pushed-nudged</code></td>
+<td>{You} {give} {the target} a push, but it doesn't move far.</td>
+</tr>
+<tr>
+<td><code>pushing-pushing-does-nothing</code></td>
+<td>Pushing {the target} has no effect.</td>
+</tr>
+<tr>
+<td><code>pushing-switch-toggled</code></td>
+<td>{You} {push} {the target}, toggling it {newState}.</td>
+</tr>
+<tr>
+<td><code>pushing-too-heavy</code></td>
+<td>{capitalize the target} {verb:is target} far too heavy to push
+(weighs {weight}kg).</td>
+</tr>
+<tr>
+<td><code>pushing-wearing-it</code></td>
+<td>{You} {can't} push {the target} while wearing it.</td>
+</tr>
+<tr>
+<td><code>pushing-wont-budge</code></td>
+<td>{capitalize the target} won't budge.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="putting-1"><code>putting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>putting-already-there</code></td>
+<td>{capitalize the item} {verb:is item} already {relation} {the
+destination}.</td>
+</tr>
+<tr>
+<td><code>putting-cant-put-in-itself</code></td>
+<td>{You} {can't} put {the item} inside itself.</td>
+</tr>
+<tr>
+<td><code>putting-cant-put-on-itself</code></td>
+<td>{You} {can't} put {the item} on itself.</td>
+</tr>
+<tr>
+<td><code>putting-container-closed</code></td>
+<td>{capitalize the container} {verb:is container} closed.</td>
+</tr>
+<tr>
+<td><code>putting-no-destination</code></td>
+<td>Where do {you} want to put {the item}?</td>
+</tr>
+<tr>
+<td><code>putting-no-room</code></td>
+<td>There's no room in {the container}.</td>
+</tr>
+<tr>
+<td><code>putting-no-space</code></td>
+<td>There's no space on {the surface}.</td>
+</tr>
+<tr>
+<td><code>putting-no-target</code></td>
+<td>Put what?</td>
+</tr>
+<tr>
+<td><code>putting-not-container</code></td>
+<td>{You} {can't} put things in {the destination}.</td>
+</tr>
+<tr>
+<td><code>putting-not-held</code></td>
+<td>{You} {need} to be holding {the item} first.</td>
+</tr>
+<tr>
+<td><code>putting-not-surface</code></td>
+<td>{You} {can't} put things on {the destination}.</td>
+</tr>
+<tr>
+<td><code>putting-put-in</code></td>
+<td>{You} {put} {the item} in {the container}.</td>
+</tr>
+<tr>
+<td><code>putting-put-on</code></td>
+<td>{You} {put} {the item} on {the surface}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="quitting-1"><code>quitting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>quitting-achievements-earned</code></td>
+<td>{You} earned {count} achievements during {your} play!</td>
+</tr>
+<tr>
+<td><code>quitting-final-score</code></td>
+<td>{Your} final score was {finalScore} out of {maxScore}.</td>
+</tr>
+<tr>
+<td><code>quitting-final-stats</code></td>
+<td>Final Statistics: <code>\n</code> Score: {finalScore}/{maxScore}
+<code>\n</code> Moves: {moves} <code>\n</code> Time played:
+{playTime}</td>
+</tr>
+<tr>
+<td><code>quitting-quit-and-saved</code></td>
+<td>Game saved. <code>\n</code> <code>\n</code> Thanks for playing!
+<code>\n</code> <code>\n</code> Final score: {finalScore} out of
+{maxScore} <code>\n</code> Moves: {moves}</td>
+</tr>
+<tr>
+<td><code>quitting-quit-cancelled</code></td>
+<td>Quit cancelled.</td>
+</tr>
+<tr>
+<td><code>quitting-quit-confirm-query</code></td>
+<td>Are {you} sure {you} want to quit?</td>
+</tr>
+<tr>
+<td><code>quitting-quit-confirmed</code></td>
+<td>Thanks for playing! <code>\n</code> <code>\n</code> Final score:
+{finalScore} out of {maxScore} <code>\n</code> Moves: {moves}</td>
+</tr>
+<tr>
+<td><code>quitting-quit-save-query</code></td>
+<td>Would {you} like to save before quitting?</td>
+</tr>
+<tr>
+<td><code>quitting-quit-unsaved-query</code></td>
+<td>{You} {have} unsaved progress. What would {you} like to do?</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="raising-1"><code>raising</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>raising-already-up</code></td>
+<td>That's already raised.</td>
+</tr>
+<tr>
+<td><code>raising-cant-raise-that</code></td>
+<td>{You} {can't} raise {the target}.</td>
+</tr>
+<tr>
+<td><code>raising-no-target</code></td>
+<td>Raise what?</td>
+</tr>
+<tr>
+<td><code>raising-raised</code></td>
+<td>{You} {raise} {the target}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="reading-2"><code>reading</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reading-cannot-read-now</code></td>
+<td>{verbatim:reason}</td>
+</tr>
+<tr>
+<td><code>reading-not-readable</code></td>
+<td>There's nothing written on {the item}.</td>
+</tr>
+<tr>
+<td><code>reading-read-book</code></td>
+<td>{capitalize the item} reads: <code>\n</code> {verbatim:text}</td>
+</tr>
+<tr>
+<td><code>reading-read-book-page</code></td>
+<td>{capitalize the item} (page {currentPage} of {totalPages}):
+<code>\n</code> {verbatim:text}</td>
+</tr>
+<tr>
+<td><code>reading-read-inscription</code></td>
+<td>{capitalize the item} reads: <code>\n</code> {verbatim:text}</td>
+</tr>
+<tr>
+<td><code>reading-read-sign</code></td>
+<td>{capitalize the item} says: <code>\n</code> {verbatim:text}</td>
+</tr>
+<tr>
+<td><code>reading-read-text</code></td>
+<td>{capitalize the item} reads: <code>\n</code> {verbatim:text}</td>
+</tr>
+<tr>
+<td><code>reading-what-to-read</code></td>
+<td>What do you want to read?</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="removing-1"><code>removing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>removing-already-have</code></td>
+<td>{You} already {have} {the item}.</td>
+</tr>
+<tr>
+<td><code>removing-attached</code></td>
+<td>{capitalize the item} {verb:is item} fixed to {the anchor}.</td>
+</tr>
+<tr>
+<td><code>removing-cant-reach</code></td>
+<td>{You} {can't} reach {the item}.</td>
+</tr>
+<tr>
+<td><code>removing-container-closed</code></td>
+<td>{capitalize the container} {verb:is container} closed.</td>
+</tr>
+<tr>
+<td><code>removing-no-source</code></td>
+<td>Remove {the item} from what?</td>
+</tr>
+<tr>
+<td><code>removing-no-target</code></td>
+<td>Remove what?</td>
+</tr>
+<tr>
+<td><code>removing-not-in-container</code></td>
+<td>{capitalize the item} isn't in {the container}.</td>
+</tr>
+<tr>
+<td><code>removing-not-on-surface</code></td>
+<td>{capitalize the item} isn't on {the surface}.</td>
+</tr>
+<tr>
+<td><code>removing-removed-from</code></td>
+<td>{You} {take} {the item} from {the container}.</td>
+</tr>
+<tr>
+<td><code>removing-removed-from-surface</code></td>
+<td>{You} {take} {the item} from {the surface}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="restarting-1"><code>restarting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>restarting-game-restarting</code></td>
+<td>The story restarts.</td>
+</tr>
+<tr>
+<td><code>restarting-new-game</code></td>
+<td>A new story begins.</td>
+</tr>
+<tr>
+<td><code>restarting-restart-confirm</code></td>
+<td>Are you sure you want to restart? All unsaved progress will be
+lost.</td>
+</tr>
+<tr>
+<td><code>restarting-restart-requested</code></td>
+<td>Restarting the story...</td>
+</tr>
+<tr>
+<td><code>restarting-restart-unsaved</code></td>
+<td>You have unsaved progress. Restart anyway?</td>
+</tr>
+<tr>
+<td><code>restarting-starting-over</code></td>
+<td>Starting over from the beginning.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="restoring-1"><code>restoring</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>restoring-available-saves</code></td>
+<td>Available saves: {saves}</td>
+</tr>
+<tr>
+<td><code>restoring-choose-save</code></td>
+<td>Which save would {you} like to restore?</td>
+</tr>
+<tr>
+<td><code>restoring-confirm-restore</code></td>
+<td>Restore game from '{verbatim:saveName}'? Current progress will be
+lost.</td>
+</tr>
+<tr>
+<td><code>restoring-corrupt-save</code></td>
+<td>The save file '{verbatim:saveName}' appears to be corrupted.</td>
+</tr>
+<tr>
+<td><code>restoring-game-loaded</code></td>
+<td>Game loaded from '{verbatim:saveName}'.</td>
+</tr>
+<tr>
+<td><code>restoring-game-restored</code></td>
+<td>Game restored.</td>
+</tr>
+<tr>
+<td><code>restoring-import-save</code></td>
+<td>Import a save file to restore.</td>
+</tr>
+<tr>
+<td><code>restoring-incompatible-save</code></td>
+<td>This save file is from a different version and cannot be
+loaded.</td>
+</tr>
+<tr>
+<td><code>restoring-no-saves</code></td>
+<td>No saved games found.</td>
+</tr>
+<tr>
+<td><code>restoring-no-saves-available</code></td>
+<td>No saved games available.</td>
+</tr>
+<tr>
+<td><code>restoring-quick-restore</code></td>
+<td>Quick restore completed.</td>
+</tr>
+<tr>
+<td><code>restoring-restore-details</code></td>
+<td>Restored: {verbatim:saveName} <code>\n</code> Score: {score}
+<code>\n</code> Moves: {moves}</td>
+</tr>
+<tr>
+<td><code>restoring-restore-failed</code></td>
+<td>Failed to restore game.</td>
+</tr>
+<tr>
+<td><code>restoring-restore-not-allowed</code></td>
+<td>{You} cannot restore a game at this time.</td>
+</tr>
+<tr>
+<td><code>restoring-restore-successful</code></td>
+<td>{Your} saved game has been restored successfully.</td>
+</tr>
+<tr>
+<td><code>restoring-resuming-game</code></td>
+<td>Resuming {your} adventure...</td>
+</tr>
+<tr>
+<td><code>restoring-save-imported</code></td>
+<td>Save file imported successfully.</td>
+</tr>
+<tr>
+<td><code>restoring-save-not-found</code></td>
+<td>No save named '{verbatim:saveName}' was found.</td>
+</tr>
+<tr>
+<td><code>restoring-unsaved-progress</code></td>
+<td>{You} {have} unsaved progress. Restore anyway?</td>
+</tr>
+<tr>
+<td><code>restoring-welcome-back</code></td>
+<td>Welcome back! Game restored from {verbatim:saveName}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="revealing-1"><code>revealing</code></h2>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>revealing-not-hidden</code></td>
+<td>{You're} not hiding.</td>
+</tr>
+<tr>
+<td><code>revealing-revealed</code></td>
+<td>{You} {come} out of hiding.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="saving-1"><code>saving</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>saving-auto-save</code></td>
+<td>Auto-saving game...</td>
+</tr>
+<tr>
+<td><code>saving-confirm-overwrite</code></td>
+<td>A save named '{verbatim:saveName}' already exists. Overwrite
+it?</td>
+</tr>
+<tr>
+<td><code>saving-game-saved</code></td>
+<td>Game saved.</td>
+</tr>
+<tr>
+<td><code>saving-game-saved-as</code></td>
+<td>Game saved as '{verbatim:saveName}'.</td>
+</tr>
+<tr>
+<td><code>saving-invalid-save-name</code></td>
+<td>'{verbatim:saveName}' is not a valid save name.</td>
+</tr>
+<tr>
+<td><code>saving-no-save-slots</code></td>
+<td>No save slots available.</td>
+</tr>
+<tr>
+<td><code>saving-overwrite-save</code></td>
+<td>Previous save '{verbatim:saveName}' has been overwritten.</td>
+</tr>
+<tr>
+<td><code>saving-quick-save</code></td>
+<td>Quick save completed.</td>
+</tr>
+<tr>
+<td><code>saving-save-details</code></td>
+<td>Saved: {verbatim:saveName} <code>\n</code> Score: {score}
+<code>\n</code> Moves: {moves}</td>
+</tr>
+<tr>
+<td><code>saving-save-exported</code></td>
+<td>Save file exported successfully.</td>
+</tr>
+<tr>
+<td><code>saving-save-failed</code></td>
+<td>Failed to save game.</td>
+</tr>
+<tr>
+<td><code>saving-save-in-progress</code></td>
+<td>Another save is already in progress.</td>
+</tr>
+<tr>
+<td><code>saving-save-not-allowed</code></td>
+<td>{You} cannot save the game at this time.</td>
+</tr>
+<tr>
+<td><code>saving-save-reminder</code></td>
+<td>Don't forget to save {your} game regularly!</td>
+</tr>
+<tr>
+<td><code>saving-save-slot</code></td>
+<td>Game saved to slot {verbatim:saveName}.</td>
+</tr>
+<tr>
+<td><code>saving-save-successful</code></td>
+<td>{Your} game has been saved successfully.</td>
+</tr>
+<tr>
+<td><code>saving-saved-locally</code></td>
+<td>Game saved to local storage.</td>
+</tr>
+<tr>
+<td><code>saving-saved-to-cloud</code></td>
+<td>Game saved to cloud storage.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="saying_goodbye-1"><code>saying_goodbye</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>saying-goodbye-not-talking</code></td>
+<td>{You} {aren't} talking to anyone.</td>
+</tr>
+<tr>
+<td><code>saying-goodbye-not-talking-to</code></td>
+<td>{You} {aren't} talking to {the target}.</td>
+</tr>
+<tr>
+<td><code>saying-goodbye-said-goodbye</code></td>
+<td>{You} {say} goodbye to {the target}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="saying_no-1"><code>saying_no</code></h2>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>saying-no-nobody-asked</code></td>
+<td>Nobody asked {you} anything.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="saying_sorry-1"><code>saying_sorry</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>saying-sorry-nothing-to-apologize-for</code></td>
+<td>There is nothing to apologize for.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="saying_yes-1"><code>saying_yes</code></h2>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>saying-yes-nobody-asked</code></td>
+<td>Nobody asked {you} anything.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="scoring-2"><code>scoring</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scoring-no-scoring</code></td>
+<td>This isn't that kind of game.</td>
+</tr>
+<tr>
+<td><code>scoring-perfect-score</code></td>
+<td>{You} {have} achieved a perfect score of {maxScore} points!</td>
+</tr>
+<tr>
+<td><code>scoring-promotion</code></td>
+<td>{You} {have} risen to the rank of {rank}.</td>
+</tr>
+<tr>
+<td><code>scoring-score-display</code></td>
+<td>{You} {have} scored {score} out of a possible {maxScore}.</td>
+</tr>
+<tr>
+<td><code>scoring-score-simple</code></td>
+<td>{Your} score is {score} points.</td>
+</tr>
+<tr>
+<td><code>scoring-score-with-rank</code></td>
+<td>{You} {have} scored {score} out of {maxScore}, earning {you} the
+rank of {rank}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="searching-1"><code>searching</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>searching-container-closed</code></td>
+<td>{capitalize the target} {verb:is target} closed.</td>
+</tr>
+<tr>
+<td><code>searching-container-contents</code></td>
+<td>In {the target} {you} {see}: {items}.</td>
+</tr>
+<tr>
+<td><code>searching-empty-container</code></td>
+<td>{capitalize the target} {verb:is target} empty.</td>
+</tr>
+<tr>
+<td><code>searching-found-concealed-here</code></td>
+<td>Hidden here, {you} {discover}: {items}.</td>
+</tr>
+<tr>
+<td><code>searching-found-concealed-in-container</code></td>
+<td>Hidden inside {the target}, {you} {discover}: {items}.</td>
+</tr>
+<tr>
+<td><code>searching-found-concealed-on-supporter</code></td>
+<td>Hidden on {the target}, {you} {discover}: {items}.</td>
+</tr>
+<tr>
+<td><code>searching-found-items</code></td>
+<td>{You} {discover}: {items}.</td>
+</tr>
+<tr>
+<td><code>searching-looked-through</code></td>
+<td>{You} {look} through {the target}.</td>
+</tr>
+<tr>
+<td><code>searching-looked-through-nothing</code></td>
+<td>{You} {see} nothing through {the target}.</td>
+</tr>
+<tr>
+<td><code>searching-not-reachable</code></td>
+<td>{You} {can't} reach {the target} to search it.</td>
+</tr>
+<tr>
+<td><code>searching-not-visible</code></td>
+<td>{You} {can't} see {the target} to search it.</td>
+</tr>
+<tr>
+<td><code>searching-nothing-special</code></td>
+<td>{You} {find} nothing of interest.</td>
+</tr>
+<tr>
+<td><code>searching-searched-location</code></td>
+<td>{You} {search} around carefully.</td>
+</tr>
+<tr>
+<td><code>searching-searched-object</code></td>
+<td>{You} {search} {the target} thoroughly.</td>
+</tr>
+<tr>
+<td><code>searching-supporter-contents</code></td>
+<td>On {the target} {you} {see}: {items}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="setting-1"><code>setting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setting-cant-set-that</code></td>
+<td>{capitalize the target} isn't something {you} can set.</td>
+</tr>
+<tr>
+<td><code>setting-no-target</code></td>
+<td>Set what?</td>
+</tr>
+<tr>
+<td><code>setting-no-value</code></td>
+<td>Set {the target} to what?</td>
+</tr>
+<tr>
+<td><code>setting-not-a-setting</code></td>
+<td>{capitalize the target} goes to {values}.</td>
+</tr>
+<tr>
+<td><code>setting-set</code></td>
+<td>{You} {set} {the target} to {verbatim:value}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="setting_course-1"><code>setting_course</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setting-course-already-there</code></td>
+<td>{capitalize the vehicle} {verb:is vehicle} already at {the
+destination}.</td>
+</tr>
+<tr>
+<td><code>setting-course-coordinates-outside-expanse</code></td>
+<td>{verbatim:destination} lies beyond the edge.</td>
+</tr>
+<tr>
+<td><code>setting-course-course-set</code></td>
+<td>{You} {set} course for {the destination}.</td>
+</tr>
+<tr>
+<td><code>setting-course-course-set-cell</code></td>
+<td>{You} {set} course for {verbatim:x}, {verbatim:y}.</td>
+</tr>
+<tr>
+<td><code>setting-course-no-destination</code></td>
+<td>Set course for where?</td>
+</tr>
+<tr>
+<td><code>setting-course-not-a-destination</code></td>
+<td>{capitalize the vehicle} {verb:does vehicle} not go to
+{verbatim:destination}.</td>
+</tr>
+<tr>
+<td><code>setting-course-not-in-vehicle</code></td>
+<td>{You're} not aboard anything that takes a course.</td>
+</tr>
+<tr>
+<td><code>setting-course-vehicle-no-such-command</code></td>
+<td>{capitalize the vehicle} takes no course.</td>
+</tr>
+<tr>
+<td><code>setting-course-vehicle-under-way</code></td>
+<td>{capitalize the vehicle} {verb:is vehicle} already under way.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="showing-1"><code>showing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>showing-no-item</code></td>
+<td>Show what?</td>
+</tr>
+<tr>
+<td><code>showing-no-viewer</code></td>
+<td>Show it to whom?</td>
+</tr>
+<tr>
+<td><code>showing-not-actor</code></td>
+<td>{You} can only show things to people.</td>
+</tr>
+<tr>
+<td><code>showing-not-carrying</code></td>
+<td>{You} aren't carrying {the item}.</td>
+</tr>
+<tr>
+<td><code>showing-self</code></td>
+<td>{You} {examine} {the item} closely.</td>
+</tr>
+<tr>
+<td><code>showing-shown</code></td>
+<td>{You} {show} {the item} to {the viewer}.</td>
+</tr>
+<tr>
+<td><code>showing-viewer-examines</code></td>
+<td>{capitalize the viewer} examines {the item} carefully.</td>
+</tr>
+<tr>
+<td><code>showing-viewer-impressed</code></td>
+<td>{capitalize the viewer} looks impressed.</td>
+</tr>
+<tr>
+<td><code>showing-viewer-nods</code></td>
+<td>{capitalize the viewer} nods.</td>
+</tr>
+<tr>
+<td><code>showing-viewer-not-visible</code></td>
+<td>{You} {can't} see {the viewer}.</td>
+</tr>
+<tr>
+<td><code>showing-viewer-recognizes</code></td>
+<td>{capitalize the viewer} recognizes {the item}!</td>
+</tr>
+<tr>
+<td><code>showing-viewer-too-far</code></td>
+<td>{capitalize the viewer} {verb:is viewer} too far away to see
+clearly.</td>
+</tr>
+<tr>
+<td><code>showing-viewer-unimpressed</code></td>
+<td>{capitalize the viewer} seems unimpressed.</td>
+</tr>
+<tr>
+<td><code>showing-wearing-shown</code></td>
+<td>{You} {show} {the viewer} that {you're} wearing {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="sleeping-1"><code>sleeping</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sleeping-already-well-rested</code></td>
+<td>{You're} already well-rested and don't feel tired.</td>
+</tr>
+<tr>
+<td><code>sleeping-brief-nap</code></td>
+<td>{You} {take} a brief nap.</td>
+</tr>
+<tr>
+<td><code>sleeping-cant-sleep-here</code></td>
+<td>{You} {can't} sleep in {location}.</td>
+</tr>
+<tr>
+<td><code>sleeping-deep-sleep</code></td>
+<td>{You} {fall} into a deep, restful sleep.</td>
+</tr>
+<tr>
+<td><code>sleeping-disturbed-sleep</code></td>
+<td>{Your} sleep is disturbed.</td>
+</tr>
+<tr>
+<td><code>sleeping-dozed-off</code></td>
+<td>{You} {doze} off for a bit.</td>
+</tr>
+<tr>
+<td><code>sleeping-fell-asleep</code></td>
+<td>{You} {fall} into a deep sleep.</td>
+</tr>
+<tr>
+<td><code>sleeping-nightmares</code></td>
+<td>{You} {have} unsettling dreams.</td>
+</tr>
+<tr>
+<td><code>sleeping-not-tired</code></td>
+<td>{You} aren't tired.</td>
+</tr>
+<tr>
+<td><code>sleeping-peaceful-sleep</code></td>
+<td>{You} {enjoy} a peaceful sleep.</td>
+</tr>
+<tr>
+<td><code>sleeping-slept</code></td>
+<td>{You} {sleep} for a while.</td>
+</tr>
+<tr>
+<td><code>sleeping-slept-fitfully</code></td>
+<td>{You} {sleep} fitfully.</td>
+</tr>
+<tr>
+<td><code>sleeping-too-dangerous-to-sleep</code></td>
+<td>It's too dangerous to sleep in {location}.</td>
+</tr>
+<tr>
+<td><code>sleeping-woke-refreshed</code></td>
+<td>{You} {wake} feeling refreshed.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="smelling-1"><code>smelling</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>smelling-burning-scent</code></td>
+<td>{capitalize the target} gives off a smoky smell.</td>
+</tr>
+<tr>
+<td><code>smelling-container-food-scent</code></td>
+<td>{You} {smell} food inside {the target}.</td>
+</tr>
+<tr>
+<td><code>smelling-declared-scent</code></td>
+<td>{capitalize the target} {verb:has target} a distinct smell.</td>
+</tr>
+<tr>
+<td><code>smelling-drink-scent</code></td>
+<td>{capitalize the target} {verb:has target} a pleasant aroma.</td>
+</tr>
+<tr>
+<td><code>smelling-food-nearby</code></td>
+<td>{You} {smell} food nearby.</td>
+</tr>
+<tr>
+<td><code>smelling-food-scent</code></td>
+<td>{capitalize the target} smells delicious.</td>
+</tr>
+<tr>
+<td><code>smelling-fresh-scent</code></td>
+<td>{capitalize the target} smells fresh and clean.</td>
+</tr>
+<tr>
+<td><code>smelling-musty-scent</code></td>
+<td>{capitalize the target} smells a bit musty.</td>
+</tr>
+<tr>
+<td><code>smelling-no-particular-scent</code></td>
+<td>{capitalize the target} {verb:has target} no particular smell.</td>
+</tr>
+<tr>
+<td><code>smelling-no-scent</code></td>
+<td>{You} {don't} smell anything unusual.</td>
+</tr>
+<tr>
+<td><code>smelling-not-visible</code></td>
+<td>{You} {can't} see {the target} to smell it.</td>
+</tr>
+<tr>
+<td><code>smelling-room-scents</code></td>
+<td>The air carries various scents.</td>
+</tr>
+<tr>
+<td><code>smelling-scents-nearby</code></td>
+<td>{You} {smell} {sources}.</td>
+</tr>
+<tr>
+<td><code>smelling-smelled</code></td>
+<td>{You} {smell} {the target}.</td>
+</tr>
+<tr>
+<td><code>smelling-smelled-environment</code></td>
+<td>{You} {sniff} the air.</td>
+</tr>
+<tr>
+<td><code>smelling-smoke-detected</code></td>
+<td>{You} {detect} a faint smell of smoke.</td>
+</tr>
+<tr>
+<td><code>smelling-too-far</code></td>
+<td>{capitalize the target} {verb:is target} too far away to smell.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="steering-1"><code>steering</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>steering-ahead</code></td>
+<td>{capitalize the vehicle} gathers way on {verbatim:bearing}
+degrees.</td>
+</tr>
+<tr>
+<td><code>steering-came-about</code></td>
+<td>{You} {come} about, and {the vehicle} settles on {verbatim:bearing}
+degrees.</td>
+</tr>
+<tr>
+<td><code>steering-cannot-steer</code></td>
+<td>{You} {can't} steer {the vehicle} that way.</td>
+</tr>
+<tr>
+<td><code>steering-hove-to</code></td>
+<td>{You} {heave} to, and {the vehicle} loses way.</td>
+</tr>
+<tr>
+<td><code>steering-naval-cannot-come-about</code></td>
+<td>{capitalize the vehicle} {verb:lies vehicle} dead to the wind, with
+no other side to come about to.</td>
+</tr>
+<tr>
+<td><code>steering-naval-how-far</code></td>
+<td>How many degrees?</td>
+</tr>
+<tr>
+<td><code>steering-naval-no-wind</code></td>
+<td>There is no wind to come about through.</td>
+</tr>
+<tr>
+<td><code>steering-not-in-vehicle</code></td>
+<td>{You're} not aboard anything {you} can steer.</td>
+</tr>
+<tr>
+<td><code>steering-not-under-way</code></td>
+<td>{capitalize the vehicle} {verb:is vehicle} not under way.</td>
+</tr>
+<tr>
+<td><code>steering-sail-made</code></td>
+<td>{You} {make} sail.</td>
+</tr>
+<tr>
+<td><code>steering-sail-shortened</code></td>
+<td>{You} {shorten} sail.</td>
+</tr>
+<tr>
+<td><code>steering-sails-already-furled</code></td>
+<td>The sails are already furled.</td>
+</tr>
+<tr>
+<td><code>steering-sails-at-full</code></td>
+<td>All sail is set.</td>
+</tr>
+<tr>
+<td><code>steering-sails-furled</code></td>
+<td>{You} {furl} the sails.</td>
+</tr>
+<tr>
+<td><code>steering-steered</code></td>
+<td>{You} {steer} {the vehicle} {direction:direction}.</td>
+</tr>
+<tr>
+<td><code>steering-turned</code></td>
+<td>{You} {bring} {the vehicle} to {verbatim:side}, to
+{verbatim:bearing} degrees.</td>
+</tr>
+<tr>
+<td><code>steering-vehicle-no-such-command</code></td>
+<td>{You} {can't} steer {the vehicle}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="switching_off-1"><code>switching_off</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>switching-off-already-off</code></td>
+<td>{capitalize the target} {verb:is target} already off.</td>
+</tr>
+<tr>
+<td><code>switching-off-device-stops</code></td>
+<td>{capitalize the target} powers down with a soft whir.</td>
+</tr>
+<tr>
+<td><code>switching-off-door-closes</code></td>
+<td>{capitalize the target} switches off and closes.</td>
+</tr>
+<tr>
+<td><code>switching-off-light-off</code></td>
+<td>{You} {switch} off {the target}, plunging the area into
+darkness.</td>
+</tr>
+<tr>
+<td><code>switching-off-light-off-still-lit</code></td>
+<td>{You} {switch} off {the target}.</td>
+</tr>
+<tr>
+<td><code>switching-off-no-target</code></td>
+<td>Switch off what?</td>
+</tr>
+<tr>
+<td><code>switching-off-not-reachable</code></td>
+<td>{You} {can't} reach {the target}.</td>
+</tr>
+<tr>
+<td><code>switching-off-not-switchable</code></td>
+<td>{capitalize the target} isn't something {you} can switch off.</td>
+</tr>
+<tr>
+<td><code>switching-off-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>switching-off-silence-falls</code></td>
+<td>{You} {switch} off {the target}. Silence falls.</td>
+</tr>
+<tr>
+<td><code>switching-off-switched-off</code></td>
+<td>{You} {switch} off {the target}.</td>
+</tr>
+<tr>
+<td><code>switching-off-was-temporary</code></td>
+<td>{capitalize the target} switches off (it had {remainingTime} seconds
+left).</td>
+</tr>
+<tr>
+<td><code>switching-off-with-sound</code></td>
+<td>{You} {switch} off {the target}. {sound}</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="switching_on-1"><code>switching_on</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>switching-on-already-on</code></td>
+<td>{capitalize the target} {verb:is target} already on.</td>
+</tr>
+<tr>
+<td><code>switching-on-device-humming</code></td>
+<td>{capitalize the target} hums to life.</td>
+</tr>
+<tr>
+<td><code>switching-on-door-opens</code></td>
+<td>{capitalize the target} switches on and opens.</td>
+</tr>
+<tr>
+<td><code>switching-on-illuminates-darkness</code></td>
+<td>{capitalize the target} switches on, banishing the darkness.</td>
+</tr>
+<tr>
+<td><code>switching-on-light-on</code></td>
+<td>{You} {switch} on {the target}.</td>
+</tr>
+<tr>
+<td><code>switching-on-no-power</code></td>
+<td>{capitalize the target} {verb:has target} no power source.</td>
+</tr>
+<tr>
+<td><code>switching-on-no-target</code></td>
+<td>Switch on what?</td>
+</tr>
+<tr>
+<td><code>switching-on-not-reachable</code></td>
+<td>{You} {can't} reach {the target}.</td>
+</tr>
+<tr>
+<td><code>switching-on-not-switchable</code></td>
+<td>{capitalize the target} isn't something {you} can switch on.</td>
+</tr>
+<tr>
+<td><code>switching-on-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>switching-on-switched-on</code></td>
+<td>{You} {switch} on {the target}.</td>
+</tr>
+<tr>
+<td><code>switching-on-temporary-activation</code></td>
+<td>{capitalize the target} switches on temporarily.</td>
+</tr>
+<tr>
+<td><code>switching-on-with-sound</code></td>
+<td>{You} {switch} on {the target}. {sound}</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="taking-1"><code>taking</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>taking-already-have</code></td>
+<td>{You} already {have} {the item}.</td>
+</tr>
+<tr>
+<td><code>taking-attached</code></td>
+<td>{capitalize the item} {verb:is item} fixed to {the anchor}.</td>
+</tr>
+<tr>
+<td><code>taking-cannot-take</code></td>
+<td>{You} {can't} take {the item}.</td>
+</tr>
+<tr>
+<td><code>taking-cant-take-room</code></td>
+<td>{You} {can't} take {the item}.</td>
+</tr>
+<tr>
+<td><code>taking-cant-take-self</code></td>
+<td>{You} {can't} take {yourself}.</td>
+</tr>
+<tr>
+<td><code>taking-container-full</code></td>
+<td>{You're} carrying too much already.</td>
+</tr>
+<tr>
+<td><code>taking-fixed-in-place</code></td>
+<td>{capitalize the item} {verb:is item} fixed in place.</td>
+</tr>
+<tr>
+<td><code>taking-no-target</code></td>
+<td>Take what?</td>
+</tr>
+<tr>
+<td><code>taking-nothing-to-take</code></td>
+<td>{You} {take} in everything {you} {see} and {enjoy} the moment.</td>
+</tr>
+<tr>
+<td><code>taking-retrieved</code></td>
+<td>{You} {haul} {the item} aboard.</td>
+</tr>
+<tr>
+<td><code>taking-taken</code></td>
+<td>Taken.</td>
+</tr>
+<tr>
+<td><code>taking-taken-from</code></td>
+<td>{You} {take} {the item} from {the container}.</td>
+</tr>
+<tr>
+<td><code>taking-taken-multi</code></td>
+<td>{item}: Taken.</td>
+</tr>
+<tr>
+<td><code>taking-too-heavy</code></td>
+<td>{Your} load is too heavy. {You} will have to leave something
+behind.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="taking_off-1"><code>taking_off</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>taking-off-cant-remove</code></td>
+<td>{You} {can't} take off {the item}.</td>
+</tr>
+<tr>
+<td><code>taking-off-no-target</code></td>
+<td>Take off what?</td>
+</tr>
+<tr>
+<td><code>taking-off-not-wearing</code></td>
+<td>{You} aren't wearing {the item}.</td>
+</tr>
+<tr>
+<td><code>taking-off-prevents-removal</code></td>
+<td>{You}'ll need to take off {the blocking} first.</td>
+</tr>
+<tr>
+<td><code>taking-off-removed</code></td>
+<td>{You} {take} off {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="talking-1"><code>talking</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>talking-acknowledges</code></td>
+<td>{capitalize the target} acknowledges {you}.</td>
+</tr>
+<tr>
+<td><code>talking-casual-greeting</code></td>
+<td>{capitalize the target} {verb:says target}, "Hey!"</td>
+</tr>
+<tr>
+<td><code>talking-first-meeting</code></td>
+<td>{You} {introduce} {yourself} to {the target}.</td>
+</tr>
+<tr>
+<td><code>talking-formal-greeting</code></td>
+<td>{capitalize the target} {verb:says target}, "Good day to you."</td>
+</tr>
+<tr>
+<td><code>talking-friendly-greeting</code></td>
+<td>{capitalize the target} smiles in recognition.</td>
+</tr>
+<tr>
+<td><code>talking-greets-again</code></td>
+<td>{capitalize the target} {verb:says target}, "Hello again."</td>
+</tr>
+<tr>
+<td><code>talking-greets-back</code></td>
+<td>{capitalize the target} {verb:says target}, "Hello there!"</td>
+</tr>
+<tr>
+<td><code>talking-has-topics</code></td>
+<td>{capitalize the target} seems willing to discuss various
+topics.</td>
+</tr>
+<tr>
+<td><code>talking-no-response</code></td>
+<td>{capitalize the target} doesn't respond.</td>
+</tr>
+<tr>
+<td><code>talking-no-target</code></td>
+<td>Talk to whom?</td>
+</tr>
+<tr>
+<td><code>talking-not-actor</code></td>
+<td>{You} can only talk to people.</td>
+</tr>
+<tr>
+<td><code>talking-not-available</code></td>
+<td>{capitalize the target} doesn't want to talk right now.</td>
+</tr>
+<tr>
+<td><code>talking-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>talking-nothing-to-say</code></td>
+<td>{capitalize the target} {verb:has target} nothing particular to
+say.</td>
+</tr>
+<tr>
+<td><code>talking-remembers-you</code></td>
+<td>{capitalize the target} {verb:says target}, "Ah, it's you
+again."</td>
+</tr>
+<tr>
+<td><code>talking-self</code></td>
+<td>Talking to {yourself} is a sign of madness.</td>
+</tr>
+<tr>
+<td><code>talking-talked</code></td>
+<td>{You} {greet} {the target}.</td>
+</tr>
+<tr>
+<td><code>talking-too-far</code></td>
+<td>{capitalize the target} {verb:is target} too far away for
+conversation.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="telling-1"><code>telling</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>telling-already-knew</code></td>
+<td>{capitalize the target} {verb:says target}, "Yes, I'm aware of
+that."</td>
+</tr>
+<tr>
+<td><code>telling-bored</code></td>
+<td>{capitalize the target} looks bored.</td>
+</tr>
+<tr>
+<td><code>telling-dismissive</code></td>
+<td>{capitalize the target} {verb:says target}, "So what?"</td>
+</tr>
+<tr>
+<td><code>telling-grateful</code></td>
+<td>{capitalize the target} {verb:says target}, "Thank you for telling
+me!"</td>
+</tr>
+<tr>
+<td><code>telling-ignores</code></td>
+<td>{capitalize the target} ignores what {you're} saying.</td>
+</tr>
+<tr>
+<td><code>telling-informed</code></td>
+<td>{You} {inform} {the target} about {verbatim:topic}.</td>
+</tr>
+<tr>
+<td><code>telling-interested</code></td>
+<td>{capitalize the target} listens with interest.</td>
+</tr>
+<tr>
+<td><code>telling-no-target</code></td>
+<td>Tell whom?</td>
+</tr>
+<tr>
+<td><code>telling-no-topic</code></td>
+<td>Tell them about what?</td>
+</tr>
+<tr>
+<td><code>telling-not-actor</code></td>
+<td>{You} can only tell things to people.</td>
+</tr>
+<tr>
+<td><code>telling-not-interested</code></td>
+<td>{capitalize the target} doesn't seem interested.</td>
+</tr>
+<tr>
+<td><code>telling-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>telling-told</code></td>
+<td>{You} {tell} {the target} about {verbatim:topic}.</td>
+</tr>
+<tr>
+<td><code>telling-too-far</code></td>
+<td>{capitalize the target} {verb:is target} too far away.</td>
+</tr>
+<tr>
+<td><code>telling-very-interested</code></td>
+<td>{capitalize the target} {verb:says target}, "Really? Tell me
+more!"</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="throwing-1"><code>throwing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>throwing-bounces-off</code></td>
+<td>{capitalize the item} bounces off {the target}.</td>
+</tr>
+<tr>
+<td><code>throwing-breaks-against</code></td>
+<td>{capitalize the item} smashes against {the target}!</td>
+</tr>
+<tr>
+<td><code>throwing-breaks-on-impact</code></td>
+<td>{capitalize the item} shatters on impact!</td>
+</tr>
+<tr>
+<td><code>throwing-cant-throw-that-way</code></td>
+<td>{You} {can't} throw {the item} that way.</td>
+</tr>
+<tr>
+<td><code>throwing-fragile-breaks</code></td>
+<td>The fragile {item} breaks into pieces.</td>
+</tr>
+<tr>
+<td><code>throwing-hits-target</code></td>
+<td>{You} {throw} {the item} at {the target}. It hits!</td>
+</tr>
+<tr>
+<td><code>throwing-lands-in</code></td>
+<td>{capitalize the item} lands in {the target}.</td>
+</tr>
+<tr>
+<td><code>throwing-lands-on</code></td>
+<td>{capitalize the item} lands on {the target}.</td>
+</tr>
+<tr>
+<td><code>throwing-lost-overboard</code></td>
+<td>{capitalize the item} drifts away.</td>
+</tr>
+<tr>
+<td><code>throwing-misses-target</code></td>
+<td>{You} {throw} {the item} at {the target}, but miss.</td>
+</tr>
+<tr>
+<td><code>throwing-no-exit</code></td>
+<td>There's no exit {direction:direction}.</td>
+</tr>
+<tr>
+<td><code>throwing-no-item</code></td>
+<td>Throw what?</td>
+</tr>
+<tr>
+<td><code>throwing-not-holding</code></td>
+<td>{You} aren't holding {the item}.</td>
+</tr>
+<tr>
+<td><code>throwing-sails-through</code></td>
+<td>{capitalize the item} sails through the exit to the
+{direction:direction}.</td>
+</tr>
+<tr>
+<td><code>throwing-self</code></td>
+<td>{You} {can't} throw things at {yourself}.</td>
+</tr>
+<tr>
+<td><code>throwing-target-angry</code></td>
+<td>{capitalize the target} doesn't appreciate being hit with {the
+item}.</td>
+</tr>
+<tr>
+<td><code>throwing-target-catches</code></td>
+<td>{capitalize the target} catches {the item}!</td>
+</tr>
+<tr>
+<td><code>throwing-target-ducks</code></td>
+<td>{capitalize the target} ducks out of the way.</td>
+</tr>
+<tr>
+<td><code>throwing-target-not-here</code></td>
+<td>{capitalize the target} isn't here.</td>
+</tr>
+<tr>
+<td><code>throwing-target-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>throwing-thrown</code></td>
+<td>{You} {throw} {the item}.</td>
+</tr>
+<tr>
+<td><code>throwing-thrown-afloat</code></td>
+<td>{capitalize the item} {verb:floats item} where {verb:it item}
+{verb:falls item}.</td>
+</tr>
+<tr>
+<td><code>throwing-thrown-at</code></td>
+<td>{You} {throw} {the item} at {the target}.</td>
+</tr>
+<tr>
+<td><code>throwing-thrown-direction</code></td>
+<td>{You} {throw} {the item} {direction:direction}.</td>
+</tr>
+<tr>
+<td><code>throwing-thrown-down</code></td>
+<td>{You} {toss} {the item} to the ground.</td>
+</tr>
+<tr>
+<td><code>throwing-too-heavy</code></td>
+<td>{capitalize the item} {verb:is item} too heavy to throw far (weighs
+{weight}kg).</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="touching-1"><code>touching</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>touching-device-vibrating</code></td>
+<td>{capitalize the target} {verb:is target} vibrating slightly.</td>
+</tr>
+<tr>
+<td><code>touching-feels-hard</code></td>
+<td>{capitalize the target} feels hard and solid.</td>
+</tr>
+<tr>
+<td><code>touching-feels-hot</code></td>
+<td>{capitalize the target} {verb:is target} hot! {You} {pull} {your}
+hand back quickly.</td>
+</tr>
+<tr>
+<td><code>touching-feels-normal</code></td>
+<td>{capitalize the target} feels as {you}'d expect.</td>
+</tr>
+<tr>
+<td><code>touching-feels-smooth</code></td>
+<td>{capitalize the target} feels smooth.</td>
+</tr>
+<tr>
+<td><code>touching-feels-soft</code></td>
+<td>{capitalize the target} feels soft.</td>
+</tr>
+<tr>
+<td><code>touching-feels-warm</code></td>
+<td>{capitalize the target} feels warm to the touch.</td>
+</tr>
+<tr>
+<td><code>touching-feels-wet</code></td>
+<td>{capitalize the target} feels damp.</td>
+</tr>
+<tr>
+<td><code>touching-immovable-object</code></td>
+<td>{capitalize the target} {verb:is target} solid and immovable.</td>
+</tr>
+<tr>
+<td><code>touching-liquid-container</code></td>
+<td>{You} {feel} liquid sloshing inside {the target}.</td>
+</tr>
+<tr>
+<td><code>touching-no-target</code></td>
+<td>Touch what?</td>
+</tr>
+<tr>
+<td><code>touching-not-reachable</code></td>
+<td>{You} {can't} reach {the target}.</td>
+</tr>
+<tr>
+<td><code>touching-not-visible</code></td>
+<td>{You} {can't} see {the target} to touch it.</td>
+</tr>
+<tr>
+<td><code>touching-patted</code></td>
+<td>{You} {pat} {the target}.</td>
+</tr>
+<tr>
+<td><code>touching-poked</code></td>
+<td>{You} {poke} {the target}.</td>
+</tr>
+<tr>
+<td><code>touching-prodded</code></td>
+<td>{You} {prod} {the target}.</td>
+</tr>
+<tr>
+<td><code>touching-stroked</code></td>
+<td>{You} {stroke} {the target}.</td>
+</tr>
+<tr>
+<td><code>touching-touched</code></td>
+<td>{You} {touch} {the target}.</td>
+</tr>
+<tr>
+<td><code>touching-touched-gently</code></td>
+<td>{You} gently {touch} {the target}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="turning-1"><code>turning</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>turning-cant-turn-that</code></td>
+<td>{capitalize the target} isn't something {you} can turn.</td>
+</tr>
+<tr>
+<td><code>turning-crank-turned</code></td>
+<td>{You} {crank} {the target}.</td>
+</tr>
+<tr>
+<td><code>turning-dial-adjusted</code></td>
+<td>{You} {adjust} {the target} {verbatim:direction}.</td>
+</tr>
+<tr>
+<td><code>turning-dial-set</code></td>
+<td>{You} {turn} {the target} to {setting}.</td>
+</tr>
+<tr>
+<td><code>turning-dial-turned</code></td>
+<td>{You} {turn} {the target}.</td>
+</tr>
+<tr>
+<td><code>turning-flow-changes</code></td>
+<td>{You} {turn} {the target}, adjusting the flow.</td>
+</tr>
+<tr>
+<td><code>turning-key-needs-lock</code></td>
+<td>{You} {need} to put {the target} in a lock first.</td>
+</tr>
+<tr>
+<td><code>turning-key-turned</code></td>
+<td>{You} {turn} {the target} in the lock.</td>
+</tr>
+<tr>
+<td><code>turning-knob-clicks</code></td>
+<td>{You} {turn} {the target} with a click.</td>
+</tr>
+<tr>
+<td><code>turning-knob-toggled</code></td>
+<td>{You} {turn} {the target}, switching it {newState}.</td>
+</tr>
+<tr>
+<td><code>turning-knob-turned</code></td>
+<td>{You} {turn} {the target}.</td>
+</tr>
+<tr>
+<td><code>turning-mechanism-activated</code></td>
+<td>As {you} {turn} {the target}, {you} {hear} machinery activate!</td>
+</tr>
+<tr>
+<td><code>turning-mechanism-grinds</code></td>
+<td>{You} {turn} {the target}. Gears grind and machinery moves.</td>
+</tr>
+<tr>
+<td><code>turning-no-target</code></td>
+<td>Turn what?</td>
+</tr>
+<tr>
+<td><code>turning-not-reachable</code></td>
+<td>{You} {can't} reach {the target}.</td>
+</tr>
+<tr>
+<td><code>turning-not-visible</code></td>
+<td>{You} {can't} see {the target}.</td>
+</tr>
+<tr>
+<td><code>turning-nothing-happens</code></td>
+<td>{You} {turn} {the target}, but nothing happens.</td>
+</tr>
+<tr>
+<td><code>turning-requires-more-turns</code></td>
+<td>{You} {turn} {the target}. It seems to need more turning.</td>
+</tr>
+<tr>
+<td><code>turning-rotated</code></td>
+<td>{You} {rotate} {the target}.</td>
+</tr>
+<tr>
+<td><code>turning-spun</code></td>
+<td>{You} {spin} {the target}.</td>
+</tr>
+<tr>
+<td><code>turning-turned</code></td>
+<td>{You} {turn} {the target}.</td>
+</tr>
+<tr>
+<td><code>turning-valve-closed</code></td>
+<td>{You} {turn} {the target}, closing the valve.</td>
+</tr>
+<tr>
+<td><code>turning-valve-opened</code></td>
+<td>{You} {turn} {the target}, opening the valve.</td>
+</tr>
+<tr>
+<td><code>turning-wearing-it</code></td>
+<td>{You} {can't} turn {the target} while wearing it.</td>
+</tr>
+<tr>
+<td><code>turning-wheel-turned</code></td>
+<td>{You} {turn} {the target}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="tying-1"><code>tying</code></h2>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tying-no-anchor</code></td>
+<td>What do {you} want to tie {the item} to?</td>
+</tr>
+<tr>
+<td><code>tying-no-target</code></td>
+<td>Tie what?</td>
+</tr>
+<tr>
+<td><code>tying-not-to-people</code></td>
+<td>{You} can't tie things to people.</td>
+</tr>
+<tr>
+<td><code>tying-self</code></td>
+<td>{You} can't tie {the item} to itself.</td>
+</tr>
+<tr>
+<td><code>tying-tied</code></td>
+<td>{You} {tie} {the item} to {the anchor}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="undoing-1"><code>undoing</code></h2>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>undoing-nothing-to-undo</code></td>
+<td>Nothing to undo.</td>
+</tr>
+<tr>
+<td><code>undoing-undo-failed</code></td>
+<td>Undo failed.</td>
+</tr>
+<tr>
+<td><code>undoing-undo-success</code></td>
+<td>Previous turn undone.</td>
+</tr>
+<tr>
+<td><code>undoing-undo-to-turn</code></td>
+<td>Undone. (Now at turn {turn})</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted"
+id="unlocking-1"><code>unlocking</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unlocking-already-unlocked</code></td>
+<td>{capitalize the item} {verb:is item} already unlocked.</td>
+</tr>
+<tr>
+<td><code>unlocking-cant-reach</code></td>
+<td>{You} {can't} reach {the item}.</td>
+</tr>
+<tr>
+<td><code>unlocking-key-not-held</code></td>
+<td>{You} {need} to be holding {the key}.</td>
+</tr>
+<tr>
+<td><code>unlocking-no-key</code></td>
+<td>What do {you} want to unlock it with?</td>
+</tr>
+<tr>
+<td><code>unlocking-no-target</code></td>
+<td>Unlock what?</td>
+</tr>
+<tr>
+<td><code>unlocking-not-lockable</code></td>
+<td>{capitalize the item} can't be unlocked.</td>
+</tr>
+<tr>
+<td><code>unlocking-still-locked</code></td>
+<td>{capitalize the item} {verb:is item} locked.</td>
+</tr>
+<tr>
+<td><code>unlocking-unlocked</code></td>
+<td>{You} {unlock} {the item}.</td>
+</tr>
+<tr>
+<td><code>unlocking-unlocked-and-opened</code></td>
+<td>{You} {unlock} {the item}, and it swings open.</td>
+</tr>
+<tr>
+<td><code>unlocking-unlocked-with</code></td>
+<td>{You} {unlock} {the item} with {the key}.</td>
+</tr>
+<tr>
+<td><code>unlocking-unlocked-with-and-opened</code></td>
+<td>{You} {unlock} {the item} with {the key}, and it swings open.</td>
+</tr>
+<tr>
+<td><code>unlocking-wrong-key</code></td>
+<td>{capitalize the key} doesn't fit {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="untying-1"><code>untying</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>untying-no-target</code></td>
+<td>Untie what?</td>
+</tr>
+<tr>
+<td><code>untying-not-tied</code></td>
+<td>{capitalize the item} {verb:isn't item} tied to anything.</td>
+</tr>
+<tr>
+<td><code>untying-untied</code></td>
+<td>{You} {untie} {the item}.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="version-1"><code>version</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>version-version-compact</code></td>
+<td>{verbatim:storyTitle} v{verbatim:storyVersion} (Sharpee
+v{verbatim:engineVersion})</td>
+</tr>
+<tr>
+<td><code>version-version-full</code></td>
+<td>{verbatim:storyTitle} v{verbatim:storyVersion} <code>\n</code>
+Sharpee Engine v{verbatim:engineVersion} <code>\n</code> Built:
+{buildDate}</td>
+</tr>
+<tr>
+<td><code>version-version-no-date</code></td>
+<td>{verbatim:storyTitle} v{verbatim:storyVersion} <code>\n</code>
+Sharpee Engine v{verbatim:engineVersion}</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="waiting-1"><code>waiting</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>waiting-grows-restless</code></td>
+<td>{You} {grow} restless from waiting.</td>
+</tr>
+<tr>
+<td><code>waiting-nothing-happens</code></td>
+<td>{You} {wait}. Nothing happens.</td>
+</tr>
+<tr>
+<td><code>waiting-patience-rewarded</code></td>
+<td>{Your} patience is rewarded.</td>
+</tr>
+<tr>
+<td><code>waiting-something-approaches</code></td>
+<td>As {you} {wait}, {you} {hear} something approaching.</td>
+</tr>
+<tr>
+<td><code>waiting-time-passes</code></td>
+<td>Time passes...</td>
+</tr>
+<tr>
+<td><code>waiting-time-runs-out</code></td>
+<td>{You}'ve waited too long!</td>
+</tr>
+<tr>
+<td><code>waiting-waited</code></td>
+<td>Time passes.</td>
+</tr>
+<tr>
+<td><code>waiting-waited-anxiously</code></td>
+<td>{You} {wait} anxiously.</td>
+</tr>
+<tr>
+<td><code>waiting-waited-briefly</code></td>
+<td>{You} {wait} for a moment.</td>
+</tr>
+<tr>
+<td><code>waiting-waited-for-event</code></td>
+<td>{You} {wait} for something to happen.</td>
+</tr>
+<tr>
+<td><code>waiting-waited-in-vehicle</code></td>
+<td>{You} {wait} in {the vehicle}.</td>
+</tr>
+<tr>
+<td><code>waiting-waited-patiently</code></td>
+<td>{You} {wait} patiently.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="waking-1"><code>waking</code></h2>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>waking-already-awake</code></td>
+<td>{You're} already awake.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="waving-1"><code>waving</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>waving-not-held</code></td>
+<td>{You} {aren't} holding {the target}.</td>
+</tr>
+<tr>
+<td><code>waving-waved</code></td>
+<td>{You} {wave} {the target} about. Nothing happens.</td>
+</tr>
+<tr>
+<td><code>waving-waved-hands</code></td>
+<td>{You} {wave}. Nobody waves back.</td>
+</tr>
+</tbody>
+</table>
+<h2 class="unnumbered unlisted" id="wearing-2"><code>wearing</code></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Default text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wearing-already-wearing</code></td>
+<td>{You're} already wearing {the item}.</td>
+</tr>
+<tr>
+<td><code>wearing-already-wearing-there</code></td>
+<td>{You're} already wearing {the item} on {your} {bare part}.</td>
+</tr>
+<tr>
+<td><code>wearing-cant-wear-that</code></td>
+<td>{You} {can't} wear {the item}.</td>
+</tr>
+<tr>
+<td><code>wearing-hands-full</code></td>
+<td>{You} {need} to have {your} hands free to put that on.</td>
+</tr>
+<tr>
+<td><code>wearing-no-target</code></td>
+<td>Wear what?</td>
+</tr>
+<tr>
+<td><code>wearing-not-held</code></td>
+<td>{You} {need} to be holding {the item} first.</td>
+</tr>
+<tr>
+<td><code>wearing-not-wearable</code></td>
+<td>{You} {can't} wear {the item}.</td>
+</tr>
+<tr>
+<td><code>wearing-worn</code></td>
+<td>{You} {put} on {the item}.</td>
+</tr>
+<tr>
+<td><code>wearing-worn-under</code></td>
+<td>{You} would have to take off {the item} first.</td>
+</tr>
+</tbody>
+</table>
+<nav class="book-nav-bottom"><a class="prev" href="-appendix-e.-character-vocabulary.html">← Appendix E. Character vocabulary</a><a class="next" href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements →</a></nav>
+</body>
+</html>

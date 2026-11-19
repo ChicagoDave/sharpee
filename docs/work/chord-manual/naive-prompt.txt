@@ -139,27 +139,18 @@ book fails a literal reader.
 7. **Reference material is read, not run.** The appendices are not executed.
    The boxes headed "From another system" quote Inform 10 and TADS 3 and are
    never typed in. Commands inside "Under the Hood" boxes are run.
-8. **The version numbers.** The book quotes `Sharpee 5.7.0 · Chord 4.1.0` and
-   `Chord 4.1.0` wherever a command prints its version (chapter 4's
-   `--version` line and every `compose:` line). This run's command prints
-   `Sharpee 5.6.4 · Chord 4.0.3` and `Chord 4.0.3` in those places. Report only
-   a difference in such a line beyond the two numbers. The same holds for the
-   line at the head of each appendix that begins "Generated from": the
-   appendices were generated on the interim release, so those lines read
-   `Sharpee 5.6.4 · Chord 4.0.3` while the title page names 5.7.0 and 4.1.0.
-   Do not report that difference.
 
 ## Versions this run expects
 
 The container installs the command with `npm install -g @sharpee/devkit`, as
 chapter 4 instructs, and `sharpee --version` must then print exactly:
 
-    Sharpee 5.6.4 · Chord 4.0.3
+    Sharpee 5.7.0 · Chord 4.1.0
 
-If it prints anything else, stop and report a stale registry or a stale
-container: that is an environment failure, not a book defect. The book's own
-pages name a later pair, Sharpee 5.7.0 and Chord 4.1.0, which is not published
-yet. This run is made on the interim release (see item 8 above).
+That is the pair the book's title page names. If the command prints anything
+else, stop and report a stale registry or a stale container: that is an
+environment failure, not a book defect. Wherever the book quotes a version
+number, the command prints the same one, and a difference is a finding.
 
 ## What "clean" means
 

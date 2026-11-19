@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>New verbs</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details open><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li class="active"><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="24-new-kinds-of-thing.html" accesskey="n" rel="next">New kinds of thing</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="22-changing-the-standard-messages.html" accesskey="p" rel="previous">Changing the standard messages</a>
+</span>
+</div>
+</nav>
+<h1 data-number="23" id="new-verbs"><span
+class="header-section-number">23</span> New verbs</h1>
+<p>The craft of Lanternhall calls its spells workings. A working is a
+single spoken word: spark, mend, hush, unbind. Ansel learns one by
+reading its page, and then says it to a thing. None of those four words
+is a command the platform knows.</p>
+<p>This chapter adds them. A new verb in Chord is a new action, and you
+declare one with <code>define action</code>. By the end of the chapter
+all four workings can be typed, each asks for its page, and each then
+finds that nothing answers it. That last part is not a failure of the
+chapter. It is the most important idea in it.</p>
+<h2 data-number="23.1" id="declaring-an-action"><span
+class="header-section-number">23.1</span> Declaring an action</h2>
+<pre class="chord"><code>define action mending
+  grammar
+    mend the target
+  the target must be reachable
+  the mend page must be learned: no-such-word
+  otherwise refuse nothing-to-mend</code></pre>
+<p>The head line names the action. An action’s name is a gerund, the
+same “-ing” word that will later appear in clause heads as
+<code>on the player mending</code>. The block has no <code>end</code>
+line. It runs until the indentation stops.</p>
+<p>The four lines beneath are four different kinds of line, and each
+gets a section.</p>
+<h2 data-number="23.2" id="the-grammar"><span
+class="header-section-number">23.2</span> The grammar</h2>
+<p>The <code>grammar</code> block lists what the player may type, one
+pattern to a line. You have read patterns before, in the passage of
+chapter 12. They have four devices.</p>
+<table>
+<thead>
+<tr>
+<th>Written</th>
+<th>Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mend</code></td>
+<td>a word the player types</td>
+</tr>
+<tr>
+<td><code>the target</code></td>
+<td>a <strong>slot</strong>: a place where the player names a thing</td>
+</tr>
+<tr>
+<td><code>mend or fix</code></td>
+<td>either word</td>
+</tr>
+<tr>
+<td><code>[the]</code></td>
+<td>a word that may be left out</td>
+</tr>
+</tbody>
+</table>
+<p>A slot is <code>the</code> followed by a name you choose.
+<code>target</code> is the usual name for the one thing a verb is done
+to. The name matters only inside the action, where the other lines use
+it to talk about whatever the player named.</p>
+<p>An action may have several patterns, and a pattern may have no slot
+at all.</p>
+<pre class="chord"><code>define action sparking
+  grammar
+    spark the target
+    spark</code></pre>
+<p>Now <code>spark lamp</code> and plain <code>spark</code> are both
+understood. The second needs a line to say what happens when the thing
+is missing.</p>
+<pre class="chord"><code>  refuse without target: working-wants-a-thing</code></pre>
+<pre class="text"><code>&gt; spark
+A working is said to something. You say it to the air, and the air has heard it all before.</code></pre>
+<p>One limit applies to every pattern you write. It may not be a command
+the standard grammar already has.</p>
+<pre class="text"><code>probe.story:37:1 error [analysis.repeats-standard-grammar] `poke :target` is already the standard `touching` grammar, so this action would take that command from it. To give a thing its own response, write `on the player touching` in that thing&#39;s block or its trait&#39;s. To add new wording, use `extend action touching`. To replace the standard action, first remove its shape with `remove from action touching`.</code></pre>
+<p>The message gives the three ways out, and chapter 25 is about the
+second and third. Before you define an action, look in Appendix C for
+the verb. The standard grammar is larger than most authors expect.</p>
+<h2 data-number="23.3" id="what-must-be-true-of-the-thing-named"><span
+class="header-section-number">23.3</span> What must be true of the thing
+named</h2>
+<pre class="chord"><code>  the target must be reachable</code></pre>
+<p>A line of this form, with no colon and no phrase, says how close the
+named thing has to be. There are three words for it.</p>
+<table>
+<thead>
+<tr>
+<th>Word</th>
+<th>The thing must be</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>visible</code></td>
+<td>in view</td>
+</tr>
+<tr>
+<td><code>reachable</code></td>
+<td>near enough to touch</td>
+</tr>
+<tr>
+<td><code>held</code></td>
+<td>in the player’s hands</td>
+</tr>
+</tbody>
+</table>
+<p>When the thing is not there, the platform says so in its own words.
+Hushing uses <code>visible</code>, because a bell at the top of a tower
+can be spoken to and cannot be touched.</p>
+<pre class="text"><code>&gt; hush bell
+You can&#39;t see any bell here.</code></pre>
+<p>That was typed in the Library. In the Bell Stair, the bell is in
+view.</p>
+<h2 data-number="23.4" id="what-must-be-true-of-the-player"><span
+class="header-section-number">23.4</span> What must be true of the
+player</h2>
+<pre class="chord"><code>  the mend page must be learned: no-such-word</code></pre>
+<p>This is the <code>must</code> line of chapter 15, and it means what
+it meant there. It is on the action, and not on any thing, because it
+concerns the person speaking. Ansel cannot say a word that has not been
+read, whatever it is said to.</p>
+<pre class="text"><code>&gt; mend lamp
+The shape of it is there, as a name is on the tip of the tongue. The word is not.</code></pre>
+<p>An action may also carry <code>refuse when</code> lines, and
+statements of its own, as a later section shows. All of its refusals and
+requirements stand above its first statement.</p>
+<h2 data-number="23.5" id="what-an-action-may-not-ask"><span
+class="header-section-number">23.5</span> What an action may not
+ask</h2>
+<p>Here is the rule that shapes everything else. An action never asks
+which thing was named.</p>
+<p>You cannot write, in the mending action, that if the target is the
+lens then the crack closes. Chord has no way to say it. If you try, with
+a line such as <code>refuse when the target is the kettle</code>, the
+compiler refuses it by name, as
+<code>analysis.slot-identity-test</code>.</p>
+<p>The reason is the habit this book has pressed since chapter 14. What
+happens to the lens belongs in the lens’s block. If the mending action
+listed the things it could mend, then adding a mendable thing to the
+story would mean editing the action, and the facts about the lens would
+be in two places.</p>
+<p>So an action knows three things: what the player may type, what must
+be true of the player, and what to say when nothing answers. Everything
+else belongs to the thing.</p>
+<h2 data-number="23.6" id="when-nothing-answers"><span
+class="header-section-number">23.6</span> When nothing answers</h2>
+<pre class="chord"><code>  otherwise refuse nothing-to-mend</code></pre>
+<p>When the player names a thing, the action asks that thing whether it
+has an answer. If it has none, this line speaks.</p>
+<p>At the end of this chapter no thing in Lanternhall has an answer to
+any of the four workings. So once the page has been read, every one of
+them misses.</p>
+<pre class="text"><code>&gt; spark lamp
+There is nothing in that for a flame to stand on.
+
+Somewhere above you, old timber takes a weight it had forgotten.
+
+&gt; spark grimoire
+There is nothing in that for a flame to stand on.
+
+A slow draught moves through the Hall, one way and then the other.</code></pre>
+<p>The first of those is plainly wrong, and it is wrong in an
+instructive way. The action is complete. The lamp has not yet been told
+that it answers to sparking. Telling it is the whole of the next
+chapter.</p>
+<p>A miss can name the thing the player typed. The slot’s name works as
+a marker.</p>
+<pre class="chord"><code>define phrases en-US
+  nothing-to-tune:
+    {capitalize the target} is as well tuned as it will ever be.</code></pre>
+<h2 data-number="23.7" id="the-four-workings"><span
+class="header-section-number">23.7</span> The four workings</h2>
+<p>Here are the other three.</p>
+<pre class="chord"><code>define action sparking
+  grammar
+    spark the target
+    spark
+  refuse without target: working-wants-a-thing
+  the target must be reachable
+  the spark page must be learned: no-such-word
+  otherwise refuse nothing-to-spark
+
+define action hushing
+  grammar
+    hush the target
+    hush
+  refuse without target: working-wants-a-thing
+  the target must be visible
+  the hush page must be learned: no-such-word
+  otherwise refuse nothing-to-hush
+
+define action unbinding
+  grammar
+    unbind the target
+    unbind
+  refuse without target: working-wants-a-thing
+  the target must be reachable
+  the unbind page must be learned: no-such-word
+  otherwise refuse nothing-to-unbind</code></pre>
+<p>Mending takes the same two extra lines. The four blocks are nearly
+identical, and Chord offers no way to write one and stamp out four. That
+is a real cost, and the answer for now is that four short blocks are
+easy to read and easy to keep in step.</p>
+<h2 data-number="23.8" id="a-verb-that-only-answers"><span
+class="header-section-number">23.8</span> A verb that only answers</h2>
+<p>Not every verb is done to a thing. Some are simply said. There is a
+fifth word in this country that every child knows and that nobody at
+Lanternhall ever managed to cast.</p>
+<pre class="chord"><code>define action blessing
+  grammar
+    gnusto
+    say gnusto
+    gnusto the target
+  refuse when the tower bell is tolling: gnusto-drowned
+  phrase gnusto-said</code></pre>
+<p>This action has a body. After its refusals come ordinary statements,
+and they run whenever the action succeeds. There is no
+<code>otherwise refuse</code>, because nothing needs to answer. The
+action answers for itself.</p>
+<pre class="text"><code>&gt; gnusto
+&quot;Gnusto,&quot; you say, as everybody does, and the morning is exactly as bright as it was. It is a word about sunlight. The scholars here always said it had been a working once, somewhere over the water, and could never say what it did.</code></pre>
+<p>Use a body for a verb that is about the player or the story: praying,
+singing, counting the money. An action’s body may do anything a clause
+can do. It may change the story’s state, raise a counter or award a
+score, and an action may declare a <code>score</code> line of its own.
+It still may not ask what was named.</p>
+<p>The third pattern, <code>gnusto the target</code>, lets a player try
+the word on a thing. Nothing answers, and the body runs all the
+same.</p>
+<h2 data-number="23.9" id="verbs-with-a-subject"><span
+class="header-section-number">23.9</span> Verbs with a subject</h2>
+<p>Some verbs take a subject and not a thing: remember the fire, think
+about home. The subject may be something that is not in the room, or not
+a thing at all. A slot can be declared a <strong>topic</strong>, and
+then the action answers by subject, with <code>about</code> lines.</p>
+<pre class="chord"><code>define action remembering
+  grammar
+    remember the subject
+    recall the subject
+  the subject is a topic
+  about &quot;dimming&quot;:
+    phrase remember-dimming
+  about &quot;gnusto&quot;:
+    phrase remember-gnusto
+  about Hobb:
+    phrase remember-hobb
+  otherwise refuse remember-nothing</code></pre>
+<p>An <code>about</code> line names a subject and holds the statements
+to run for it. A subject in quotes is matched against the words the
+player typed. A subject without quotes is a thing or a person in the
+story, matched by any of its names.</p>
+<pre class="text"><code>&gt; remember dimming
+You remember it as a night when every lamp in the Hall went out at once, and a morning when nobody could make one light.
+
+&gt; remember the dimming
+You remember it as a night when every lamp in the Hall went out at once, and a morning when nobody could make one light.
+
+&gt; recall hobb
+He confiscated a kettle from you in your second week. You have a feeling it is the same kettle.
+
+&gt; remember breakfast
+Nothing comes. Thirty years is a long time.</code></pre>
+<p>The article is dropped before matching, so <code>"dimming"</code>
+answers both of the first two commands. Write each subject once, without
+“the”. A quoted line may list several spellings with commas between
+them, as in <code>about "dimming", "night"</code>.</p>
+<p>This does not break the rule about asking what was named. The rule is
+about things in the world, which have blocks of their own to answer in.
+A subject has no block. The <code>about</code> lines are where its
+answer lives.</p>
+<p>You will meet <code>about</code> lines again in chapter 27, where
+they are what a person says when asked about something. An action with a
+topic is the same machinery pointed at the player’s own head.</p>
+<h2 data-number="23.10" id="other-kinds-of-slot"><span
+class="header-section-number">23.10</span> Other kinds of slot</h2>
+<p>Two more lines describe a slot.</p>
+<p><code>the words takes the rest of the line</code> makes a slot
+swallow everything the player types after the verb. It is for writing,
+saying and naming.</p>
+<pre class="chord"><code>define action scrawling
+  grammar
+    scrawl the words
+  the words takes the rest of the line
+  phrase scrawled</code></pre>
+<p>The text is available to a phrase as
+<code>{verbatim:words}</code>.</p>
+<pre class="text"><code>&gt; scrawl hello there world
+[scrawled: hello there world]</code></pre>
+<p><code>the tool is an instrument</code> marks a second slot as the
+thing the action is done with, as in a pattern
+<code>tune the target with the tool</code>. The standard grammar uses it
+for keys, weapons and tools.</p>
+<h2 data-number="23.11" id="a-verb-that-comes-and-goes"><span
+class="header-section-number">23.11</span> A verb that comes and
+goes</h2>
+<p>An action’s head may carry a condition. The verb then exists only
+while the condition holds.</p>
+<pre class="chord"><code>define action shouting while the tower bell is tolling
+  grammar
+    shout
+  phrase shout-lost</code></pre>
+<p>Before the bell begins, the story does not know the word.</p>
+<pre class="text"><code>&gt; shout
+I don&#39;t understand that.</code></pre>
+<p>Once it is tolling:</p>
+<pre class="text"><code>&gt; shout
+You shout. The bell tolls through the middle of it.</code></pre>
+<p>This is stronger than a refusal. A refused verb tells the player that
+the command exists. A verb that is not understood tells them nothing.
+Use it when the existence of the command would itself give something
+away, and otherwise prefer a <code>refuse when</code> with a sentence
+that helps. The Relighting does not use this action. It is here as an
+example.</p>
+<h2 data-number="23.12" id="why-a-thing-cannot-simply-answer"><span
+class="header-section-number">23.12</span> Why a thing cannot simply
+answer</h2>
+<p>You may already have tried the obvious thing: an
+<code>on the player mending</code> clause in the lens’s block, like the
+<code>on the player reading</code> clause on each page.</p>
+<pre class="text"><code>probe.story:19:17 error [analysis.story-action-on-clause] `on the player thumping` in `drum`&#39;s block would never run: `thumping` is this story&#39;s own action, and it runs a thing&#39;s `after` clauses and the `on` clauses of its traits, never a thing&#39;s own `on` clause. To react once the action succeeds, write `after the player thumping`. To refuse or answer in the action&#39;s place, move the clause into a trait and give `drum` that trait.</code></pre>
+<p>For a standard action, a thing’s own <code>on</code> clause is how it
+answers. For an action you define, the answer comes from a
+<strong>trait</strong>. The message says what to do, and the next
+chapter does it.</p>
+<h2 data-number="23.13" id="build-and-try-it-19"><span
+class="header-section-number">23.13</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-23</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the phrases, which the chapter did
+not print in full. To make the changes by hand instead, work from this
+list and take the rest from that file: add the four working actions, the
+<code>blessing</code> action and the <code>remembering</code> action
+near the top of the file, and add their eleven phrases.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Try each working before and after its page. The lamp still lights
+with the standard <code>light lamp</code>, as it has since chapter 15.
+Spark is a word now, and has nothing to work on.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: an action is data</strong> · Story IR
+<code>actions</code></p>
+<p>In the compiled IR the sparking action is an entry of plain data. It
+has a <code>name</code>, and then its <code>patterns</code>, each a run
+of words and slots; its <code>constraints</code>, which are the
+<code>must be reachable</code> lines; its <code>musts</code>, each a
+condition and a phrase key; its <code>refusals</code>, which are the
+<code>refuse</code> lines; <code>otherwise</code>, which holds the
+phrase key of the <code>otherwise refuse</code> line;
+<code>scores</code>, which is empty for this action; and its
+<code>body</code>. A last field, <code>span</code>, records where in the
+file the action was written. There is no code in it. The platform has
+one piece of machinery that runs any action described this way, and that
+machinery is what looks for an answer on the thing and falls back to
+your <code>otherwise refuse</code> line.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: new actions</strong></p>
+<p>In Inform 10 you write “Mending is an action applying to one
+touchable thing” and “Understand ‘mend [something]’ as mending”, and
+then rules say what it does, including rules that name particular
+things. In TADS 3 you define the action with <code>DefineTAction</code>
+and a <code>VerbRule</code>, and each object answers in its
+<code>dobjFor(Mend)</code> block. Chord follows the TADS division more
+strictly than TADS does. The action holds grammar and what is true of
+the player, the thing holds the response, and the compiler will not let
+either do the other’s work.</p>
+</div>
+<h2 data-number="23.14" id="what-you-have-so-far-22"><span
+class="header-section-number">23.14</span> What you have so far</h2>
+<p>The story understands four workings, one old word about sunlight, and
+Ansel’s memory. It knows who may say each working, and how near the
+thing must be. It does not yet know what any working does. That
+knowledge belongs to the lamp, the lens, the bell and the grille, and
+the next chapter gives it to them.</p>
+<nav class="book-nav-bottom"><a class="prev" href="22-changing-the-standard-messages.html">← Changing the standard messages</a><a class="next" href="24-new-kinds-of-thing.html">New kinds of thing →</a></nav>
+</body>
+</html>

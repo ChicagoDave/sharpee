@@ -173,7 +173,11 @@ website/public/playground/
 
 # The Chord Manual's companion folders (regenerated from tutorials/relighting/
 # by website/scripts/sync-chord-manual-companion.mjs on every site build).
-website/public/chord-manual/
+# Only the companion is ignored. The web edition beside it, in
+# website/public/chord-manual/<version>/book/, is committed: it is copied in by
+# hand with website/scripts/publish-chord-manual.mjs, and the server cannot
+# render it (no pandoc there).
+website/public/chord-manual/*/relighting/
 
 # Zifmia installer binaries (distributed separately)
 website/public/downloads/Zifmia_*

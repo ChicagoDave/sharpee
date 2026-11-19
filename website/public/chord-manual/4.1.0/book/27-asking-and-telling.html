@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Asking and telling</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details open><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li class="active"><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="28-conversations-with-a-shape.html" accesskey="n" rel="next">Conversations with a shape</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="26-people-who-act.html" accesskey="p" rel="previous">People who act</a>
+</span>
+</div>
+</nav>
+<h1 data-number="27" id="asking-and-telling"><span
+class="header-section-number">27</span> Asking and telling</h1>
+<p>The oldest way to talk to a character in interactive fiction is to
+ask about a subject: <code>ask hobb about the bell</code>. It has lasted
+because it is honest about what the game can do. The player names a
+subject, the character has something to say about it or has not, and
+nobody has to pretend the program understands English.</p>
+<p>Chord’s form of it is a table. Each person has one, and each row of
+the table is a subject and what follows from raising it. This chapter
+writes the tables for Hobb and for Tamsin Vey, gives a book a table of
+its own, and then adds the two things that make a table sound like a
+person: a greeting and a manner.</p>
+<h2 data-number="27.1" id="a-table-of-topics"><span
+class="header-section-number">27.1</span> A table of topics</h2>
+<pre class="chord"><code>define topics for Hobb
+  about &quot;dimming&quot;:
+    phrase hobb-on-dimming
+  about &quot;lantern&quot;, &quot;great lantern&quot;, &quot;light&quot;:
+    phrase hobb-on-lantern
+  about &quot;tamsin&quot;, &quot;tamsin vey&quot;, &quot;vey&quot;, &quot;salvager&quot;:
+    phrase hobb-on-tamsin
+  about &quot;gnusto&quot;:
+    phrase hobb-on-gnusto
+end topics</code></pre>
+<p>The block is a top-level declaration, like
+<code>define action</code>. It names the person it belongs to, and a
+person may have only one. Each row begins <code>about</code>, gives its
+subject, and ends with a colon. The body beneath is a list of
+statements, and a row with one statement may carry it on the same
+line.</p>
+<p>A quoted subject is matched against what the player typed after
+<code>about</code>. The match is of the whole subject and is never a
+guess: “lantern” answers <code>ask hobb about lantern</code> and does
+not answer <code>ask hobb about lanterns</code>. Give a row every
+spelling a player might reasonably use, separated by commas.</p>
+<pre class="text"><code>&gt; ask hobb about the dimming
+He looks at the blue flame on the sill before he answers.
+
+&quot;Went out like a pipe,&quot; says Hobb. &quot;No bang. The Master stood in the court with his hand up for an hour and nothing came to it.&quot;
+
+&gt; ask hobb about tamsin
+He takes his time, of which he has had a great deal.
+
+&quot;Vey? Takes the brass and leaves the hinges. I let her. Brass doesn&#39;t keep the rain out.&quot; He considers. &quot;Her word&#39;s good. It&#39;s all of her that is.&quot;</code></pre>
+<p>The sentence above each answer is one of three that Hobb’s manner
+takes in turn, which a later section of this chapter explains. Which of
+the three you see depends on how many answers he has given in your game,
+so in this chapter and the three after it, that sentence in your play
+will often be a different one of the three from the one the page
+shows.</p>
+<p>Each answer has a sentence in front of it that is not in the phrase.
+That is Hobb’s manner, and this chapter comes to it below.</p>
+<p>The player’s article is dropped before the match, so “dimming”
+answers both <code>about dimming</code> and
+<code>about the dimming</code>. For the same reason you write a subject
+once, without its article. Writing it both ways is an error.</p>
+<pre class="text"><code>probe.story:23:9 error [analysis.duplicate-topic] &quot;rain&quot; is already declared in this table (line 23) — aliases included, a topic answers in one place.</code></pre>
+<p><code>tell hobb about gnusto</code> reaches the same table as
+<code>ask hobb about gnusto</code>. A subject has one row, and the row
+answers either verb.</p>
+<h3 data-number="27.1.1" id="a-thing-as-a-subject"><span
+class="header-section-number">27.1.1</span> A thing as a subject</h3>
+<p>A row may name a thing in the story in place of a quoted word.</p>
+<pre class="chord"><code>about the kettle:
+  phrase hobb-on-kettle</code></pre>
+<pre class="text"><code>&gt; ask hobb about the kettle
+He turns the kettle a quarter round on its hook, to no purpose.
+
+&quot;Mine,&quot; says Hobb.</code></pre>
+<p>A row of this kind answers when the player’s words name that thing,
+by any of its names, and the thing is there to be named. The kettle is
+in the Lodge with Hobb, so the row works. It is the right form for
+something the player can point at.</p>
+<p>It is the wrong form for a subject that is somewhere else. Tamsin Vey
+is in the Refectory, and a row written <code>about Tamsin Vey</code> in
+Hobb’s table would not answer a player standing in the Lodge. That is
+why Hobb’s row about her is quoted, with her names spelled out. People
+are asked about in their absence more often than not, so quote them.</p>
+<p>A row cannot be both. If a table has a row for the thing, a quoted
+row spelling the thing’s name is an error.</p>
+<pre class="text"><code>probe.story:31:9 error [analysis.topic-entity-collision] &quot;bucket&quot; collides with `bucket` — that entity is already an entity-tier row of this table, and the quoted spelling would shadow its quiet entity resolution. Remove one.</code></pre>
+<h3 data-number="27.1.2" id="what-a-row-can-do"><span
+class="header-section-number">27.1.2</span> What a row can do</h3>
+<p>A row’s body is statements, and they are the statements of chapter
+15. A row can refuse, change a state, award a score, or have its owner
+act.</p>
+<pre class="chord"><code>about &quot;bell&quot;, &quot;tolling&quot;, &quot;noise&quot;:
+  refuse when the tower bell is unrung: hobb-what-bell
+  phrase hobb-on-bell
+  Hobb gives the hush page to Ansel when Hobb has the hush page</code></pre>
+<p>This row is how the third working now reaches the player. Until this
+chapter the hush page lay on a shelf in the stacks. It has moved into
+Hobb’s keeping.</p>
+<pre class="chord"><code>create Hobb
+  a person, proper
+  pronouns he
+  in the Lodge
+  carries the hush page
+  mood calm</code></pre>
+<p>Ask him before the bell has rung, and the row refuses.</p>
+<pre class="text"><code>&gt; ask hobb about the bell
+&quot;Bell hasn&#39;t rung in thirty years,&quot; says Hobb. &quot;Ask me again when it does.&quot;</code></pre>
+<p>Ask him when the Hall is ringing with it, and he answers, and then
+acts.</p>
+<pre class="text"><code>&gt; ask hobb about the bell
+He takes one hand off one ear to hear you, and puts it back.
+
+&quot;It&#39;ll go on till it&#39;s told,&quot; Hobb shouts. &quot;There&#39;s a word for the telling. I kept it by, in a newspaper, in case.&quot;
+
+Hobb gives the hush page to Ansel.
+
+The bell tolls again, and the rooks go up off the roof.</code></pre>
+<p>The last line of the row is the acting statement of chapter 26, with
+a <code>when</code> suffix so that he hands the page over once. Ask a
+second time and he says his piece again and has nothing to give.</p>
+<h3 data-number="27.1.3" id="a-subject-nobody-has"><span
+class="header-section-number">27.1.3</span> A subject nobody has</h3>
+<p>A subject with no row gets the platform’s stock answer.</p>
+<pre class="text"><code>&gt; ask hobb about the weather
+Hobb says, &quot;I don&#39;t know anything about that.&quot;</code></pre>
+<p>That line is a standard message, and its alias is
+<code>asking-unknown-topic</code>. Chapter 22 showed how to replace one.
+The Relighting adds it to the <code>override messages</code> block it
+already has.</p>
+<pre class="chord"><code>override messages en-US
+  asking-unknown-topic:
+    {capitalize the target} gives that some thought, and gives it back.</code></pre>
+<pre class="text"><code>&gt; ask hobb about the weather
+Hobb gives that some thought, and gives it back.</code></pre>
+<p>The override serves every person in the story. A table has no
+<code>otherwise</code> row of its own.</p>
+<p><code>ask hobb for the kettle</code> is a different action from
+asking about a subject. It is a request for a thing, and with nothing
+written for it the platform answers “Hobb doesn’t seem inclined to hand
+over the kettle.”</p>
+<h2 data-number="27.2" id="looking-things-up"><span
+class="header-section-number">27.2</span> Looking things up</h2>
+<p>A topic table may also belong to a thing that is
+<code>readable</code>. The player does not ask a book. The player
+consults it.</p>
+<pre class="chord"><code>define topics for the grimoire
+  about &quot;gnusto&quot;:
+    phrase grimoire-on-gnusto
+  about &quot;spark&quot;, &quot;sparking&quot;, &quot;flame&quot;:
+    phrase grimoire-on-spark
+end topics</code></pre>
+<pre class="text"><code>&gt; consult grimoire about gnusto
+You turn to the margin again. The note is all there is: came over the water as a working, meaning lost. Whoever wrote it underlined &quot;lost&quot; twice.
+
+&gt; look up cheese in grimoire
+You find nothing about that in the grimoire.</code></pre>
+<p>The standard grammar has three ways of saying it:
+<code>consult the grimoire about gnusto</code>,
+<code>look up gnusto in the grimoire</code>, and
+<code>read about gnusto in the grimoire</code>. The table is written
+exactly as a person’s is. A directory, a ledger, a dictionary and an
+index are all this one construct.</p>
+<h2 data-number="27.3" id="greetings"><span
+class="header-section-number">27.3</span> Greetings</h2>
+<p>A question that has a row is answered at once. Something has to
+happen when the player opens a conversation with no such question:
+<code>talk to hobb</code>, or a first question he has no row for. That
+is a greeting.</p>
+<pre class="chord"><code>define greetings for Hobb
+  first time:
+    phrase hobb-greets
+  on return:
+    phrase hobb-greets-again
+end greetings</code></pre>
+<pre class="text"><code>&gt; talk to hobb
+He turns the kettle a quarter round on its hook, to no purpose.
+
+&quot;It&#39;s you,&quot; says Hobb. He does not say which you.</code></pre>
+<p>The <code>first time</code> row is used once. After the player has
+said <code>goodbye</code>, or has walked away and come back, the next
+opening uses the <code>on return</code> row.</p>
+<pre class="text"><code>&gt; goodbye
+You say goodbye to Hobb.
+
+&gt; talk to hobb
+He looks at the blue flame on the sill before he answers.
+
+&quot;Still here,&quot; says Hobb, of one of you.</code></pre>
+<p><code>on return</code> may be narrowed by how long the player was
+gone: <code>on return, again so soon</code>,
+<code>on return, after a while</code>, and
+<code>on return, after days</code>. A plain <code>on return</code>
+covers whichever of those you have not written.</p>
+<p>A person with no greetings block has nothing to say to
+<code>talk to</code>, and the platform answers “Tamsin Vey doesn’t
+respond.” Tamsin has a table and no greeting, and that suits her for
+now.</p>
+<h3 data-number="27.3.1"
+id="a-person-who-is-being-talked-to-stays"><span
+class="header-section-number">27.3.1</span> A person who is being talked
+to stays</h3>
+<p>While a conversation is open, the person in it does not go on with a
+goal. Tamsin Vey, asked about her brass in the Refectory, answers, and
+does not turn to her heap of door furniture as she did in the last
+chapter. She takes her rounds up again when the player has left her.</p>
+<h3 data-number="27.3.2" id="the-line-a-greeting-needs"><span
+class="header-section-number">27.3.2</span> The line a greeting
+needs</h3>
+<p>Greetings, and the manner below, belong to a fuller model of a person
+than a topic table needs. A person who has either block must also have
+at least one line of that model in their own block. Chapter 29 is about
+those lines. Until then, one is enough, and the plainest is a mood.</p>
+<pre class="chord"><code>mood calm</code></pre>
+<p>Leave it out and the story compiles, and then fails when it is
+loaded.</p>
+<pre class="text"><code>Error loading story: `Nell` declares conversation blocks but no character model — scenes need a modeled owner. (line 16)</code></pre>
+<p>A topic table alone does not need the line. Tamsin already has the
+model, because a goal is part of it.</p>
+<h2 data-number="27.4" id="manner"><span
+class="header-section-number">27.4</span> Manner</h2>
+<p>A character who answers every question in one flat paragraph is a
+reference book. People do something before they speak.</p>
+<pre class="chord"><code>define manner for Hobb
+  when the tower bell is not tolling:
+    beat &quot;He turns the kettle a quarter round on its hook, to no purpose.&quot;
+    beat &quot;He looks at the blue flame on the sill before he answers.&quot;
+    beat &quot;He takes his time, of which he has had a great deal.&quot;
+  when the tower bell is tolling:
+    beat &quot;He takes one hand off one ear to hear you, and puts it back.&quot;
+end manner</code></pre>
+<p>A manner is a set of rows, each a condition and one or more beats. A
+beat is a quoted sentence. When the person greets the player or answers
+from their table, the platform takes the next beat from a row whose
+condition holds and prints it as a paragraph of its own, ahead of the
+line.</p>
+<p>The beats of a row are used in turn, so Hobb’s three come round one
+after another and no answer has the beat of the one before it. You have
+already seen all three in the transcripts above. A row with one beat
+prints that beat every time, which is right for a man with his hands
+over his ears.</p>
+<p>A beat is not printed before a refusal or before the stock answer for
+an unknown subject. Those are not the person speaking in their own
+voice.</p>
+<p>The value of the block is that it is separate from the answers. Hobb
+has five rows in his table and may have fifteen by the end of the book.
+None of their phrases needs to mention the kettle.</p>
+<h2 data-number="27.5" id="build-and-try-it-23"><span
+class="header-section-number">27.5</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-27</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the topic tables, the greetings and
+the phrases that the chapter did not print in full. To make the changes
+by hand instead, work from this list and take the rest from that file.
+Add <code>carries the hush page</code> and <code>mood calm</code> to
+Hobb, and take the hush page’s <code>in the Stack 3</code> line away.
+Add the greetings, the manner and the three topic tables near the
+people, the one line to <code>override messages</code>, and the new
+phrases to the phrases block. The story’s day is also longer from this
+chapter on, since conversation takes turns: the sequence’s first step is
+<code>at turn 70</code> and its second <code>40 turns later</code>.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Ask Hobb about everything in his table, and about something that is
+not. Then play on until the bell is tolling, come back to the Lodge, and
+ask him about the bell.</p>
+<pre class="text"><code>&gt; read hush page
+The third working is hardly a word at all. It is the breath you take before one.
+
+The bell tolls. You have stopped counting.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: where the table goes</strong> · Story IR
+<code>topics</code>, <code>greetings</code>, <code>manner</code>,
+<code>character</code></p>
+<p>In the compiled IR a topic table is the <code>topics</code> list of
+the entity that owns it, whether that is a person or a book. Each row
+has a <code>filter</code> and a <code>body</code>. A quoted row’s filter
+is of kind <code>text</code>, with a <code>primary</code> spelling and
+its <code>aliases</code>; the body is the same list of statements a
+clause has. A person’s <code>greetings</code> and <code>manner</code>
+are two more keys on the entity, and the <code>mood calm</code> line
+appears under <code>character</code>, the key that also holds the goals
+of chapter 26. The standard actions <code>asking</code>,
+<code>telling</code> and <code>consulting</code> each take the player’s
+words after <code>about</code> as a topic, and all three look the topic
+up in the owner’s one table.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: asking about</strong></p>
+<p>Inform 10 has the actions of asking someone about something and
+telling someone about something, and an author answers them with rules
+such as “Instead of asking Hobb about ‘bell’”, or with a table that has
+a topic column. TADS 3 gives each character a set of topic objects:
+<code>AskTopic</code>, <code>TellTopic</code> and
+<code>AskTellTopic</code> for subjects, <code>DefaultAskTellTopic</code>
+for a subject that has no response, <code>HelloTopic</code> and
+<code>ByeTopic</code> for greetings and partings, and
+<code>ConsultTopic</code> for a book. A Chord topic table is close to
+the TADS arrangement, written as rows of one block where TADS has an
+object for each.</p>
+</div>
+<h2 data-number="27.6" id="what-you-have-so-far-26"><span
+class="header-section-number">27.6</span> What you have so far</h2>
+<p>Hobb can be asked about the Dimming, the Lantern, Tamsin Vey, his
+kettle, the word gnusto and the bell, and when the bell is tolling he
+gives up the page that quiets it. Tamsin answers three questions. The
+grimoire can be consulted. The game can still be won, and the walk to
+the win now goes by way of the Lodge.</p>
+<p>What a table cannot do is hold a thread. Every question stands alone,
+and Hobb has no way to ask the player anything. A bargain needs both,
+and the unbind page is waiting for one.</p>
+<nav class="book-nav-bottom"><a class="prev" href="26-people-who-act.html">← People who act</a><a class="next" href="28-conversations-with-a-shape.html">Conversations with a shape →</a></nav>
+</body>
+</html>

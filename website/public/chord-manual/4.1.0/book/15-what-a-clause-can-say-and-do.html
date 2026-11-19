@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>What a clause can say and do</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details open><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li class="active"><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="16-conditions.html" accesskey="n" rel="next">Conditions</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="14-reacting-to-the-player-on-and-after.html" accesskey="p" rel="previous">Reacting to the player: on and after</a>
+</span>
+</div>
+</nav>
+<h1 data-number="15" id="what-a-clause-can-say-and-do"><span
+class="header-section-number">15</span> What a clause can say and
+do</h1>
+<p>A clause is a list of statements, run from the top. The last chapter
+used three of them. This chapter goes through the rest of the everyday
+ones: the two ways to refuse, the statements that print, change and
+move, and the suffix that makes any of them conditional.</p>
+<p>Chord has no <code>if</code>. There is no line that says “if this, do
+these three things, otherwise do those”. It is the first thing an author
+from another language looks for, and the reason for its absence is the
+subject of half this chapter. What Chord has in its place is a set of
+smaller forms, each of which says one thing plainly.</p>
+<h2 data-number="15.1" id="requirements-must"><span
+class="header-section-number">15.1</span> Requirements: must</h2>
+<p>Ansel remembers the shape of the old workings and none of their
+words. The hand lamp should not light until the first word has been
+read. That is a <strong>requirement</strong>, a thing that has to be
+true before the action may go on, and it is written with
+<code>must</code>.</p>
+<pre class="chord"><code>create the hand lamp
+  a thing, light-source, starts unlit
+  in the Lodge
+
+  A tin hand lamp with a wire handle. Its wick is dry and its glass is
+  clean, which is Hobb all over.
+
+  on the player lighting
+    the spark page must be learned: no-such-word
+  end on</code></pre>
+<p>The line states what must hold, then a colon, then the phrase to
+print when it does not. If the spark page is <code>learned</code>, the
+line does nothing and the clause goes on. Here there is nothing more in
+the clause, so the standard lighting action runs as usual. If the page
+is not learned, the action is refused with the phrase.</p>
+<pre class="text"><code>&gt; light lamp
+You reach for the word and find only the place where it was.</code></pre>
+<p>A <code>must</code> line can ask the same things a condition can, in
+the form that follows <code>must</code>:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Form</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>must be</code> a state</td>
+<td><code>the spark page must be learned</code></td>
+</tr>
+<tr>
+<td><code>must be in</code> a place</td>
+<td><code>the lens must be in the Great Lantern</code></td>
+</tr>
+<tr>
+<td><code>must be a</code> kind</td>
+<td><code>the crate must be a container</code></td>
+</tr>
+<tr>
+<td><code>must have</code>, <code>must hold</code>,
+<code>must wear</code></td>
+<td><code>the player must hold the hand lamp</code></td>
+</tr>
+<tr>
+<td><code>must see</code>, <code>must reach</code></td>
+<td><code>the player must reach the lens</code></td>
+</tr>
+</tbody>
+</table>
+<p>The Great Lantern has two requirements, and they are checked in
+order.</p>
+<pre class="chord"><code>  on the player lighting
+    the spark page must be learned: no-such-word
+    the lens must be in the Great Lantern: lantern-empty
+  end on</code></pre>
+<p>A player who has not read the page is told about the word. A player
+who has read it and brought no lens is told about the lens. The first
+requirement that fails is the one that speaks.</p>
+<h2 data-number="15.2" id="prohibitions-refuse-when"><span
+class="header-section-number">15.2</span> Prohibitions: refuse when</h2>
+<p>A requirement says what must be so. Its opposite is a
+<strong>prohibition</strong>, which names something that stops the
+action when it is present. Hobb’s cake may be eaten, but not while Hobb
+is watching.</p>
+<pre class="chord"><code>create the seed cake
+  aka cake
+  a thing, edible
+  on the chair
+  servings 2
+
+  Half a seed cake on a plate, cut with some care into two pieces.
+
+  on the player eating
+    refuse when Hobb is here: cake-watched
+  end on</code></pre>
+<pre class="text"><code>&gt; eat cake
+Hobb cut that cake into two pieces with some care, and he is sitting four feet away. You find you cannot.</code></pre>
+<p>Carry the cake out to the Gate Court and it can be eaten, because
+Hobb is not there.</p>
+<p>Chord keeps these two forms apart, and it will not let you turn one
+into the other by adding <code>not</code>. Both of the following are
+errors.</p>
+<pre class="text"><code>probe.story:23:19 error [parse.must-negative] State requirements positively — `must not …` is not a form. Use `refuse when &lt;condition&gt;: &lt;key&gt;` for prohibitions.</code></pre>
+<pre class="text"><code>probe.story:23:5 error [analysis.negated-requirement] State requirements positively — `refuse when not …` is not a form. Write `&lt;subject&gt; must &lt;predicate&gt;: &lt;phrase-key&gt;` for the requirement; `refuse when` is for hazards that are present.</code></pre>
+<p>The rule sounds fussy and reads well. A <code>must</code> line always
+tells you what the player needs. A <code>refuse when</code> line always
+tells you what is in the way. You never have to untangle a negative to
+find out which.</p>
+<p>The third form is the plain <code>refuse</code> of the last chapter,
+which stops the action without asking anything. All three belong at the
+top of an <code>on</code> clause, above the statements that do things,
+and none of them may appear in an <code>after</code> clause.</p>
+<h2 data-number="15.3" id="printing-phrase"><span
+class="header-section-number">15.3</span> Printing: phrase</h2>
+<p><code>phrase</code> prints the text that a key stands for. The key is
+declared in the <code>define phrases</code> block, or it may be declared
+on the spot, by writing the text beneath the statement and indenting it
+one level further.</p>
+<pre class="chord"><code>  after the player touching
+    phrase cat-goes
+      The cat is elsewhere, at once.
+  end after</code></pre>
+<p>A phrase written in place belongs to that clause and cannot be used
+from another one. It suits a line that is said once. Text that several
+clauses share, such as <code>no-such-word</code>, belongs in
+<code>define phrases</code>, and so does anything you will want to find
+again when you revise the prose.</p>
+<h2 data-number="15.4" id="changing-and-moving"><span
+class="header-section-number">15.4</span> Changing and moving</h2>
+<p><code>change</code> sets a state, and you have used it. The
+statements that move things are these.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Statement</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>move the page to the Refectory</code></td>
+<td>puts a thing in a room, in a container, on a supporter or in a
+person’s hands</td>
+</tr>
+<tr>
+<td><code>move the page here</code></td>
+<td>puts it where the player is</td>
+</tr>
+<tr>
+<td><code>move the cat offstage</code></td>
+<td>takes it out of the world, to be brought back by a later
+<code>move</code></td>
+</tr>
+<tr>
+<td><code>remove the bun</code></td>
+<td>takes it out of the story for good</td>
+</tr>
+<tr>
+<td><code>make Hobb wear the spectacles</code></td>
+<td>puts a wearable thing on a person</td>
+</tr>
+<tr>
+<td><code>make the player take off the robe</code></td>
+<td>takes it off, and leaves it in their hands</td>
+</tr>
+</tbody>
+</table>
+<p>A thing may also begin offstage. If a <code>create</code> block has
+no placement line, the thing exists and is nowhere, and waits for a
+<code>move</code>. The refectory candles use this. Somewhere under the
+middle pricket there is a page that daylight does not show.</p>
+<pre class="chord"><code>create the unbind page
+  aka fourth page
+  a thing, readable with text &quot;It reads like a knot seen from the wrong end.&quot;
+
+  A leaf of the grimoire with a ring of old wax on it, where a pricket
+  stood for thirty years.</code></pre>
+<pre class="chord"><code>create the candles
+  aka prickets
+  a thing, scenery, plural, light-source, starts unlit
+  in the Refectory
+
+  Stubs of tallow in iron prickets down the middle of each table. Nobody
+  has put a flame to them since the last supper of the last term.
+
+  on the player lighting
+    the spark page must be learned: no-such-word
+  end on
+
+  after the player lighting
+    move the unbind page here
+    phrase candles-catch
+  end after</code></pre>
+<p>The candles have an <code>on</code> clause and an <code>after</code>
+clause for the same action, which is allowed and often wanted. The first
+decides whether lighting may happen. The second says what follows when
+it has.</p>
+<pre class="text"><code>&gt; light candles
+You light the candles.
+
+The flame runs down the length of the table, and every cold wick takes it. In the candlelight there is a leaf of paper under the middle pricket that the daylight did not show.
+
+&gt; look
+Refectory
+Three long tables, each with its row of candles, and a hearth you could stable a horse in. The benches are stacked against the wall, where someone left them for the holidays. The cloister is back to the west.
+
+You can see an unbind page here.</code></pre>
+<p>Hobb’s spectacles get one more line. Giving them to him already
+printed a phrase, and now he puts them on.</p>
+<pre class="chord"><code>  after the player giving to Hobb
+    make Hobb wear the spectacles
+    phrase spectacles-given
+  end after</code></pre>
+<p>For this the spectacles need the trait word <code>wearable</code> on
+their kind line. The statement prints nothing by itself. The phrase does
+the telling.</p>
+<h2 data-number="15.5" id="the-when-suffix"><span
+class="header-section-number">15.5</span> The when suffix</h2>
+<p>Any statement that does something may end with <code>when</code> and
+a condition. The statement then runs only if the condition is true.</p>
+<p>The spark page should behave differently the second time it is read.
+The first reading teaches the word and wakes the Hall. Later readings
+should only say that Ansel knows it.</p>
+<pre class="chord"><code>  on the player reading
+    phrase spark-known when the spark page is learned
+    phrase spark-learned when the spark page is legible
+    change the story to waking when the spark page is legible
+    change the spark page to learned
+  end on</code></pre>
+<pre class="text"><code>&gt; read page
+(first taking the spark page)
+
+You take the spark page from the reading desk.
+
+You read the line once, and it reads you back. The word for waking a flame settles into the place it left thirty years ago, as if it had only stepped out.
+
+&gt; read page
+You know it. You are not likely to lose it twice.</code></pre>
+<p>This is what Chord offers where another language would offer
+<code>if</code>, and you should see its two costs.</p>
+<p>Each line carries its own condition, so a clause with two outcomes
+repeats the condition on every line.</p>
+<p>The lines also run in order, and an earlier one can change what a
+later one tests. The <code>change the spark page to learned</code> line
+is last for that reason. Move it to the top and both phrases would find
+the page <code>learned</code>, and the first reading would print the
+wrong one.</p>
+<p>For a clause with one or two conditional lines, the suffix is the
+right tool. For a clause that really has branches, chapter 17 has a
+better one, and it will rewrite this clause.</p>
+<p><code>refuse</code> takes no <code>when</code> suffix. Its
+conditional form is <code>refuse when</code>, which you have
+already.</p>
+<h2 data-number="15.6" id="it-and-its-absence"><span
+class="header-section-number">15.6</span> It, and its absence</h2>
+<p>In every clause above, the thing is named in full:
+<code>the spark page</code>, <code>the hand lamp</code>. You might
+expect to write <code>it</code>. In a <code>create</code> block you may
+not.</p>
+<pre class="text"><code>probe.story:23:17 error [analysis.it-removed] `it` is no longer a form outside `define trait` — name the owner: `the lamp`.</code></pre>
+<p>A clause in a thing’s block often mentions two or three things, and
+<code>it</code> would leave the reader to work out which one is meant.
+The word comes back in chapter 24, in the one place where the thing has
+no name to use.</p>
+<h2 data-number="15.7" id="build-and-try-it-11"><span
+class="header-section-number">15.7</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-15</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the phrases, which the chapter did
+not print. To make the changes by hand instead, work from this list and
+take the rest from that file: add the clauses to the hand lamp, the seed
+cake, the Great Lantern and the candles, give the Lantern and the
+candles <code>light-source, starts unlit</code> and the spectacles
+<code>wearable</code>, rewrite the spark page’s clause, add the unbind
+page, and add the five new phrases.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>The first steps of the game now have to be done in order. The lamp
+will not light until the page is read, the page is behind a locked door,
+and the key is in the oak press.</p>
+<pre class="text"><code>&gt; light lamp
+You light the hand lamp.
+
+&gt; down
+Undercroft
+Low vaults on squat pillars, running off under the whole of the hall. The air is cold and smells of stone. The steps go back up.
+
+You can see a crate here.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: what the test runner derives</strong> ·
+<code>sharpee test</code></p>
+<p>Run <code>sharpee test .</code> inside the companion folder
+<code>chapter-15</code>, which has a test tree where your own folder has
+none, and read the list under the heading that begins “Derived rule
+tests”. The report has other parts above and below that list, and
+chapter 38 explains them. The runner has turned each refusal into a test
+of its own: “hand lamp · on lighting · refused no-such-word”, “seed cake
+· on eating · refused cake-watched”. It arranges the world so that the
+refusal should fire, types the command, and checks that the phrase came
+out. A <code>must</code> line and a <code>refuse when</code> line are
+both stored as a condition and a phrase key, which is all the runner
+needs to do that.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: no if</strong></p>
+<p>Both Inform 10 and TADS 3 let you put a conditional block wherever
+statements go. Chord does not. A refusal is a <code>must</code> or a
+<code>refuse when</code> at the top of the clause, a single conditional
+effect takes a <code>when</code> suffix, and a real branch is a
+<code>select</code> block from chapter 17. If you find yourself wanting
+three or four <code>when</code> suffixes with the same condition, that
+is the language telling you the thing has a state you have not named
+yet.</p>
+</div>
+<h2 data-number="15.8" id="what-you-have-so-far-14"><span
+class="header-section-number">15.8</span> What you have so far</h2>
+<p>A clause can now require, forbid, print, change and move. The lamp
+wants a word, the candles hide a page, and the story itself has moved
+from <code>asleep</code> to <code>waking</code>. Every one of those
+lines leans on a condition, and so far the conditions have been as
+simple as they come. They are the next chapter.</p>
+<nav class="book-nav-bottom"><a class="prev" href="14-reacting-to-the-player-on-and-after.html">← Reacting to the player: on and after</a><a class="next" href="16-conditions.html">Conditions →</a></nav>
+</body>
+</html>

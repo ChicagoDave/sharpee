@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Choosing between outcomes</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details open><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li class="active"><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="18-counting-scoring-and-ending.html" accesskey="n" rel="next">Counting, scoring and ending</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="16-conditions.html" accesskey="p" rel="previous">Conditions</a>
+</span>
+</div>
+</nav>
+<h1 data-number="17" id="choosing-between-outcomes"><span
+class="header-section-number">17</span> Choosing between outcomes</h1>
+<p>The reading clauses of the last two chapters work, and they are hard
+to read. Four lines each end in <code>when</code>, the order of the
+lines matters, and the reader has to hold a state in their head to see
+which lines will run. The clause is really saying something simple: if
+the page is legible, do this, and if it is learned, do that.</p>
+<p>Chord has three blocks for choosing. One chooses by a state. One
+chooses by turn, or by chance. One chooses by how many times the clause
+has run.</p>
+<h2 data-number="17.1" id="choosing-by-state-select-on"><span
+class="header-section-number">17.1</span> Choosing by state: select
+on</h2>
+<p>A <code>select on</code> block names a thing’s state and gives one
+<strong>arm</strong> for each value you care about. Here is the spark
+page’s clause again.</p>
+<pre class="chord"><code>  on the player reading
+    select on the spark page&#39;s state
+      when legible
+        change the spark page to learned
+        change the story to waking
+        phrase spark-learned
+        each faded-page
+          change the match to legible
+        end each
+      when learned
+        phrase spark-known
+    end select
+  end on</code></pre>
+<p>The first line is <code>select on</code>, the thing with
+<code>'s state</code> after it. Each arm opens with <code>when</code>
+and a state name, and its statements are indented beneath it. The block
+closes with <code>end select</code>.</p>
+<p>Exactly one arm runs: the one for the state the page is in when the
+block is reached. That removes both of the costs chapter 15 warned
+about. No condition is repeated, and the order of the statements inside
+an arm no longer matters to the choice, because the choice has been made
+before any of them runs. The
+<code>change the spark page to learned</code> line can now stand first,
+where a reader expects it.</p>
+<p>You do not have to give an arm for every state. A state with no arm
+does nothing.</p>
+<h2 data-number="17.2" id="refusals-stay-outside"><span
+class="header-section-number">17.2</span> Refusals stay outside</h2>
+<p>The hush page has three states, and its <code>faded</code> state is a
+refusal. It is tempting to give it an arm.</p>
+<pre class="chord"><code>    select on the hush page&#39;s state
+      when faded
+        refuse page-blank</code></pre>
+<p>The compiler will not have it.</p>
+<pre class="text"><code>relighting.story:390:9 error [analysis.refusal-misplaced] Refusal inside a `select` arm — it never fires, because refusals are decided before any branch runs. Move `refuse page-blank` to the top of the clause, above the block.</code></pre>
+<p>Whether an action goes ahead is settled first, from the
+<code>must</code>, <code>refuse when</code> and <code>refuse</code>
+lines at the top of the clause. Only then do the statements run. So the
+refusal keeps its place at the top, and the block handles the two states
+that remain.</p>
+<pre class="chord"><code>  on the player reading
+    refuse when the hush page is faded: page-blank
+    select on the hush page&#39;s state
+      when legible
+        change the hush page to learned
+        phrase hush-learned
+      when learned
+        phrase hush-known
+    end select
+  end on</code></pre>
+<p>This is the shape of most clauses that do real work: what stops the
+action, then what the action does, by case.</p>
+<h2 data-number="17.3" id="one-clause-several-answers"><span
+class="header-section-number">17.3</span> One clause, several
+answers</h2>
+<p>Chapter 14 said that a thing has one clause for each gerund, and
+promised a way to answer one action differently at different times. This
+is it. The cistern in the Undercroft looks different in each of its
+three states, and it has one <code>after</code> clause for being
+examined.</p>
+<pre class="chord"><code>create the cistern
+  aka ice
+  a thing, scenery
+  in the Undercroft
+  states: frozen, thawing, running
+
+  A stone cistern sunk in the floor, fed by a lead pipe from somewhere
+  above.
+
+  after the player examining
+    select on the cistern&#39;s state
+      when frozen
+        phrase cistern-frozen
+      when thawing
+        phrase cistern-thawing
+      when running
+        phrase cistern-running
+    end select
+  end after</code></pre>
+<p>The description now holds only what is always true of the cistern,
+and the clause adds the sentence that depends on its state.</p>
+<pre class="text"><code>&gt; examine cistern
+A stone cistern sunk in the floor, fed by a lead pipe from somewhere above.
+
+It is a block of grey ice to its brim. Something flat and pale is held in the ice, a hand&#39;s depth down.</code></pre>
+<p>Nothing thaws the cistern yet, so the other two arms wait for chapter
+19.</p>
+<h2 data-number="17.4"
+id="choosing-by-turn-select-with-a-strategy"><span
+class="header-section-number">17.4</span> Choosing by turn: select with
+a strategy</h2>
+<p>A response that never varies wears thin. The bell rope says the same
+sentence every time it is pulled, and a player will pull it more than
+once. A <code>select</code> block may be given a
+<strong>strategy</strong> in place of <code>on</code>, and then its arms
+are alternatives, separated by lines that say <code>or</code>.</p>
+<pre class="chord"><code>  after the player pulling
+    select cycling
+      phrase rope-nothing
+    or
+      phrase rope-dust
+    or
+      phrase rope-patience
+    end select
+  end after</code></pre>
+<p><code>cycling</code> takes the arms in order and starts again after
+the last.</p>
+<pre class="text"><code>&gt; pull rope
+You pull the bell rope.
+
+Nothing answers. The bell has not been rung in thirty years and sees no reason to start for you.
+
+&gt; pull rope
+You pull the bell rope.
+
+A little dust comes down the well, and that is all.
+
+&gt; pull rope
+You pull the bell rope.
+
+The rope takes your weight and gives nothing back. Somewhere above, the bell goes on not ringing.
+
+&gt; pull rope
+You pull the bell rope.
+
+Nothing answers. The bell has not been rung in thirty years and sees no reason to start for you.</code></pre>
+<p>There are five strategies.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Which arm runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cycling</code></td>
+<td>each in order, then round again</td>
+</tr>
+<tr>
+<td><code>stopping</code></td>
+<td>each in order, then the last one from then on</td>
+</tr>
+<tr>
+<td><code>randomly</code></td>
+<td>any one, chosen afresh each time</td>
+</tr>
+<tr>
+<td><code>sticky</code></td>
+<td>one chosen at random the first time, and that one ever after</td>
+</tr>
+<tr>
+<td><code>first-time</code></td>
+<td>the first arm once, and the second arm from then on</td>
+</tr>
+</tbody>
+</table>
+<p><code>stopping</code> suits a thing that runs out of things to say.
+<code>sticky</code> suits a detail that should differ from one playing
+to the next and stay fixed within one. <code>first-time</code> takes two
+arms and is the plainest way to say a thing once and something shorter
+afterwards.</p>
+<p>An arm may hold any statements, not only a <code>phrase</code>. One
+arm could move a thing and another could change a state. Most of the
+time, though, a strategy is being used to vary text, and chapter 20 has
+a shorter way to write that, with the variants inside the phrase.</p>
+<h2 data-number="17.5"
+id="choosing-by-count-first-time-second-time"><span
+class="header-section-number">17.5</span> Choosing by count: first time,
+second time</h2>
+<p>The third block counts. Inside a clause, <code>first time</code>
+opens a block that runs the first time the clause runs,
+<code>second time</code> the second, and so on up to
+<code>tenth time</code>.</p>
+<pre class="chord"><code>create the iron grille
+  aka grille
+  a thing, scenery
+  in the Bell Stair
+  states: standing, lifted
+
+  Wrought iron, floor to vault, with no lock, no latch and no hinges.
+  It was not built. It was put there.
+
+  on the player taking, pushing, pulling
+    refuse grille-fixed
+  end on
+
+  after the player examining
+    first time
+      phrase grille-memory
+    second time
+      phrase grille-cold
+    third time
+      phrase grille-enough
+  end after</code></pre>
+<pre class="text"><code>&gt; examine grille
+Wrought iron, floor to vault, with no lock, no latch and no hinges. It was not built. It was put there.
+
+There was no grille here in your day. You came down this stair at a run, most mornings.
+
+&gt; examine grille
+Wrought iron, floor to vault, with no lock, no latch and no hinges. It was not built. It was put there.
+
+The iron is colder than the morning accounts for.
+
+&gt; examine grille
+Wrought iron, floor to vault, with no lock, no latch and no hinges. It was not built. It was put there.
+
+It has not changed its mind.
+
+&gt; examine grille
+Wrought iron, floor to vault, with no lock, no latch and no hinges. It was not built. It was put there.</code></pre>
+<p>After the third time the blocks are used up, and the grille has only
+its description. These blocks need no <code>end</code> line. Each one
+closes where the next begins, or where the clause does.</p>
+<p>You met <code>first time</code> in chapter 5, as the text a room
+shows on the first visit. It is the same idea. On a room it stands in
+the block by itself. In a clause it counts that clause.</p>
+<h2 data-number="17.6" id="which-one-to-use"><span
+class="header-section-number">17.6</span> Which one to use</h2>
+<p>The three blocks answer three different questions, and it is worth
+asking which question you have before you write one.</p>
+<p>If the answer depends on what is true of the world, use
+<code>select on</code>. The cistern does not thaw because it has been
+looked at three times.</p>
+<p>If the answer should simply vary, use a strategy. Nothing about the
+bell rope has changed between one pull and the next.</p>
+<p>If the answer depends on the player having done this before, use the
+count. The grille’s third response is a small joke about persistence,
+and it is funny only as the third.</p>
+<p>When the count starts to matter to the story, as when the fifth pull
+of a rope should bring the bell down, you have gone past what these
+blocks are for. That is a number the story should keep, and it is the
+next chapter.</p>
+<h2 data-number="17.7" id="build-and-try-it-13"><span
+class="header-section-number">17.7</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-17</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the phrases and the unbind page’s
+clause, which the chapter did not print. To make the changes by hand
+instead, work from this list and take the rest from that file: rewrite
+the reading clauses of the spark, hush and unbind pages with
+<code>select on</code>, move the frozen sentence out of the cistern’s
+description and give the cistern its clause, and put the
+<code>select cycling</code> block in the bell rope’s clause and the
+three counted blocks on the grille. There are eight new phrases.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: a branch is a test</strong> ·
+<code>sharpee test</code></p>
+<p>The derived tests of chapter 15 follow the branches. Run
+<code>sharpee test .</code> inside the companion folder
+<code>chapter-17</code> and you will see one line for each arm: “spark
+page · on reading · when legible”, “spark page · on reading · when
+learned”, “iron grille · after examining · the third time”. For a
+<code>select on</code> the runner puts the thing in the arm’s state
+before it types the command, which is something it can do only because
+the states are declared. An arm you never reach in play can still be
+exercised here. Not every arm is. A line that begins with <code>◌</code>
+is an arm the runner could not arrange, with its reason, and the
+cistern’s three arms are listed that way in this chapter’s story,
+because the runner could not bring the cistern into the player’s
+sight.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: varying text</strong></p>
+<p>Inform 10 writes variation inside the text, with substitutions such
+as “[one of]…[or]…[cycling]” and “[first time]…[only]”. TADS 3 has event
+lists, among them <code>ShuffledEventList</code> and
+<code>StopEventList</code>, attached to an object. Chord’s strategies
+are the same family, and its names will be familiar from both. The
+difference is that a Chord <code>select</code> chooses between runs of
+statements, so the alternatives can do things as well as say them.</p>
+</div>
+<h2 data-number="17.8" id="what-you-have-so-far-16"><span
+class="header-section-number">17.8</span> What you have so far</h2>
+<p>A clause can now branch on a state, rotate through alternatives and
+count its own visits. The reading clauses say what they mean. Part III
+has two chapters left, and they add the two things a puzzle game is
+usually built on: numbers and time.</p>
+<nav class="book-nav-bottom"><a class="prev" href="16-conditions.html">← Conditions</a><a class="next" href="18-counting-scoring-and-ending.html">Counting, scoring and ending →</a></nav>
+</body>
+</html>

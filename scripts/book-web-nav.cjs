@@ -18,8 +18,12 @@ const path = require('path');
 // Book editions are versioned (docs/book/<version>/). An optional leading
 // vX.Y.Z argument picks the edition; default: newest present.
 const BOOK_ROOT = path.join(__dirname, '..', 'docs', 'book');
-const VERSION = /^v\d/.test(process.argv[2] || '')
-  ? process.argv[2]
+// The argument is taken when it names an edition directory, whatever its
+// spelling: the Chord manual's is `chord-v4.1.0`, which the Sharpee editions'
+// `vX.Y.Z` test used to pass over, so its web build was read from v2.0.0.
+const named = process.argv[2] || '';
+const VERSION = named && fs.existsSync(path.join(BOOK_ROOT, named, 'web'))
+  ? named
   : fs.readdirSync(BOOK_ROOT).filter((d) => /^v\d/.test(d)).sort().pop();
 const WEB = path.join(BOOK_ROOT, VERSION, 'web');
 const sm = JSON.parse(fs.readFileSync(path.join(WEB, 'sitemap.json'), 'utf8'));
@@ -54,7 +58,8 @@ let appendixGroup = null;
 for (const s of L1) {
   const title = s.title;
   const page = fileOf(s.path);
-  const isVol = /^Volume\b/.test(title);
+  // A Sharpee edition divides into Volumes and the Chord manual into Parts.
+  const isVol = /^(Volume|Part)\b/.test(title);
   const isApp = /^Appendix\b/.test(title) || /Illustration Credits/.test(title);
   if (isVol) {
     curVol = { label: title, page, children: [] };
@@ -82,7 +87,9 @@ function li(item, current) {
 }
 
 function sidebar(current) {
-  let h = '<nav id="book-nav"><a class="book-nav-home" href="index.html">The Sharpee Book</a>';
+  // The home link carries the edition's own title, as pandoc recorded it.
+  const bookTitle = (sm.section && sm.section.title) || 'The Sharpee Book';
+  let h = `<nav id="book-nav"><a class="book-nav-home" href="index.html">${esc(bookTitle)}</a>`;
   if (frontList.length) {
     h += '<ul class="book-nav-front">' + frontList.map((c) => li(c, current)).join('') + '</ul>';
   }

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Ways that are closed, hidden or strange</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details open><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li class="active"><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-part-iii.-making-things-happen.html" accesskey="n" rel="next">Part III. Making things happen</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="11-regions.html" accesskey="p" rel="previous">Regions</a>
+</span>
+</div>
+</nav>
+<h1 data-number="12" id="ways-that-are-closed-hidden-or-strange"><span
+class="header-section-number">12</span> Ways that are closed, hidden or
+strange</h1>
+<p>An exit, so far, is either there or not there, and the only thing
+that has ever stood in one is a door. This chapter adds four more
+possibilities. A way can refuse the player with words of your choosing.
+It can kill them. It can exist only some of the time. And it can be a
+way that no compass direction describes, taken by typing a command of
+its own.</p>
+<h2 data-number="12.1" id="a-way-that-refuses"><span
+class="header-section-number">12.1</span> A way that refuses</h2>
+<p>The stair to the roof of Lanternhall has been sealed for thirty years
+by an iron grille that nobody built. The exit is there, and the player
+may not use it.</p>
+<pre class="chord"><code>create the Bell Stair, a room
+  in the Hall
+  up to the Lantern Gallery
+  up is blocked: stair-sealed
+
+  The foot of the tower. A stair winds up around the well where the bell
+  rope hangs, and an iron grille stands across its third step. The
+  cloister is south.</code></pre>
+<p>The new line reads as English does: <code>up is blocked</code>, a
+colon, and a name. The name, <code>stair-sealed</code>, is a
+<strong>phrase key</strong>. It stands for a piece of text that is
+written elsewhere in the file, in a block near the end.</p>
+<pre class="chord"><code>define phrases en-US
+  stair-sealed:
+    The grille stands across the stair, and there is no way round it.</code></pre>
+<p>This is the first phrase in The Relighting, and phrases have a whole
+chapter to themselves, which is chapter 20. What you need now is small.
+A <code>define phrases</code> block is a list of keys, each followed by
+a colon and then its text on the lines beneath, indented one level
+further. The words <code>en-US</code> say which language the text is in.
+A key is lower-case words joined by hyphens, and you make it up.</p>
+<p>When the player tries the stair, the phrase is what they read.</p>
+<pre class="text"><code>&gt; up
+The grille stands across the stair, and there is no way round it.</code></pre>
+<p>You cannot write the text on the <code>blocked</code> line itself.
+What follows the colon is always a key. If the key has no phrase, the
+compiler says which one is missing:</p>
+<pre class="text"><code>relighting.story:102:3 error [analysis.missing-phrase] Phrase `stair-sealed` is not declared in en-US.</code></pre>
+<p>A blocked way wants something in the room to account for it, so the
+grille is a thing as well.</p>
+<pre class="chord"><code>create the iron grille
+  aka grille
+  a thing, scenery
+  in the Bell Stair
+
+  Wrought iron, floor to vault, with no lock, no latch and no hinges.
+  It was not built. It was put there.</code></pre>
+<p>The grille and the blocked line have nothing to do with each other as
+far as the story is concerned. The line stops the player, and the thing
+gives them something to look at. Keeping them in step is your job.</p>
+<p>As it stands the stair is blocked for good, which makes the Lantern
+Gallery unreachable. A blocked line may carry a condition, written
+<code>up is blocked while</code> and then the condition before the
+colon, and then the way is blocked only while the condition holds.
+Lifting the grille is the business of chapter 24. Conditions are chapter
+16.</p>
+<h2 data-number="12.2" id="a-way-that-kills"><span
+class="header-section-number">12.2</span> A way that kills</h2>
+<p>On the roof, a low parapet runs along the east side of the Gallery.
+There is no room to the east. There is a drop.</p>
+<pre class="chord"><code>create the Lantern Gallery, a room
+  in the Hall
+  east is deadly: over-the-parapet</code></pre>
+<pre class="chord"><code>define phrases en-US
+  over-the-parapet:
+    You step up onto the parapet to see the court. The court comes up to
+    meet you.</code></pre>
+<p>A deadly way needs no exit line, because it leads nowhere. When the
+player takes it, the phrase is printed and the story ends.</p>
+<pre class="text"><code>&gt; east
+You step up onto the parapet to see the court. The court comes up to meet you.
+
+[The story has ended. RESTART, RESTORE or UNDO]</code></pre>
+<p>Be sparing with this, and be fair. The Gallery’s description now
+says, “To the east a low parapet is all there is between you and the
+court.” A player who has read that and walks east has been warned. A
+deadly way that the prose did not signal is a trap, and players forgive
+very little less.</p>
+<p>Because the stair is sealed, you cannot reach the parapet in the
+story as it stands. To see it work, wait until this chapter’s story is
+in your folder, which is the copy in “Build and try it” below. Then take
+out the <code>up is blocked</code> line for a moment, walk up and step
+off, and put the line back.</p>
+<h2 data-number="12.3" id="a-way-that-is-sometimes-there"><span
+class="header-section-number">12.3</span> A way that is sometimes
+there</h2>
+<p>A blocked way is one the player can see and cannot take. A hidden way
+is not there at all until something makes it so. An exit line may end
+with <code>while</code> and a condition, and the exit then exists only
+while the condition is true.</p>
+<pre class="chord"><code>create the Study, a room
+  north to the Vault while the bookcase is open</code></pre>
+<p>Until the bookcase is open, going north from the Study gets the same
+answer as any direction with no exit. Nothing tells the player that a
+way exists. When the bookcase opens, the exit is simply there.</p>
+<p>The difference between the two is what the player knows. Use
+<code>blocked</code> when they should see the obstacle and wonder how to
+get past it. Use a <code>while</code> exit when discovering that the way
+exists is itself the puzzle.</p>
+<p>The Relighting has no hidden exit of this kind. It has something
+stranger.</p>
+<h2 data-number="12.4" id="a-way-with-its-own-command"><span
+class="header-section-number">12.4</span> A way with its own
+command</h2>
+<p>Behind the Refectory’s hearth, the iron plate does not sit square,
+and there is a gap a thin person could get through. It leads down into
+the Undercroft. It is not north or east or down. It is behind the
+hearth, and the player gets through it by saying so.</p>
+<pre class="chord"><code>create the Refectory, a room
+  in the Hall
+
+  Three long tables, each with its row of candles, and a hearth you
+  could stable a horse in. The benches are stacked against the wall,
+  where someone left them for the holidays. The cloister is back to the
+  west.
+
+  passage to the Undercroft
+    grammar
+      squeeze or crawl behind [the] hearth
+  end passage</code></pre>
+<p>A <strong>passage</strong> is an exit that is taken with a command
+instead of a direction. The block opens with <code>passage to</code> and
+the room it leads to, and it closes with <code>end passage</code>.
+Inside it, the word <code>grammar</code> stands on a line by itself, and
+the lines beneath that are the commands, indented one level further.</p>
+<p>The command line is a pattern, and it has two small devices in
+it.</p>
+<ul>
+<li><code>squeeze or crawl</code> means that either word will do.</li>
+<li><code>[the]</code> means that the word in brackets may be typed or
+left out.</li>
+</ul>
+<p>So this one line accepts <code>squeeze behind hearth</code>,
+<code>crawl behind hearth</code>, <code>squeeze behind the hearth</code>
+and <code>crawl behind the hearth</code>. Chapter 23 uses the same
+notation at length, for verbs of your own.</p>
+<pre class="text"><code>&gt; examine hearth
+The back of the hearth is a single iron plate, and it does not sit quite square. There is a hand&#39;s breadth of darkness down one side.
+
+&gt; squeeze behind hearth
+It is pitch dark. You are likely to be eaten by a grue.</code></pre>
+<p>The Undercroft is dark, and Ansel has arrived in it without the lamp.
+That is the passage working as intended, and with a lit lamp in hand the
+same command shows the room.</p>
+<p>Three properties of a passage are worth knowing.</p>
+<p>A passage is one-way. The gap behind the hearth goes from the
+Refectory to the Undercroft, and there is no climbing back through it.
+If you want a way back, write a second passage in the other room.</p>
+<p>Its commands are understood only in its own room. Type
+<code>squeeze behind hearth</code> in the Undercroft, where there is no
+such passage, and the story does not know the words:</p>
+<pre class="text"><code>&gt; squeeze behind hearth
+I don&#39;t understand that.</code></pre>
+<p>And nothing announces it. The player has to find the passage by
+reading. Here the hearth’s description does the work: “a hand’s breadth
+of darkness down one side” is an invitation, and <code>squeeze</code> is
+the verb it invites.</p>
+<p>A passage may also be blocked or deadly, with a line inside the
+block: <code>blocked: stair-sealed</code>, or
+<code>deadly: over-the-parapet</code>, each naming a phrase key as
+before.</p>
+<h2 data-number="12.5" id="build-and-try-it-8"><span
+class="header-section-number">12.5</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-12</code> over your own file. It is the story with this
+chapter’s changes made. To make the changes by hand instead, work from
+this list and take the rest from that file: add the two lines to the
+Bell Stair and the Lantern Gallery, the passage to the Refectory, the
+grille, and the <code>define phrases</code> block. The phrases go after
+the last <code>create</code> block and before the start block. Nothing
+is raised in the header: this is still version <code>0.2.0</code>, and
+it is the end of Part II.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Fetch the lamp and light it, then go through the hearth.</p>
+<pre class="text"><code>&gt; squeeze behind hearth
+Undercroft
+Low vaults on squat pillars, running off under the whole of the hall. The air is cold and smells of stone. The steps go back up.
+
+You can see a crate here.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: reasons to refuse</strong> ·
+<code>if.action.going</code></p>
+<p>All four of these are the same standard action, <code>going</code>,
+being given something to consult. A <code>blocked</code> line is a
+refusal with a message attached. A <code>deadly</code> line is a refusal
+that also ends the story. An exit with a <code>while</code> condition is
+an exit the action cannot find until the condition holds. A passage adds
+a command to the story’s grammar that leads to <code>going</code>, but
+only in the room that has the passage. In every case you have described
+the way, and the one action that moves the player has decided what to do
+about it.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: unusual exits</strong></p>
+<p>In Inform 10 you would write a rule that stops the going action and
+prints a reason, and you would write a new action, with its own grammar
+line, for squeezing behind the hearth. In TADS 3 the direction property
+of a room can hold a message or a special connector object in place of a
+destination. Chord treats each of these as a fact about the way and
+gives each its own line. The gain is that the map remains readable as a
+map: every way out of a room, open or closed or strange, is in that
+room’s block. The cost is that you have these forms and no others, until
+Part III gives you clauses that can refuse anything at all.</p>
+</div>
+<h2 data-number="12.6" id="what-you-have-so-far-11"><span
+class="header-section-number">12.6</span> What you have so far</h2>
+<p>That is the world. Lanternhall has eleven rooms in two regions, a
+locked door, a dark cellar, a sealed stair, a hidden way and a deadly
+one. It has a porter, a coat, a cake, a cup, a lamp, a lens in a crate
+and a book with one word in its margin. A player can walk it, pick it
+up, open it, wear it and unlock it.</p>
+<p>What a player cannot do is change it. Nothing in Lanternhall yet
+reacts to anything. The rope rings no bell, the lens seats in the
+Lantern to no effect, and the lamp lights for anyone who asks. Part III
+is about making things happen.</p>
+<nav class="book-nav-bottom"><a class="prev" href="11-regions.html">← Regions</a><a class="next" href="-part-iii.-making-things-happen.html">Part III. Making things happen →</a></nav>
+</body>
+</html>

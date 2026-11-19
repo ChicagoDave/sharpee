@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>The page the player sees</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details open><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li class="active"><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-part-viii.-proving-and-shipping.html" accesskey="n" rel="next">Part VIII. Proving and shipping</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="36-sound-music-and-pictures.html" accesskey="p" rel="previous">Sound, music and pictures</a>
+</span>
+</div>
+</nav>
+<h1 data-number="37" id="the-page-the-player-sees"><span
+class="header-section-number">37</span> The page the player sees</h1>
+<!-- PENDING (Phase 5, 2026-11-16): the header fields `theme:` and `template:`
+     are named and not taught. `theme:` alone wires no stylesheet, and
+     `template:` is ignored with a warning. Both are filed. A page of the
+     story's own (`browser/index.html`) is described from the default page's
+     own comment and from one run; a channel rendered into a named element was
+     not run. The Chord Writer steps are pending under D-3. -->
+<p>A story played in a terminal has no say in how it looks. A story
+played in a browser has a page, and the page has a title bar, a status
+line, a place for a picture, a column for panels, a menu of themes, and
+somewhere to keep saved games.</p>
+<p>Chord gives a story three ways to shape that page. The header chooses
+the client and its themes. A <strong>channel</strong> sends a named
+value to the page, beside the prose, for the page to show where it
+likes. And a folder beside the story holds a stylesheet, and if you want
+one, a page of your own.</p>
+<p>This chapter builds The Relighting for the browser for the first time
+and gives it a panel that lists the workings Ansel has learned.</p>
+<h2 data-number="37.1" id="the-client-fields"><span
+class="header-section-number">37.1</span> The client fields</h2>
+<p>The story header from chapter 2 has a second group of fields, which
+say nothing about the story and everything about where it will be
+played.</p>
+<pre class="chord"><code>story
+  title: The Relighting
+  id: relighting
+  story-version: 0.7.0
+  client: browser
+  themes: paper, modern-dark
+  default-theme: paper
+  storage-prefix: relighting</code></pre>
+<p><code>client</code> names the program the story is built for. There
+is one value today, <code>browser</code>, and it is also what a story
+gets by leaving the line out. Any other word is refused when the story
+is built.</p>
+<pre class="text"><code>Error: unknown client &#39;terminal&#39; (story header `client:`) — the build can only produce &#39;browser&#39;.</code></pre>
+<p><code>themes</code> is a list of themes, separated by commas, that
+the page will offer in its Settings menu. Four are built in:
+<code>paper</code>, <code>modern-dark</code>,
+<code>retro-terminal</code> and <code>system-6</code>. The page always
+offers a fifth, called Classic, which is the page with no theme
+applied.</p>
+<p><code>default-theme</code> is the theme the page opens in. It should
+be one of the names in <code>themes</code>. Leave it out and the page
+opens in Classic.</p>
+<p><code>storage-prefix</code> is the word the browser files this
+story’s saved games under. It defaults to the story’s <code>id</code>,
+so most stories never write it. It matters when two stories are served
+from one site, because the browser keeps one drawer per site and the
+prefix is what keeps their saves apart.</p>
+<p>The compiler accepts any word as a theme name. The build is where a
+wrong one is caught.</p>
+<pre class="text"><code>Error: Unknown built-in theme &quot;parchment&quot;. Available: modern-dark, retro-terminal, paper, system-6. For your own theme, list { &quot;id&quot;: &quot;…&quot;, &quot;name&quot;: &quot;…&quot; } and define its [data-theme] block in browser/&lt;package-name&gt;.css.</code></pre>
+<p>Only the <code>themes</code> list is checked in this way. A
+<code>default-theme</code> that names a theme the list does not carry
+builds without complaint and opens on a page with no stylesheet for it,
+so read the two lines together.</p>
+<h2 data-number="37.2" id="building-the-page"><span
+class="header-section-number">37.2</span> Building the page</h2>
+<pre class="shell"><code>sharpee build relighting.story</code></pre>
+<p>The command compiles the story, as <code>compose</code> does, and
+then writes a complete web page to a folder under
+<code>dist/web/</code>, named for the story’s <code>id</code>. There is
+no need to run it yet. “Build and try it” runs it at the end of the
+chapter, on the story with everything this chapter adds, and this is
+what it prints then.</p>
+<pre class="text"><code>🔨 Building browser bundle
+
+  ✓ Minted the story&#39;s ifid into relighting.config.json
+  Story: The Relighting (relighting)
+  ✓ Validated relighting.story (gate-clean) — source not shipped (`publish-source:` absent)
+  ✓ Story IR → dist/relighting.ir.json
+  Generated browser entry from template
+  ✓ Embedded the compiled story IR into the bundle
+  Bundling game.js...
+
+  dist/web/relighting/game.js      1.9mb ⚠️
+  dist/web/relighting/game.js.map  3.5mb
+
+⚡ Done in 87ms
+  ✓ Built game.js
+  ✓ Copied index.html
+  ✓ Copied index-testing.html (IDE testing surface — excluded from publish)
+  ✓ Copied platform engine CSS (base, engine, decorations)
+  ✓ Wired 2 theme(s): paper, modern-dark
+  ✓ Copied relighting.css
+  ✓ Copied assets/ (2 entries)
+
+✅ Build complete! (game.js 1907.7 KB)
+Output: dist/web/relighting/
+
+To test locally:
+  npx serve dist/web/relighting</code></pre>
+<p>The line about <code>relighting.css</code> appears once the
+stylesheet later in this chapter exists, and the line about themes once
+the header names them. The line about an <code>ifid</code> is chapter
+40’s subject. It is printed by the first build of a story that has no
+identifier yet.</p>
+<p>The folder holds <code>index.html</code>, one script called
+<code>game.js</code> with the whole story inside it, the stylesheets,
+and the <code>audio</code> and <code>img</code> folders that were inside
+the <code>assets</code> folder of chapter 36. Nothing in it needs a
+server that does more than hand out files. To look at it on your own
+machine, serve the folder and open the address it prints.</p>
+<pre class="shell"><code>npx serve dist/web/relighting</code></pre>
+<p>The page opens on the story’s title and prologue, in the paper theme.
+The Settings menu has a Theme entry that lists Classic, Paper and Modern
+Dark. The page has no sound control of its own, so see that your
+machine’s sound is up before you spark the lamp. The first build also
+writes a small file beside the story,
+<code>relighting.config.json</code>, which chapter 40 explains.</p>
+<p>The page also prints something the terminal does not. When one of the
+chapters from chapter 19 begins, the page prints its title in bold, and
+its description in italics beneath if it has one, above the reply to the
+command that began it. <code>Morning</code> stands over the first room,
+and reading the spark page begins the afternoon.</p>
+<pre class="text"><code>&gt; read spark page
+
+Afternoon
+
+The Hall has noticed you.
+
+(first taking the spark page)</code></pre>
+<h2 data-number="37.3" id="a-channel"><span
+class="header-section-number">37.3</span> A channel</h2>
+<p>The prose is not the only thing a story sends to the page. The room’s
+name in the status line, the score and the turn count each travel on a
+<strong>channel</strong>: a named value that the page shows in a place
+of its own. Those channels are the platform’s. A story may define
+more.</p>
+<pre class="chord"><code>define channel workings
+  mode append
+  return &quot;(working): (gloss)&quot; from relighting-working-learned
+end channel</code></pre>
+<p><code>define channel</code> is a top-level block with a one-word
+name. It has two lines that matter.</p>
+<p>The <code>return</code> line says what the channel’s value is and
+when it changes. It ends in <code>from</code> and the name of an
+<strong>event</strong>. Each time the story raises that event, the
+channel takes a new value, built from what the event carried. Here the
+value is a piece of text with two slots in parentheses, and each slot is
+filled from the event’s field of that name.</p>
+<p>The <code>mode</code> line says what a new value does to the old
+one.</p>
+<ul>
+<li><code>mode replace</code> keeps only the latest value. A tide gauge,
+a compass heading, or the name of a chapter is a replace channel.</li>
+<li><code>mode append</code> adds each value to a growing list. A log, a
+list of clues, or this list of workings is an append channel.</li>
+<li><code>mode event</code> has no lasting value at all. It reports that
+something happened this turn, and the page reacts and forgets.</li>
+</ul>
+<h2 data-number="37.4" id="raising-an-event"><span
+class="header-section-number">37.4</span> Raising an event</h2>
+<p>A story raises an event with <code>emit</code>.</p>
+<pre class="chord"><code>on the player reading
+  select on the spark page&#39;s state
+    when legible
+      change the spark page to learned
+      change the story to waking
+      start waking
+      raise workings by 1
+      emit relighting-working-learned with working &quot;spark&quot; and gloss &quot;wakes a flame&quot;
+      award first-working
+      phrase spark-learned</code></pre>
+<p><code>emit</code> is a statement. It names the event with one
+hyphenated word, then <code>with</code>, then the event’s fields joined
+by <code>and</code>. A field is a name followed by its value: a quoted
+string, a number, or a reference to something in the world.</p>
+<p>The event’s name is the story’s own, and the convention is to begin
+it with the story’s <code>id</code>, so that it cannot collide with an
+event of the platform’s. The name is one word. A dotted name is an
+error, <code>parse.dotted-key</code>.</p>
+<p>Each of the four pages emits the same event with its own two strings.
+The channel hears all four.</p>
+<p>An event is not prose, and <code>emit</code> prints nothing. In a
+terminal, reading the spark page looks exactly as it did in chapter 13.
+On the page, a column opens beside the story.</p>
+<pre class="text"><code>workings
+spark: wakes a flame</code></pre>
+<p>By the time the Lantern is lit the panel holds four lines, in the
+order Ansel read the pages.</p>
+<pre class="text"><code>workings
+spark: wakes a flame
+unbind: releases a ward
+hush: quiets a thing
+mend: makes a broken thing whole</code></pre>
+<p>A channel the page has no special place for is shown in this way, as
+a titled panel in a column at the side. The column is hidden until some
+channel has a value, so a player who never reads a page never sees an
+empty box.</p>
+<h2 data-number="37.5" id="what-a-channel-may-return"><span
+class="header-section-number">37.5</span> What a channel may return</h2>
+<p>The <code>return</code> line has four forms. The first three give the
+channel a single value.</p>
+<pre class="chord"><code>define channel tide
+  mode replace
+  return level from harbour-tide-turned
+end channel
+
+define channel bell
+  mode event
+  gated by sound
+  return phrase bell-caption from harbour-bell-rung
+end channel</code></pre>
+<p><code>return level from …</code> takes one field of the event, by
+name, and the channel’s value is whatever that field held:
+<code>high</code> after
+<code>emit harbour-tide-turned with level "high"</code>, and the number
+3 after <code>emit harbour-tide-turned with level 3</code>.</p>
+<p><code>return "…" from …</code> is the text form the workings channel
+uses.</p>
+<p><code>return phrase bell-caption from …</code> gives the channel a
+phrase from the story’s phrase table, so the value is prose that can
+vary as any phrase can.</p>
+<p><code>gated by</code> names one of the client capabilities of chapter
+36. A gated channel is sent only to a client that has the capability.
+The bell’s caption is for a page that is about to play the bell.</p>
+<p>The fourth form returns a <strong>record</strong>: several named
+values at once.</p>
+<pre class="chord"><code>define channel card
+  mode replace
+  return record from harbour-card-dealt
+    suit suit
+    rank rank
+    notes list of note
+  end record
+end channel</code></pre>
+<p>Each line of the record is a member: the member’s name, then where
+its value comes from, which is again a field name, a text with slots, or
+<code>phrase</code> and a key. <code>list of</code> makes the member a
+list, even when the event carried a single value. After
+<code>emit harbour-card-dealt with suit "spades" and rank 7 and note "dog-eared"</code>,
+the channel’s value is a record whose <code>suit</code> is
+<code>spades</code>, whose <code>rank</code> is 7, and whose
+<code>notes</code> is a list of one string.</p>
+<p>A record is for a page of your own, which can lay the members out as
+it likes. A panel a player reads is better served by a text.</p>
+<h2 data-number="37.6" id="a-reference-in-a-field"><span
+class="header-section-number">37.6</span> A reference in a field</h2>
+<p>An <code>emit</code> field may hold a reference to a thing or a room,
+with no quotation marks.</p>
+<pre class="chord"><code>emit harbour-noted with what &quot;gauge read&quot; and where the Quay</code></pre>
+<p>The event does not carry the Quay’s name. It carries the Quay’s
+identifier, which for this room is <code>quay</code>, and a channel that
+returns <code>"(what): (where)"</code> shows
+<code>gauge read: quay</code>. That is useful to a page that keeps its
+own table of rooms, and wrong for a panel a player reads. When the value
+is for reading, send a string.</p>
+<h2 data-number="37.7" id="the-stylesheet"><span
+class="header-section-number">37.7</span> The stylesheet</h2>
+<p>A story’s own styles go in a folder called <code>browser</code>
+beside the story file, in a stylesheet named for the story’s
+<code>id</code>.</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* browser/relighting.css */</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#channel-panel-workings</span> <span class="fu">.sharpee-channel-panel-title</span> {</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-variant</span><span class="ch">:</span> <span class="dv">small-caps</span><span class="op">;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">letter-spacing</span><span class="ch">:</span> <span class="dv">0.06</span><span class="dt">em</span><span class="op">;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="pp">#channel-panel-workings</span> <span class="fu">.sharpee-channel-panel-row</span> {</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">margin-bottom</span><span class="ch">:</span> <span class="dv">0.4</span><span class="dt">rem</span><span class="op">;</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The build copies it into the page’s folder and loads it last, after
+the platform’s styles and after the themes, so a rule here wins. A
+channel’s panel has the identifier <code>channel-panel-</code> followed
+by the channel’s name.</p>
+<p>Keep colours out of this file where you can. The themes set them, and
+a colour fixed here will be right in one theme and wrong in the
+other.</p>
+<p>The picture from chapter 36 appears above the story, in a strip whose
+height the platform’s stylesheet sets. A rule for
+<code>#sharpee-media</code> in your own stylesheet changes it. A
+chapter’s title and description are printed in a block with the class
+<code>sharpee-chapter</code>, and a rule for that class restyles the
+block or hides it.</p>
+<h2 data-number="37.8" id="a-page-of-your-own"><span
+class="header-section-number">37.8</span> A page of your own</h2>
+<p>The stylesheet is enough for most stories. For the rest, the whole
+page can be replaced. The default <code>index.html</code> in the build
+folder opens with a comment that says how: copy it to
+<code>browser/index.html</code> beside your story and edit it there.
+From then on the build uses your page as it stands.</p>
+<p>Two elements must keep their identifiers, because the client looks
+for them by name: <code>sharpee-media</code>, where pictures go, and
+<code>sharpee-sidebar</code>, where panels go. You may move them
+anywhere on the page. The classes that begin <code>sharpee-</code> are
+what the themes style, so keep those on anything you want themed.</p>
+<p>Start with the stylesheet. A copied page is yours to maintain, and it
+will not pick up improvements to the default one.</p>
+<h2 data-number="37.9" id="build-and-try-it-33"><span
+class="header-section-number">37.9</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code>,
+<code>relighting.config.json</code> and the <code>browser</code> folder
+from the companion folder <code>chapter-37</code> into your project, the
+story over your own file and the other two beside it. The story is yours
+with this chapter’s changes made, and its <code>story-version</code> is
+<code>0.7.0</code>. The copied story already carries its identifier, in
+the header and in the config file, so your build does not print the line
+about minting one that the build earlier in this chapter shows. To make
+the changes by hand instead, work from this list and take the rest from
+that file: add the four client fields to the header, the
+<code>define channel</code> block near the top of the story, and one
+<code>emit</code> line to each of the four pages’
+<code>on the player reading</code> clauses, and make the folder
+<code>browser</code> and put <code>relighting.css</code> in it.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee build relighting.story
+npx serve dist/web/relighting</code></pre>
+<p>Play as far as the Library and read the spark page. Then change the
+theme from the Settings menu and reload the page. The theme you chose
+has been remembered. It was filed in the browser under the storage
+prefix, as <code>relighting-theme</code>, and the saved games are filed
+beside it.</p>
+<p>The reload also brings the game back from its autosave, with the line
+<code>[Session restored]</code>. The status line names the Library
+again, and the <code>workings</code> panel is there with its one line,
+because the page saves what its channels were showing along with the
+game.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: channels</strong> · Story IR
+<code>channels</code>, platform channels <code>location</code>,
+<code>score</code>, <code>turn</code></p>
+<p>The compiled IR has a top-level <code>channels</code> list holding
+each channel’s name, mode, gate and return. At the end of every turn the
+platform asks each channel, its own and the story’s, whether this turn’s
+events give it a value, and sends the page the values that changed. The
+status line is three platform channels, <code>location</code>,
+<code>score</code> and <code>turn</code>. The pictures of chapter 36 are
+channels as well, one for each layer, and the sounds another. A story’s
+<code>emit</code> adds an event to the turn like any other, with its
+fields as the event’s data.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: the status line and other
+windows</strong></p>
+<p>Inform 10 gives a story the two ends of the status line as values it
+can set:
+<code>now the left hand status line is "[the player's surroundings] / [turn count] / [score]";</code>.
+TADS 3 has the banner window, which its System Manual describes as “a
+rectangular area of the screen that can be separately controlled: each
+banner has its own contents, background color, text color, and so on”,
+and a game creates one with <code>bannerCreate()</code> and writes to
+it. In both, the story writes the text that appears in the window. A
+Chord channel sends a value and leaves its appearance to the page.</p>
+</div>
+<h2 data-number="37.10" id="what-you-have-so-far-36"><span
+class="header-section-number">37.10</span> What you have so far</h2>
+<p>The Relighting has a page. It opens in a theme the story chose,
+offers a second, keeps its saves under its own name, plays three
+recordings, shows a picture when the Lantern is lit, and lists the
+workings in a panel that grows as Ansel learns them.</p>
+<p>That is Part VII, and the story is finished. Nothing more will be
+added to it. What is left is to prove that it works, and will go on
+working after the next change, and then to give it to somebody. Part
+VIII begins with the proof.</p>
+<nav class="book-nav-bottom"><a class="prev" href="36-sound-music-and-pictures.html">← Sound, music and pictures</a><a class="next" href="-part-viii.-proving-and-shipping.html">Part VIII. Proving and shipping →</a></nav>
+</body>
+</html>

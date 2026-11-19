@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Build, play, read an error</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details open><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li class="active"><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-part-ii.-the-world.html" accesskey="n" rel="next">Part II. The world</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="3-the-player-and-the-start.html" accesskey="p" rel="previous">The player and the start</a>
+</span>
+</div>
+</nav>
+<h1 data-number="4" id="build-play-read-an-error"><span
+class="header-section-number">4</span> Build, play, read an error</h1>
+<p>You have a story file and you understand every block in it but one.
+This chapter turns it into something you can play. It also breaks the
+file in several ways on purpose, because the most useful skill in this
+book is reading what the compiler says when something is wrong.</p>
+<p>There are two ways to work with a Chord story. Chord Writer is an
+application with an editor, a play pane and a testing pane in one
+window. The <code>sharpee</code> command does the same work from a
+terminal. This book gives both wherever a step is something you do
+rather than something you write, under the heading “Build and try it”.
+The story file is the same either way. This chapter is steps from
+beginning to end, so it has no such heading. From chapter 5 on, each
+chapter has one near its end.</p>
+<!-- PENDING (plan D-3): the Chord Writer half of this chapter. No published
+     Chord Writer pairs with this edition's pin yet (issues 653 and 729), so
+     its steps cannot be written from the product. Each "Build and try it"
+     below gives the command only until one is. -->
+<h2 data-number="4.1" id="installing-the-command"><span
+class="header-section-number">4.1</span> Installing the command</h2>
+<p>The <code>sharpee</code> command needs Node.js, version 18 or later.
+If you do not have it, install it from nodejs.org first. Then install
+the command itself:</p>
+<pre class="shell"><code>npm install -g @sharpee/devkit</code></pre>
+<p>A recent npm may end the install with a warning that one package had
+its install script blocked. The command works without that script, and
+you can leave the warning alone.</p>
+<p>Check that the command is there by asking for its version:</p>
+<pre class="shell"><code>sharpee --version</code></pre>
+<pre class="text"><code>Sharpee 5.7.0 · Chord 4.1.0</code></pre>
+<p>The first number is the version of the Sharpee platform, which runs
+your story. The second is the version of the Chord language, which is
+what you write it in.</p>
+<h2 data-number="4.2" id="a-folder-for-the-story"><span
+class="header-section-number">4.2</span> A folder for the story</h2>
+<p>Chapter 1 had you make a folder called <code>relighting</code> and
+put <code>relighting.story</code> in it. A story’s folder is called its
+<strong>project</strong>, and a project holds exactly one
+<code>.story</code> file. Everything in this book is typed from inside
+that folder.</p>
+<h2 data-number="4.3" id="checking-the-story"><span
+class="header-section-number">4.3</span> Checking the story</h2>
+<p>The first thing to do with a story file is to ask whether the
+compiler accepts it.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check</code></pre>
+<pre class="text"><code>compose: Chord 4.1.0 — relighting.story is gate-clean (--check: IR not emitted)</code></pre>
+<p>The word to look for is <strong>gate-clean</strong>. The compiler
+puts a story through a series of checks, which it calls gates, and a
+story that passes every one of them is gate-clean. A story that is not
+gate-clean cannot be played.</p>
+<p><code>compose</code> is the compiler’s name, and <code>--check</code>
+tells it to run the gates and stop. Run this command often. It takes a
+moment, and it is far easier to find a mistake among the five lines you
+have just typed than among fifty.</p>
+<h2 data-number="4.4" id="playing-the-story"><span
+class="header-section-number">4.4</span> Playing the story</h2>
+<p>To play the story, tell <code>sharpee</code> to play the project you
+are standing in. The full stop means “this folder”.</p>
+<pre class="shell"><code>sharpee play .</code></pre>
+<pre class="text"><code>Loading story from: /home/ansel/relighting
+
+--- Play Mode ---  (/quit or /q to exit)
+
+You were here for one term, thirty years ago, and you would have said you remembered none of it. Then last week a candle leaned toward your hand, and you started walking.
+
+The Relighting
+Thirty years after the magic went out of the world, a lamp burns blue.
+By The Sharpee Project
+Story v0.1.0
+
+Lodge
+The porter&#39;s lodge is one small room built into the thickness of the gate arch. A chair, a kettle and thirty years of newspapers have filled most of it. On the sill a lamp is burning with a steady blue flame.
+
+&gt;</code></pre>
+<p>The first line names the folder the story was loaded from, and yours
+will name your own. After it come your prologue, then your header, then
+your room. The <code>&gt;</code> is the prompt, where the player types.
+Try a few commands.</p>
+<pre class="text"><code>&gt; examine me
+You were a student here once, for a term. You have the same hands and not much else.
+
+&gt; examine lamp
+You can&#39;t see any such thing.
+
+&gt; north
+There are no obvious exits.
+
+&gt; wait
+Time passes...
+
+&gt; xyzzy
+I don&#39;t understand that.</code></pre>
+<p>Two of those answers are worth a second look, because you wrote
+neither of them.</p>
+<p>“You can’t see any such thing” is the story telling the truth. The
+Lodge’s description mentions a lamp, but a description is only words.
+There is no lamp in the story until you create one, and chapter 6 does.
+Every noun you put in a description is a promise to the player that it
+can be examined, and for now The Relighting is breaking several such
+promises in one paragraph.</p>
+<p>“There are no obvious exits” and “Time passes…” are answers that came
+with the platform. You did not teach the story what going north means,
+or what waiting is. A Chord story begins with several dozen ordinary
+actions already understood, and most of this book is about adding to
+them, not building them.</p>
+<p>Type <code>/quit</code> to leave.</p>
+<h2 data-number="4.5" id="reading-an-error"><span
+class="header-section-number">4.5</span> Reading an error</h2>
+<p>Now break the story. Open <code>relighting.story</code>, find the
+line <code>playable</code> under <code>create Ansel</code>, and remove
+one letter so that it reads <code>playble</code>. Check the story
+again.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check</code></pre>
+<pre class="text"><code>relighting.story:31:3 error [analysis.player-target-not-playable] `ansel` is not `playable` — add `playable` to its create block to let the player role move to it.
+relighting.story:24:3 error [analysis.trait-not-declared] Trait `playble` is not declared (`define trait playble`) and is not a v1 adjective.
+compose: relighting.story failed the load-time gates (2 error(s))</code></pre>
+<p>Each line the compiler prints about your story is called a
+<strong>diagnostic</strong>, and every diagnostic has the same five
+parts.</p>
+<ol type="1">
+<li><strong>Where.</strong> <code>relighting.story:24:3</code> is the
+file, the line and the column. Line 24, column 3 is the first letter of
+<code>playble</code>.</li>
+<li><strong>How serious.</strong> <code>error</code> means the story
+cannot be played until this is fixed. The other word you will see here
+is <code>warning</code>, which is described below.</li>
+<li><strong>The code.</strong>
+<code>[analysis.trait-not-declared]</code> is the diagnostic’s name. The
+part before the full stop says which stage of the compiler found the
+problem: <code>lex</code> reads characters, <code>parse</code> reads
+lines and blocks, and <code>analysis</code> checks that what you wrote
+makes sense together. The code never changes, so it is the thing to
+search for when a message puzzles you.</li>
+<li><strong>The message.</strong> This says what is wrong in a
+sentence.</li>
+<li><strong>The remedy.</strong> Most messages end by telling you what
+to write instead.</li>
+</ol>
+<p>Now read the two diagnostics as a pair. The second one is the mistake
+itself: the compiler does not know the word <code>playble</code>. The
+first is a consequence of it: because that line was not understood,
+Ansel is not playable, and so the start block is handing the role to
+someone who cannot hold it. One wrong letter produced two errors, and
+the one printed first is not the one to fix.</p>
+<p>This happens often, and it gives the rule for reading compiler
+output. Read all of it before you change anything, look for the
+diagnostic that points at something you typed wrongly, and fix that one.
+Then check again. The others frequently vanish.</p>
+<p>Put the letter back before you go on.</p>
+<h2 data-number="4.6" id="when-the-compiler-guesses"><span
+class="header-section-number">4.6</span> When the compiler guesses</h2>
+<p>Some diagnostics go further than a remedy and offer a guess. Change
+<code>starts in the Lodge</code> to <code>starts in the Loge</code> and
+check again.</p>
+<pre class="text"><code>relighting.story:25:13 error [analysis.unknown-entity] No entity named `Loge` — did you mean `lodge`?.
+compose: relighting.story failed the load-time gates (1 error(s))</code></pre>
+<p>An <strong>entity</strong> is the compiler’s word for anything you
+make with <code>create</code>. The guess is printed in lower case
+because the compiler compares names without regard to capitals. You may
+write <code>the Lodge</code> or <code>the lodge</code> in your own
+lines, and they are the same room. Put the letter back before you go
+on.</p>
+<h2 data-number="4.7" id="warnings"><span
+class="header-section-number">4.7</span> Warnings</h2>
+<p>A warning is a diagnostic that does not stop the story. Delete the
+Lodge’s description, both the paragraph and the blank line above it, so
+that the header line has nothing under it, and check.</p>
+<pre class="text"><code>relighting.story:16:8 warning [analysis.room-no-description] `the Lodge` has no description, so LOOK there shows only its name.
+compose: Chord 4.1.0 — relighting.story is gate-clean (--check: IR not emitted)</code></pre>
+<p>The story is still gate-clean and it will still play. The warning is
+the compiler pointing at something that is legal and probably not what
+you meant. Treat a warning as a question. Sometimes the answer is that
+you did mean it.</p>
+<p>Restore the description, check once more, and make sure you are back
+to a single gate-clean line.</p>
+<h2 data-number="4.8" id="two-mistakes-with-the-folder"><span
+class="header-section-number">4.8</span> Two mistakes with the
+folder</h2>
+<p>Two errors come from the project and not from the story, and both are
+easy to make in your first hour.</p>
+<p>The <code>play</code> command takes a folder, not a file. If you give
+it the file, it says so in its own way:</p>
+<pre class="text"><code>play: &#39;relighting.story&#39; is neither a directory nor a registered story — run `sharpee register &lt;location&gt;`, or run `sharpee play` from the project directory</code></pre>
+<p>A project has one story. If you keep a second <code>.story</code>
+file in the folder, a copy you made before an experiment, for instance,
+<code>play</code> refuses to choose between them:</p>
+<pre class="text"><code>Error loading story: project has 2 .story files (notes.story, relighting.story) — a project has exactly one; remove or rename the others</code></pre>
+<p>Keep your experiments in another folder, or give the copy a different
+ending.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: what <code>compose</code> writes</strong> ·
+<code>sharpee compose</code></p>
+<p>Without <code>--check</code>, the compiler writes the Story IR. Give
+it a file to write to:</p>
+<pre class="shell"><code>sharpee compose relighting.story -o relighting.ir.json</code></pre>
+<pre class="text"><code>compose: Chord 4.1.0 — relighting.story loaded — 2 entities, 0 trait(s), 0 action(s)
+compose: IR written to relighting.ir.json</code></pre>
+<p>The two entities are the Lodge and Ansel. The traits and actions it
+counts are ones a story defines for itself, which Part IV teaches, and
+The Relighting has none yet. The file is JSON and is safe to open and
+read. Nothing in this book asks you to edit it, and
+<code>sharpee play</code> does not need it: it compiles the story afresh
+each time.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: the compile step</strong></p>
+<p>In Inform 10 you press Go and the application compiles and runs the
+story in one motion. In TADS 3 you compile a project into an image file
+and run that in an interpreter. Chord has the same two steps, but
+nothing you keep comes out of them at this stage. There is no story file
+to pass to an interpreter. The <code>.story</code> text is the story,
+<code>play</code> compiles it in memory each time, and a thing you can
+give to a player is made only when you publish, in chapter 40.</p>
+</div>
+<h2 data-number="4.9" id="what-you-have-so-far-3"><span
+class="header-section-number">4.9</span> What you have so far</h2>
+<p>You can check a story, play it, and read what the compiler says about
+it. The Relighting is one room with nothing in it and nowhere to go.
+Part II gives it a world.</p>
+<nav class="book-nav-bottom"><a class="prev" href="3-the-player-and-the-start.html">← The player and the start</a><a class="next" href="-part-ii.-the-world.html">Part II. The world →</a></nav>
+</body>
+</html>

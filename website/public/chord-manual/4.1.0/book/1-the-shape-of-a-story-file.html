@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>The shape of a story file</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details open><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li class="active"><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="2-the-story-header.html" accesskey="n" rel="next">The story header</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-part-i.-a-first-story.html" accesskey="p" rel="previous">Part I. A first story</a>
+</span>
+</div>
+</nav>
+<h1 data-number="1" id="the-shape-of-a-story-file"><span
+class="header-section-number">1</span> The shape of a story file</h1>
+<p>A Chord story is a plain text file whose name ends in
+<code>.story</code>. A small story needs nothing else: there is no
+project file beside it, and no second language in which the difficult
+parts are written. This chapter does not teach what any line means. It
+teaches what the page looks like, so that when later chapters hand you
+lines to type, you know where they go and how they sit.</p>
+<p>Here is the whole of the story this book builds, as it stands at the
+end of Part I. It is called The Relighting. Look it over the way you
+would look over a page of sheet music before playing it.</p>
+<pre class="chord"><code>## The Relighting, as it stands at the end of Part I: a header, a prologue,
+## one room, and the person the player will be.
+
+story
+  title: The Relighting
+  id: relighting
+  story-version: 0.1.0
+  authors:
+    The Sharpee Project
+  description: Thirty years after the magic went out of the world, a lamp burns blue.
+  prologue:
+    You were here for one term, thirty years ago, and you would have said
+    you remembered none of it. Then last week a candle leaned toward your
+    hand, and you started walking.
+
+create the Lodge, a room
+
+  The porter&#39;s lodge is one small room built into the thickness of the
+  gate arch. A chair, a kettle and thirty years of newspapers have filled
+  most of it. On the sill a lamp is burning with a steady blue flame.
+
+create Ansel
+  a person
+  playable
+  starts in the Lodge
+
+  You were a student here once, for a term. You have the same hands and
+  not much else.
+
+before the game starts
+  change the player to Ansel
+end before</code></pre>
+<p>You can see the shape before you know the words. The file is a list
+of blocks. Each block begins with a line at the left margin, and the
+lines that belong to it are indented beneath it. This file has four: the
+<code>story</code> block, two <code>create</code> blocks, and the
+<code>before the game starts</code> block. The two lines at the top that
+begin with <code>##</code> are a comment, which is a note to yourself
+that the compiler ignores.</p>
+<div class="from-another-system">
+<p><strong>From another system: layout</strong></p>
+<p>In Inform 10 the source is sentences and paragraphs, written to read
+as English. In TADS 3, braces mark the blocks, semicolons end the
+statements, and a line break means nothing. Chord is closer to a typed
+outline. A block is its header line and whatever is indented under it.
+There are no braces and no closing punctuation, and the indentation must
+be spaces. The compiler refuses a tab with the error
+<code>lex.tab-indent</code>, so set your editor to insert spaces before
+you begin.</p>
+</div>
+<div class="under-the-hood">
+<p><strong>Under the Hood: Story IR</strong> ·
+<code>sharpee compose</code></p>
+<p>The compiler does not run your file. It reads the file and writes a
+description of the story called the Story IR, which is a JSON document,
+and the Sharpee platform builds the world from that description. The
+command
+<code>sharpee compose relighting.story -o relighting.ir.json</code>
+writes it where you can read it. You do not have the
+<code>sharpee</code> command yet. Chapter 4 installs it, and runs this
+command at its end.</p>
+</div>
+<h2 data-number="1.1" id="one-line-one-thing"><span
+class="header-section-number">1.1</span> One line, one thing</h2>
+<p>Chord is read a line at a time. Each line says one thing, and the end
+of the line is the end of what it says. Nothing marks the end of a line
+except the line break: there is no full stop to remember and no
+semicolon to forget.</p>
+<p>Look at the <code>create Ansel</code> block. It has a header line and
+then three short lines, <code>a person</code>, <code>playable</code> and
+<code>starts in the Lodge</code>. Each of the three is a separate fact
+about Ansel, and each has a line to itself.</p>
+<p>Prose is the exception, and it is a comfortable one. The prologue and
+the two descriptions are running text, and running text may wrap
+wherever you like. The compiler joins the lines of a paragraph with
+single spaces, so the player sees one flowing paragraph however you
+broke it in the file.</p>
+<h2 data-number="1.2" id="indentation-says-what-belongs-to-what"><span
+class="header-section-number">1.2</span> Indentation says what belongs
+to what</h2>
+<p>A line that is indented further than the line above it belongs to
+that line. In the <code>story</code> block, <code>title:</code> and
+<code>authors:</code> belong to <code>story</code>, and the name
+<code>The Sharpee Project</code> belongs to <code>authors:</code>
+because it is indented further again. When the indentation returns to
+the left margin, the block is over.</p>
+<p>This book indents by two spaces at each level. The compiler does not
+insist on two, but it does insist on spaces. A tab in the indentation is
+an error, and the compiler says so:</p>
+<pre class="text"><code>relighting.story:5:1 error [lex.tab-indent] Tabs are not allowed in indentation — use spaces.</code></pre>
+<p>Most editors can be told to insert spaces when you press the Tab key.
+Set that before you type your first story, and you will never see this
+error.</p>
+<h2 data-number="1.3" id="how-a-block-ends"><span
+class="header-section-number">1.3</span> How a block ends</h2>
+<p>Most blocks end when the indentation does. The <code>story</code>
+block ends where <code>create the Lodge</code> begins at the left
+margin, and nothing more is needed.</p>
+<p>Some blocks hold a list of things to do, and those close with a line
+of their own. The last block in the file is one of them:</p>
+<pre class="chord"><code>before the game starts
+  change the player to Ansel
+end before</code></pre>
+<p>The closing line is the word <code>end</code> followed by a word from
+the block’s header. The chapters that introduce each kind of block tell
+you whether it needs one. If you leave out a closing line that is
+required, the compiler names the line it wanted and the line where the
+block began:</p>
+<pre class="text"><code>relighting.story:30:1 error [parse.unterminated-block] Missing `end before` for the block opened at line 30.</code></pre>
+<h2 data-number="1.4" id="blank-lines"><span
+class="header-section-number">1.4</span> Blank lines</h2>
+<p>Between blocks, a blank line is for your eyes. The compiler does not
+need one there, though this book always leaves one.</p>
+<p>Inside a <code>create</code> block, a blank line does a job. It
+separates the short lines that say what a thing is from the paragraph
+that describes it. Look at the Lodge: the header line, a blank line, and
+then the description. Ansel has three short lines, a blank line, and
+then a description. Without the blank line the compiler would try to
+read the description as one more short fact, and it would fail.</p>
+<p>A second blank line inside a description starts a second paragraph.
+The player sees the two paragraphs with a gap between them.</p>
+<h2 data-number="1.5" id="comments"><span
+class="header-section-number">1.5</span> Comments</h2>
+<p>A comment is a note in the file that the story ignores. A comment
+line begins with two hash marks, and a run of comment lines makes one
+comment:</p>
+<pre class="chord"><code>## The Relighting, as it stands at the end of Part I: a header, a prologue,
+## one room, and the person the player will be.</code></pre>
+<p>Three rules govern comments, and all three are strict.</p>
+<ol type="1">
+<li>The <code>##</code> must be at the left margin. An indented
+<code>##</code> is not a comment.</li>
+<li>A comment needs a blank line before it and a blank line after it.
+The top and the bottom of the file each count as a blank line.</li>
+<li>A comment goes between blocks, never inside one.</li>
+</ol>
+<p>There is no way to put a comment at the end of a line. If you write
+<code>title: The Relighting ## working title</code>, the title of your
+story is all of that, hash marks included. The same thing happens to an
+indented <code>##</code> under a description: it becomes a paragraph the
+player reads.</p>
+<div class="from-another-system">
+<p><strong>From another system: comments</strong></p>
+<p>Inform 10 writes a comment in square brackets, and TADS 3 has the two
+C forms, one that runs to the end of the line and one that brackets a
+region. Chord has one form with one place to put it. The reason is
+prose: a story file is mostly text the player will read, and the
+compiler takes text literally. A comment mark that worked inside a block
+would be a mark you could never print.</p>
+</div>
+<h2 data-number="1.6" id="words-numbers-and-quotation-marks"><span
+class="header-section-number">1.6</span> Words, numbers and quotation
+marks</h2>
+<p>The small pieces of a Chord line are few.</p>
+<p>A <strong>word</strong> is letters, with digits, hyphens, apostrophes
+and underscores allowed inside it. Names are made of words, and a name
+may be several of them: <code>the Lodge</code>, <code>Ansel</code>,
+<code>The Sharpee Project</code>.</p>
+<p>A <strong>key</strong> is a word that the language itself defines,
+followed by a colon, as in <code>title:</code> and
+<code>story-version:</code>. Where a key is made of two English words,
+it is always written with a hyphen and never with a space. Writing
+<code>story version:</code> is an error.</p>
+<p>A <strong>number</strong> is digits, with full stops allowed inside
+it, so <code>0.1.0</code> is a number.</p>
+<p><strong>Quotation marks</strong> are rarer than you might expect.
+Text the player reads is not quoted. The title is not quoted, and
+neither is the prologue or any description. If you put quotation marks
+around the title, they become part of the title. Quotation marks do
+appear later, for a small number of things such as the name of a file or
+a topic the player asks about, and each chapter says so when it needs
+them.</p>
+<div class="from-another-system">
+<p><strong>From another system: quoted text</strong></p>
+<p>In Inform 10 and in TADS 3, text the player reads is a quoted string,
+and everything outside the quotation marks is the language. Chord turns
+that around. Position decides what is prose: a paragraph under a
+<code>create</code> header is a description because of where it sits,
+and it needs no marks around it. The habit to unlearn is reaching for a
+quotation mark every time you write a sentence for the player.</p>
+</div>
+<h2 data-number="1.7" id="what-you-have-so-far"><span
+class="header-section-number">1.7</span> What you have so far</h2>
+<p>You have not built anything yet, and that is deliberate. Type the
+story at the top of this chapter into a file called
+<code>relighting.story</code>, with spaces for indentation, and keep it.
+Make a new folder called <code>relighting</code> for it, with nothing
+else inside. The folder can be anywhere you keep your own work. Chapter
+2 explains its first block, chapter 3 explains Ansel and the block that
+ends the file, and chapter 4 builds the story and plays it. The Lodge
+waits for chapter 5, though it is already doing its work as the one
+place the story has.</p>
+<nav class="book-nav-bottom"><a class="prev" href="-part-i.-a-first-story.html">← Part I. A first story</a><a class="next" href="2-the-story-header.html">The story header →</a></nav>
+</body>
+</html>

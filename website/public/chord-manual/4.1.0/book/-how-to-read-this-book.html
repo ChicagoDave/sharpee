@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>How to read this book</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li class="active"><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-part-i.-a-first-story.html" accesskey="n" rel="next">Part I. A first story</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-preface.html" accesskey="p" rel="previous">Preface</a>
+</span>
+</div>
+</nav>
+<h1 class="unnumbered" id="how-to-read-this-book">How to read this
+book</h1>
+<h2 data-number="0.4" id="where-to-start"><span
+class="header-section-number">0.4</span> Where to start</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>If you are</th>
+<th>Read</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>New to interactive fiction, or new to writing it</td>
+<td>The chapters in order, skipping every boxed note.</td>
+</tr>
+<tr>
+<td>An author who knows Inform or TADS</td>
+<td>The chapters in order, with the boxes headed “From another
+system”.</td>
+</tr>
+<tr>
+<td>Curious about what the platform does with your lines</td>
+<td>The chapters in order, with the boxes headed “Under the Hood”.</td>
+</tr>
+<tr>
+<td>Looking something up</td>
+<td>The table of contents, and the appendices at the back.</td>
+</tr>
+</tbody>
+</table>
+<p>The chapters build on one another, and the story grows through them,
+so the book works best read from the front. Part I is short and gets a
+story on the screen. If you read nothing else before starting a story of
+your own, read Parts I and II.</p>
+<h2 data-number="0.5" id="the-eight-parts"><span
+class="header-section-number">0.5</span> The eight parts</h2>
+<ul>
+<li><strong>Part I. A first story</strong> (chapters 1 to 4) covers the
+story file, its header, the player, and how to build a story, play it,
+and read an error.</li>
+<li><strong>Part II. The world</strong> (chapters 5 to 12) covers rooms,
+things, containers, doors, light and darkness, regions, and ways that
+are closed or hidden.</li>
+<li><strong>Part III. Making things happen</strong> (chapters 13 to 19)
+covers states, the clauses that react to the player, conditions,
+choices, scoring, endings and time.</li>
+<li><strong>Part IV. Words</strong> (chapters 20 to 25) covers the
+story’s prose, the platform’s standard messages, and new verbs and new
+kinds of thing.</li>
+<li><strong>Part V. People</strong> (chapters 26 to 31) covers people
+who act, talk, remember and feel, and stories with more than one
+protagonist.</li>
+<li><strong>Part VI. Larger machinery</strong> (chapters 32 to 35)
+covers machines, vehicles, open water, and the systems a story may opt
+into.</li>
+<li><strong>Part VII. Presentation</strong> (chapters 36 and 37) covers
+sound, pictures and the page in the browser.</li>
+<li><strong>Part VIII. Proving and shipping</strong> (chapters 38 to 40)
+covers tests, claims and publishing.</li>
+</ul>
+<h2 data-number="0.6" id="the-two-kinds-of-box"><span
+class="header-section-number">0.6</span> The two kinds of box</h2>
+<p>The main text is complete without either kind of box. Skip them
+freely.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: what this box is for</strong></p>
+<p>A box like this one names the part of the Sharpee platform that a
+Chord line becomes: a trait, a standard action, an event, a message. It
+is for readers who also write for the platform directly, or who like to
+know what is underneath. Nothing later in the book depends on it.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: what this box is for</strong></p>
+<p>A box like this one compares Chord with Inform 10 and TADS 3, and
+with no other system. It is for authors who already think in one of
+them. Each statement it makes about either system was checked against
+that system’s own documentation.</p>
+</div>
+<h2 data-number="0.7" id="conventions"><span
+class="header-section-number">0.7</span> Conventions</h2>
+<p>Lines of Chord appear in blocks like this one.</p>
+<pre class="chord"><code>create the Lodge, a room</code></pre>
+<p>Commands for your terminal appear in their own blocks, and so does
+what the story prints. In a block of story output, a line that begins
+with <code>&gt;</code> is a command the player typed.</p>
+<pre class="text"><code>&gt; take lamp
+You take it.</code></pre>
+<p>A block of Chord is sometimes a whole declaration and sometimes the
+few lines of one that the chapter is talking about. The prose says which
+lines are new, and the companion folder for the chapter always has the
+whole story.</p>
+<p>In a story file the end of a line means something, and some lines are
+longer than a printed page is wide. When the page has to break such a
+line, the continuation begins with the mark <code>↪</code>, set under
+the start of the line it continues.</p>
+<pre class="chord"><code>  description: Thirty years after the magic went out of the world, a lamp burns blue.</code></pre>
+<p>Type a marked row on the same line as the row above it, with one
+space where the page broke it, and leave the mark out. On a screen the
+line is not broken and there is no mark. Story output is prose, and the
+page wraps it as it wraps any paragraph.</p>
+<h2 data-number="0.8" id="build-and-try-it"><span
+class="header-section-number">0.8</span> Build and try it</h2>
+<p>Most chapters end with a section called “Build and try it”, which
+gives the <code>sharpee</code> commands that compile and play the
+chapter’s story in a terminal. Chord Writer, the editor made for Chord,
+does the same work from one window. The story file is the same in both,
+and chapter 4 introduces the two.</p>
+<h2 data-number="0.9" id="the-companion-folders"><span
+class="header-section-number">0.9</span> The companion folders</h2>
+<p>The Relighting as it stands at the end of each chapter is on the
+book’s website, in a folder named for the chapter:
+<code>chapter-05</code>, <code>chapter-06</code>, and so on. The folders
+are at this address:</p>
+<div class="url-line">
+<p><a href="https://sharpee.net/chord-manual/4.1.0/relighting/"
+class="uri">https://sharpee.net/chord-manual/4.1.0/relighting/</a></p>
+</div>
+<p>Each one can be read in a browser, file by file, and each can be
+downloaded whole by adding <code>.zip</code> to its name:</p>
+<div class="url-line">
+<p><a
+href="https://sharpee.net/chord-manual/4.1.0/relighting/chapter-05.zip"
+class="uri">https://sharpee.net/chord-manual/4.1.0/relighting/chapter-05.zip</a></p>
+</div>
+<p>A folder holds the story file and a test tree, which chapter 38
+explains, and from Part VII on it holds the story’s sounds, picture and
+stylesheet as well. Beside them are eight folders named
+<code>part-1</code> to <code>part-8</code>, each holding the story as it
+stands at the end of that part. No step in this book uses those.</p>
+<p>You need the folders to follow the book. A chapter prints the lines
+it teaches. It does not print every line of the story, because a page of
+descriptions teaches nothing about Chord. Part I’s story is short, and
+you type all of it. From chapter 5 on, each chapter’s “Build and try it”
+begins by copying that chapter’s <code>relighting.story</code> from its
+folder over your own, so that your story is the book’s at the end of
+every chapter. The same section lists what changed, for the reader who
+would sooner make the changes by hand and take only the unprinted lines
+from the file.</p>
+<h2 data-number="0.10" id="when-something-is-missing"><span
+class="header-section-number">0.10</span> When something is missing</h2>
+<p>A few chapters say plainly that a part of the language is not
+covered, because it could not be shown working in this edition. That is
+a statement about the edition and not about your story. The language’s
+reference material lists every form, and a later edition of this book
+will cover what this one could not.</p>
+<nav class="book-nav-bottom"><a class="prev" href="-preface.html">← Preface</a><a class="next" href="-part-i.-a-first-story.html">Part I. A first story →</a></nav>
+</body>
+</html>

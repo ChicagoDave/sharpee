@@ -53,25 +53,21 @@ was rewritten after run 1, on the two rulings it quotes.
 7. **Reference material is read, not run.** The appendices are not executed.
    The boxes headed "From another system" quote Inform 10 and TADS 3 and are
    never typed in. Commands inside "Under the Hood" boxes are run.
-8. **The version numbers.** The book quotes `Sharpee 5.7.0 · Chord 4.1.0` and
-   `Chord 4.1.0` wherever a command prints its version (chapter 4's
-   `--version` line and every `compose:` line). A run on the interim release
-   prints `Sharpee 5.6.4 · Chord 4.0.3` and `Chord 4.0.3` in those places.
-   Report only a difference in such a line beyond the two numbers. The same
-   holds for the line at the head of each appendix that begins "Generated
-   from": the appendices were generated on the interim release, so those
-   lines read `Sharpee 5.6.4 · Chord 4.0.3` while the title page names 5.7.0
-   and 4.1.0 (David, 2026-11-17, on run 3's one reported issue: "1 a"). The
-   appendices are regenerated when that release is published (#755). This item
-   and the expected line below go back to 5.7.0 / 4.1.0 when that release is
-   published.
+
+Item 8, the version numbers, is withdrawn (2026-11-19, session aed920, #755).
+It let a run made on an interim release (5.6.2 to 5.6.4, each reporting Chord
+4.0.3) print numbers other than the book's `Sharpee 5.7.0 · Chord 4.1.0`, in
+the command's version lines and in each appendix's "Generated from" line.
+Sharpee 5.7.0 with Chord 4.1.0 is published, the appendices were regenerated
+on it, and the book and the command now print the same pair. A difference in
+a version number is a finding again. Runs 1 to 17 were made under the item.
 
 ## Versions this run expects
 
 `npm install -g @sharpee/devkit` must give a `sharpee` whose `--version` line
-is exactly `Sharpee 5.6.4 · Chord 4.0.3`, the interim release David cut on
-2026-11-18 so the runs need not wait for 5.7.0 / 4.1.0. Anything else is a
-stale registry or a stale container: an environment failure, not a book defect.
+is exactly `Sharpee 5.7.0 · Chord 4.1.0`, the release the book's title page
+names. Anything else is a stale registry or a stale container: an environment
+failure, not a book defect.
 
 ## What "clean" means
 

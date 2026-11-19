@@ -104,9 +104,12 @@ build_front_fragment() {
     --to=html5 \
     --output="$FRONT_FRAGMENT"
   if [ "${1:-}" = "cover" ] && [ -n "$COVER" ]; then
+    # The second argument names the image as the built page will find it; it
+    # defaults to the cover's own path, which the one-file builds resolve.
+    local SRC="${2:-$COVER}"
     local BODY
     BODY="$(cat "$FRONT_FRAGMENT")"
-    printf '<div class="cover-page"><img src="%s" alt="Front cover" /></div>\n%s\n' "$COVER" "$BODY" > "$FRONT_FRAGMENT"
+    printf '<div class="cover-page"><img src="%s" alt="Front cover" /></div>\n%s\n' "$SRC" "$BODY" > "$FRONT_FRAGMENT"
   fi
 }
 
@@ -189,7 +192,9 @@ build_print() {
 # site yet; gitignored like build/. Generated from the same canonical source.
 build_web() {
   echo "→ WEB (chunked HTML site → web/)"
-  build_front_fragment
+  # The web pages live in web/, so the cover is named as a file beside them and
+  # copied there once pandoc has made the directory.
+  build_front_fragment cover cover.png
   rm -rf web
   pandoc --defaults=book.yaml \
     --to=chunkedhtml \
@@ -208,6 +213,7 @@ build_web() {
   # pages — including the cover and the index — are styled.
   mkdir -p web/styles
   cp -f styles/book.css web/styles/book.css
+  [ -n "$COVER" ] && cp -f "$COVER" web/cover.png
   # chunkedhtml ships only a minimal top nav; add a persistent left sidebar
   # (collapsible volumes → chapters) and a bottom Prev/Next bar to every page.
   if command -v node >/dev/null; then

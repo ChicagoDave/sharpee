@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>States</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details open><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li class="active"><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="14-reacting-to-the-player-on-and-after.html" accesskey="n" rel="next">Reacting to the player: on and after</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-part-iii.-making-things-happen.html" accesskey="p" rel="previous">Part III. Making things happen</a>
+</span>
+</div>
+</nav>
+<h1 data-number="13" id="states"><span
+class="header-section-number">13</span> States</h1>
+<p>Part II built a world that a player can walk through and pick up.
+Nothing in it remembers anything. The grille is across the stair because
+a line says so, and the lens is cracked because its description says so,
+and neither of those is a fact the story could act on.</p>
+<p>A <strong>state</strong> is such a fact. It is a word that says what
+condition a thing is in, chosen from a short list that you write. This
+chapter gives states to the story and to five of its things. The next
+chapter makes them change.</p>
+<h2 data-number="13.1" id="declaring-states"><span
+class="header-section-number">13.1</span> Declaring states</h2>
+<p>The iron grille across the Bell Stair is either standing or it has
+been lifted. That is one line in its block.</p>
+<pre class="chord"><code>create the iron grille
+  aka grille
+  a thing, scenery
+  in the Bell Stair
+  states: standing, lifted
+
+  Wrought iron, floor to vault, with no lock, no latch and no hinges.
+  It was not built. It was put there.</code></pre>
+<p>The line is the word <code>states</code>, a colon, and the names
+separated by commas. A state name is one word, or several joined by
+hyphens. Three rules come with the line.</p>
+<ul>
+<li>A thing is always in exactly one of its states.</li>
+<li>The first state listed is the one it starts in. The grille starts
+<code>standing</code>.</li>
+<li>The list has a direction. A thing may move to a later state and may
+not come back to an earlier one, unless you say otherwise.</li>
+</ul>
+<p>The last rule is the one that surprises people, and it is deliberate.
+Most things in a story happen once. A seal is broken, a page is read, a
+bridge falls. Writing the states in order tells the compiler which way
+the story runs, and it will stop you if a later line tries to run it
+backwards.</p>
+<p>Here are the other things in The Relighting that get states in this
+chapter.</p>
+<pre class="chord"><code>create the lens
+  a thing
+  in the crate
+  states: cracked, sound</code></pre>
+<pre class="chord"><code>create the cistern
+  aka ice
+  a thing, scenery
+  in the Undercroft
+  states: frozen, thawing, running
+
+  A stone cistern sunk in the floor, fed by a lead pipe from somewhere
+  above. It is a block of grey ice to its brim, and something flat and
+  pale is held in the ice a hand&#39;s depth down.</code></pre>
+<pre class="chord"><code>create the tower bell
+  aka bell
+  a thing, scenery
+  in the Bell Stair
+  states: unrung, tolling, silent
+
+  You cannot see the bell from here, only the dark it hangs in.</code></pre>
+<pre class="chord"><code>create the spark page
+  aka first page, leaf
+  a thing, readable with text &quot;One line, in ink that is still wet. It is a single word, and it will not stay in your head.&quot;
+  on the reading desk
+  states: legible, learned
+
+  A leaf that has worked loose from the grimoire. The ink on it is
+  complete.</code></pre>
+<p>The cistern, the bell and the page are new. Each list tells a small
+story in order: the ice thaws and then runs, the bell has never rung,
+then tolls, then falls silent, and the page can be read before it has
+been learned.</p>
+<h2 data-number="13.2" id="naming-a-state"><span
+class="header-section-number">13.2</span> Naming a state</h2>
+<p>A state names what the thing is. It does not name what the thing has
+stopped being. If you give a wax seal the states
+<code>sealed, unsealed</code>, the compiler refuses the second word with
+<code>analysis.negated-state</code>, because <code>unsealed</code>
+describes the absence of the first state and nothing else. Ask what the
+seal is once it is no longer sealed. It is <code>broken</code>, or
+<code>melted</code>, or <code>lifted</code>, and any of those tells the
+player and the next author more than the negative does.</p>
+<h2 data-number="13.3" id="reading-a-state"><span
+class="header-section-number">13.3</span> Reading a state</h2>
+<p>A state is read with the word <code>is</code>. The phrase
+<code>the iron grille is standing</code> is a
+<strong>condition</strong>, which is to say something the story can test
+and find true or false. Conditions have a chapter of their own, which is
+chapter 16, but you met one place that takes a condition in chapter 12.
+A blocked way may be blocked only <code>while</code> something
+holds.</p>
+<pre class="chord"><code>create the Bell Stair, a room
+  in the Hall
+  up to the Lantern Gallery
+  up is blocked while the iron grille is standing: stair-sealed</code></pre>
+<p>In Part II the stair was sealed for good. Now it is sealed for as
+long as the grille is in its first state, and the line and the thing are
+tied together. To say that a thing is not in a state, write
+<code>is not</code>: <code>the iron grille is not standing</code>.</p>
+<h2 data-number="13.4" id="changing-a-state"><span
+class="header-section-number">13.4</span> Changing a state</h2>
+<p>A state is changed with a <strong>statement</strong>, which is one
+line of instruction to the story.</p>
+<pre class="chord"><code>change the iron grille to lifted</code></pre>
+<p>Statements cannot stand loose in a file. They live inside blocks that
+say when they run, and the block you will use most is the clause of
+chapter 14. There is one such block in the story already, the start
+block, and it will do for an experiment. The line needs the grille’s
+<code>states</code> line, so try it once this chapter’s story is in your
+folder, after the copy in “Build and try it” below. Add the line to the
+start block for a moment.</p>
+<pre class="chord"><code>before the game starts
+  change the player to Ansel
+  change the iron grille to lifted
+end before</code></pre>
+<p>Build the story and walk to the Bell Stair.</p>
+<pre class="text"><code>&gt; up
+Lantern Gallery
+The roof of the tower, open on every side. The Great Lantern stands in the middle of it on a stone drum, taller than you are, its glass thirty years dirty. To the east a low parapet is all there is between you and the court. The stair goes back down.</code></pre>
+<p>The stair is open, because the condition on the blocked line is no
+longer true. Take the extra line out again before you go on. Keep the
+trick in mind, though. The start block is a good place to put the world
+into the state you want to test, without playing your way there each
+time.</p>
+<p>If you ask for a state the thing does not have, the compiler tells
+you.</p>
+<pre class="text"><code>probe.story:27:3 error [analysis.undeclared-state] `melted` is not a declared state of seal.</code></pre>
+<h2 data-number="13.5" id="states-that-go-both-ways"><span
+class="header-section-number">13.5</span> States that go both ways</h2>
+<p>Nothing in Lanternhall goes back to what it was, which is rather the
+point of the story. For a thing that does, here is a sluice from another
+one.</p>
+<pre class="chord"><code>create the sluice
+  a thing, scenery
+  in the Yard
+  states, reversible: raised, lowered
+
+  A sluice.</code></pre>
+<p>The word <code>reversible</code> goes after <code>states</code> and
+before the colon. With it, the sluice may be changed from
+<code>raised</code> to <code>lowered</code> and back as often as the
+story likes. Without it, the second change is an error, and the message
+shows you the line to write:</p>
+<pre class="text"><code>probe.story:37:3 error [analysis.irreversible-state] `whole-shell` is the initial state of a forward-only set — `change` cannot go back. Declare the set as `states, reversible: whole-shell, cracked-shell` to permit back-transitions.</code></pre>
+<p>Leave <code>reversible</code> off unless the thing really does go
+both ways. The forward-only rule will then catch the day you write a
+change in the wrong direction.</p>
+<h2 data-number="13.6" id="the-storys-own-states"><span
+class="header-section-number">13.6</span> The story’s own states</h2>
+<p>Some facts belong to no one thing. Lanternhall as a whole is asleep,
+and then it is waking, and at the end it is awake. The story header
+takes a <code>states</code> line of the same shape.</p>
+<pre class="chord"><code>story
+  title: The Relighting
+  id: relighting
+  story-version: 0.3.0
+  states: asleep, waking, awake</code></pre>
+<p>The story’s state is changed with
+<code>change the story to waking</code>, and it is read with
+<code>the story is asleep</code> or
+<code>the story is not asleep</code>. Everything said above about order
+and direction holds for the story as well.</p>
+<p>Use the story’s states for the few large facts that many things will
+ask about. A fact about one thing belongs on that thing. Chord has no
+loose variables and no flags, and that is by design. Every fact has an
+owner, and you find the fact by looking at its owner’s block.</p>
+<h2 data-number="13.7" id="the-states-you-do-not-declare"><span
+class="header-section-number">13.7</span> The states you do not
+declare</h2>
+<p>Some things already had states before this chapter. The library door
+is locked, the oak press is closed, and the hand lamp is unlit. Those
+come with the trait words of Part II, and they are read in the same
+way.</p>
+<table>
+<thead>
+<tr>
+<th>Trait word</th>
+<th>What you can read</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openable</code></td>
+<td><code>is open</code>, <code>is closed</code></td>
+</tr>
+<tr>
+<td><code>lockable</code></td>
+<td><code>is locked</code>, <code>is unlocked</code></td>
+</tr>
+<tr>
+<td><code>switchable</code></td>
+<td><code>is on</code>, <code>is off</code></td>
+</tr>
+<tr>
+<td><code>light-source</code></td>
+<td><code>is lit</code></td>
+</tr>
+<tr>
+<td><code>wearable</code></td>
+<td><code>is worn</code></td>
+</tr>
+<tr>
+<td><code>breakable</code></td>
+<td><code>is broken</code></td>
+</tr>
+</tbody>
+</table>
+<p>So <code>the library door is locked</code> is a condition you may
+already write, and <code>change the library door to unlocked</code> is a
+statement you may already write. For light, say <code>is lit</code> and
+<code>is not lit</code>. The word <code>unlit</code> belongs to the
+<code>starts unlit</code> line and is not something a condition
+reads:</p>
+<pre class="text"><code>probe.story:26:42 error [analysis.unknown-value] `unlit` is not a state of lamp or a known trait — did you mean `lit`?.</code></pre>
+<p>Because the trait owns those words, you may not declare a state of
+the same name on a thing that has the trait.</p>
+<pre class="text"><code>probe.story:14:11 error [analysis.shadow-state] `open` is a word of `openable`, which box carries — a state of that name would answer `is open` in place of the trait. Rename the state, or read and change the trait&#39;s own (`is open`, `change … to open`).</code></pre>
+<p>One trait word from chapter 9 makes its positions out of your states.
+A thing that is <code>settable</code> is a dial, and the states you
+declare are the marks on it.</p>
+<pre class="chord"><code>create the dial
+  a thing, scenery, settable
+  in the Yard
+  states, reversible: low, high
+
+  A dial with two marks, low and high.</code></pre>
+<pre class="text"><code>&gt; set dial to low
+You set the dial to low.
+
+&gt; set dial to middling
+The dial goes to low or high.</code></pre>
+<h2 data-number="13.8" id="build-and-try-it-9"><span
+class="header-section-number">13.8</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-13</code> over your own file. It is the story with this
+chapter’s changes made. To make the changes by hand instead, work from
+this list and take the rest from that file: add the <code>states</code>
+line to the header and to the grille and the lens, add the cistern, the
+tower bell and the spark page, put the <code>while</code> condition on
+the Bell Stair’s blocked line, and raise <code>story-version</code> to
+<code>0.3.0</code>, because this is the first chapter of Part III.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Play it, and you will find that nothing has changed. That is correct.
+Every thing is in its first state and no line yet moves one. The page
+can be read, and reading it teaches nothing.</p>
+<pre class="text"><code>&gt; read page
+(first taking the spark page)
+
+You take the spark page from the reading desk.
+
+The spark page reads:
+One line, in ink that is still wet. It is a single word, and it will not stay in your head.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: where a state lives</strong> · Story IR
+<code>states</code></p>
+<p>Compile the story with
+<code>sharpee compose relighting.story -o relighting.json</code> and
+look at the entry for the grille. Its <code>states</code> field holds
+the list in the order you wrote it, and a field beside it records
+whether the set is reversible. The trait states are not there.
+<code>is locked</code> and <code>is lit</code> are read from the
+platform’s own lockable and light-source traits each time they are asked
+for, which is why they can never disagree with what the standard actions
+have done.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: properties and flags</strong></p>
+<p>In Inform 10 you would write “The cistern can be frozen, thawing or
+running” and then test and set that property anywhere in the source. In
+TADS 3 you would add a property to the object and assign to it from any
+method. Chord’s <code>states</code> line does the same job with two
+differences. The states are ordered, and the order is enforced unless
+you say <code>reversible</code>. And there is no global variable to fall
+back on: a fact belongs to a thing or to the story, and it is declared
+in that owner’s block.</p>
+</div>
+<h2 data-number="13.9" id="what-you-have-so-far-12"><span
+class="header-section-number">13.9</span> What you have so far</h2>
+<p>The story and five of its things can now be in one condition or
+another, and one exit already depends on which. What is missing is
+anything that changes a state during play. For that a thing has to
+notice what the player does to it, and that is the next chapter.</p>
+<nav class="book-nav-bottom"><a class="prev" href="-part-iii.-making-things-happen.html">← Part III. Making things happen</a><a class="next" href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after →</a></nav>
+</body>
+</html>

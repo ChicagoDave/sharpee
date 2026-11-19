@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Claims</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details open><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li class="active"><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="40-publishing.html" accesskey="n" rel="next">Publishing</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="38-test-trees.html" accesskey="p" rel="previous">Test trees</a>
+</span>
+</div>
+</nav>
+<h1 data-number="39" id="claims"><span
+class="header-section-number">39</span> Claims</h1>
+<!-- PENDING (Phase 5, 2026-11-17): the Chord Writer steps (locking a claim
+     from the Testing tab) are pending under D-3. `sharpee claim` does not
+     return when asked to lock a fact at or after a line's first `put`, and a
+     `needs verbs` line that names `put` hangs `sharpee test`; both are filed
+     (782), and the chapter writes its second claim by hand for that reason.
+     The proposed set is taught as a draft to edit (716). -->
+<p>A test tree checks a great many small things. Card by card it says
+that this sentence was printed and that door was open. Nowhere does it
+say, in one place and in plain words, what the story is for: that the
+stair can be opened, and that the game can be won.</p>
+<p>A <strong>claim</strong> is one sentence of that kind, with a name.
+The claims of a story live together in a small file of their own, and
+<code>sharpee test</code> reports on every one of them each time it
+runs. This chapter writes three claims for The Relighting, and looks at
+what the report says when a claim holds, when it stops holding, and when
+nobody can tell.</p>
+<h2 data-number="39.1" id="a-fact-worth-keeping"><span
+class="header-section-number">39.1</span> A fact worth keeping</h2>
+<p>The quickest way to a claim is to take one from a line of the tree
+that already reaches it. The <code>sharpee claim</code> command does
+that. Give it a line and it lists what is true at the end of that line
+that was not true when the story began.</p>
+<p>A line is named by the identifier of the segment it starts in. If you
+name one that does not exist, the command lists the ones that do.</p>
+<pre class="text"><code>claim: no line &quot;winning1&quot; — the tree&#39;s lines, by segment id and first command:
+  thelodge  talk to hobb
+  refusal1  no
+  grille01  east
+  fromafar  wait
+  cracked1  put lens in hoist
+  parapet1  drop lens
+  trusted1  up</code></pre>
+<p>The main line is <code>thelodge</code>. The option <code>--at</code>
+chooses a turn on it, and without the option the command reads the
+line’s last card. The turn of a card is the <code>turn</code> field of
+its record in the output of chapter 38’s
+<code>sharpee test . --json --capture-output</code>. Two cards on the
+way type <code>unbind grille</code>. The one at turn 70 is refused,
+because the bell is tolling. The one at turn 82 lifts the grille, and it
+is the one wanted here.</p>
+<pre class="shell"><code>sharpee claim thelodge --at 82</code></pre>
+<pre class="text"><code>At turn 82 of line thelodge &quot;opening-lodge&quot;, true now and not at boot:
+  the player is in the Bell Stair
+  the player has the spectacles
+  the player has the hand lamp
+  the player has the library key
+  the player has the unbind page
+  the player has the spark page
+  the player has the hush page
+  the story is waking
+  the iron grille is lifted
+  the spark page is learned</code></pre>
+<p>The list goes on for another twenty-three lines, and it closes by
+saying how to keep one.</p>
+<pre class="text"><code>Lock one with: sharpee claim thelodge &quot;&lt;fact&gt;&quot; --at 82</code></pre>
+<p>Every line of the list is a sentence a claim can state. Most of them
+are not worth stating. That the player has the spectacles at turn 82 is
+true, and nobody would mind if it stopped being true. The line that
+matters is <code>the iron grille is lifted</code>, because the whole
+middle of the story exists to make it so.</p>
+<h2 data-number="39.2" id="locking-it"><span
+class="header-section-number">39.2</span> Locking it</h2>
+<p>Give the command the fact, in quotation marks, and a name for the
+claim.</p>
+<pre class="shell"><code>sharpee claim thelodge &quot;the iron grille is lifted&quot; --at 82 --name &quot;the ward on the stair can be lifted&quot;</code></pre>
+<pre class="text"><code>Locking at turn 82 of line thelodge &quot;opening-lodge&quot;: the iron grille is lifted
+
+  needs rooms: the Lodge, the Gate Court, the Cloister, the Refectory, the Library, the Bell Stair
+  needs things: Hobb, the kettle, the chair, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the grimoire, the spark page, the hush page, the mend page, the wisp, the wax taper, the tower bell, the newspapers, the candles, the iron grille
+  needs verbs: talk to, ask, tell, goodbye, sit on, exit, search, take, examine, open, wait, say, answer, unlock, consult, look up, read, light, spark, look, inventory, unbind, quiet, hush
+
+Written: created relighting.claims.chord
+Written: relighting.tests/manifest.json
+Written: relighting.tests/thebell1.json
+Pinned &quot;the ward on the stair can be lifted&quot; on card b7wicd1b.</code></pre>
+<p>Three files changed. The command wrote a new file beside the story,
+<code>relighting.claims.chord</code>, which holds the claim. It added
+one key to the tree’s manifest, so that the tree knows the file is
+there.</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;claims&quot;</span><span class="fu">:</span> <span class="st">&quot;relighting.claims.chord&quot;</span><span class="fu">,</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;seed&quot;</span><span class="fu">:</span> <span class="dv">42</span><span class="fu">,</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;story&quot;</span><span class="fu">:</span> <span class="st">&quot;relighting&quot;</span><span class="fu">,</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;version&quot;</span><span class="fu">:</span> <span class="dv">3</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>And it added one key, <code>locks</code>, to the card where the fact
+was read.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;contains&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;The grille is not there, in the manner of a thing that was never there&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;states&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;the iron grille is lifted&quot;</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;unbind grille&quot;</span><span class="fu">,</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;b7wicd1b&quot;</span><span class="fu">,</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;locks&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;the ward on the stair can be lifted&quot;</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="er">,</span></span></code></pre></div>
+<p>A <strong>lock</strong> ties a claim to a card. It says that the
+claim is true on that card, on that turn of that line, and that you want
+to be told if it ever is not.</p>
+<p>Add <code>--propose</code> to the command and it prints the same
+report and writes nothing, which is the way to look before you lock.</p>
+<h2 data-number="39.3" id="the-claims-file"><span
+class="header-section-number">39.3</span> The claims file</h2>
+<p>Here is the file the command wrote.</p>
+<pre class="chord"><code>## The Relighting&#39;s claims: what the finished story can reach, each under the
+## rooms, things and verbs that are load-bearing on the way. The test tree&#39;s
+## manifest names this file; the story never imports it.
+
+claims
+  claim the ward on the stair can be lifted
+    the iron grille is lifted
+    needs rooms: the Lodge, the Gate Court, the Cloister, the Refectory, the Library, the Bell Stair
+    needs things: Hobb, the kettle, the chair, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the grimoire, the spark page, the hush page, the mend page, the wisp, the wax taper, the tower bell, the newspapers, the candles, the iron grille
+    needs verbs: talk to, ask, tell, goodbye, sit on, exit, search, take, examine, open, wait, say, answer, unlock, consult, look up, read, light, spark, look, inventory, unbind, quiet, hush
+end claims</code></pre>
+<p>The file is Chord, and it holds one block, which opens with
+<code>claims</code> and closes with <code>end claims</code>. It has no
+story header, and the story does not import it. The manifest’s
+<code>claims</code> key is the only thing that points to it, so a story
+is never changed by the claims made about it.</p>
+<p>Inside the block, each claim begins with the word <code>claim</code>
+and its name. The name is yours, and it is what the report will call the
+claim. Write it as you would say it to someone: the ward on the stair
+can be lifted.</p>
+<p>The next line is the fact, and a claim has exactly one. Under it come
+up to three <code>needs</code> lines, which this chapter returns to when
+it reaches the walk. For a claim that a line of the tree reaches, they
+are a note of what the line used on the way.</p>
+<h2 data-number="39.4" id="what-a-claim-may-state"><span
+class="header-section-number">39.4</span> What a claim may state</h2>
+<p>A claim states one thing that holds. The forms are few, and most of
+them are conditions you already write after <code>while</code> and
+<code>when</code>.</p>
+<ul>
+<li><code>the iron grille is lifted</code> names a thing and one of its
+states. The same form takes the platform’s own state words:
+<code>open</code> and <code>closed</code>, <code>locked</code> and
+<code>unlocked</code>, <code>on</code> and <code>off</code>,
+<code>lit</code> and <code>unlit</code>, <code>worn</code> and
+<code>unworn</code>, <code>read</code> and <code>unread</code>.</li>
+<li><code>the story is awake</code> names a state of the story
+itself.</li>
+<li><code>the player is in the Library</code> names the room the player
+has reached.</li>
+<li><code>the player has the library key</code> says who holds a thing.
+Any person may stand where <code>the player</code> does.</li>
+<li><code>the lens is in the Great Lantern</code> says where a thing is,
+and <code>the kettle is not in the Lodge</code> names a room that a
+thing has left.</li>
+</ul>
+<p>Three more forms belong to claims alone.</p>
+<ul>
+<li><code>the story ends in victory</code> and
+<code>the story ends in defeat</code> say how the story ended, and
+<code>the story has ended</code> says only that it did.</li>
+<li><code>Hobb was asked about "the kettle"</code> says that a person
+was asked about a topic.</li>
+<li><code>the seed cake has been eaten</code> says that a thing has
+answered an action. The thing must have an <code>on</code> clause for
+that action, and the word after <code>has been</code> is the action’s
+past participle.</li>
+</ul>
+<p>A claim cannot be turned round. There is no
+<code>is not lifted</code> and no <code>never</code>, because a claim
+says what the story can reach, and “can never reach” is a different and
+much harder thing to show.</p>
+<p>When a fact does not fit the story, <code>sharpee test</code> refuses
+the file before it runs anything, and says what the thing’s states
+are.</p>
+<pre class="text"><code>test: claims file &#39;relighting.claims.chord&#39; does not compile (1 error(s)):
+  relighting.claims.chord:7:24 [claims.state-unknown] [relighting.claims.chord] `the ward on the stair can be lifted`: `iron grille` is never `raised`. Its states are `standing`, `lifted`. The platform&#39;s words are `open`, `closed`, `locked`, `unlocked`, `on`, `off`, `lit`, `unlit`, `worn`, `unworn`, `read`, `unread`.</code></pre>
+<h2 data-number="39.5" id="the-report"><span
+class="header-section-number">39.5</span> The report</h2>
+<p>Run the tree as before.</p>
+<pre class="shell"><code>sharpee test .</code></pre>
+<p>After the cards, the derived tests and the three counts of chapter
+38, the report has a new last section.</p>
+<pre class="text"><code>Claims: relighting.claims.chord
+claims: 1 of 1 held (seed 42)
+0 walks
+HELD  the ward on the stair can be lifted — by line thelodge &quot;opening-lodge&quot; at turn 82
+  lock &quot;the ward on the stair can be lifted&quot; at line thelodge &quot;opening-lodge&quot; at turn 82 — held there</code></pre>
+<p>The first line under the file’s name is the score: how many of the
+claims you have declared are held. A claim is <strong>held</strong> when
+the runner has seen the story reach it. Here a line of the tree reached
+it, at turn 82, and the report says which.</p>
+<p>The last line is the lock. The claim is held and its lock is held,
+and those are two different statements. The first says that some line,
+somewhere, reaches the fact. The second says that the fact is true on
+the very card you pinned it to.</p>
+<h2 data-number="39.6" id="when-a-lock-breaks"><span
+class="header-section-number">39.6</span> When a lock breaks</h2>
+<p>Suppose that some weeks from now you are tidying the
+<code>ward</code> trait, and the line <code>change it to lifted</code>
+goes out with something else. The grille still vanishes when it is
+unbound, because <code>move it offstage</code> is still there, and the
+prose still prints. Run the tree.</p>
+<pre class="text"><code>✗ opening-lodge — unbind grille: State assertion failed: the iron grille is lifted. the iron grille is &quot;standing&quot;, expected &quot;lifted&quot;
+    You say the word. The grille is not there, in the manner of a thing that was never there, and the stair goes up.</code></pre>
+<p>The card fails, as chapter 38 promised. Thirty-four more cards fail
+after it, on the main line and on the two branches that climb the stair,
+because the stair is still shut and everything beyond it goes wrong.
+Thirty-five failures do not tell you much about what you broke. The
+claims section does.</p>
+<pre class="text"><code>Claims: relighting.claims.chord
+claims: 0 of 1 held, 1 unproven (seed 42)
+1 walk
+  under the set of &quot;the ward on the stair can be lifted&quot;: 6 rooms, 20 things, 24 verbs — 11612 states, 63603 commands, stopped: max-seconds
+UNPROVEN  the ward on the stair can be lifted — not reached by any line; the walk stopped at max-seconds after 11612 states; its set carries 20 things, and each independent thing doubles the states to exhaust
+  lock &quot;the ward on the stair can be lifted&quot; at line thelodge &quot;opening-lodge&quot; at turn 82 — NOT held there: the iron grille is standing</code></pre>
+<p>Read it from the bottom. The lock is not held, and the report says
+what is so in its place: the iron grille is standing. One line names the
+promise you broke, in the words you gave it.</p>
+<p>The line above it says that the claim is <strong>unproven</strong>.
+No line of the tree reaches the fact any longer, so the runner went
+looking for a way to reach it by itself, and gave up after two minutes.
+The next section is about that search.</p>
+<p>The two are treated differently. A lock that is not held fails its
+card, as a failed assertion does, and the run exits with 1. Had this
+card carried no <code>states</code> assertion, it would have failed all
+the same, with a line of its own.</p>
+<pre class="text"><code>✗ opening-lodge — hush bell: lock &quot;the ward on the stair can be lifted&quot; not held here: the iron grille is standing</code></pre>
+<p>(That line comes from a lock pinned, on purpose, one card too
+early.)</p>
+<p>An unproven claim fails nothing. Claims are a list of what you mean
+the story to do, and the report on them is a reading of how much of the
+list is true today. That makes it safe to write a claim before the story
+can meet it.</p>
+<p>Put the line back, and the report returns to 1 of 1.</p>
+<h2 data-number="39.7" id="a-claim-written-by-hand"><span
+class="header-section-number">39.7</span> A claim written by hand</h2>
+<p>The second claim is the one any story should make.</p>
+<p><code>sharpee claim</code> proposes a set of needs from what the line
+did, and the proposal is a draft. It lists everything the line touched,
+the kettle and the chair among them. It is also not yet sound for every
+line. At this edition the command does not return when it is asked to
+lock a fact at a turn that comes after the line’s first
+<code>put</code>, and on the winning line that is every turn from 105
+on. The winning turn is 138.</p>
+<p>So this claim is written by hand, which is always allowed. A claims
+file is yours to edit. Add the block before <code>end claims</code>,
+with one blank line above it.</p>
+<pre class="chord"><code>  claim the story can be won
+    the story ends in victory
+    needs rooms: the Lodge, the Gate Court, the Cloister, the Refectory, the Library, the Bell Stair, the Undercroft, the Lantern Gallery, the Water Stair, the Beacon Isle
+    needs things: Hobb, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the spark page, the hush page, the mend page, the tower bell, the newspapers, the candles, the iron grille, the cistern, the crate, the lens, the book hoist, the shutter crank, the shutter, the Great Lantern, the Mere, the skiff, the beacon
+    needs verbs: talk to, ask, say, take, open, unlock, read, light, spark, examine, wait, unbind, quiet, fix, repair, turn, push, enter, steer, make sail, exit</code></pre>
+<p>The verbs leave out <code>put</code>, although the winning line types
+it twice. At this edition a <code>needs verbs</code> line that names
+<code>put</code> stops <code>sharpee test</code> from finishing.</p>
+<p>The lock is one key on the winning card, which is the card
+<code>bjhmo3xt</code> in <code>winning1.json</code>. It is written
+between <code>id</code> and <code>type</code> because a tree file keeps
+its keys in alphabetical order.</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;command&quot;</span><span class="er">:</span> <span class="st">&quot;spark beacon&quot;</span><span class="er">,</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;ending&quot;</span><span class="er">:</span> <span class="st">&quot;beacon-lit&quot;</span><span class="er">,</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;id&quot;</span><span class="er">:</span> <span class="st">&quot;bjhmo3xt&quot;</span><span class="er">,</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;locks&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;the story can be won&quot;</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="er">,</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;type&quot;</span><span class="er">:</span> <span class="st">&quot;turn&quot;</span></span></code></pre></div>
+<p>The layout of the claims file matters as the layout of a tree file
+does. A claim’s name is indented by two spaces and its lines by four.
+The fact comes first, then <code>needs rooms</code>,
+<code>needs things</code> and <code>needs verbs</code> in that order,
+and exactly one blank line separates two claims. A file laid out another
+way is refused, and the refusal names the line. This is the refusal for
+a file in which a second claim follows this one with no blank line
+between them.</p>
+<pre class="text"><code>test: claims file &#39;relighting.claims.chord&#39; is not in the lock&#39;s canonical form (fix the lines named, or re-lock):
+  relighting.claims.chord:17 · claim the story can be won — the next block follows without a blank line</code></pre>
+<p>With the file laid out as the runner wants it, the report has both
+claims.</p>
+<pre class="text"><code>claims: 2 of 2 held (seed 42)
+0 walks
+HELD  the ward on the stair can be lifted — by line thelodge &quot;opening-lodge&quot; at turn 82
+HELD  the story can be won — by line thelodge &quot;opening-lodge&quot; at turn 138
+  lock &quot;the ward on the stair can be lifted&quot; at line thelodge &quot;opening-lodge&quot; at turn 82 — held there
+  lock &quot;the story can be won&quot; at line thelodge &quot;opening-lodge&quot; at turn 138 — held there</code></pre>
+<h2 data-number="39.8" id="a-claim-no-line-reaches"><span
+class="header-section-number">39.8</span> A claim no line reaches</h2>
+<p>Both claims so far were read from the tree. A claim may also say
+something that no line of the tree does, and then the runner has to find
+out for itself whether it is true.</p>
+<p>Hobb’s seed cake has sat on his chair since Part II, and since Part
+III the player has been refused it: “Hobb cut that cake into two pieces
+with some care, and he is sitting four feet away. You find you cannot.”
+The refusal has a condition, <code>when Hobb is here</code>. So the cake
+can be eaten, somewhere Hobb is not. Nothing in the tree tries it.</p>
+<pre class="chord"><code>  claim the cake can be eaten in the Lodge
+    the seed cake has been eaten
+    needs rooms: the Lodge
+    needs things: Hobb, the chair, the seed cake
+    needs verbs: take, eat
+
+  claim the cake can be eaten
+    the seed cake has been eaten
+    needs rooms: the Lodge, the Gate Court
+    needs things: Hobb, the chair, the seed cake
+    needs verbs: take, eat</code></pre>
+<p>The two claims state the same fact and differ in one word of one
+line. The first allows the Lodge and nothing else. The second allows the
+Gate Court as well.</p>
+<pre class="text"><code>claims: 3 of 4 held, 1 unproven (seed 42)
+2 walks
+  under the set of &quot;the cake can be eaten in the Lodge&quot;: 1 rooms, 3 things, 2 verbs — 161 states, 239 commands, stopped: max-depth-reached
+  under the set of &quot;the cake can be eaten&quot;: 2 rooms, 3 things, 2 verbs — 17 states, 20 commands, stopped: all-claims-settled
+HELD  the ward on the stair can be lifted — by line thelodge &quot;opening-lodge&quot; at turn 82
+HELD  the story can be won — by line thelodge &quot;opening-lodge&quot; at turn 138
+UNPROVEN  the cake can be eaten in the Lodge — not reached by any line; the walk stopped at max-depth-reached after 161 states; its set carries 3 things, and each independent thing doubles the states to exhaust
+HELD  the cake can be eaten — not reached by any line; by walk at depth 3: take seed cake / north / eat seed cake</code></pre>
+<p>For each claim that no line reaches, the runner takes a
+<strong>walk</strong>. It starts the story fresh and tries commands, and
+from every position those lead to it tries commands again, keeping count
+of the positions it has seen. It stops when it finds one where the claim
+is true.</p>
+<p>For the second claim it found one in twenty commands, and the report
+prints the way there: take the cake, go north, eat it. Those three
+commands are a <strong>witness</strong>. The claim is held, and it is
+held more firmly than by a line of the tree, because nobody wrote the
+answer down.</p>
+<h2 data-number="39.9" id="the-needs-lines"><span
+class="header-section-number">39.9</span> The needs lines</h2>
+<p>A walk that tried every command in every room would never finish. The
+<code>needs</code> lines are what make it small. They say which rooms,
+things and verbs are on the way to the fact, and the walk stays inside
+them.</p>
+<ul>
+<li><code>needs rooms</code> lists the rooms the walk may enter. It goes
+through an exit only when the room beyond is on the list.</li>
+<li><code>needs things</code> lists the things and people a command may
+name. The player is always there and is never listed.</li>
+<li><code>needs verbs</code> lists the verbs the walk may type, as a
+player types them: <code>take</code>, <code>eat</code>,
+<code>talk to</code>.</li>
+</ul>
+<p>The walk does not invent sentences. From each position it tries the
+exits, and for each thing it can see it tries what that thing’s kind
+allows: <code>open</code> for something openable, <code>take</code> for
+something that can be carried, <code>ask</code> for a person with
+topics, a story’s own verb for a thing that answers it. Then the three
+lists cut that down.</p>
+<p>The lists are part of the claim. The first cake claim does not say
+that the cake can be eaten. It says that the cake can be eaten using
+only the Lodge, Hobb, the chair, the cake, and the verbs
+<code>take</code> and <code>eat</code>. That is a smaller statement, and
+in this story it is false, because Hobb never leaves the Lodge. The walk
+tried 161 positions, reached the deepest path it allows itself, and
+stopped.</p>
+<p>It did not report the claim as false. <strong>Unproven</strong> means
+that the walk ran out of room before it found a witness. Sometimes that
+is because there is none, as here. Sometimes the set is too loose, and
+the walk drowned in kettles and chairs. The report cannot tell the two
+apart, and it says which limit stopped it so that you can judge:
+<code>max-depth-reached</code> is a path of eighty commands,
+<code>max-states</code> is half a million positions, and
+<code>max-seconds</code> is two minutes. Run the tree with
+<code>--verbose</code> and the limits are printed.</p>
+<pre class="text"><code>Claims budget per walk: 120s, 500000 states, depth 80</code></pre>
+<p>The last clause of an unproven line is advice. Every thing in the set
+that can change by itself doubles the number of positions there are to
+visit. A walk under three things is over in a moment. The walk under the
+first claim’s twenty things, in the section on the broken lock, ran for
+its whole two minutes. So when a claim comes back unproven, make its set
+smaller before you make it larger, and list only what the fact cannot be
+reached without.</p>
+<p>When several claims need the same set, the lists can be written once,
+at the top of the block, before the first claim. A claim with no
+<code>needs</code> lines of its own takes those, and a claim that writes
+one of the three replaces that one and keeps the other two.</p>
+<pre class="chord"><code>claims
+  needs rooms: the Lodge, the Gate Court
+  needs things: Hobb, the chair, the seed cake
+  needs verbs: take, eat
+
+  claim the cake can be had
+    the player has the seed cake
+
+  claim the cake can be eaten
+    the seed cake has been eaten
+
+  claim the cake can be eaten in the Lodge
+    the seed cake has been eaten
+    needs rooms: the Lodge
+end claims</code></pre>
+<p>Claims that share a set share a walk, so the first two here cost one
+walk between them.</p>
+<h2 data-number="39.10" id="which-claims-to-keep"><span
+class="header-section-number">39.10</span> Which claims to keep</h2>
+<p>The first cake claim has done its work in this chapter, and it comes
+out of the file. An unproven claim that you know to be false is only
+noise in the report. An unproven claim that you believe is a different
+matter. It is the most useful line in the file, because it is a thing
+the story does not yet do.</p>
+<p>That is the other way to use claims. Before a puzzle exists, write
+down that it can be solved: name the fact, and list the rooms and things
+you intend to build it from. The claim is unproven on the first day. On
+the day the puzzle works, the walk finds its witness, and you have not
+had to play it through to know.</p>
+<p>Keep the claims few. The Relighting has three: the stair opens, the
+story can be won, and a small one about a cake that shows the walk at
+work. A story of this size might fairly have a dozen. They should be the
+sentences you would use to tell someone what the game is.</p>
+<h2 data-number="39.11" id="build-and-try-it-35"><span
+class="header-section-number">39.11</span> Build and try it</h2>
+<p>Work in your own project, which now holds what the companion folder
+<code>chapter-38</code> holds: the story of chapter 37 and the full
+tree. List the facts at turn 82 of the main line, and lock
+<code>the iron grille is lifted</code> under the name this chapter gave
+it, <code>the ward on the stair can be lifted</code>, so that your
+reports read as the chapter’s do. Run the tree and find the claim and
+its lock in the report. Add the claim that the story can be won, and its
+lock, as the chapter did.</p>
+<p>Then add the second cake claim by hand, and run the tree again to see
+the witness. Change its <code>needs rooms</code> line to the Lodge
+alone, and see it come back unproven. Put the Gate Court back on the
+line afterwards.</p>
+<p>Last, break the story as this chapter did, by taking
+<code>change it to lifted</code> out of the <code>ward</code> trait, and
+read the lock’s line. The chapter broke it with one claim in the file.
+With three, the claims section is longer than the one printed under
+“When a lock breaks”: the claim that the story can be won is unproven as
+well, its lock is not held either, and the runner walks for each of
+them, so the run takes four minutes at the least, and a good deal longer
+on a busy machine. Put the line back.</p>
+<p>The companion folder <code>chapter-39</code> holds the story with its
+three claims.</p>
+<pre class="shell"><code>sharpee test .</code></pre>
+<pre class="text"><code>Claims: relighting.claims.chord
+claims: 3 of 3 held (seed 42)
+1 walk
+  under the set of &quot;the cake can be eaten&quot;: 2 rooms, 3 things, 2 verbs — 17 states, 20 commands, stopped: all-claims-settled
+HELD  the ward on the stair can be lifted — by line thelodge &quot;opening-lodge&quot; at turn 82
+HELD  the story can be won — by line thelodge &quot;opening-lodge&quot; at turn 138
+HELD  the cake can be eaten — not reached by any line; by walk at depth 3: take seed cake / north / eat seed cake
+  lock &quot;the ward on the stair can be lifted&quot; at line thelodge &quot;opening-lodge&quot; at turn 82 — held there
+  lock &quot;the story can be won&quot; at line thelodge &quot;opening-lodge&quot; at turn 138 — held there</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: the claims tier</strong> · manifest
+<code>claims</code>, card <code>locks</code>, verdicts <code>HELD</code>
+and <code>UNPROVEN</code></p>
+<p><code>sharpee test</code> runs in three tiers: the tree’s cards, the
+derived tests, and the claims. The claims file is compiled against the
+story before any card is played, which is why a misspelled state stops
+the run at once. While the cards replay, every claim is checked after
+every card. A claim that some card satisfies is held by that line and is
+never walked, and a card’s <code>locks</code> are checked on that card
+alone. Only the claims left over are walked, one walk for each distinct
+set of needs, each from a fresh start at the tree’s seed. Every line of
+the claims report is the same on every run at the same seed, except
+where a walk was stopped by the clock.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: proving a story can be
+finished</strong></p>
+<p>Inform 10 and TADS 3 both replay commands, as the last chapter’s
+aside describes, and a replayed solution is how an author in either
+system shows that a story can still be won. A lock is the same idea with
+a name on it. The walk has no counterpart in the pages of <em>Writing
+with Inform</em> and the TADS 3 System Manual read for this book:
+neither describes a tool that searches a story for a way to reach a
+state. The nearest thing is in <em>Writing with Inform</em>’s section on
+testing for thoroughness, which names an extension that “allows us to
+try out a long list of commands against any object in the story”. That
+tries every command on one thing. It does not look for a path.</p>
+</div>
+<h2 data-number="39.12" id="what-you-have-so-far-38"><span
+class="header-section-number">39.12</span> What you have so far</h2>
+<p>You can write down, in a file beside the story, the few sentences the
+story exists to make true. You can lock one to the card where a line of
+the tree reaches it, and let the runner go looking for the ones no line
+reaches. The report tells you after every change how many are held.</p>
+<p>The Relighting is written, tested, and holds its claims. The last
+chapter gives it a version and an address, and sends it out.</p>
+<nav class="book-nav-bottom"><a class="prev" href="38-test-trees.html">← Test trees</a><a class="next" href="40-publishing.html">Publishing →</a></nav>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>The opt-in systems</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details open><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li class="active"><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="-part-vii.-presentation.html" accesskey="n" rel="next">Part VII. Presentation</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="34-open-water-and-open-ground.html" accesskey="p" rel="previous">Open water and open ground</a>
+</span>
+</div>
+</nav>
+<h1 data-number="35" id="the-opt-in-systems"><span
+class="header-section-number">35</span> The opt-in systems</h1>
+<!-- PENDING (Phase 4, 2026-11-16): GH #781. This chapter does not say how a
+     player is fed under `use hunger`, or show a hostile combatant attacking,
+     because neither could be shown working. The `all`, `collapsed` and
+     `combined` announce modes were not run. -->
+<p>The Relighting’s header has four lines that begin with
+<code>use</code>.</p>
+<pre class="chord"><code>story
+  title: The Relighting
+  id: relighting
+  use scoring
+    rank &quot;Latecomer&quot; at 0
+    rank &quot;Second-Year&quot; at 10
+    rank &quot;Journeyman&quot; at 30
+    rank &quot;Lamplighter&quot; at 50
+  use chapters
+  use expanses
+  use sailing</code></pre>
+<p>Each arrived in the chapter that needed it. This chapter is about the
+line itself, and about two systems the game does not use. Nothing here
+is added to The Relighting. A story about relighting a lantern does not
+need a fight in it, and it should not grow one to fill a chapter.</p>
+<h2 data-number="35.1" id="what-use-means"><span
+class="header-section-number">35.1</span> What <code>use</code>
+means</h2>
+<p>Most of Chord is always available. Rooms, things, people, clauses,
+timers, conversations and machines need no permission.</p>
+<p>A few systems are larger than a word. They bring vocabulary of their
+own, they run something on every turn, and they print lines the author
+did not write. A story that does not want them should not pay for them
+or be surprised by them. Those systems are opt-in, and
+<code>use &lt;name&gt;</code> in the story header is how a story opts
+in.</p>
+<p>A <code>use</code> line does two things. It admits the system’s
+words, so that the compiler will accept <code>an expanse</code> or
+<code>combatant</code>. And it tells the platform to start the system
+when the story loads.</p>
+<p>The rules are few. A <code>use</code> line goes in the story header
+and nowhere else. Each system is named once. All but two are a single
+line: <code>use scoring</code> carries its rank ladder beneath it, as
+chapter 18 showed, and <code>use hunger</code> carries its own lines,
+below. A system may need another, as sailing needs expanses, and the
+compiler says so.</p>
+<p>Using a word without its line is an error that names the line. So is
+a <code>use</code> line for something that needs none. People and
+machines are core, and <code>use npc</code> is refused.</p>
+<table>
+<thead>
+<tr>
+<th>Line</th>
+<th>What it brings</th>
+<th>Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>use scoring</code></td>
+<td><code>score</code>, <code>award</code>, the rank ladder</td>
+<td>18</td>
+</tr>
+<tr>
+<td><code>use chapters</code></td>
+<td><code>define chapters</code>, <code>during</code>,
+<code>before</code>, <code>after</code></td>
+<td>19</td>
+</tr>
+<tr>
+<td><code>use expanses</code></td>
+<td><code>an expanse</code>, landmarks, <code>movement: open</code></td>
+<td>34</td>
+</tr>
+<tr>
+<td><code>use sailing</code></td>
+<td><code>wind:</code>, the <code>sailing</code> block,
+<code>sails:</code></td>
+<td>34</td>
+</tr>
+<tr>
+<td><code>use combat</code></td>
+<td><code>combatant</code>, <code>weapon</code>, fighting</td>
+<td>this one</td>
+</tr>
+<tr>
+<td><code>use hunger</code></td>
+<td>a hunger meter with rungs</td>
+<td>this one</td>
+</tr>
+</tbody>
+</table>
+<h2 data-number="35.2" id="combat"><span
+class="header-section-number">35.2</span> Combat</h2>
+<p><code>use combat</code> brings two trait words. A person who can
+fight is a <code>combatant</code>, and a thing to fight with is a
+<code>weapon</code>.</p>
+<pre class="chord"><code>story
+  title: The Cellar
+  id: cellar
+  use combat
+  authors:
+    Nobody
+
+create the Cellar, a room
+
+  A low brick cellar that smells of coal and damp.
+
+create the rat
+  a person, combatant with health 3 and skill 20 and base-damage 1
+  in the Cellar
+
+  A rat the size of a boot.
+
+create the poker
+  a thing, weapon with damage 3
+  in the Cellar
+
+  An iron poker.
+
+create Ansel
+  a person
+  playable
+  starts in the Cellar
+
+  You came down for coal.
+
+before the game starts
+  change the player to Ansel
+end before</code></pre>
+<p>That is a whole story, with a room, a player and a start block as
+Part I taught them. Both words take settings, written with
+<code>with</code> and <code>and</code> as the behaviour words of chapter
+26 do. <code>health</code> is how much damage a combatant can take.
+<code>skill</code> is how likely its blows are to land, and
+<code>base-damage</code> is what a blow does bare-handed. A weapon’s
+<code>damage</code> is what it adds.</p>
+<p>The standard <code>attack</code> action has been in the grammar all
+along. Against something that is not a combatant it does nothing of
+consequence. Against a combatant it is a fight.</p>
+<pre class="text"><code>&gt; attack rat
+You land a solid blow on the rat, dealing 1 damage!
+
+&gt; take poker
+Taken.
+
+&gt; attack rat with poker
+You have slain the rat!</code></pre>
+<p>An attack may also miss: “You swing at the rat but miss!” Whether it
+does is a roll against skill. <code>sharpee play</code> rolls afresh
+each time it starts, so your fight will not go blow for blow as this one
+did, and the rat may take more attacks or fewer. A test tree is
+different. It carries a seed, as chapter 38 describes, and the rolls
+come from that seed, so a tree that pins a fight sees the same fight
+every time.</p>
+<p>All of these lines are standard messages. A story with combat in it
+will want its own, and chapter 22’s <code>override message</code> is
+how.</p>
+<p>The appendix of trait words lists every setting the two words take.
+Reach for combat when fighting is part of what your game is. A single
+guard who must be got past is better written as a blocked exit and a
+clause, with prose you control, than as a system of numbers that the
+player meets once.</p>
+<h2 data-number="35.3" id="hunger"><span
+class="header-section-number">35.3</span> Hunger</h2>
+<p><code>use hunger</code> gives the player a meter that rises with
+time.</p>
+<pre class="chord"><code>story
+  title: The Yard
+  id: yard
+  use hunger
+    grows 1 each turn
+    peckish at 2 says hunger-peckish
+    hungry at 4 says hunger-hungry
+    fatal at 9
+  authors:
+    Nobody
+
+create the Yard, a room
+
+  A cobbled yard with a pump in the middle of it.
+
+create Ansel
+  a person
+  playable
+  starts in the Yard
+
+  You have not eaten since yesterday.
+
+before the game starts
+  change the player to Ansel
+end before
+
+define phrases en-US
+  hunger-peckish:
+    You could eat.
+  hunger-hungry:
+    You are hungry now, and thinking about the loaf.</code></pre>
+<p>The lines beneath <code>use hunger</code> are its settings.
+<code>grows &lt;n&gt; each turn</code> is the rate. Each line of the
+form <code>&lt;name&gt; at &lt;n&gt;</code> is a <strong>rung</strong>:
+a level of the meter with a name of your choosing. A rung may end with
+<code>says</code> and a phrase, and the phrase is printed once, when the
+meter first reaches the rung. <code>fatal at &lt;n&gt;</code> is the
+level at which the player dies.</p>
+<p>The meter starts at nothing. The opening of a story is not a turn, so
+the meter still stands at nothing when the player first reads the Yard,
+and each command after that adds one. The second <code>wait</code> takes
+it to two.</p>
+<pre class="text"><code>&gt; wait
+Time passes...
+
+&gt; wait
+Time passes...
+
+You could eat.
+
+&gt; wait
+Time passes...
+
+&gt; wait
+Time passes...
+
+You are hungry now, and thinking about the loaf.</code></pre>
+<p>Left alone, the meter reaches nine on the ninth
+<code>wait</code>.</p>
+<pre class="text"><code>&gt; wait
+Time passes...
+
+You have starved to death.
+
+[The story has ended. RESTART, RESTORE or UNDO]</code></pre>
+<p>This is the form of chapter 18’s rank ladder, turned upside down. A
+rank is a threshold on a number that rises as the player does well, and
+a rung is a threshold on a number that rises as time passes. Both speak
+once on the way up.</p>
+<h3 data-number="35.3.1" id="announcing"><span
+class="header-section-number">35.3.1</span> Announcing</h3>
+<p>A system that crosses thresholds has to decide how much to say about
+it. A <code>use</code> line may end with <code>, announce</code> and a
+mode.</p>
+<pre class="chord"><code>use hunger, announce silent</code></pre>
+<p><code>silent</code> prints nothing at a rung. The meter still rises,
+and the fatal level still ends the game with its line. The other modes
+are <code>all</code>, which is the default and reports every rung as it
+is reached, and <code>collapsed</code> and <code>combined</code>, which
+say less when several rungs are crossed at once.</p>
+<p>The suffix is allowed on any <code>use</code> line, and it matters
+for the ones that count something, which are hunger and scoring.</p>
+<h2 data-number="35.4" id="choosing"><span
+class="header-section-number">35.4</span> Choosing</h2>
+<p>An opt-in system saves work when its model is the model your game
+has. Scoring is that for most games, and The Relighting used it without
+a second thought. Expanses were that for one scene of this game and
+would have been absurd for the rest.</p>
+<p>When a system’s model is nearly what you want, be careful. You will
+spend the saved work bending it. A meter is a counter, a rung is a
+comparison, and a starving player is <code>kill the player</code> with a
+<code>when</code> on it. Chapter 18 gave you all three, and a story that
+wants a thirst that only matters in one desert can write it in ten lines
+and own every word.</p>
+<h2 data-number="35.5" id="build-and-try-it-31"><span
+class="header-section-number">35.5</span> Build and try it</h2>
+<p>There is no companion snapshot for this chapter. The two examples
+above are complete stories, and you can build them as you built the
+first story in Part I. Each needs a folder of its own, because a folder
+holds one story. Make a folder called <code>cellar</code> beside your
+project, and later one called <code>yard</code> in the same place. Type
+the first example into a file called <code>cellar.story</code> inside
+it, and run these two commands there.</p>
+<pre class="shell"><code>sharpee compose cellar.story --check
+sharpee play .</code></pre>
+<p>Attack the rat, take the poker, and attack again until the rat is
+dead. Then make a folder called <code>yard</code>, type the second
+example into <code>yard.story</code> inside it, and do the same.</p>
+<pre class="shell"><code>sharpee compose yard.story --check
+sharpee play .</code></pre>
+<p>Type <code>wait</code> until the story ends, and count the turns
+between the lines.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: a manifest for each system</strong> · Story
+IR <code>uses</code>, <code>announceModes</code></p>
+<p>Each opt-in system is described to the compiler by a small manifest:
+its name, the trait words it adds, and the settings each word takes with
+their types. That is how <code>weapon with damage three</code> can be an
+error at build time though the compiler knows nothing about fighting.
+The compiled IR lists the systems a story opted into under
+<code>uses</code>, and any <code>announce</code> suffix under
+<code>announceModes</code>. When the story loads, the platform starts
+one plugin for each name in <code>uses</code>, and each plugin takes its
+turn in the cycle after the player’s command.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: extensions</strong></p>
+<p>Both Inform 10 and TADS 3 handle this with libraries that a story
+includes. An Inform story writes “Include”, the name of an extension and
+its author, as in “Include Rideable Vehicles by Graham Nelson.” A TADS 3
+project names its libraries in the project file, with a
+<code>-lib</code> line for each. A Chord <code>use</code> line is
+narrower than either. It turns on a system that ships with the platform,
+and it cannot name code that the story’s author wrote.</p>
+</div>
+<h2 data-number="35.6" id="what-you-have-so-far-34"><span
+class="header-section-number">35.6</span> What you have so far</h2>
+<p>That is Part VI. You have every part of the language that builds a
+world and makes it move: rooms and things, clauses and conditions,
+phrases and verbs, people who act and talk and feel, machines, vehicles,
+open water, and the systems a story may opt into.</p>
+<p>Two things remain. The player meets a story through a page, with
+sound and pictures and a layout, and Part VII is about that page. And a
+story that you mean other people to play has to be proved and shipped,
+which is Part VIII.</p>
+<nav class="book-nav-bottom"><a class="prev" href="34-open-water-and-open-ground.html">← Open water and open ground</a><a class="next" href="-part-vii.-presentation.html">Part VII. Presentation →</a></nav>
+</body>
+</html>

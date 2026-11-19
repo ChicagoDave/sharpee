@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Test trees</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details open><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li class="active"><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="39-claims.html" accesskey="n" rel="next">Claims</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="-part-viii.-proving-and-shipping.html" accesskey="p" rel="previous">Part VIII. Proving and shipping</a>
+</span>
+</div>
+</nav>
+<h1 data-number="38" id="test-trees"><span
+class="header-section-number">38</span> Test trees</h1>
+<!-- PENDING (Phase 5, 2026-11-16): the Chord Writer steps (recording a tree in
+     the Testing tab) are pending under D-3; this chapter teaches the tree's
+     files, which are the same whichever tool wrote them. The command line has
+     no recorder and no way to put a hand-written file into canonical form;
+     both are filed. -->
+<p>The Relighting is finished, and it has been played to its end many
+times in the writing of this book. Each of those plays proved something
+on the day. None of them proves anything about tomorrow, when you move a
+key or reword a phrase and something four rooms away stops working.</p>
+<p>A <strong>test tree</strong> is a play-through that has been written
+down, with a note on each turn of what the story must say. The
+<code>sharpee test</code> command plays it again, turn by turn, and
+tells you which notes no longer hold. It is called a tree because a
+play-through can fork: from one position in the story you may record
+several different continuations, and they share everything before the
+fork.</p>
+<p>This chapter builds a small tree by hand and then reads the full one
+that comes with the story.</p>
+<h2 data-number="38.1" id="two-ways-to-make-one"><span
+class="header-section-number">38.1</span> Two ways to make one</h2>
+<p>Chord Writer has a Testing tab that records. You play the story
+there, and each turn becomes a card that you can pin an expectation
+to.</p>
+<p>The <code>sharpee</code> command has no recorder. From the command
+line a tree is written as files, by hand, and the story’s own output is
+read back from a test run. That sounds laborious and is less so than it
+sounds, because a tree is very regular. It is also worth learning
+whichever tool you use, because the files are the same, they live beside
+your story, and they are what you will read when a test fails.</p>
+<h2 data-number="38.2" id="the-folder"><span
+class="header-section-number">38.2</span> The folder</h2>
+<p>A story’s tree is a folder beside the story file, named for the
+story’s <code>id</code> with <code>.tests</code> on the end. For The
+Relighting it is <code>relighting.tests</code>. It holds one file called
+<code>manifest.json</code> and one file for each stretch of the
+play-through.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;seed&quot;</span><span class="fu">:</span> <span class="dv">42</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;story&quot;</span><span class="fu">:</span> <span class="st">&quot;relighting&quot;</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;version&quot;</span><span class="fu">:</span> <span class="dv">3</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>That is the whole manifest. <code>story</code> is the story’s
+<code>id</code>. <code>version</code> is the version of the tree format,
+which is 3. <code>seed</code> fixes the story’s luck: every
+<code>one chance in</code> condition and every
+<code>select random</code> of chapter 17 falls the same way on every run
+at the same seed, so a tree that passes once passes always, until the
+story changes.</p>
+<h2 data-number="38.3" id="a-segment-and-its-cards"><span
+class="header-section-number">38.3</span> A segment and its cards</h2>
+<p>The play-through itself is in <strong>segment</strong> files. A
+segment is a run of turns with no fork in it. Its file is named for its
+identifier, and the identifier is exactly eight lowercase letters or
+digits.</p>
+<p>Here is <code>mainline.json</code>, a first segment of three
+cards.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cards&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0001&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;skip&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;opening&quot;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;take lamp&quot;</span><span class="fu">,</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0002&quot;</span><span class="fu">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;skip&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;open press&quot;</span><span class="fu">,</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0003&quot;</span><span class="fu">,</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;skip&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;mainline&quot;</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>A <strong>card</strong> is one step. There are two types. The
+<code>opening</code> card is everything the story prints before anything
+is typed: its prologue, its title and credits, and the first look at the
+first room. A tree has exactly one, and it is the first card of the
+first segment. A <code>turn</code> card is a command the player types,
+given in <code>command</code>. The opening is not a turn, so the first
+<code>turn</code> card is turn 1.</p>
+<p>Every card has an <code>id</code> of its own, again eight lowercase
+letters or digits. The identifiers mean nothing. They only have to be
+different from one another, and they must never change once written,
+because other things will come to refer to a card by its identifier.</p>
+<p><code>"skip": true</code> says that the card is played and nothing is
+checked. A card must either check something or say <code>skip</code>,
+and a card that does neither fails.</p>
+<p>The layout of the file matters. The keys of every object are in
+alphabetical order, which is why <code>cards</code> comes before
+<code>id</code> and <code>command</code> before <code>type</code>. The
+indentation is two spaces, each element of a list is on a line of its
+own, one space follows each colon, and the file ends with one newline
+after its last brace. A tree file laid out any other way is refused.</p>
+<pre class="text"><code>test: relighting.tests/ has files not in canonical form (re-save them from the Testing tab):
+  mainline.json</code></pre>
+<h2 data-number="38.4" id="reading-what-the-story-says"><span
+class="header-section-number">38.4</span> Reading what the story
+says</h2>
+<p>To write an expectation you need the story’s exact words. Run the
+tree with two options and it will give them to you.</p>
+<pre class="shell"><code>sharpee test . --json --capture-output &gt; records.txt</code></pre>
+<p>The file <code>records.txt</code> now holds one JSON record to a
+line. The report of derived tests that every run ends with still prints
+in the terminal, and you can pass over it here. The records of type
+<code>command-result</code> are the cards, and each carries the card’s
+output in <code>actualOutput</code>.</p>
+<pre class="text"><code>{&quot;schemaVersion&quot;:2,&quot;seq&quot;:3,&quot;elapsedMs&quot;:80,&quot;type&quot;:&quot;command-result&quot;,&quot;file&quot;:&quot;mainline&quot;,&quot;line&quot;:0,&quot;input&quot;:&quot;take lamp&quot;,&quot;passed&quot;:true,&quot;expectedFailure&quot;:false,&quot;skipped&quot;:true,&quot;cardId&quot;:&quot;card0002&quot;,&quot;actualOutput&quot;:&quot;You take it.&quot;,&quot;turn&quot;:1,&quot;assertionResults&quot;:[{&quot;description&quot;:&quot;[SKIP]&quot;,&quot;passed&quot;:true,&quot;message&quot;:&quot;Skipped&quot;}]}</code></pre>
+<p>So the working method is this. Add the next few commands as skip
+cards. Run the tree, and read what each one printed. Then replace each
+<code>skip</code> with the part of that output you care about.</p>
+<h2 data-number="38.5" id="what-a-card-can-assert"><span
+class="header-section-number">38.5</span> What a card can assert</h2>
+<p>A card’s expectations go in <code>assertions</code>. Here are the
+last two cards again, with their <code>skip</code> lines replaced.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;exact&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;You take it.&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;take lamp&quot;</span><span class="fu">,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0002&quot;</span><span class="fu">,</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="er">,</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;contains&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;In the oak press you see a library key.&quot;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;states&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;the oak press is open&quot;</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;open press&quot;</span><span class="fu">,</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0003&quot;</span><span class="fu">,</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span></code></pre></div>
+<p>There are six kinds of assertion, and a card may carry several.</p>
+<ul>
+<li><code>contains</code> is a list of pieces of text, each of which
+must appear in the turn’s output. This is the one you will use
+most.</li>
+<li><code>notContains</code> is a list of pieces of text, none of which
+may appear.</li>
+<li><code>exact</code> is the turn’s whole output, line by line. Use it
+sparingly. It breaks when any sentence of the turn is reworded,
+including sentences the card was not about.</li>
+<li><code>states</code> is a list of conditions, in the same words a
+<code>while</code> or a <code>when</code> uses, each of which must hold
+after the turn: <code>the oak press is open</code>,
+<code>Tamsin Vey is bound</code>, <code>the story is awake</code>.</li>
+<li><code>events</code> is a list of event names, each of which the turn
+must have raised: <code>media.sound.play</code>, or the story’s own
+<code>relighting-working-learned</code>.</li>
+<li><code>channels</code> is a list of channel claims. Each names a
+channel by <code>id</code> and gives either <code>is</code>, the
+channel’s exact value, or <code>contains</code>, a list of pieces its
+value must include.</li>
+</ul>
+<p>The opening card conventionally checks the story’s title, which
+travels on a platform channel called <code>info.title</code>.</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;channels&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>          <span class="fu">{</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;info.title&quot;</span><span class="fu">,</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;is&quot;</span><span class="fu">:</span> <span class="st">&quot;The Relighting&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>          <span class="fu">}</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0001&quot;</span><span class="fu">,</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;opening&quot;</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="er">,</span></span></code></pre></div>
+<p>With all three cards changed, <code>mainline.json</code> is this.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cards&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;channels&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>          <span class="fu">{</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;info.title&quot;</span><span class="fu">,</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;is&quot;</span><span class="fu">:</span> <span class="st">&quot;The Relighting&quot;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>          <span class="fu">}</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0001&quot;</span><span class="fu">,</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;opening&quot;</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;exact&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;You take it.&quot;</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;take lamp&quot;</span><span class="fu">,</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0002&quot;</span><span class="fu">,</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;contains&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;In the oak press you see a library key.&quot;</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;states&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;the oak press is open&quot;</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;open press&quot;</span><span class="fu">,</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0003&quot;</span><span class="fu">,</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;mainline&quot;</span></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Prefer <code>contains</code> and <code>states</code> together. The
+text says what the player was told, and the state says what became true.
+A turn that prints the right sentence and changes nothing is one of the
+commonest defects in interactive fiction, and only a state assertion
+catches it.</p>
+<p>The last two kinds are how chapters 36 and 37 are proved without a
+browser. The card that sparks the lamp asserts the event
+<code>media.sound.play</code>, and the card that reads the spark page
+asserts that the channel <code>workings</code> contains
+<code>spark: wakes a flame</code>.</p>
+<h2 data-number="38.6" id="running-the-tree"><span
+class="header-section-number">38.6</span> Running the tree</h2>
+<pre class="shell"><code>sharpee test .</code></pre>
+<pre class="text"><code>Loading story from: /home/ansel/relighting
+Test tree: relighting.tests/ (seed 42, 1 line(s))
+
+✓ opening-lodge
+3 cards passing, 4 assertions passing</code></pre>
+<p>The first line names the folder the story was loaded from, as
+<code>play</code> does, and yours will name your own. Every report
+begins with it, and the reports quoted from here on start at the line
+after it.</p>
+<p>The command exits with 0 when everything passes and 1 when anything
+fails. Here is the same tree after the <code>take lamp</code> card’s
+<code>exact</code> list was replaced by
+<code>"contains": ["Taken."]</code>, words the story does not say.</p>
+<pre class="text"><code>Test tree: relighting.tests/ (seed 42, 1 line(s))
+
+✗ opening-lodge — take lamp: Output does not contain &quot;Taken.&quot;
+    You take it.
+2 cards passing, 3 assertions passing, 1 card failing, 1 assertion failing</code></pre>
+<p>A failure names the line, the command, and the assertion that failed,
+and prints what the story said in its place. Then you decide which of
+the two is wrong. If the story is, mend the story. If the story’s new
+words are what you now want, mend the card.</p>
+<h2 data-number="38.7" id="a-fork"><span
+class="header-section-number">38.7</span> A fork</h2>
+<p>So far the tree is one line. A <strong>fork</strong> is a card with
+more than one continuation, and it is where a tree earns its name.</p>
+<p>A fork is always the last card of its segment. Each way on from it is
+a segment of its own, which names the segment it grows from in
+<code>parent</code> and takes a number in <code>ordinal</code>. The
+continuation of the same line is ordinal 0. The alternatives are 1, 2, 3
+and so on.</p>
+<p>After <code>open press</code>, the main line goes on to take the
+key.</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cards&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;contains&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;You take the library key from the oak press.&quot;</span><span class="ot">,</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;Hobb closes the oak press.&quot;</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;states&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;the oak press is closed&quot;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;take key&quot;</span><span class="fu">,</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0004&quot;</span><span class="fu">,</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;onward01&quot;</span><span class="fu">,</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ordinal&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;parent&quot;</span><span class="fu">:</span> <span class="st">&quot;mainline&quot;</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>A second segment tries something else from the same position.</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cards&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;contains&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;You find you cannot.&quot;</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;eat cake&quot;</span><span class="fu">,</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0005&quot;</span><span class="fu">,</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;notContains&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;library key&quot;</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;inventory&quot;</span><span class="fu">,</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;card0006&quot;</span><span class="fu">,</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;thecake1&quot;</span><span class="fu">,</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ordinal&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;parent&quot;</span><span class="fu">:</span> <span class="st">&quot;mainline&quot;</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<pre class="text"><code>Test tree: relighting.tests/ (seed 42, 2 line(s))
+
+✓ opening-lodge
+✓ lodge · eat cake
+6 cards passing, 9 assertions passing
+5 commands (5 authored + 0 replayed), 1 restored at a fork</code></pre>
+<p>The tree now has two <strong>lines</strong>. A line is one path from
+the opening to an end, and the report names each by the room it starts
+in and its first command. The main line is named for the opening.</p>
+<p>The second line did not replay the first three cards. The runner
+saved the story at the fork and restored it, so a deep tree with many
+branches costs little more to run than its cards.</p>
+<p>The second card of the branch is worth a look.
+<code>inventory</code>, asserting that the key is not there, proves that
+this line really did start from before the key was taken. A branch is a
+different world from its siblings, and nothing done in one is seen in
+another.</p>
+<h2 data-number="38.8" id="an-ending"><span
+class="header-section-number">38.8</span> An ending</h2>
+<p>A turn that ends the story says so on its card, with the ending’s key
+from chapter 18.</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;assertions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;contains&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;The two lights hold one another.&quot;</span><span class="ot">,</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;You have risen to the rank of a Lamplighter.&quot;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;events&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>          <span class="st">&quot;media.image.hide&quot;</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">},</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;spark beacon&quot;</span><span class="fu">,</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;ending&quot;</span><span class="fu">:</span> <span class="st">&quot;beacon-lit&quot;</span><span class="fu">,</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;bjhmo3xt&quot;</span><span class="fu">,</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;turn&quot;</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span></code></pre></div>
+<p>A card with <code>ending</code> asserts that the story ended on that
+turn, and in that ending. It is the last card of its line.</p>
+<h2 data-number="38.9" id="the-whole-tree-and-what-it-covers"><span
+class="header-section-number">38.9</span> The whole tree, and what it
+covers</h2>
+<p>The companion folder <code>chapter-38</code> holds the story as
+chapter 37 left it and the tree this book has been running since chapter
+5, grown to its full size: 182 cards on seven lines. The main line is
+the winning walk. The six branches are the bargain refused and reopened,
+Tamsin Vey at the grille, the pry bar heard from the Library, the
+cracked lens and its ending, the parapet and its ending, and Hobb’s
+trust.</p>
+<pre class="text"><code>Test tree: relighting.tests/ (seed 42, 7 line(s))
+
+✓ opening-lodge
+✓ refectory · no
+✓ library · east
+✓ library · wait
+✓ undercroft · put lens in hoist
+✓ undercroft · drop lens
+✓ undercroft · up
+182 cards passing, 275 assertions passing
+181 commands (181 authored + 0 replayed), 6 restored at a fork</code></pre>
+<p>After the cards, the report goes on at length, and the rest of it is
+not about your tree. <code>sharpee test</code> also reads the story
+itself, finds every clause and every branch inside a clause, and tries
+to write a small test for each one unaided: arrange the world so that
+the clause applies, type the command, and see that the clause’s effects
+happened. These are the <strong>derived tests</strong>. A <code>✓</code>
+is a clause that was exercised that way. A <code>◌</code> is one the
+runner could not arrange, with its reason. A <code>✗</code> is a clause
+whose effects did not happen, and it fails the run as a card does.</p>
+<p>The report closes with three counts. Under the first it lists every
+branch not exercised, 81 lines here, which this page leaves out.</p>
+<pre class="text"><code>Branches exercised: 53 / 134</code></pre>
+<pre class="text"><code>Endings reached: 2 / 3
+Not reached (1):
+  relighting.story:314 · night-falls (lose)
+Rooms entered: 13 / 13</code></pre>
+<p>Read the counts as a list of what nobody has checked. The Relighting
+has three endings and the tree reaches two. The third,
+<code>night-falls</code>, needs a hundred and sixty turns of doing
+nothing, and it has been left out on purpose so that this report has
+something to show you. In your own story, an ending in that list is an
+ending no test has ever seen.</p>
+<h2 data-number="38.10" id="build-and-try-it-34"><span
+class="header-section-number">38.10</span> Build and try it</h2>
+<p>Make the folder <code>relighting.tests</code> beside your story.
+Write the manifest into it, and <code>mainline.json</code> with its
+three skip cards, with their keys in alphabetical order and two spaces
+of indentation for each level. Run the command of “Reading what the
+story says”. Then replace <code>mainline.json</code> with the whole file
+printed under “What a card can assert”, and run
+<code>sharpee test .</code>. Write the other two segments,
+<code>onward01.json</code> and <code>thecake1.json</code>, and run it
+again. The second and third segments go in together, because a segment
+that continues a line is refused until a branch leaves the card it
+continues from. Then break something on purpose. In the story, find the
+phrase <code>cake-watched</code>, which the seed cake’s refusal prints,
+and change its last sentence from “You find you cannot.” to “You decide
+against it.” Run the tree and read the failure. Then put the sentence
+back and run the tree again.</p>
+<p>When you have seen a failure and mended it, replace your
+<code>relighting.tests</code> folder with the
+<code>relighting.tests</code> folder from the companion folder
+<code>chapter-38</code>, and run the full tree. Your story stays as it
+is.</p>
+<pre class="shell"><code>sharpee test .</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: the tree runner</strong> · manifest
+<code>seed</code>, card <code>states</code>, platform channel
+<code>info.title</code></p>
+<p>The runner loads the compiled story exactly as
+<code>sharpee play</code> does, sets the story’s random seed from the
+manifest, and feeds each card’s command to the real parser and the real
+turn loop. A <code>contains</code> assertion reads the turn’s prose. A
+<code>states</code> assertion is compiled as a Chord condition and
+evaluated against the world after the turn. An <code>events</code>
+assertion reads the turn’s event list, and a <code>channels</code>
+assertion reads the values the turn would have sent to a page. Nothing
+is simulated, which is why a tree that passes is evidence about the
+story a player will get.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: test commands and scripts</strong></p>
+<p>Inform 10 lets a story name a list of commands in its source, as in
+<code>Test balloon with "get balloon / blow balloon / drop balloon".</code>,
+and typing TEST BALLOON in the running story plays them. <em>Writing
+with Inform</em> adds that “The Skein and Transcript tools of the Inform
+application are provided for exactly this purpose”. TADS 3 has input
+scripts: its System Manual says “The Interpreter provides”script” files
+for this purpose”, read at start with the interpreter’s <code>-i</code>
+option, and a game built on the standard library offers RECORD and
+REPLAY commands. Each of these replays commands. What a Chord card adds
+is the expectation stored beside the command, and the fork.</p>
+</div>
+<h2 data-number="38.11" id="what-you-have-so-far-37"><span
+class="header-section-number">38.11</span> What you have so far</h2>
+<p>You can write a play-through down as cards, say on each card what the
+story must print and what must have become true, fork it wherever the
+player has a choice worth checking, and run the whole thing in a few
+seconds after every change.</p>
+<p>A tree proves what happens along the paths you recorded. It does not,
+by itself, say which of those results you are promising to keep. The
+next chapter is about writing the promises down.</p>
+<nav class="book-nav-bottom"><a class="prev" href="-part-viii.-proving-and-shipping.html">← Part VIII. Proving and shipping</a><a class="next" href="39-claims.html">Claims →</a></nav>
+</body>
+</html>

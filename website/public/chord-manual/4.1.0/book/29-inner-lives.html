@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Inner lives</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details open><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li class="active"><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="30-principles.html" accesskey="n" rel="next">Principles</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="28-conversations-with-a-shape.html" accesskey="p" rel="previous">Conversations with a shape</a>
+</span>
+</div>
+</nav>
+<h1 data-number="29" id="inner-lives"><span
+class="header-section-number">29</span> Inner lives</h1>
+<!-- PENDING (Phase 4, 2026-11-16): not taught here, because it could not be
+     shown working on the in-repo CLI (GH #777): reading a platform mood after
+     `change mood to` it, personality words and intensities, `thinks` and
+     `define fact`, `influence` and `resists`, `cognitive-profile` and `define
+     profile`, and the recency words. -->
+<p>Hobb and Tamsin Vey can now say a great deal, and what they say
+depends on things: whether the bell is tolling, whether a bargain is
+struck, what has been asked before. All of that is the state of the
+world. None of it is the state of the person.</p>
+<p>A person in Chord has an inside as well, and the language calls it
+the <strong>character model</strong>. You have already written one line
+of it, the <code>mood calm</code> that chapter 27 needed. This chapter
+covers the three parts of the model whose effects you can see and use in
+a story: a mood, feelings toward other people, and things known.</p>
+<p>Each works the same way. A line in the person’s block says how they
+begin. A statement changes it. A condition reads it, and anything that
+takes a condition can then depend on it: a topic row, a manner row, a
+clause, a goal.</p>
+<h2 data-number="29.1" id="mood"><span
+class="header-section-number">29.1</span> Mood</h2>
+<pre class="chord"><code>create Hobb
+  a person, proper
+  pronouns he
+  in the Lodge
+  carries the hush page
+  mood calm</code></pre>
+<p>The <code>mood</code> line gives the mood a person starts in. The
+platform has thirteen mood words: <code>calm</code>,
+<code>content</code>, <code>cheerful</code>, <code>nervous</code>,
+<code>anxious</code>, <code>panicked</code>, <code>angry</code>,
+<code>furious</code>, <code>sad</code>, <code>grieving</code>,
+<code>suspicious</code>, <code>confused</code> and
+<code>resigned</code>.</p>
+<p>A mood is read with <code>is</code>, as a state is.</p>
+<pre class="chord"><code>define manner for Hobb
+  when Hobb is calm:
+    beat &quot;He turns the kettle a quarter round on its hook, to no purpose.&quot;
+    beat &quot;He looks at the blue flame on the sill before he answers.&quot;
+    beat &quot;He takes his time, of which he has had a great deal.&quot;
+  when Hobb is rattled:
+    beat &quot;He takes one hand off one ear to hear you, and puts it back.&quot;
+end manner</code></pre>
+<p>In chapter 27 these two rows asked about the bell. They now ask about
+Hobb, which is what a manner should be about. The bell is the reason,
+and the reason is written once, somewhere else.</p>
+<h3 data-number="29.1.1" id="a-mood-of-your-own"><span
+class="header-section-number">29.1.1</span> A mood of your own</h3>
+<p><code>rattled</code> is not one of the thirteen. A story may define a
+mood by saying which platform mood it resembles.</p>
+<pre class="chord"><code>define mood rattled like nervous, but darker</code></pre>
+<p>The line names the new mood and the platform mood it is
+<code>like</code>. It may end with <code>, but</code> and one of four
+words that shift it: <code>restless</code>, <code>stiller</code>,
+<code>darker</code> or <code>brighter</code>. A defined mood is used
+wherever a platform mood is: on a <code>mood</code> line, after
+<code>change mood to</code>, and in a condition.</p>
+<h3 data-number="29.1.2" id="changing-a-mood"><span
+class="header-section-number">29.1.2</span> Changing a mood</h3>
+<pre class="chord"><code>on every turn while the tower bell is tolling
+  change mood to rattled
+end on</code></pre>
+<p><code>change mood to</code> has no person in it. It changes the mood
+of the person whose block or table the statement stands in. This clause
+stands in Hobb’s own block, so it is Hobb who is rattled. Written in one
+of Tamsin’s topic rows it would change Tamsin’s mood. Always write it in
+a person’s block or in one of that person’s tables, where it has someone
+to belong to.</p>
+<pre class="text"><code>&gt; ask hobb about the bell
+He takes one hand off one ear to hear you, and puts it back.
+
+&quot;It&#39;ll go on till it&#39;s told,&quot; Hobb shouts. &quot;There&#39;s a word for the telling. I kept it by, in a newspaper, in case.&quot;
+
+Hobb gives the hush page to Ansel.
+
+The bell tolls again, and the rooks go up off the roof.</code></pre>
+<p>A mood does not stay changed. Left alone, a person settles back to
+the mood they began in over a few turns. That is why Hobb’s clause runs
+on every turn the bell tolls: it holds him rattled for as long as there
+is something to be rattled by. Hush the bell and he settles. For the
+first few turns afterwards his answers come with no sentence of manner
+at all, and then he is calm again and turning his kettle.</p>
+<p>This is worth designing around. A mood is the right tool for how
+someone is taking the present moment. For a change that should last, use
+a feeling, or a state.</p>
+<h2 data-number="29.2" id="feelings"><span
+class="header-section-number">29.2</span> Feelings</h2>
+<p>A person may feel something toward another person, or toward any
+thing or place in the story.</p>
+<pre class="chord"><code>feels wary of Ansel</code></pre>
+<p>Hobb’s block has that line, and so has Tamsin Vey’s, with a
+<code>mood suspicious</code> above it.</p>
+<p>There are eight words, and they run from worst to best:
+<code>despises</code>, <code>hates</code>, <code>dislikes</code>,
+<code>wary of</code>, <code>neutral</code>, <code>likes</code>,
+<code>trusts</code> and <code>devoted to</code>. Two of them end in a
+preposition. After the other six, write <code>toward</code> before the
+name: <code>feels trusts toward Ansel</code>.</p>
+<p>A feeling is read with the same words.</p>
+<pre class="chord"><code>about &quot;last night&quot;, &quot;that night&quot;, &quot;master&quot;:
+  refuse when Hobb feels wary of Ansel: hobb-not-to-strangers
+  phrase hobb-on-last-night when dimming was discussed</code></pre>
+<p>Hobb’s best story now has two locks on it. The player must have asked
+about the Dimming, as before, and Hobb must not be wary of the person
+asking.</p>
+<pre class="text"><code>&gt; ask hobb about last night
+Hobb looks at you for a while, narrowly, as a man looks at small print. &quot;That&#39;s not a thing I tell to people I can&#39;t see,&quot; he says.</code></pre>
+<p>The refusal is the hint. Hobb has been looking for his spectacles
+since the spring, and chapter 24 made them something Ansel can mend.</p>
+<h3 data-number="29.2.1" id="changing-a-feeling"><span
+class="header-section-number">29.2.1</span> Changing a feeling</h3>
+<pre class="chord"><code>on every turn while Hobb wears the spectacles, once
+  change feeling toward Ansel to trusts
+end on</code></pre>
+<p>This clause is in Hobb’s block too.</p>
+<p><code>change feeling toward &lt;someone&gt; to &lt;word&gt;</code>
+follows the rule of <code>change mood to</code>: the feeling changed is
+that of the person whose block the statement stands in. Unlike a mood, a
+feeling stays where it is put.</p>
+<pre class="text"><code>&gt; give spectacles to hobb
+You give the spectacles to Hobb.
+
+Hobb hooks them over his ears and looks at you properly for the first time. &quot;Ansel,&quot; he says, after a while. &quot;You were always late.&quot;
+
+&gt; talk to hobb
+He turns the kettle a quarter round on its hook, to no purpose.
+
+&quot;Still here,&quot; says Hobb, of one of you.
+
+&gt; ask hobb about last night
+He looks at the blue flame on the sill before he answers.
+
+Hobb is quiet for some time. &quot;Somebody had to put the Lantern out,&quot; he says. &quot;It was guttering. The Master said a dead light was worse than none. He didn&#39;t say who.&quot; He looks at his hands.</code></pre>
+<p>Tamsin’s feeling changes in the row that strikes the bargain.</p>
+<pre class="chord"><code>define exchange the-price for Tamsin Vey
+  answer &quot;yes&quot;, &quot;agreed&quot;, &quot;done&quot;, &quot;you have my word&quot;:
+    phrase tamsin-shakes
+    change Tamsin Vey to bound
+    change feeling toward Ansel to likes
+    Tamsin Vey gives the unbind page to Ansel</code></pre>
+<p>And one of her topic rows has two answers, chosen by it.</p>
+<pre class="chord"><code>about &quot;magic&quot;, &quot;craft&quot;:
+  phrase tamsin-on-magic when Tamsin Vey feels wary of Ansel
+  phrase tamsin-on-magic-warmer when Tamsin Vey feels likes toward Ansel</code></pre>
+<pre class="text"><code>&gt; ask tamsin about magic
+&quot;My mother kept a stall by this gate. The day it went out, so did the custom. Now you tell me it&#39;s coming back, and I am to be glad.&quot; She is not, particularly.</code></pre>
+<pre class="text"><code>&gt; ask tamsin about magic
+&quot;I&#39;ll tell you what I never told the old man. The night it went out, my mother&#39;s scales would not weigh true, and she laughed. She said it was the first honest day&#39;s trade she ever did.&quot; Tamsin Vey looks at the page in your hand. &quot;Light your lamp. I would like to see if she was right.&quot;</code></pre>
+<p>The two phrases in that row carry conditions, and chapter 28 said
+that a row’s conditions must not overlap. Two different feelings toward
+the same person never do, and the compiler knows it.</p>
+<p>A state would have done this job. Tamsin already has
+<code>free</code> and <code>bound</code>, and the second phrase could
+have asked whether she is bound. The feeling is better for two reasons.
+It says what you mean, so that the row still reads correctly when a
+second way of winning her round is added. And it is a scale and not a
+switch: a story can move a person from <code>wary of</code> to
+<code>neutral</code> to <code>likes</code> in three steps, and write a
+row for each.</p>
+<h2 data-number="29.3" id="what-a-person-knows"><span
+class="header-section-number">29.3</span> What a person knows</h2>
+<pre class="chord"><code>knows the-last-night, witnessed, certain</code></pre>
+<p>A <code>knows</code> line in a person’s block says that the person
+holds a piece of knowledge when the story starts. The knowledge is a
+name of your choosing, a single hyphenated word, and it stands for the
+thing known. It does not need to be declared anywhere else.</p>
+<p>Two more words follow it. The first is how the person came by it, and
+is required: <code>witnessed</code>, <code>told</code>,
+<code>inferred</code>, <code>assumed</code> or
+<code>hallucinated</code>. The second is how sure they are:
+<code>uncertain</code>, <code>suspects</code>, <code>believes</code> or
+<code>certain</code>.</p>
+<p>A condition reads it with <code>knows</code>.</p>
+<pre class="chord"><code>phrase hobb-keeps-it when Hobb knows the-last-night</code></pre>
+<p>By itself that is a flag, and a state would serve. The value of
+naming knowledge is that the names are shared. Two people can know the
+same thing, and a row in one person’s table can ask what another person
+knows.</p>
+<h3 data-number="29.3.1" id="telling-one-another"><span
+class="header-section-number">29.3.1</span> Telling one another</h3>
+<p>Knowledge also moves. A <code>spreads</code> line says what a person
+passes on, and to whom.</p>
+<pre class="chord"><code>create Nell
+  a person, proper
+  in the Yard
+  mood calm
+  knows theft, witnessed, certain
+  spreads theft to anyone
+
+  Nell.
+
+create Tom
+  a person, proper
+  in the Yard
+  mood calm
+  spreads nothing
+
+  Tom.</code></pre>
+<p><code>spreads</code> is followed by the things spread, then
+<code>to</code> and an audience: <code>anyone</code>,
+<code>trusted</code> or <code>allied</code>. Several things are joined
+with <code>and</code>. When two people who each have a
+<code>spreads</code> line are in a room together, the platform has each
+tell the other what their line allows. Tom’s line is
+<code>spreads nothing</code>. He passes nothing on, and the line is what
+makes him someone who can be told.</p>
+<pre class="text"><code>&gt; wait
+Time passes...
+
+You hear: &quot;Nell mentions something to Tom.&quot;</code></pre>
+<p>From that turn <code>Tom knows theft</code> is true, and anything
+gated on it opens. The player, standing in the Yard, is told only that
+something was said. In another room the player would be told nothing,
+and Tom would know all the same.</p>
+<p>That is rumour, in two lines a person. A fact witnessed in the
+kitchen can reach the drawing room by way of whoever walks between them,
+and what the people there will say to the player changes as it
+arrives.</p>
+<h2 data-number="29.4" id="build-and-try-it-25"><span
+class="header-section-number">29.4</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-29</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the phrases, which the chapter did
+not print in full. To make the changes by hand instead, work from this
+list and take the rest from that file. Add the <code>define mood</code>
+line at the top of the story. Give Hobb his <code>feels</code> and
+<code>knows</code> lines and the two <code>on every turn</code> clauses,
+and change his manner rows to read his mood. Give Tamsin Vey her
+<code>mood</code> and <code>feels</code> lines, add the
+<code>change feeling</code> line to her exchange, and split her row
+about magic in two.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Ask Hobb about the Dimming and then about last night. Then find his
+spectacles, give them to him as they are, and ask again. Do this before
+you read the spark page. Hobb trusts whoever puts the spectacles on his
+nose, mended or not, and while the Hall is quiet he answers as the
+blocks above show. Once the bell has begun he is rattled, and he answers
+the same questions with one hand over an ear.</p>
+<div class="under-the-hood">
+<p><strong>Under the Hood: the character model</strong> · Story IR
+<code>character</code></p>
+<p>Every line of this chapter is recorded under one key of the person’s
+entity in the compiled IR, <code>character</code>. It holds
+<code>mood</code>, a <code>feels</code> list with one entry for each
+person or thing felt about, and a <code>knows</code> list in which each
+entry carries its source and its confidence. The goals of chapter 26 are
+in the same place. The platform builds one model for each person from
+that key when the story loads, and it is the model’s own clock that
+brings a mood back to where it began.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: feelings as relations</strong></p>
+<p>Neither manual describes a built-in model of mood or feeling. In
+Inform 10 the usual tool is a relation: a sentence declares that it
+“relates” people to people, another gives it a verb, and after that a
+sentence with the verb is a condition like any other. The TADS 3
+documentation suggests a property on the actor, tested where a response
+should depend on the character’s frame of mind. Chord’s
+<code>feels</code> is a relation of the Inform kind that the language
+already knows about, with a fixed scale of eight values where Inform’s
+would be yours to define.</p>
+</div>
+<h2 data-number="29.5" id="what-you-have-so-far-28"><span
+class="header-section-number">29.5</span> What you have so far</h2>
+<p>Hobb is rattled while the bell tolls and calm when it stops, and his
+manner follows his mood. He is wary of a stranger and trusts a returned
+student, and the difference is a pair of spectacles. Tamsin Vey warms to
+someone who has kept a bargain with her, and says so in her own way.</p>
+<nav class="book-nav-bottom"><a class="prev" href="28-conversations-with-a-shape.html">← Conversations with a shape</a><a class="next" href="30-principles.html">Principles →</a></nav>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Light, dark and the other senses</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details open><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li class="active"><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="11-regions.html" accesskey="n" rel="next">Regions</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="9-what-things-can-do-the-trait-words.html" accesskey="p" rel="previous">What things can do: the trait words</a>
+</span>
+</div>
+</nav>
+<h1 data-number="10" id="light-dark-and-the-other-senses"><span
+class="header-section-number">10</span> Light, dark and the other
+senses</h1>
+<p>The Relighting is a story about a light that has gone out, and so far
+every room in it is as bright as every other. This chapter makes one
+room dark, makes the hand lamp a lamp, and then looks briefly at what
+the player can smell and hear.</p>
+<h2 data-number="10.1" id="a-dark-room"><span
+class="header-section-number">10.1</span> A dark room</h2>
+<p>A room is lit unless you say otherwise. The word that says otherwise
+is <code>dark</code>, and it goes on the room’s header line after the
+kind.</p>
+<pre class="chord"><code>create the Undercroft, a room, dark
+
+  Low vaults on squat pillars, running off under the whole of the hall.
+  The air is cold and smells of stone. The steps go back up.</code></pre>
+<p><code>dark</code> is a trait word for rooms only. In a dark room the
+player cannot see. The room’s description is not shown, the things in it
+are not listed, and nothing there can be examined or taken, because as
+far as the player can tell nothing is there.</p>
+<pre class="text"><code>&gt; down
+It is pitch dark. You are likely to be eaten by a grue.
+
+&gt; look
+It&#39;s pitch dark, and you can&#39;t see a thing.
+
+&gt; examine crate
+You can&#39;t see any such thing.
+
+&gt; up
+Cloister
+A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.</code></pre>
+<p>Notice three things. The player was allowed to walk into the dark,
+and was allowed to walk out of it again. The exits of a dark room still
+work, so a player who blunders in is never trapped. And the first line
+the player read came from another story entirely.</p>
+<p>The grue is the platform’s stock line for entering a dark room, kept
+in honour of the games that invented this kind of puzzle. It has no
+place in Lanternhall, where the only thing in the dark is a crate.
+Chapter 22 shows how to replace any of the platform’s messages with your
+own, and this is the first one The Relighting replaces. Until then,
+leave it. Knowing which lines in your story are not yours is worth a
+little embarrassment.</p>
+<h2 data-number="10.2" id="a-light-to-carry"><span
+class="header-section-number">10.2</span> A light to carry</h2>
+<p>A thing gives light if it is a <code>light-source</code>, and you say
+how it begins.</p>
+<pre class="chord"><code>create the hand lamp
+  a thing, light-source, starts unlit
+  in the Lodge
+
+  A tin hand lamp with a wire handle. Its wick is dry and its glass is
+  clean, which is Hobb all over.</code></pre>
+<p><code>starts lit</code> and <code>starts unlit</code> are the two
+starting states, and like every starting state they need their trait
+word. A thing that is not a <code>light-source</code> cannot start
+lit:</p>
+<pre class="text"><code>relighting.story:259:12 error [analysis.starts-state-pairing] `starts lit` requires `light-source` composed on this entity.</code></pre>
+<p>A light source that is lit lights the room it is in. It does so
+whether the player is holding it or has put it down, and it goes on
+doing so if the player leaves and comes back.</p>
+<pre class="text"><code>&gt; light lamp
+You light the hand lamp.</code></pre>
+<pre class="text"><code>&gt; down
+Undercroft
+Low vaults on squat pillars, running off under the whole of the hall. The air is cold and smells of stone. The steps go back up.
+
+You can see a crate here.</code></pre>
+<p>The player lights and puts out a light source with the ordinary
+verbs, and the platform notices when doing so changes what can be
+seen.</p>
+<pre class="text"><code>&gt; extinguish lamp
+You put out the hand lamp, and darkness closes in.
+
+&gt; look
+It&#39;s pitch dark, and you can&#39;t see a thing.
+
+&gt; light lamp
+You light the hand lamp, and the darkness draws back.
+
+Undercroft
+Low vaults on squat pillars, running off under the whole of the hall. The air is cold and smells of stone. The steps go back up.
+
+You can see a crate here.</code></pre>
+<p>Only a light source can be lit. Ansel’s taper is a plain thing, and
+the story says so:</p>
+<pre class="text"><code>&gt; light taper
+The wax taper isn&#39;t something you can light.</code></pre>
+<h2 data-number="10.3" id="what-this-does-to-the-story"><span
+class="header-section-number">10.3</span> What this does to the
+story</h2>
+<p>With two words added, The Relighting has changed shape. The lens is
+in a crate in the Undercroft, the Undercroft is dark, and the lamp is in
+the Lodge. A player who goes straight down the steps learns that they
+need a light, and has to go back for one. The world now has an order in
+which things must be done, and you wrote no rule to enforce it. The
+darkness enforces it.</p>
+<p>There is one thing wrong, and it is worth seeing clearly. The lamp
+lights when the player types <code>light lamp</code>. In the finished
+story, lighting that lamp is the first act of magic anyone has performed
+in thirty years, and it should not be available for the asking. For now
+it is. The standard action that lights a light source does not know that
+this one is special. Teaching it takes a requirement from chapter 15 and
+a new verb from chapter 25, and until then the lamp is merely a
+lamp.</p>
+<h2 data-number="10.4" id="seeing-in-the-dark"><span
+class="header-section-number">10.4</span> Seeing in the dark</h2>
+<p>A person may be given <strong><code>night-vision</code></strong>,
+which lets them see in a dark room as though it were lit. It is a trait
+word for people only.</p>
+<pre class="chord"><code>create Ansel
+  a person, proper, night-vision
+  playable
+  starts in the Cellar</code></pre>
+<p>For a person who is the player, the dark simply stops mattering.
+Ansel has no such gift. The word is more often useful on someone else,
+in a story where a character must find their way about a dark house on
+their own turns, as Part V describes.</p>
+<h2 data-number="10.5" id="smell-and-sound"><span
+class="header-section-number">10.5</span> Smell and sound</h2>
+<p>The player has other senses, and two trait words speak to them.</p>
+<p>A thing that is <strong><code>smelly</code></strong> can be smelled
+from anywhere in its room, and a thing that is
+<strong><code>loud</code></strong> can be heard. What makes these two
+worth having is that they pass through a closed container. Here is a tin
+with three things in it, from another story.</p>
+<pre class="chord"><code>create the tin
+  a container, openable, starts closed
+  in the Den
+
+  A tin.
+
+create the cheese
+  a thing, smelly
+  in the tin
+
+  A ripe cheese.
+
+create the clock
+  a thing, loud
+  in the tin
+
+  A clock.
+
+create the sock
+  a thing
+  in the tin
+
+  A sock.</code></pre>
+<p>With the tin shut, the player can see none of the three, and can
+detect two.</p>
+<pre class="text"><code>&gt; smell
+You smell a cheese.
+
+&gt; listen
+You hear a clock.
+
+&gt; listen to tin
+You hear faint sounds from inside the tin.</code></pre>
+<p>This is a way of telling the player that a closed thing is worth
+opening without saying so. The sock, which is neither smelly nor loud,
+gives no sign of itself until the tin is open.</p>
+<p>Sound goes much further than this. A story can define sounds of its
+own, play them, and have people in the story react to hearing them, and
+The Relighting does all three with its tower bell. Those need clauses
+from Part III and are taught in chapter 36.</p>
+<h2 data-number="10.6" id="build-and-try-it-6"><span
+class="header-section-number">10.6</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-10</code> over your own file. It is the story with this
+chapter’s changes made. To make the changes by hand instead, work from
+this list and take the rest from that file: add <code>dark</code> to the
+Undercroft, make the hand lamp a light source, and let the Cloister’s
+description warn of the dark at the bottom of the steps.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Walk down without the lamp, then fetch it, light it and walk down
+with it. Then try leaving the lit lamp in the Undercroft and coming
+back.</p>
+<pre class="text"><code>&gt; drop lamp
+Dropped.
+
+&gt; up
+Cloister
+A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.
+
+&gt; down
+Undercroft
+Low vaults on squat pillars, running off under the whole of the hall. The air is cold and smells of stone. The steps go back up.
+
+You can see a crate and a hand lamp here.</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: perception</strong> ·
+<code>if.event.perception.blocked</code></p>
+<p>Darkness is not handled by the actions. The <code>looking</code>
+action describes the Undercroft in exactly the same way whether or not
+there is light. Between the action and the player sits a perception
+step, which asks whether the player can see where they are. If they
+cannot, it replaces what the action reported with a single event saying
+that sight was blocked, and “It’s pitch dark, and you can’t see a thing”
+is how that event is worded. This is why you did not have to write a
+dark version of the room. There is only one version, and the platform
+decides whether the player gets it.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: light</strong></p>
+<p>Both systems have this model, and it will feel like home. Inform 10
+has dark rooms and lit things, and TADS 3 has a brightness on rooms and
+on light sources. Chord’s version is the simple one: a room is dark or
+it is not, a light source is lit or it is not, and one lit source in the
+room is enough. There are no degrees of brightness. The surprise for
+both kinds of author is further on, in that lighting a light source is
+an ordinary standard action that you restrict, not a rule you write from
+nothing.</p>
+</div>
+<h2 data-number="10.7" id="what-you-have-so-far-9"><span
+class="header-section-number">10.7</span> What you have so far</h2>
+<p>Lanternhall has a dark place under it and one lamp to see by, and the
+story has its first forced order of events. The next chapter steps back
+from single rooms and things to look at the map as a whole.</p>
+<nav class="book-nav-bottom"><a class="prev" href="9-what-things-can-do-the-trait-words.html">← What things can do: the trait words</a><a class="next" href="11-regions.html">Regions →</a></nav>
+</body>
+</html>

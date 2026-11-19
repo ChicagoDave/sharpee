@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="David Cornelson" />
+  <title>Principles</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="styles/book.css" />
+
+<style id="book-nav-css">
+  #sitenav { display: none; }
+  body { margin: 0 0 0 20em !important; max-width: none !important; padding: 1.5rem 2rem 3rem !important; }
+  #book-nav { position: fixed; top: 0; left: 0; width: 20em; height: 100vh; overflow-y: auto;
+    box-sizing: border-box; padding: 1rem 1.1rem; background: #f4f1e8;
+    border-right: 1px solid #d8d2c2; font-size: 0.86rem; line-height: 1.4; }
+  #book-nav a { text-decoration: none; color: #3a352c; }
+  #book-nav a:hover { text-decoration: underline; }
+  #book-nav .book-nav-home { display: block; font-weight: 700; font-size: 1rem;
+    margin-bottom: .8rem; color: #1c1a15; }
+  #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
+  #book-nav li { margin: .18rem 0; }
+  #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
+  #book-nav details { margin: .25rem 0; }
+  #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
+  #book-nav summary a { color: inherit; }
+  .book-nav-bottom { display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d2c2; }
+  .book-nav-bottom .next { margin-left: auto; text-align: right; }
+  @media (max-width: 820px) {
+    body { margin-left: 0 !important; }
+    #book-nav { position: static; width: auto; height: auto;
+      border-right: none; border-bottom: 1px solid #d8d2c2; }
+  }
+</style>
+</head>
+<body>
+<nav id="book-nav"><a class="book-nav-home" href="index.html">The Chord Manual</a><ul class="book-nav-front"><li><a href="-preface.html">Preface</a></li><li><a href="-how-to-read-this-book.html">How to read this book</a></li></ul><details><summary>Part I. A first story</summary><ul><li class="book-nav-opener"><a href="-part-i.-a-first-story.html">Overview</a></li><li><a href="1-the-shape-of-a-story-file.html">The shape of a story file</a></li><li><a href="2-the-story-header.html">The story header</a></li><li><a href="3-the-player-and-the-start.html">The player and the start</a></li><li><a href="4-build-play-read-an-error.html">Build, play, read an error</a></li></ul></details><details><summary>Part II. The world</summary><ul><li class="book-nav-opener"><a href="-part-ii.-the-world.html">Overview</a></li><li><a href="5-rooms-and-exits.html">Rooms and exits</a></li><li><a href="6-things.html">Things</a></li><li><a href="7-containers-and-supporters.html">Containers and supporters</a></li><li><a href="8-doors-locks-and-keys.html">Doors, locks and keys</a></li><li><a href="9-what-things-can-do-the-trait-words.html">What things can do: the trait words</a></li><li><a href="10-light-dark-and-the-other-senses.html">Light, dark and the other senses</a></li><li><a href="11-regions.html">Regions</a></li><li><a href="12-ways-that-are-closed-hidden-or-strange.html">Ways that are closed, hidden or strange</a></li></ul></details><details><summary>Part III. Making things happen</summary><ul><li class="book-nav-opener"><a href="-part-iii.-making-things-happen.html">Overview</a></li><li><a href="13-states.html">States</a></li><li><a href="14-reacting-to-the-player-on-and-after.html">Reacting to the player: on and after</a></li><li><a href="15-what-a-clause-can-say-and-do.html">What a clause can say and do</a></li><li><a href="16-conditions.html">Conditions</a></li><li><a href="17-choosing-between-outcomes.html">Choosing between outcomes</a></li><li><a href="18-counting-scoring-and-ending.html">Counting, scoring and ending</a></li><li><a href="19-time.html">Time</a></li></ul></details><details><summary>Part IV. Words</summary><ul><li class="book-nav-opener"><a href="-part-iv.-words.html">Overview</a></li><li><a href="20-phrases.html">Phrases</a></li><li><a href="21-a-things-own-words.html">A thing’s own words</a></li><li><a href="22-changing-the-standard-messages.html">Changing the standard messages</a></li><li><a href="23-new-verbs.html">New verbs</a></li><li><a href="24-new-kinds-of-thing.html">New kinds of thing</a></li><li><a href="25-bending-the-standard-grammar.html">Bending the standard grammar</a></li></ul></details><details open><summary>Part V. People</summary><ul><li class="book-nav-opener"><a href="-part-v.-people.html">Overview</a></li><li><a href="26-people-who-act.html">People who act</a></li><li><a href="27-asking-and-telling.html">Asking and telling</a></li><li><a href="28-conversations-with-a-shape.html">Conversations with a shape</a></li><li><a href="29-inner-lives.html">Inner lives</a></li><li class="active"><a href="30-principles.html">Principles</a></li><li><a href="31-more-than-one-protagonist.html">More than one protagonist</a></li></ul></details><details><summary>Part VI. Larger machinery</summary><ul><li class="book-nav-opener"><a href="-part-vi.-larger-machinery.html">Overview</a></li><li><a href="32-machines.html">Machines</a></li><li><a href="33-vehicles.html">Vehicles</a></li><li><a href="34-open-water-and-open-ground.html">Open water and open ground</a></li><li><a href="35-the-opt-in-systems.html">The opt-in systems</a></li></ul></details><details><summary>Part VII. Presentation</summary><ul><li class="book-nav-opener"><a href="-part-vii.-presentation.html">Overview</a></li><li><a href="36-sound-music-and-pictures.html">Sound, music and pictures</a></li><li><a href="37-the-page-the-player-sees.html">The page the player sees</a></li></ul></details><details><summary>Part VIII. Proving and shipping</summary><ul><li class="book-nav-opener"><a href="-part-viii.-proving-and-shipping.html">Overview</a></li><li><a href="38-test-trees.html">Test trees</a></li><li><a href="39-claims.html">Claims</a></li><li><a href="40-publishing.html">Publishing</a></li></ul></details><details><summary>Appendices</summary><ul><li><a href="-appendix-a.-the-grammar.html">Appendix A. The grammar</a></li><li><a href="-appendix-b.-kinds-trait-words-state-words-and-their-pairings.html">Appendix B. Kinds, trait words, state words and their pairings</a></li><li><a href="-appendix-c.-the-standard-actions-and-their-gerunds.html">Appendix C. The standard actions and their gerunds</a></li><li><a href="-appendix-d.-statements-and-conditions.html">Appendix D. Statements and conditions</a></li><li><a href="-appendix-e.-character-vocabulary.html">Appendix E. Character vocabulary</a></li><li><a href="-appendix-f.-message-aliases.html">Appendix F. Message aliases</a></li><li><a href="-appendix-g.-removed-forms-and-their-replacements.html">Appendix G. Removed forms and their replacements</a></li></ul></details></nav>
+<div class="cover-page"><img src="cover.png" alt="Front cover" /></div>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">The Chord Manual</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">The Chord Manual</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="31-more-than-one-protagonist.html" accesskey="n" rel="next">More than one protagonist</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="29-inner-lives.html" accesskey="p" rel="previous">Inner lives</a>
+</span>
+</div>
+</nav>
+<h1 data-number="30" id="principles"><span
+class="header-section-number">30</span> Principles</h1>
+<!-- PENDING (Phase 4, 2026-11-16): this chapter teaches what was shown
+     working: a confided fact, `never betrays a confidence` and its `except`,
+     `answers honestly`, and `temperament`. Not taught, because no observable
+     effect was found (GH #777): the other six `never` acts, `protects`,
+     `honor … before` and `define honor`, `burdened by`, and `define topic … as`.
+     `code` and `define code`, `define temperament` and `temperament … while`
+     compile and were not run. -->
+<p>In the last chapter Hobb kept one story back from a stranger. The row
+that kept it back said so in as many words.</p>
+<pre class="chord"><code>about &quot;last night&quot;, &quot;that night&quot;, &quot;master&quot;:
+  refuse when Hobb feels wary of Ansel: hobb-not-to-strangers
+  phrase hobb-on-last-night when dimming was discussed</code></pre>
+<p>That works, and it is the author deciding. The row knows that this
+question is delicate, knows which feeling matters, and has a refusal
+written for the case. A character with twenty things to keep quiet about
+needs twenty such lines, and each is a place to get the rule slightly
+different.</p>
+<p>Chord lets you say the rule once, about the person. Hobb does not
+betray a confidence. What he was told in confidence is marked as such
+where he knows it. Whether he tells is then worked out by the platform
+each time he is asked, from what he holds to and how he feels about the
+person asking. This chapter is about the lines that say what a person
+holds to.</p>
+<h2 data-number="30.1" id="something-told-in-confidence"><span
+class="header-section-number">30.1</span> Something told in
+confidence</h2>
+<p>A <code>knows</code> line may end with one more word.</p>
+<pre class="chord"><code>knows night, told, certain, confided</code></pre>
+<p><code>confided</code> says the knowledge was given in trust. It
+changes nothing by itself. A person with no principles tells a confided
+thing as readily as any other.</p>
+<p>The name matters here in a way it did not in the last chapter. The
+platform connects a fact to a topic row by name: the fact is
+<code>night</code>, and the row that speaks of it must have
+<code>night</code> as one of its spellings.</p>
+<pre class="chord"><code>about &quot;night&quot;, &quot;last night&quot;, &quot;that night&quot;, &quot;master&quot;:
+  phrase hobb-on-last-night when dimming was discussed</code></pre>
+<p>The row has lost its <code>refuse</code> line. It now says only what
+Hobb would say, and when the subject may come up at all. Whether he says
+it is no longer the row’s business.</p>
+<h2 data-number="30.2" id="a-thing-a-person-will-not-do"><span
+class="header-section-number">30.2</span> A thing a person will not
+do</h2>
+<pre class="chord"><code>never betrays a confidence</code></pre>
+<p>A <code>never</code> line goes in the person’s block. It names an act
+the person holds it wrong to commit. There are seven:
+<code>betrays a confidence</code>, <code>lies</code>,
+<code>harms</code>, <code>steals</code>, <code>breaks a promise</code>,
+<code>abandons</code> and <code>trespasses</code>. Write the act in the
+third person, as it reads after the person’s name.</p>
+<p>With that line, a question that would have Hobb reveal a confided
+thing meets his principle, and the principle wins.</p>
+<pre class="text"><code>&gt; ask hobb about last night
+Hobb gives that some thought, and gives it back.</code></pre>
+<p>Nothing in the row refused. The platform judged that answering would
+be the forbidden act, and withheld the row. What the player reads is the
+story’s line for a subject a person has nothing to say about, the one
+The Relighting overrode in chapter 27. From outside, a kept confidence
+and plain ignorance look the same, which is the point of keeping
+one.</p>
+<p>A principle may have an exception, written after a comma.</p>
+<pre class="chord"><code>never betrays a confidence, except Ansel</code></pre>
+<p>The exception names a person, or a kind of person such as
+<code>a servant</code>, or <code>anyone</code>. A person with this line
+tells Ansel and no one else.</p>
+<h2 data-number="30.3" id="what-decides-between-principles"><span
+class="header-section-number">30.3</span> What decides between
+principles</h2>
+<p>One rule and no exceptions gives a character who never tells. People
+are more interesting when two things they hold to pull against each
+other, and Chord has a word for how a person settles that.</p>
+<p>The platform recognises five forces that can move a person:
+<code>fear</code>, <code>desire</code>, <code>duty</code>,
+<code>honor</code> and <code>love</code>. A principle is a duty. A
+feeling of trust or devotion toward someone is love. When two forces
+disagree about an act, the stronger one wins, unless the person has a
+<code>temperament</code> line that ranks them.</p>
+<pre class="chord"><code>temperament love over duty</code></pre>
+<p>A temperament is one or more pairs, each
+<code>&lt;force&gt; over &lt;force&gt;</code>, joined with
+<code>and</code>. This one says that where love and duty collide, love
+decides.</p>
+<p>Here is Hobb in full.</p>
+<pre class="chord"><code>create Hobb
+  a person, proper
+  pronouns he
+  in the Lodge
+  carries the hush page
+  mood calm
+  feels wary of Ansel
+  knows night, told, certain, confided
+  never betrays a confidence
+  temperament love over duty</code></pre>
+<p>While he is wary of Ansel there is no love in the question, and duty
+is unopposed. He keeps the confidence, as above. Then the spectacles are
+given, mended or not, and the clause from the last chapter changes his
+feeling to <code>trusts</code>.</p>
+<pre class="text"><code>&gt; give spectacles to hobb
+You give the spectacles to Hobb.
+
+Hobb hooks them over his ears and looks at you properly for the first time. &quot;Ansel,&quot; he says, after a while. &quot;You were always late.&quot;
+
+&gt; ask hobb about last night
+He takes his time, of which he has had a great deal.
+
+Hobb is quiet for some time. &quot;Somebody had to put the Lantern out,&quot; he says. &quot;It was guttering. The Master said a dead light was worse than none. He didn&#39;t say who.&quot; He looks at his hands.</code></pre>
+<p>Nothing in the row changed between those two answers. The row never
+mentioned trust. Hobb told because he is a man who puts a person he
+trusts above a rule he was given, and the story said so in one line of
+his block.</p>
+<p>The puzzle is the one the last chapter had, and the player solves it
+the same way. What has changed is where the rule lives. Give Hobb a
+second confidence tomorrow, with a row of its own, and it is kept and
+given up on exactly the same terms, with nothing more to write.</p>
+<h2 data-number="30.4" id="honesty"><span
+class="header-section-number">30.4</span> Honesty</h2>
+<p>A second line of the same family pulls the other way.</p>
+<pre class="chord"><code>answers honestly</code></pre>
+<p>A person who <code>answers honestly</code> holds it a duty to answer
+what they are asked. Alone, with no <code>never</code> line, it changes
+little: such a person tells a confided thing to whoever asks.</p>
+<p>Its use is in the collision. A person with both lines has two duties,
+one forbidding the answer and one requiring it, and a temperament ranks
+forces and not two duties against each other. The platform’s answer to
+that is the human one. The person evades.</p>
+<pre class="chord"><code>create Cy
+  a person, proper
+  in the Yard
+  mood calm
+  knows secret, told, certain, confided
+  never betrays a confidence
+  answers honestly
+
+  Cy.</code></pre>
+<pre class="text"><code>&gt; ask cy about secret
+Cy says, &quot;I don&#39;t know anything about that.&quot;</code></pre>
+<p>And a feeling can close a mouth as well as open one. A person who
+<code>answers honestly</code> and has no rule against telling still
+keeps a confidence from someone they hate.</p>
+<h2 data-number="30.5" id="what-the-lines-add-up-to"><span
+class="header-section-number">30.5</span> What the lines add up to</h2>
+<p>Six people were each told the same secret in confidence, and each was
+asked for it by the player. This is what they did.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>The person’s lines</th>
+<th>Asked, they</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no principle</td>
+<td>tell</td>
+</tr>
+<tr>
+<td><code>never betrays a confidence</code></td>
+<td>keep it</td>
+</tr>
+<tr>
+<td><code>never betrays a confidence, except</code> the asker</td>
+<td>tell</td>
+</tr>
+<tr>
+<td><code>never betrays a confidence</code>,
+<code>temperament love over duty</code>, and devoted to the asker</td>
+<td>tell</td>
+</tr>
+<tr>
+<td><code>answers honestly</code></td>
+<td>tell</td>
+</tr>
+<tr>
+<td><code>answers honestly</code>, and hates the asker</td>
+<td>keep it</td>
+</tr>
+<tr>
+<td><code>never betrays a confidence</code> and
+<code>answers honestly</code></td>
+<td>evade</td>
+</tr>
+</tbody>
+</table>
+<p>Read down the table and you have a small cast: the gossip, the vault,
+the confidant, the friend, the honest witness, the enemy, and the person
+in a bind. Each is two or three lines.</p>
+<p>Principles of this kind are worth their cost when a story has several
+people and several secrets. For one secret and one keeper, the last
+chapter’s <code>refuse when</code> is shorter and says what you mean.
+The gain comes with the second secret, and with the first time you
+change a character’s mind about someone and find that everything they
+would and would not tell has moved with it.</p>
+<h2 data-number="30.6" id="build-and-try-it-26"><span
+class="header-section-number">30.6</span> Build and try it</h2>
+<p>Copy <code>relighting.story</code> from the companion folder
+<code>chapter-30</code> over your own file. It is the story with this
+chapter’s changes made, and it holds the row about Hobb’s spectacles,
+which the chapter did not print. To make the changes by hand instead,
+work from this list and take the rest from that file. Change Hobb’s
+<code>knows</code> line and add the two lines beneath it. Take the
+<code>refuse</code> line out of his row about the last night and give
+the row the spelling <code>night</code>. Add a row about his spectacles,
+so that the player has something to go on.</p>
+<pre class="shell"><code>sharpee compose relighting.story --check
+sharpee play .</code></pre>
+<p>Ask Hobb about the Dimming, then about the last night, then about his
+spectacles.</p>
+<pre class="text"><code>&gt; ask hobb about spectacles
+He turns the kettle a quarter round on its hook, to no purpose.
+
+&quot;Lost them in the spring,&quot; says Hobb. &quot;Since then a face is a face. There are things I was told that I don&#39;t tell to a face.&quot;</code></pre>
+<div class="under-the-hood">
+<p><strong>Under the Hood: the arbiter</strong> · Story IR
+<code>character.principles</code>,
+<code>character.temperaments</code></p>
+<p>The compiled IR records a person’s <code>never</code> lines under
+<code>character.principles</code> and the temperament under
+<code>character.temperaments</code>, beside the <code>knows</code> entry
+that carries the <code>confided</code> mark. When a topic row is about
+to answer, the platform checks whether any spelling of the row names a
+fact its owner holds in confidence. If one does, it weighs the forces
+for and against answering: each principle, the person’s feeling toward
+the asker, and the temperament’s ranking. A verdict to refuse or to
+evade withholds the row, and nothing in the row runs.</p>
+</div>
+<div class="from-another-system">
+<p><strong>From another system: knowledge and reticence</strong></p>
+<p>Neither manual describes a model of what a character will and will
+not reveal. The TADS 3 documentation says of its conversation system
+that the library does not use any sort of knowledge model for non-player
+characters, and suggests an <code>isActive</code> test on a topic to
+model a character’s frame of mind. That is the approach of this
+chapter’s first example, the <code>refuse when</code> on a row. Chord’s
+principles are a layer above it, in which the test is derived from lines
+about the person.</p>
+</div>
+<h2 data-number="30.7" id="what-you-have-so-far-29"><span
+class="header-section-number">30.7</span> What you have so far</h2>
+<p>Hobb keeps what he was told in confidence, from anyone he does not
+trust, because of who he is and not because a row says so. The game
+plays as it did. Its porter has become someone who could keep a second
+secret without being taught how.</p>
+<nav class="book-nav-bottom"><a class="prev" href="29-inner-lives.html">← Inner lives</a><a class="next" href="31-more-than-one-protagonist.html">More than one protagonist →</a></nav>
+</body>
+</html>
