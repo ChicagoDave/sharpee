@@ -59,7 +59,9 @@ You put on the travelling coat.
 
 A bare `wearable` thing can be worn with anything else. If two things ought to
 compete for the same place, say where each is worn, with `wearable on the`
-followed by a word of your own for the part of the body.
+followed by a word of your own for the part of the body. The Relighting has
+one coat and nothing to compete with it, so here are a hat and a cap from
+another story, which has a room called the Den:
 
 ```chord
 create the hat
@@ -199,7 +201,9 @@ that there is something to attach the consequence to. A lever, a cord, a
 handle and a drawer are all pullable things waiting for chapter 14.
 
 A pushable thing has one ability that needs no further writing. It can be
-pushed from one room to another, if you say between which rooms.
+pushed from one room to another, if you say between which rooms. Nothing in
+The Relighting travels this way, so here is a trolley from the same other
+story, whose Den has a Yard to the north of it:
 
 ```chord
 create the trolley
@@ -258,7 +262,8 @@ begin the story broken, with `starts broken` beside `breakable`.
 
 **`attached to the`**, followed by the name of another thing, fixes one thing
 to another. An attached thing cannot be taken. Add **`detachable`** and a pull
-frees it.
+frees it. The Relighting fastens nothing in this way, so the tassel is from
+the other story too, and it hangs from a hook in the Den:
 
 ```chord
 create the tassel
@@ -285,7 +290,8 @@ other thing, the refusal names it, and the attachment can end.
 
 ## Switching on and off
 
-**`switchable`** gives a thing an on and an off.
+**`switchable`** gives a thing an on and an off. The wireless is the last
+thing from the other story:
 
 ```chord
 create the wireless

@@ -102,7 +102,12 @@ const PINNED = {
   // 4.0.3 — 2026-11-14 (session 79cefa): PATCH by owner ruling ("4.0.3 - we
   // already published 4.0.2"). Carries ADR-397's removal of `never` from the
   // claims language and GH #705's `the story is [not] <state>` condition.
-  languageVersion: '4.0.3',
+  // 4.1.0 — 2026-11-19 (session aed920): MINOR, cut alongside Sharpee 5.7.0
+  // by the owner ("Sharpee 5.7.0 and Chord 4.1.0"). Carries ADR-404's
+  // opening block, an additive construct. The hash is unchanged by the bump:
+  // the surface as re-pinned for the opening block (below) is the 4.1.0
+  // surface.
+  languageVersion: '4.1.0',
   // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
   // chapters` — the first additive grammar of the chapters extension,
   // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.

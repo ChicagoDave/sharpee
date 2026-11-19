@@ -172,6 +172,33 @@ h1.part {
    title page instead (frontmatter/00-title-page.md), so hide the auto one. */
 #title-block-header { display: none; }
 
+/* ---- An address set out on a line of its own (`::: url-line`) ----
+   The whole address stays on one line and is never broken, so a reader can
+   copy it or type it without guessing where a line break fell. */
+.url-line {
+  margin: 0.8em 0;
+  text-align: center;
+  white-space: nowrap;
+}
+.url-line p {
+  max-width: none;
+  margin: 0;
+}
+
+/* ---- Front cover (scripts/build-book.sh puts it ahead of the title page) ---- */
+.cover-page {
+  margin: 0 0 3em;
+  text-align: center;
+}
+
+.cover-page img {
+  display: block;
+  width: 100%;
+  max-width: 6in;
+  height: auto;
+  margin: 0 auto;
+}
+
 /* ---- Title page (authored: sword + title + subtitle + author) ---- */
 .title-page {
   text-align: center;

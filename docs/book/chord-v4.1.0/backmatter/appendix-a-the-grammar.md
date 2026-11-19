@@ -2,7 +2,7 @@
 
 The Chord grammar in EBNF, as the compiler implements it: 215 rules in 24 sections.
 The grammar file's comments are left out, so this is the productions alone. Generated from
-`chord.ebnf` (Sharpee 5.6.4 · Chord 4.0.3) by `scripts/generate-chord-appendices.cjs`.
+`chord.ebnf` (Sharpee 5.7.0 · Chord 4.1.0) by `scripts/generate-chord-appendices.cjs`.
 
 ```text
 Notation:

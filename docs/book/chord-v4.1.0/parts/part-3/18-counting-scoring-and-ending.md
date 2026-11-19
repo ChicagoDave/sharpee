@@ -262,7 +262,8 @@ before the game starts
 end before
 ```
 
-Then walk up and light the Lantern.
+Then walk up to the Lantern Gallery, put the lens in the Lantern and light
+it.
 
 ```text
 > put lens in lantern

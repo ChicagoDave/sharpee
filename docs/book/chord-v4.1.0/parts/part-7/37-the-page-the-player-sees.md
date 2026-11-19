@@ -132,6 +132,22 @@ is up before you spark the lamp. The first build also writes
 a small file beside the story, `relighting.config.json`, which chapter 40
 explains.
 
+The page also prints something the terminal does not. When one of the
+chapters from chapter 19 begins, the page prints its title in bold, and its
+description in italics beneath if it has one, above the reply to the command
+that began it. `Morning` stands over the first room, and reading the spark
+page begins the afternoon.
+
+```text
+> read spark page
+
+Afternoon
+
+The Hall has noticed you.
+
+(first taking the spark page)
+```
+
 ## A channel
 
 The prose is not the only thing a story sends to the page. The room's
@@ -318,7 +334,9 @@ colour fixed here will be right in one theme and wrong in the other.
 
 The picture from chapter 36 appears above the story, in a strip whose
 height the platform's stylesheet sets. A rule for `#sharpee-media` in
-your own stylesheet changes it.
+your own stylesheet changes it. A chapter's title and description are
+printed in a block with the class `sharpee-chapter`, and a rule for that
+class restyles the block or hides it.
 
 ## A page of your own
 
@@ -362,8 +380,8 @@ theme from the Settings menu and reload the page. The theme you chose has
 been remembered. It was filed in the browser under the storage prefix, as
 `relighting-theme`, and the saved games are filed beside it.
 
-The reload also brings the game back from its autosave, with the words
-"Session restored". The status line names the Library again, and the
+The reload also brings the game back from its autosave, with the line
+`[Session restored]`. The status line names the Library again, and the
 `workings` panel is there with its one line, because the page saves what
 its channels were showing along with the game.
 

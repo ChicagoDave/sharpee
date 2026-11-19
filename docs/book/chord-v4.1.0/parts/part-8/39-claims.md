@@ -42,8 +42,9 @@ claim: no line "winning1" — the tree's lines, by segment id and first command:
 The main line is `thelodge`. The option `--at` chooses a turn on it, and
 without the option the command reads the line's last card. The turn of a
 card is the `turn` field of its record in the output of chapter 38's
-`sharpee test . --json --capture-output`. The card that types `unbind
-grille` is turn 82.
+`sharpee test . --json --capture-output`. Two cards on the way type
+`unbind grille`. The one at turn 70 is refused, because the bell is tolling.
+The one at turn 82 lifts the grille, and it is the one wanted here.
 
 ```shell
 sharpee claim thelodge --at 82
@@ -518,8 +519,8 @@ lifted` out of the `ward` trait, and read the lock's line. The chapter
 broke it with one claim in the file. With three, the claims section is
 longer than the one printed under "When a lock breaks": the claim that
 the story can be won is unproven as well, its lock is not held either,
-and the runner walks for each of them, so the run takes about four
-minutes. Put the line back.
+and the runner walks for each of them, so the run takes four minutes
+at the least, and a good deal longer on a busy machine. Put the line back.
 
 The companion folder `chapter-39` holds the story with its three claims.
 

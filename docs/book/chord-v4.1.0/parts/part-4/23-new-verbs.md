@@ -400,10 +400,14 @@ has nothing to work on.
 ::: under-the-hood
 **Under the Hood: an action is data** · Story IR `actions`
 
-In the compiled IR the sparking action is an entry with four lists: its
-`patterns`, each a run of words and slots; its `constraints`, which are the
-`must be reachable` lines; its `musts`, each a condition and a phrase key;
-and its body. There is no code in it. The platform has one piece of
+In the compiled IR the sparking action is an entry of plain data. It has a
+`name`, and then its `patterns`, each a run of words and slots; its
+`constraints`, which are the `must be reachable` lines; its `musts`, each a
+condition and a phrase key; its `refusals`, which are the `refuse` lines;
+`otherwise`, which holds the phrase key of the `otherwise refuse` line;
+`scores`, which is empty for this action; and its `body`. A last field,
+`span`, records where in the file the action was written. There is no code
+in it. The platform has one piece of
 machinery that runs any action described this way, and that machinery is
 what looks for an answer on the thing and falls back to your `otherwise
 refuse` line.

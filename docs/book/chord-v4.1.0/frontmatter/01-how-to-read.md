@@ -106,12 +106,20 @@ introduces the two.
 
 The Relighting as it stands at the end of each chapter is on the book's
 website, in a folder named for the chapter: `chapter-05`, `chapter-06`,
-and so on. The folders are at
-<https://sharpee.net/chord-manual/4.1.0/relighting/>. Each one can be
-read in a browser, file by file, and each can be downloaded whole by
-adding `.zip` to its name, as in
-<https://sharpee.net/chord-manual/4.1.0/relighting/chapter-05.zip>. A
-folder holds the story file and a test tree, which chapter 38 explains,
+and so on. The folders are at this address:
+
+::: url-line
+<https://sharpee.net/chord-manual/4.1.0/relighting/>
+:::
+
+Each one can be read in a browser, file by file, and each can be
+downloaded whole by adding `.zip` to its name:
+
+::: url-line
+<https://sharpee.net/chord-manual/4.1.0/relighting/chapter-05.zip>
+:::
+
+A folder holds the story file and a test tree, which chapter 38 explains,
 and from Part VII on it holds the story's sounds, picture and stylesheet
 as well. Beside them are eight folders named `part-1` to `part-8`, each
 holding the story as it stands at the end of that part. No step in this

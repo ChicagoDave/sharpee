@@ -10,6 +10,10 @@
 # Usage:
 #   scripts/build-book.sh <version>          # render all formats for one edition
 #   scripts/build-book.sh <version> html     # render one format (html | epub | pdf)
+#   scripts/build-book.sh <version> print    # the printable interior, a fourth
+#                                            # output for print-on-demand (no
+#                                            # cover, mirrored margins); not part
+#                                            # of `all`
 #   version = v1.5.0 | v2.0.0 | chord-v4.1.0  (subdirectories of docs/book/)
 #
 # Output files are named the-sharpee-book-<version>.*, unless the edition has a
@@ -82,15 +86,33 @@ optimize_art() {
 # See frontmatter.yaml for the full rationale.
 FRONT_FRAGMENT="$OUT/.frontmatter.html"
 
+# An edition's front cover, when it has one, is the 6in x 9in image at
+# book/<version>/<version>-cover.png in the repository root (the Chord manual
+# has one; the Sharpee editions do not). It is named from the edition directory
+# by a relative path, so pandoc's --embed-resources and weasyprint both find it.
+COVER_REL="../../../book/$VERSION/$VERSION-cover.png"
+COVER=""
+[ -f "$COVER_REL" ] && COVER="$COVER_REL"
+
+# Render the title and copyright pages to the fragment. With the argument
+# `cover`, and an edition that has a cover, the cover leads the fragment as a
+# page of its own (styled by .cover-page in book.css and print.css). The web
+# build passes no argument: its pages are chunked into another directory, where
+# the relative path would not resolve.
 build_front_fragment() {
   pandoc --defaults=frontmatter.yaml \
     --to=html5 \
     --output="$FRONT_FRAGMENT"
+  if [ "${1:-}" = "cover" ] && [ -n "$COVER" ]; then
+    local BODY
+    BODY="$(cat "$FRONT_FRAGMENT")"
+    printf '<div class="cover-page"><img src="%s" alt="Front cover" /></div>\n%s\n' "$COVER" "$BODY" > "$FRONT_FRAGMENT"
+  fi
 }
 
 build_html() {
   echo "→ HTML"
-  build_front_fragment
+  build_front_fragment cover
   pandoc --defaults=book.yaml \
     --to=html5 \
     --embed-resources \
@@ -102,9 +124,13 @@ build_html() {
 
 build_epub() {
   echo "→ EPUB"
+  # pandoc takes the cover as its own option and makes it the EPUB's cover page.
+  local COVER_ARGS=()
+  [ -n "$COVER" ] && COVER_ARGS=(--epub-cover-image="$COVER")
   pandoc --defaults=frontmatter.yaml --defaults=book.yaml \
     --to=epub3 \
     --css=styles/epub.css \
+    ${COVER_ARGS[@]+"${COVER_ARGS[@]}"} \
     --output="$OUT/$NAME.epub"
 }
 
@@ -117,7 +143,7 @@ build_pdf() {
   # on-disk file references fine. The single-step --pdf-engine path runs
   # weasyprint from a temp dir where assets/ is unreachable.
   local TMP=".pdf-source.html"
-  build_front_fragment
+  build_front_fragment cover
   pandoc --defaults=book.yaml \
     --to=html5 \
     --css=styles/book.css \
@@ -126,6 +152,35 @@ build_pdf() {
     --include-before-body="$FRONT_FRAGMENT" \
     --output="$TMP"
   weasyprint "$TMP" "$OUT/$NAME.pdf"
+  rm -f "$TMP"
+}
+
+# The printable interior, a fourth output for print-on-demand: the same book as
+# build_pdf, laid out to be printed on both sides and bound. It differs in two
+# ways. It has no cover page, because the cover is uploaded to the printer as a
+# separate file, so the title page is page 1 and a right-hand page. And it
+# layers the edition's styles/print-pod.css over print.css for mirrored margins
+# with a wider binding edge. An edition without that stylesheet has no
+# printable interior, and asking for one is an error. Written beside the other
+# outputs as <name>-print.pdf; build_html, build_epub and build_pdf are
+# unchanged by it.
+build_print() {
+  echo "→ PDF (printable interior)"
+  command -v weasyprint >/dev/null || { echo "error: weasyprint not found (brew install weasyprint)"; exit 1; }
+  [ -f styles/print-pod.css ] || { echo "error: docs/book/$VERSION has no styles/print-pod.css, so it has no printable interior"; exit 2; }
+  # The name must contain "pdf-source": an edition's filters (the Chord manual's
+  # mark-wrapped-lines.lua) tell a paged build from the HTML one by it.
+  local TMP=".pdf-source-print.html"
+  build_front_fragment
+  pandoc --defaults=book.yaml \
+    --to=html5 \
+    --css=styles/book.css \
+    --css=styles/print.css \
+    --css=styles/print-pod.css \
+    --metadata=document-css:false \
+    --include-before-body="$FRONT_FRAGMENT" \
+    --output="$TMP"
+  weasyprint "$TMP" "$OUT/$NAME-print.pdf"
   rm -f "$TMP"
 }
 
@@ -196,6 +251,7 @@ case "$FORMAT" in
   html)     build_html ;;
   epub)     build_epub ;;
   pdf)      build_pdf ;;
+  print)    build_print ;;
   web)      build_web ;;
   snippets) build_snippets ;;
   all)      build_html; build_epub; build_pdf; build_snippets ;;

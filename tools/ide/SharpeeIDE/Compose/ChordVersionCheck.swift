@@ -90,7 +90,13 @@ enum ChordVersionCheck {
     /// `sharpee compose --check` at 4.0.3; the golden was regenerated over
     /// it with the nine existing streams unchanged, and `ChordLexer.swift`
     /// did not move.
-    static let supportedLanguageVersion = "4.0.3"
+    ///
+    /// 4.1.0 (2026-11-19, GH #755): the number moves with the cut of
+    /// Sharpee 5.7.0 and no surface moves with it. The 4.1.0 surface is the
+    /// one the 4.0.3 corpus file already carries, the opening block
+    /// included, so the corpus, the golden and `ChordLexer.swift` are
+    /// unchanged.
+    static let supportedLanguageVersion = "4.1.0"
 
     /// Extracts the Chord version from `sharpee --version` output
     /// ("Sharpee 4.1.1 · Chord 2.1.0" → "2.1.0"). Nil when the shape is foreign.

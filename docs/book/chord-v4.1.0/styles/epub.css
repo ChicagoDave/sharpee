@@ -95,6 +95,11 @@ pre {
   margin-top: 1em;
 }
 
+/* ---- An address on a line of its own (`::: url-line`) ----
+   Set apart and centered. It is not forced onto one line here, because a
+   reader's screen may be narrower than the address. */
+.url-line { text-align: center; margin: 0.8em 0; }
+
 /* ---- Title page (reflowable) ---- */
 
 .title-page { text-align: center; }

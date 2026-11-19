@@ -4,6 +4,10 @@ A story moves in **turns**. Each command the player types is one turn, and
 so far the world has held still between them. Ansel could stand in the Lodge
 for a week and dusk would never come.
 
+Four commands are exceptions. `score`, `about`, `help` and `version` are
+questions put to the game and not acts in its world, and they take no turn.
+Nothing in this chapter runs after one of them, and none of them is counted.
+
 This chapter gives the story a clock. It has four parts: things that happen
 every turn, timers that count a few named turns and then go off, a sequence
 that runs against the turn count of the whole game, and chapters that divide
@@ -258,8 +262,8 @@ end sequence
 The first step is anchored to a turn of the game with `at turn`. Each later
 step may be anchored the same way, or set a number of turns after the one
 before it with `turns later`. The statements under a step run when its turn
-comes. The opening of a story is not a turn, so turn fifty is the fiftieth
-command the player types.
+comes. The opening of a story is not a turn, and neither is a command such
+as `score`, so turn fifty is the fiftieth command that takes a turn.
 
 At turn fifty the player is warned.
 
@@ -402,6 +406,8 @@ free, and ask for the score.
 > score
 You have scored 15 out of 35, earning you the rank of a Second-Year.
 ```
+
+No bell line follows it, though the bell is tolling: `score` takes no turn.
 
 ::: under-the-hood
 **Under the Hood: who is listening** · Story IR `timers`, `sequences`

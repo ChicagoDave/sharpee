@@ -1,0 +1,53 @@
+/*
+ * print-pod.css — the interior for print-on-demand: a bound 6in x 9in book.
+ *
+ * Purpose: layered after print.css by `scripts/build-book.sh <version> print`
+ *          to turn the screen PDF's layout into pages that are printed on
+ *          both sides and bound at one edge.
+ * Public interface: none of its own. It overrides print.css's page margins
+ *          and adds the right-hand-page rules; every other rule is print.css's.
+ * Owner:   docs/book authoring toolchain; the Chord manual plan.
+ *
+ * What a bound book needs that a screen PDF does not:
+ *   - Mirrored margins. The inside margin (the binding edge) is wider than
+ *     the outside one, and it is on the left of a right-hand page and on the
+ *     right of a left-hand page.
+ *   - No cover page. A printer takes the cover as a separate file, so the
+ *     build leaves it out and the title page is page 1, a right-hand page.
+ *   - Part openers on a right-hand page, with the blank page that sometimes
+ *     makes carrying no page number.
+ *
+ * The inside margin is 0.75in. That is the minimum KDP's table gives for a
+ * book of 501 to 700 pages; the book is about 595. If the page count ever
+ * passes 700, the minimum is 0.875in and this number must move with it. The
+ * outside margin is 0.45in, above KDP's 0.25in minimum for a page with no
+ * bleed.
+ *
+ * Invariant: the two side margins add up to 1.2in, as print.css's do, so the
+ * text is 4.8in wide here and in the screen PDF. The listings are wrapped for
+ * that width by filters/mark-wrapped-lines.lua, which marks each continuation
+ * row with an arrow. A narrower column makes the page break those rows again
+ * with no mark, so if the inside margin grows, the outside one shrinks by the
+ * same amount, or the filter's width is worked out again.
+ */
+
+/* A right-hand page: the binding is on its left. */
+@page :right {
+  margin: 0.5in 0.45in 0.5in 0.75in;
+}
+
+/* A left-hand page: the binding is on its right. */
+@page :left {
+  margin: 0.5in 0.75in 0.5in 0.45in;
+}
+
+/* A page left blank to make the next one a right-hand page has no number. */
+@page :blank {
+  @bottom-center { content: none; }
+}
+
+/* Each Part opens on a right-hand page. Chapters start on whichever page
+   comes next, as in the screen PDF, so the book gains at most eight pages. */
+.part-page {
+  break-before: right;
+}

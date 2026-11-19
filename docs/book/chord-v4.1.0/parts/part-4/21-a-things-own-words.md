@@ -110,10 +110,14 @@ The tower bell tolls.
 
 Look at the condition: `the candles is lit`. The candles are plural, and
 English wants "are". Chord does not. A condition's verb is always `is`,
-whatever the thing.
+whatever the thing. Written as `the candles are lit`, the line is refused
+twice, because the word is neither a verb a condition may use nor the name
+of a condition.
 
 ```text
-relighting.story:402:35 error [parse.predicate] Unknown predicate `are` — expected is, is a, is in, has, holds, wears, feels, knows, or can see/reach.
+relighting.story:405:35 error [parse.predicate] Unknown predicate `are` — expected is, is a, is in, has, holds, wears, feels, knows, or can see/reach.
+relighting.story:405:35 error [analysis.unknown-condition] `are` is not a declared condition or story state.
+compose: relighting.story failed the load-time gates (2 error(s))
 ```
 
 The lens takes the same treatment. Its crack moves out of the description

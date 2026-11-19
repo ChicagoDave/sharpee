@@ -157,7 +157,9 @@ The wisp follows you.
 ```
 
 The line "The wisp follows you." is the platform's. From here to the end
-of the game the wisp is in the room with Ansel, and the room lists it.
+of the game the wisp is in the room with Ansel, and a `look` lists it. On
+the turn Ansel walks into a room, the room's list is printed before the
+wisp arrives, so the wisp is not in that one.
 
 A person needs the word `person`. The wisp is not much of a person, but it
 moves by itself and will later hear things, and those are what the kind is

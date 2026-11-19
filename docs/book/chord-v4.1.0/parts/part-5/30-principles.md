@@ -124,7 +124,7 @@ create Hobb
 
 While he is wary of Ansel there is no love in the question, and duty is
 unopposed. He keeps the confidence, as above. Then the spectacles are
-mended and given, and the clause from the last chapter changes his feeling
+given, mended or not, and the clause from the last chapter changes his feeling
 to `trusts`.
 
 ```text

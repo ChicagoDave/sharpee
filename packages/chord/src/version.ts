@@ -384,5 +384,14 @@
  * without the field reads as a story with no block. ADR-257 D2's ordinary
  * rule makes an additive construct a minor; the owner sets the number when
  * the next version is cut, not here. The EBNF hash is re-recorded.
+ *
+ * 4.1.0 — 2026-11-19 (session aed920, David: "Sharpee 5.7.0 and Chord
+ * 4.1.0"), cut alongside Sharpee 5.7.0 after the Chord manual's reader run
+ * came back clean. It ships the pending entry above, ADR-404's opening
+ * block, which is an additive construct and so a MINOR by ADR-257 D2's
+ * ordinary rule. The EBNF hash is unchanged by the bump: the surface as
+ * re-recorded for the opening block is the 4.1.0 surface. The interim
+ * Sharpee releases 5.6.2 to 5.6.4 went to npm reporting Chord 4.0.3, the
+ * last of them with the opening block already in it.
  */
-export const CHORD_LANGUAGE_VERSION = '4.0.3';
+export const CHORD_LANGUAGE_VERSION = '4.1.0';
