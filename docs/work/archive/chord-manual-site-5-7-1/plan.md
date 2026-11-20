@@ -1,7 +1,7 @@
 # Session Plan: The Chord Manual and sharpee.net brought up to Sharpee 5.7.1
 
 **Created**: 2026-11-19
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Re-pin *The Chord Manual* (edition `docs/book/chord-v4.1.0/`) from Sharpee 5.7.0 to the published 5.7.1, prove the re-pin on the published release, republish the manual's downloads and web edition, and put 5.7.1's release note and version on sharpee.net; then David deploys. Release follow-up, not a feature: no `packages/` change, no Chord language move.
 **Bounded contexts touched**: N/A (documentation, book tooling, website content)
 **Key domain language**: N/A. Working vocabulary from the archived manual plan: edition, edition pin, companion folder, snippet check, tree run.
@@ -79,5 +79,5 @@ Goal, David, 2026-11-19: "go ahead and update the manual and the website". Relea
 - **Files**: `docs/work/chord-manual-site-5-7-1/plan.md`
 - **Exit state**: sharpee.net serves the manual's page naming Sharpee 5.7.1, the PDF and EPUB from Phase 1's commit, the web edition naming 5.7.1 in its front matter, the 5.7.1 release note on the releases page, and a playground pinned to 5.7.1.
 - **Demonstration**: `curl -sL https://sharpee.net/chord/manual` returns 200 with "Sharpee 5.7.1" in the body. The live PDF's SHA-1 from `curl -sL https://sharpee.net/downloads/the-chord-manual-4.1.0.pdf` piped to `shasum` equals `shasum` of the repository's `website/public/downloads/the-chord-manual-4.1.0.pdf`; the EPUB answers 200. `curl -sL https://sharpee.net/chord-manual/4.1.0/book/index.html` returns 200, and the book's preface page names 5.7.1. `curl -sL https://sharpee.net/releases` returns 200 with 5.7.1 on it. `curl -sL https://sharpee.net/playground/current.json` reports version 5.7.1.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-19)
+- **Demonstrated**: 2026-11-19 20:38 CST, session eee4bd, after David's "deployed" (the deploy was his; `main` was level with `origin/main` at `b60ae2176`). `curl -sL https://sharpee.net/chord/manual`: 200, body names "Sharpee 5.7.1" 6 times and holds no "5.7.0". `curl -sL https://sharpee.net/downloads/the-chord-manual-4.1.0.pdf` then `shasum`: 200, `1d428037cf809a4615ace5b26bd6c329533ac180`, equal to `shasum website/public/downloads/the-chord-manual-4.1.0.pdf`. The EPUB: 200, `51a31358318e6af0d3ad94f378ec36359bdd0fc7`, equal to the repository's copy. `curl -sL https://sharpee.net/chord-manual/4.1.0/book/index.html`: 200; the book's preface page, `-preface.html`: 200, names "Sharpee 5.7.1" once and no other 5.7 release. `curl -sL https://sharpee.net/releases`: 200, "5.7.1" 6 times (the 3 "5.7.0" are the earlier release's entry). `curl -sL https://sharpee.net/playground/current.json`: 200, `{"version":"5.7.1"}`. [reported by session, unverified]
+- **Status**: DONE
