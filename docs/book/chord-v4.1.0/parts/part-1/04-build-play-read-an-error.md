@@ -38,7 +38,7 @@ sharpee --version
 ```
 
 ```text
-Sharpee 5.7.0 · Chord 4.1.0
+Sharpee 5.7.1 · Chord 4.1.0
 ```
 
 The first number is the version of the Sharpee platform, which runs your

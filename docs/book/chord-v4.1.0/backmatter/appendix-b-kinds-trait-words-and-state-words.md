@@ -2,7 +2,7 @@
 
 The closed word lists the compiler checks a story against: 9 kinds, 43 trait words
 and 10 state words. A word marked with a `use` line belongs to an opt-in system and needs
-that line in the story. Generated from the `@sharpee/chord` vocabulary (Sharpee 5.7.0 · Chord 4.1.0) by
+that line in the story. Generated from the `@sharpee/chord` vocabulary (Sharpee 5.7.1 · Chord 4.1.0) by
 `scripts/generate-chord-appendices.cjs`.
 
 ## Kinds {.unnumbered .unlisted}

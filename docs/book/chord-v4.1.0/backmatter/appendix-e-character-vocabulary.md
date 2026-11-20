@@ -1,7 +1,7 @@
 # Appendix E. Character vocabulary {.unnumbered}
 
 The closed word lists of the character model: 96 words in 18 lists, 5 cognitive dimensions and
-8 profile presets. Generated from the `@sharpee/chord` character vocabulary (Sharpee 5.7.0 · Chord 4.1.0) by
+8 profile presets. Generated from the `@sharpee/chord` character vocabulary (Sharpee 5.7.1 · Chord 4.1.0) by
 `scripts/generate-chord-appendices.cjs`.
 
 ## Word lists {.unnumbered .unlisted}

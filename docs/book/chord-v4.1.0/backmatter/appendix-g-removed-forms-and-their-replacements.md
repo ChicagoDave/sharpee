@@ -3,7 +3,7 @@
 Forms Chord no longer accepts: 28 of them. The compiler still knows each one by name, so a story
 that uses one gets an error that says what to write instead. The table gives each form, its
 replacement and the error's code; the entries under it show a source that raises the error and the
-compiler's own words. Generated from the `@sharpee/chord` registry of removed forms (Sharpee 5.7.0 · Chord 4.1.0) by
+compiler's own words. Generated from the `@sharpee/chord` registry of removed forms (Sharpee 5.7.1 · Chord 4.1.0) by
 `scripts/generate-chord-appendices.cjs`.
 
 | Removed form | Write instead | Error |

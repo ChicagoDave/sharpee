@@ -138,15 +138,15 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-wearing.story` | Wearing | chord | author | 25 |
 | 02 | `02-wearing.story` | Wearing | chord | author | 36 |
-| 03 | `03-wearing.story` | Wearing | chord | author | 64 |
-| 04 | `04-reading.story` | Reading | chord | author | 96 |
-| 05 | `05-eating-and-drinking.story` | Eating and drinking | chord | author | 146 |
-| 06 | `06-pulling-and-pushing.story` | Pulling and pushing | chord | author | 179 |
-| 07 | `07-pulling-and-pushing.story` | Pulling and pushing | chord | author | 204 |
-| 08 | `08-breaking.story` | Breaking | chord | author | 236 |
-| 09 | `09-fixed-to-something.story` | Fixed to something | chord | author | 263 |
-| 10 | `10-switching-on-and-off.story` | Switching on and off | chord | author | 290 |
-| 11 | `11-build-and-try-it.sh` | Build and try it | shell | author | 337 |
+| 03 | `03-wearing.story` | Wearing | chord | author | 66 |
+| 04 | `04-reading.story` | Reading | chord | author | 98 |
+| 05 | `05-eating-and-drinking.story` | Eating and drinking | chord | author | 148 |
+| 06 | `06-pulling-and-pushing.story` | Pulling and pushing | chord | author | 181 |
+| 07 | `07-pulling-and-pushing.story` | Pulling and pushing | chord | author | 208 |
+| 08 | `08-breaking.story` | Breaking | chord | author | 240 |
+| 09 | `09-fixed-to-something.story` | Fixed to something | chord | author | 268 |
+| 10 | `10-switching-on-and-off.story` | Switching on and off | chord | author | 296 |
+| 11 | `11-build-and-try-it.sh` | Build and try it | shell | author | 343 |
 
 ## Light, dark and the other senses
 
@@ -294,8 +294,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 10 | `10-winning-and-losing.story` | Winning and losing | chord | author | 195 |
 | 11 | `11-winning-and-losing.story` | Winning and losing | chord | author | 207 |
 | 12 | `12-trying-the-endings.story` | Trying the endings | chord | author | 256 |
-| 13 | `13-killing-the-player.story` | Killing the player | chord | author | 307 |
-| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 346 |
+| 13 | `13-killing-the-player.story` | Killing the player | chord | author | 308 |
+| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 347 |
 
 ## Time
 
@@ -303,17 +303,17 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-every-turn.story` | Every turn | chord | author | 21 |
-| 02 | `02-every-turn.story` | Every turn | chord | author | 27 |
-| 03 | `03-timers.story` | Timers | chord | author | 106 |
-| 04 | `04-timers.story` | Timers | chord | author | 126 |
-| 05 | `05-timers.story` | Timers | chord | author | 155 |
-| 06 | `06-timers.story` | Timers | chord | author | 169 |
-| 07 | `07-more-about-timers.story` | More about timers | chord | author | 217 |
-| 08 | `08-a-sequence.story` | A sequence | chord | author | 249 |
-| 09 | `09-chapters.story` | Chapters | chord | author | 298 |
-| 10 | `10-chapters.story` | Chapters | chord | author | 327 |
-| 11 | `11-build-and-try-it.sh` | Build and try it | shell | author | 391 |
+| 01 | `01-every-turn.story` | Every turn | chord | author | 25 |
+| 02 | `02-every-turn.story` | Every turn | chord | author | 31 |
+| 03 | `03-timers.story` | Timers | chord | author | 110 |
+| 04 | `04-timers.story` | Timers | chord | author | 130 |
+| 05 | `05-timers.story` | Timers | chord | author | 159 |
+| 06 | `06-timers.story` | Timers | chord | author | 173 |
+| 07 | `07-more-about-timers.story` | More about timers | chord | author | 221 |
+| 08 | `08-a-sequence.story` | A sequence | chord | author | 253 |
+| 09 | `09-chapters.story` | Chapters | chord | author | 302 |
+| 10 | `10-chapters.story` | Chapters | chord | author | 331 |
+| 11 | `11-build-and-try-it.sh` | Build and try it | shell | author | 395 |
 
 # Part IV. Words
 
@@ -344,10 +344,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-detail-a-sentence-that-depends.story` | Detail: a sentence that depends | chord | author | 21 |
 | 02 | `02-detail-a-sentence-that-depends.story` | Detail: a sentence that depends | chord | author | 74 |
-| 03 | `03-detail-a-sentence-that-depends.story` | Detail: a sentence that depends | chord | author | 123 |
-| 04 | `04-present-how-a-thing-is-announced.story` | Present: how a thing is announced | chord | author | 164 |
-| 05 | `05-disappeared-a-parting-line.story` | Disappeared: a parting line | chord | author | 203 |
-| 06 | `06-build-and-try-it.sh` | Build and try it | shell | author | 248 |
+| 03 | `03-detail-a-sentence-that-depends.story` | Detail: a sentence that depends | chord | author | 127 |
+| 04 | `04-present-how-a-thing-is-announced.story` | Present: how a thing is announced | chord | author | 168 |
+| 05 | `05-disappeared-a-parting-line.story` | Disappeared: a parting line | chord | author | 207 |
+| 06 | `06-build-and-try-it.sh` | Build and try it | shell | author | 252 |
 
 ## Changing the standard messages
 
@@ -434,12 +434,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 04 | `04-a-set-of-your-own.story` | A set of your own | chord | author | 83 |
 | 05 | `05-the-stock-behaviours.story` | The stock behaviours | chord | author | 121 |
 | 06 | `06-the-stock-behaviours.story` | The stock behaviours | chord | author | 135 |
-| 07 | `07-the-five-words.story` | The five words | chord | author | 179 |
-| 08 | `08-having-a-person-do-something.story` | Having a person do something | chord | author | 232 |
-| 09 | `09-goals.story` | Goals | chord | author | 293 |
-| 10 | `10-the-steps.story` | The steps | chord | author | 366 |
-| 11 | `11-when-a-goal-is-active.story` | When a goal is active | chord | author | 429 |
-| 12 | `12-build-and-try-it.sh` | Build and try it | shell | author | 494 |
+| 07 | `07-the-five-words.story` | The five words | chord | author | 181 |
+| 08 | `08-having-a-person-do-something.story` | Having a person do something | chord | author | 234 |
+| 09 | `09-goals.story` | Goals | chord | author | 295 |
+| 10 | `10-the-steps.story` | The steps | chord | author | 368 |
+| 11 | `11-when-a-goal-is-active.story` | When a goal is active | chord | author | 431 |
+| 12 | `12-build-and-try-it.sh` | Build and try it | shell | author | 496 |
 
 ## Asking and telling
 
@@ -574,11 +574,11 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 07 | `07-a-vehicle-on-open-water.story` | A vehicle on open water | chord | author | 151 |
 | 08 | `08-looking-across-water.story` | Looking across water | chord | author | 196 |
 | 09 | `09-looking-across-water.story` | Looking across water | chord | author | 205 |
-| 10 | `10-things-adrift.story` | Things adrift | chord | author | 295 |
-| 11 | `11-the-new-ending.story` | The new ending | chord | author | 313 |
-| 12 | `12-the-new-ending.story` | The new ending | chord | author | 327 |
-| 13 | `13-the-new-ending.story` | The new ending | chord | author | 334 |
-| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 379 |
+| 10 | `10-things-adrift.story` | Things adrift | chord | author | 308 |
+| 11 | `11-the-new-ending.story` | The new ending | chord | author | 326 |
+| 12 | `12-the-new-ending.story` | The new ending | chord | author | 340 |
+| 13 | `13-the-new-ending.story` | The new ending | chord | author | 347 |
+| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 392 |
 
 ## The opt-in systems
 
@@ -625,13 +625,13 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-the-client-fields.story` | The client fields | chord | author | 28 |
 | 02 | `02-building-the-page.sh` | Building the page | shell | author | 73 |
 | 03 | `03-building-the-page.sh` | Building the page | shell | author | 124 |
-| 04 | `04-a-channel.story` | A channel | chord | author | 142 |
-| 05 | `05-raising-an-event.story` | Raising an event | chord | author | 171 |
-| 06 | `06-what-a-channel-may-return.story` | What a channel may return | chord | author | 227 |
-| 07 | `07-what-a-channel-may-return.story` | What a channel may return | chord | author | 257 |
-| 08 | `08-a-reference-in-a-field.story` | A reference in a field | chord | author | 284 |
-| 09 | `09-the-stylesheet.css` | The stylesheet | css | author | 299 |
-| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 354 |
+| 04 | `04-a-channel.story` | A channel | chord | author | 158 |
+| 05 | `05-raising-an-event.story` | Raising an event | chord | author | 187 |
+| 06 | `06-what-a-channel-may-return.story` | What a channel may return | chord | author | 243 |
+| 07 | `07-what-a-channel-may-return.story` | What a channel may return | chord | author | 273 |
+| 08 | `08-a-reference-in-a-field.story` | A reference in a field | chord | author | 300 |
+| 09 | `09-the-stylesheet.css` | The stylesheet | css | author | 315 |
+| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 372 |
 
 # Part VIII. Proving and shipping
 
@@ -643,7 +643,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-reading-what-the-story-says.sh` | Reading what the story says | shell | author | 129 |
 | 02 | `02-running-the-tree.sh` | Running the tree | shell | author | 271 |
-| 03 | `03-build-and-try-it.sh` | Build and try it | shell | author | 491 |
+| 03 | `03-build-and-try-it.sh` | Build and try it | shell | author | 492 |
 
 ## Claims
 
@@ -651,14 +651,14 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-a-fact-worth-keeping.sh` | A fact worth keeping | shell | author | 48 |
-| 02 | `02-locking-it.sh` | Locking it | shell | author | 83 |
-| 03 | `03-the-claims-file.story` | The claims file | chord | author | 145 |
-| 04 | `04-the-report.sh` | The report | shell | author | 215 |
-| 05 | `05-a-claim-written-by-hand.story` | A claim written by hand | chord | author | 309 |
-| 06 | `06-a-claim-no-line-reaches.story` | A claim no line reaches | chord | author | 371 |
-| 07 | `07-the-needs-lines.story` | The needs lines | chord | author | 462 |
-| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 526 |
+| 01 | `01-a-fact-worth-keeping.sh` | A fact worth keeping | shell | author | 49 |
+| 02 | `02-locking-it.sh` | Locking it | shell | author | 84 |
+| 03 | `03-the-claims-file.story` | The claims file | chord | author | 146 |
+| 04 | `04-the-report.sh` | The report | shell | author | 216 |
+| 05 | `05-a-claim-written-by-hand.story` | A claim written by hand | chord | author | 310 |
+| 06 | `06-a-claim-no-line-reaches.story` | A claim no line reaches | chord | author | 372 |
+| 07 | `07-the-needs-lines.story` | The needs lines | chord | author | 463 |
+| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 527 |
 
 ## Publishing
 

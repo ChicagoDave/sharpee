@@ -30,7 +30,7 @@ epub-title-page: false
 
 metadata:
   title: "The Chord Manual"
-  subtitle: "Writing Interactive Fiction in Chord (Chord 4.1.0, Sharpee 5.7.0)"
+  subtitle: "Writing Interactive Fiction in Chord (Chord 4.1.0, Sharpee 5.7.1)"
   author: "David Cornelson"
   lang: en-US
 

@@ -2,7 +2,7 @@
 
 Every statement a clause body may hold and every test a condition may make, one form to a line, in
 the notation of Appendix A: 38 statements, 11 conditions and 24 predicates.
-Generated from `chord.ebnf` (Sharpee 5.7.0 · Chord 4.1.0) by `scripts/generate-chord-appendices.cjs`.
+Generated from `chord.ebnf` (Sharpee 5.7.1 · Chord 4.1.0) by `scripts/generate-chord-appendices.cjs`.
 
 ## Statements {.unnumbered .unlisted}
 
