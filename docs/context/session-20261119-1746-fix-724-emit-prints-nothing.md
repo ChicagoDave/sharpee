@@ -3,11 +3,12 @@
 ## Goals
 - Run `/devarch:finalize`, the session's request (17:46 CST), on a branch whose previous session (785b7e) had already committed and pushed `489d3aeac` ("a story event is not prose", ADR-405, refs #724).
 - When `commit-remote`'s suite run failed: diagnose the failure, fix it (David chose "diagnose first", then fix A), and re-run the full suite to meet rule 14's pre-commit gate.
+- Then, at David's requests: open the PR, and after his merge, close out ADR-405 and archive the plan. The session began on the branch; the checkout is now on `main`, and this one file remains its summary.
 
 ## Phase Context
-- **Plan**: `docs/work/story-event-not-prose/plan.md` reads `**Plan Status**: DONE`, both phases DONE, and their Demonstrated lines were already marked.
-- **Phase executed**: none. This session's edit follows up on test samples the plan's phases added; it is not a plan phase.
-- **Tool calls used**: 94 (state file) / no budget
+- **Plan**: `docs/work/archive/story-event-not-prose/plan.md`, `**Plan Status**: DONE`, both phases DONE with their Demonstrated lines already marked. It was archived this session at David's "proceed!", and `.current-plan` was released.
+- **Phase executed**: none. This session's edits follow up on test samples the plan's phases added and close out the plan; they are not a plan phase.
+- **Tool calls used**: 94 at the 18:04 write (state file) / no budget; not re-read at this write.
 - **Phase outcome**: N/A
 
 ## Completed
@@ -22,18 +23,30 @@
 ### The full suite re-run
 - The main session ran `pnpm exec turbo run test:ci` once after the fix, and every task passed: "Tasks:    73 successful, 73 total" (saved run output, line 2647), with the event log's row at 00:03:21Z (18:03:21 CST) reading "Tests passed". That is after the 17:58:32 CST edits, so rule 14's gate is met. Per-package counts are under Test Coverage Delta.
 
+### Landed on main
+- `da5ce270c` (the sample rename and this summary) was pushed to `fix/724-emit-prints-nothing` (push line `489d3aeac..da5ce270c`); the commit script also moved `docs/context/session-20261118-1903-main.md` into `docs/context/archive/`.
+- At David's "create the PR", PR #820 opened from the branch into `main`. David merged it: `gh pr view 820` reads `"state":"MERGED"`, `"mergedAt":"2026-11-20T00:19:56Z"`, merge commit `bb4a58a58` (checked at this write).
+- 724: closed by the merge at 2026-11-20T00:19:58Z (main session's report). It was not closed by this agent or the main session.
+- The local checkout switched to `main` and fast-forwarded `1db000f2f..bb4a58a58`.
+
+### ADR-405 and the plan closed out
+- `docs/architecture/adrs/adr-405-a-story-event-is-not-prose.md`: `**Planning**` moved OPEN to IMPLEMENTED (line 3 now reads `**Planning**: IMPLEMENTED`), as its Status line said it would when the branch landed; the Status line now names PR #820 and merge `bb4a58a58`. `INDEX.md` was rebuilt with `adr-index.sh`.
+- `plan-archive.sh story-event-not-prose` moved the plan to `docs/work/archive/story-event-not-prose/` and released `.current-plan` (`git status` shows the rename and the deleted pointer). ADR-405's two citations of the plan path now point at the archive path (lines 7 and 67). The two session summaries that mention the old path are history and were left as written.
+
+### The patch bump question
+- David asked about it: nothing was bumped, and everything is still 5.7.0. The 5.7.1 bump is a `tsf version` step at publish, under his standing rule that versions move at publish.
+
 ## Key Decisions
 
 ### 1. Rename the samples rather than widen the AC-16 allow-list
 The engine cases need some declared story-event name, not a media one in particular, so the ADR-101 gate stays as strict as it was. The plan's Decision 4 (a media `emit` prints nothing) is still pinned by the loader's `packages/story-loader/tests/gh-724-emit-prints-nothing.test.ts`, whose `'a media emit'` case uses `type: 'media.sound.play'` (line 223).
 
 ## Next Phase
-Plan complete: all phases are done. The archive is held for David, as 785b7e recorded, so this write did not run `plan-archive.sh`.
+No active plan. `story-event-not-prose` is complete and archived.
 
 ## Open Items
 
 ### Short Term
-- 724: An emit whose event name is also a phrase key prints that phrase, using the trait's default text instead of the entity's override
 - 819: No test pins that prose from a story-header on every turn clause reaches the printed text
 - 818: Dungeo unit transcripts: five fail on every run and three fail intermittently
 - 815: Role hand-over on a turn that moves the player prints the wrong room heading and "can sees"
@@ -45,15 +58,22 @@ Plan complete: all phases are done. The archive is held for David, as 785b7e rec
 
 ## Files Modified
 
-**Engine tests** (2 files):
+**Engine tests** (2 files, in `da5ce270c`):
 - `packages/engine/tests/unit/story-events.test.ts`: the sample `'media.sound.play'` becomes `'yard-chime-played'` (lines 79, 84)
 - `packages/engine/tests/prose-pipeline/stages/filter.test.ts`: the sample becomes `'chime-played'` (lines 82, 87)
+
+**ADRs** (2 files, staged by the next commit):
+- `docs/architecture/adrs/adr-405-a-story-event-is-not-prose.md`: Planning is IMPLEMENTED, the Status line names PR #820, and the plan path points at the archive
+- `docs/architecture/adrs/INDEX.md`: rebuilt by `adr-index.sh`
+
+**Plan** (staged by the next commit):
+- `docs/work/story-event-not-prose/plan.md` moved to `docs/work/archive/story-event-not-prose/plan.md`; `docs/context/.current-plan` deleted
 
 **Session record**: this summary.
 
 ## Notes
 
-**Session duration**: about 20 minutes of repository work (17:46 to about 18:05 CST), plus the side search.
+**Session duration**: about 37 minutes of repository work (17:46 to 18:23 CST), plus the side search.
 
 **Approach**: diagnose before fixing, then apply the smallest fix that keeps the guard intact.
 
@@ -67,20 +87,20 @@ Plan complete: all phases are done. The archive is held for David, as 785b7e rec
   
   David will reconstruct it. One route was not tried and was passed to him: local APFS snapshots from 2026-11-18 18:09 onward may still hold Docker.raw, and they expire in about 24 hours.
 - Side effects on the machine: the `alpine/git:latest` Docker image was pulled (`docker images alpine/git` lists it). `git fetch --prune` removed the stale ref `origin/feat/adr-389-chord-loader`, whose branch was deleted on GitHub (`git branch -r --list 'origin/feat/adr-389*'` now prints nothing).
-- Still David's, carried from 785b7e: merging the branch to main (#724 stays open until then), the plan archive, and whether to delete the git-ignored `dist/cli/sharpee-nofilter.js`.
-- The open items were confirmed by `issues.sh list-open` at this write (200 open). None were filed, commented on or closed.
+- Still David's: the 5.7.1 patch bump at publish, and whether to delete the git-ignored `dist/cli/sharpee-nofilter.js`. The merge and the plan archive are done.
+- Open items: the list is carried from the 18:04 write (`issues.sh list-open`, 200 open), with 724 dropped after the merge closed it; the store was not re-listed at this write. None were filed, commented on or closed by this agent.
 
 ---
 
 ## Session Metadata
 
 - **Session**: 399582
-- **Status**: COMPLETE (unverified: the failed run's 27-of-39 task count; the research-branch search result)
-- **Blocker**: N/A. The previous write's blocker, rule 14's pre-commit gate, cleared when the full `turbo run test:ci` passed 73 of 73 tasks after the fix (Test Coverage Delta).
+- **Status**: IN-FLIGHT
+- **Blocker**: N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
-- **Rollback Safety**: safe to revert
-- **Commits**: none before this write (`git log --since=2026-11-19T23:46:14Z --format=%h` printed nothing; the branch head is 785b7e's `489d3aeac`). This write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261119-1746-fix-724-emit-prints-nothing.md`.
+- **Rollback Safety**: merged to main
+- **Commits**: `da5ce270c`, pushed to `fix/724-emit-prints-nothing` and merged to `main` as `bb4a58a58` (`git log --since=2026-11-19T23:46:14Z` lists both). This write, the ADR-405 flip, `INDEX.md` and the plan archive are staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261119-1746-fix-724-emit-prints-nothing.md`.
 
 ## Dependency/Prerequisite Check
 
@@ -89,7 +109,7 @@ Plan complete: all phases are done. The archive is held for David, as 785b7e rec
 
 ## Architectural Decisions
 
-- None this session. ADR-405, and ADR-101's AC-16 gate, were applied, not changed.
+- ADR-405: Planning moved OPEN to IMPLEMENTED when PR #820 landed; the decision itself did not change. ADR-101's AC-16 gate was applied, not changed.
 
 ## Mutation Audit
 
@@ -104,7 +124,8 @@ Plan complete: all phases are done. The archive is held for David, as 785b7e rec
   - `pnpm --filter '@sharpee/engine' test run story-events filter`: "Tests 19 passed (19)", filter 12 and story-events 7 (17:59:16 CST).
   
   These match what the main session reported for its 17:58 runs.
-- Full suite, run by the main session after the fix: `pnpm exec turbo run test:ci`, "Tasks:    73 successful, 73 total", no failed test in any package (event log 00:03:21Z / 18:03:21 CST, "Tests passed"). Per-package lines: channel-service "Tests  137 passed (137)" (9 files, the AC-16 failure gone); engine "Tests  928 passed | 7 skipped (935)"; story-loader "Tests  1733 passed | 1 skipped (1734)"; chord 1966 passed; world-model 1687; character 641; parser-en-us 553; lang-en-us 484; branch-tester 473; transcript-tester 385; devkit 240 passed, 1 skipped; platform-browser 228; core 152; repokit 143 passed, 1 skipped; story-dungeo 58. The stdlib count was not captured; its task is among the 73 that succeeded. These counts are the main session's grep of the saved output; only the Tasks line was re-read at this write.
+- Full suite, run by the main session after the fix: `pnpm exec turbo run test:ci`, "Tasks:    73 successful, 73 total", no failed test in any package (event log 00:03:21Z / 18:03:21 CST, "Tests passed"). Per-package lines: channel-service "Tests  137 passed (137)" (9 files, the AC-16 failure gone); engine "Tests  928 passed | 7 skipped (935)"; story-loader "Tests  1733 passed | 1 skipped (1734)"; chord 1966 passed; world-model 1687; character 641; parser-en-us 553; lang-en-us 484; branch-tester 473; transcript-tester 385; devkit 240 passed, 1 skipped; platform-browser 228; core 152; repokit 143 passed, 1 skipped; story-dungeo 58. The stdlib count was not captured; its task is among the 73 that succeeded. These counts are the main session's grep of the saved output; only the Tasks line was re-read at the 18:04 write.
+- Since that run, only docs, the ADR, the index and the plan's location changed; no tests were re-run at this write.
 - Known untested areas, none run this session: `pnpm test:scripts`, the Dungeo walkthrough chain, `./repokit verify`, and the IDE's Xcode tests.
 
 ---
@@ -112,3 +133,4 @@ Plan complete: all phases are done. The archive is held for David, as 785b7e rec
 **Progressive update**: session completed 2026-11-19 17:47 — first write: a finalize-only session with no edits, committed work already on the remote, and the carried open items confirmed in the store.
 **Progressive update**: session completed 2026-11-19 18:00 — revised after the failed `test:ci` assessment: AC-16 grep-gate failure diagnosed to `489d3aeac`'s engine test samples, fix A applied (samples renamed), focused re-runs corroborated, full suite not re-run, so the status moves to INCOMPLETE; side search for the research branch recorded.
 **Progressive update**: session completed 2026-11-19 18:04 — the full `turbo run test:ci` re-run after the fix passed 73 of 73 tasks (event log 00:03:21Z), so rule 14's blocker clears and the status moves to COMPLETE (unverified: two minor session-reported claims); the suites still not run this session are named.
+**Progressive update**: checkpoint 2026-11-19 18:23 — `da5ce270c` pushed, PR #820 merged as `bb4a58a58` (724 closed by the merge), checkout on `main`, ADR-405 Planning moved to IMPLEMENTED, the plan archived and `.current-plan` released; the status is IN-FLIGHT until the terminal write.

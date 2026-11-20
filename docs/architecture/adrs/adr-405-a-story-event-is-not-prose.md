@@ -1,10 +1,10 @@
 # ADR-405: A story event is not prose
 
-**Planning**: OPEN
+**Planning**: IMPLEMENTED
 
 **Summary**: An event a Chord story raises with `emit` is a story event, a signal for channels and machines; the compiled story declares its story-event types, the engine hands them to the prose pipeline at install, and the pipeline renders none of them. No event carries a rendering flag: `ISemanticEvent.narrate` is removed.
 
-**Status**: **ACCEPTED** (David, 2026-11-19, session 785b7e: "accept", to "Do you accept it?"). Written the same day and session at David's direction ("proceed", approving the plan `docs/work/story-event-not-prose/plan.md` and its recommendation to record the decision). The decisions are his: that the fix says what the event is ("I dislike the narrate: false construct - it is not a DDD construct"), and that the flag is cleaned up in the same change ("if we're going to fix it, let's clean up the flag too - one big happy patch bump change"). All five decisions are built on branch `fix/724-emit-prints-nothing` (2026-11-19). Planning stays `OPEN` until the branch lands on `main`.
+**Status**: **ACCEPTED** (David, 2026-11-19, session 785b7e: "accept", to "Do you accept it?"). Written the same day and session at David's direction ("proceed", approving the plan `docs/work/archive/story-event-not-prose/plan.md` and its recommendation to record the decision). The decisions are his: that the fix says what the event is ("I dislike the narrate: false construct - it is not a DDD construct"), and that the flag is cleaned up in the same change ("if we're going to fix it, let's clean up the flag too - one big happy patch bump change"). All five decisions are built on branch `fix/724-emit-prints-nothing` (2026-11-19). The branch landed on `main` as PR #820 (merge `bb4a58a58`, 2026-11-19), and Planning moved to `IMPLEMENTED` with it.
 
 ## Date: 2026-11-19
 
@@ -64,4 +64,4 @@ A first attempt marked each emitted event `narrate: false` and had the filter ho
 
 ## Session
 
-Session 785b7e, 2026-11-19, branch `fix/724-emit-prints-nothing`. Plan: `docs/work/story-event-not-prose/plan.md`. Issue: #724.
+Session 785b7e, 2026-11-19, branch `fix/724-emit-prints-nothing`. Plan: `docs/work/archive/story-event-not-prose/plan.md`. Issue: #724.
