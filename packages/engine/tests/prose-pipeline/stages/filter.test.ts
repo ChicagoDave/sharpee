@@ -77,4 +77,36 @@ describe('filterEvents', () => {
     const result = filterEvents(inputTypes.map((t) => makeEvent(t)));
     expect(result.map((e) => e.type)).toEqual(expectedTypes);
   });
+
+  describe('story events (ADR-405)', () => {
+    const vocabulary: ReadonlySet<string> = new Set(['petted', 'chime-played']);
+
+    it('drops an event whose type is in the story-event vocabulary, whatever its data', () => {
+      const bare = makeEvent('petted');
+      const withText = makeEvent('petted', { message: 'never printed', text: 'nor this', messageId: 'taken' });
+      const media = makeEvent('chime-played', { src: 'chime.ogg', text: 'never printed' });
+      const kept = makeEvent('game.message', { text: 'printed' });
+
+      expect(filterEvents([bare, kept, withText, media], vocabulary)).toEqual([kept]);
+    });
+
+    it('passes the same type when the vocabulary does not hold it', () => {
+      const event = makeEvent('petted', { message: 'printed, as for a story that declares no story events' });
+
+      expect(filterEvents([event])).toEqual([event]);
+      expect(filterEvents([event], new Set(['fed']))).toEqual([event]);
+    });
+
+    it('matches a type without regard to case', () => {
+      expect(filterEvents([makeEvent('Petted')], vocabulary)).toEqual([]);
+    });
+
+    it('keeps the system and platform rules alongside the vocabulary', () => {
+      const types = ['system.tick', 'platform.save_requested', 'platform.save_completed', 'petted', 'action.success'];
+
+      const result = filterEvents(types.map((t) => makeEvent(t)), vocabulary);
+
+      expect(result.map((e) => e.type)).toEqual(['platform.save_completed', 'action.success']);
+    });
+  });
 });

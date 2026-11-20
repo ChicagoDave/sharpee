@@ -5,7 +5,7 @@
  * block that names none, the classifier after `is a` and in a character
  * line's scope (a kind or a story trait), a `define action` that tests its
  * slot for identity with a named thing, composition and trait adjectives with their
- * settings, the opening's routine list, exits on a non-room, worn items, tool-gated gerunds, listeners,
+ * settings, the opening's routine list, the story-event vocabulary, exits on a non-room, worn items, tool-gated gerunds, listeners,
  * conditional deadly exits, every door's connection, and the flag entity
  * that only holds a state for something else (a warning). Each is a fact of
  * the IR alone — no AST, no analyzer state —
@@ -25,6 +25,7 @@
  * - ADR-394 D6 — a story action does not repeat standard grammar.
  * - ADR-394 D7 — a flag entity draws a warning.
  * - ADR-394 D9 — a story action runs no thing's own `on` clause and no bare head.
+ * - ADR-405 — the story-event vocabulary matches the story's `emit` statements.
  */
 import { KIND_NOUNS, TRAIT_ADJECTIVES } from './catalog.js';
 import { type Diagnostic, DiagnosticBag } from './diagnostics.js';
@@ -35,6 +36,7 @@ import type { PatternElement } from '@sharpee/if-domain';
 import { expandReadings, lowerParts, renderPattern, samePatternShape } from './patterns.js';
 import { type Span, spanOf } from './span.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
+import { collectStoryEvents } from './story-events.js';
 
 /** The three routine names an opening list may hold (ADR-404 decision 6). */
 const OPENING_ROUTINES: ReadonlySet<string> = new Set(['show-prologue', 'show-banner', 'do-first-look']);
@@ -194,6 +196,30 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
           at,
         );
       }
+    }
+  }
+  // ADR-405: the story-event vocabulary is exactly the event ids the story's
+  // `emit` statements name. A compile always records it that way, so this
+  // fires for IR that reached a loader with a list written some other way:
+  // a name left off it would let that story event print as prose. The list
+  // carries no span of its own; the story's first line stands in.
+  {
+    const declared: readonly string[] = ir.storyEvents ?? [];
+    const emitted = collectStoryEvents(ir);
+    const declaredSet = new Set(declared);
+    const emittedSet = new Set(emitted);
+    const missing = emitted.filter((id) => !declaredSet.has(id));
+    const surplus = declared.filter((id) => !emittedSet.has(id));
+    if (missing.length > 0 || surplus.length > 0 || declared.length !== emitted.length) {
+      const parts: string[] = [];
+      if (missing.length > 0) parts.push(`it leaves out ${missing.map((id) => `\`${id}\``).join(', ')}`);
+      if (surplus.length > 0) parts.push(`it names ${surplus.map((id) => `\`${id}\``).join(', ')}, which no \`emit\` raises`);
+      if (parts.length === 0) parts.push('it names an event more than once');
+      diagnostics.error(
+        'analysis.story-events-mismatch',
+        `The story's list of story events does not match its \`emit\` statements: ${parts.join('; ')}. The list is recorded by the compiler; compile the story again.`,
+        spanOf(1, 1),
+      );
     }
   }
   // ADR-394 D4: an action does not decide what happens by testing which

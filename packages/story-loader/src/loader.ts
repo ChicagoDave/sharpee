@@ -125,6 +125,12 @@ export class ChordStory implements Story {
    * block, which the engine reads as the default routine.
    */
   readonly opening?: readonly IROpeningRoutine[];
+  /**
+   * The story's story-event vocabulary as runtime event types (ADR-405):
+   * `ir.storyEvents` through `translateEventId`, each once. The engine
+   * hands it to the prose pipeline, which renders none of them.
+   */
+  readonly storyEvents: readonly string[];
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
@@ -183,6 +189,9 @@ export class ChordStory implements Story {
     this.identityStamp = ir.identity.stamp;
     // Null is "no block"; so is IR written before the field existed.
     if (ir.opening !== undefined && ir.opening !== null) this.opening = [...ir.opening];
+    // ADR-405: the same translation the `emit` statement applies when it
+    // raises the event, so the vocabulary names the runtime types.
+    this.storyEvents = [...new Set(ir.storyEvents.map(translateEventId))];
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       title: ir.meta.title,

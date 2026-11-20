@@ -73,7 +73,6 @@ export function registerRealityAlteredDaemon(scheduler: ISchedulerService): void
         data: {
           messageId: RealityAlteredMessages.REALITY_ALTERED
         },
-        narrate: true
       }];
     }
   };

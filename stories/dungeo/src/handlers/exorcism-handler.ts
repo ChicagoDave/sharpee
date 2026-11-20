@@ -146,7 +146,6 @@ function completeExorcism(
     data: {
       messageId: ExorcismMessages.SPIRITS_VANISH
     },
-    narrate: true
   });
 
   // Emit passage opens event

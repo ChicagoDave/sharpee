@@ -55,7 +55,6 @@ function messageEvent(messageId: string): ISemanticEvent {
     timestamp: Date.now(),
     entities: {},
     data: { messageId },
-    narrate: true,
   };
 }
 

@@ -100,6 +100,12 @@ export class ProsePipeline implements IProsePipeline {
    * serialized, dropped with the pipeline on reload.
    */
   private readonly slotEntries = new Map<string, SlotEntry>();
+  /**
+   * The installed story's story-event types, in lower case (ADR-405). The
+   * filter stage drops every event of these types; empty until a story
+   * that declares some is installed.
+   */
+  private storyEvents: ReadonlySet<string> = new Set();
 
   /**
    * @param languageProvider the active language provider (template → text)
@@ -257,8 +263,18 @@ export class ProsePipeline implements IProsePipeline {
     return flattenBlocks(blocks);
   }
 
+  /**
+   * Replace the story-event vocabulary the filter stage drops (ADR-405).
+   *
+   * @param types the installed story's story-event types; stored in lower
+   *   case, the form the turn's event processor gives every event type
+   */
+  setStoryEvents(types: readonly string[]): void {
+    this.storyEvents = new Set(types.map((type) => type.toLowerCase()));
+  }
+
   processTurn(events: ISemanticEvent[]): ITextBlock[] {
-    const filtered = filterEvents(events);
+    const filtered = filterEvents(events, this.storyEvents);
     const sorted = sortEventsForProse(filtered);
 
     const context: HandlerContext = this.buildHandlerContext();

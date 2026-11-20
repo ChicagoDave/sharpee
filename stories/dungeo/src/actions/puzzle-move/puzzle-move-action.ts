@@ -72,7 +72,6 @@ export const puzzleMoveAction: Action & { metadata: ActionMetadata } = {
         messageId: PuzzleHandlerMessages.MOVE_BLOCKED,
         direction: context.sharedData.direction || 'unknown'
       },
-      narrate: true
     }];
   },
 

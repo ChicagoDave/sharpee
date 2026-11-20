@@ -126,7 +126,6 @@ export function registerBatHandler(
           data: {
             messageId: BatMessages.COWERS
           },
-          narrate: true
         });
       } else {
         // Bat attacks and carries player away!
@@ -138,7 +137,6 @@ export function registerBatHandler(
           data: {
             messageId: BatMessages.ATTACKS
           },
-          narrate: true
         });
 
         // Pick a random destination
@@ -152,7 +150,6 @@ export function registerBatHandler(
           data: {
             messageId: BatMessages.CARRIES_AWAY
           },
-          narrate: true
         });
 
         // Move the player
@@ -176,7 +173,6 @@ export function registerBatHandler(
             includeContents: true,
             verbose: true
           },
-          narrate: true
         });
       }
 

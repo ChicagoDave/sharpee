@@ -60,7 +60,6 @@ export const puzzleTakeCardAction: Action & { metadata: ActionMetadata } = {
       data: {
         messageId: PuzzleHandlerMessages.CANT_TAKE_CARD
       },
-      narrate: true
     }];
   },
 

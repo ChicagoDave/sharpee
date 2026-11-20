@@ -134,9 +134,9 @@ function selectIds(ir: StoryIR): string[] {
 }
 
 describe('ADR-289 D2 / ADR-388 D2 — compiler-assigned select ids', () => {
-  it('IR_FORMAT is `story language 6`', () => {
-    expect(IR_FORMAT).toBe('story language 6');
-    expect(compiled().format).toBe('story language 6');
+  it('IR_FORMAT is `story language 7`', () => {
+    expect(IR_FORMAT).toBe('story language 7');
+    expect(compiled().format).toBe('story language 7');
   });
 
   it('names the clause by its head and the select by its index among the body\'s selects', () => {

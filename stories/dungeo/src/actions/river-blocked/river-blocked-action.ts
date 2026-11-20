@@ -40,7 +40,6 @@ export const riverBlockedAction: Action = {
       data: {
         messageId: RiverBlockedMessages.NO_BOAT
       },
-      narrate: true
     }];
   },
 

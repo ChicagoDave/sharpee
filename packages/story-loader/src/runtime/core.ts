@@ -422,11 +422,6 @@ export class RuntimeCore {
     return world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId) ?? null;
   }
 
-  /** Scheduler-returned events must narrate to reach the transcript. */
-  narrated(events: ISemanticEvent[]): ISemanticEvent[] {
-    return events.map((e) => ({ ...e, narrate: true } as ISemanticEvent));
-  }
-
   /**
    * ADR-328 D3, producer half: an owner's autonomous narration carries the
    * owner as `entities.actor` and the place it happened as

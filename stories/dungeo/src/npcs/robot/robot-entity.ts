@@ -119,7 +119,6 @@ export function makeRobotPushButton(
       messageId: RobotMessages.PUSHES_BUTTON,
       npcName: 'robot'
     },
-    narrate: true
   });
 
   events.push({
@@ -130,7 +129,6 @@ export function makeRobotPushButton(
     data: {
       messageId: RobotMessages.CAROUSEL_FIXED
     },
-    narrate: true
   });
 
   return events;

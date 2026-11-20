@@ -92,7 +92,6 @@ export function createVictoryDaemon(
             messageId: VictoryMessages.ENTER_TREASURY
           },
           timestamp: Date.now(),
-          narrate: true
         },
         {
           id: generateEventId(),
@@ -102,7 +101,6 @@ export function createVictoryDaemon(
             messageId: VictoryMessages.VICTORY_TEXT
           },
           timestamp: Date.now(),
-          narrate: true
         },
         {
           id: generateEventId(),
@@ -117,7 +115,6 @@ export function createVictoryDaemon(
             }
           },
           timestamp: Date.now(),
-          narrate: true
         },
         {
           id: generateEventId(),
@@ -127,7 +124,6 @@ export function createVictoryDaemon(
             messageId: VictoryMessages.CONGRATULATIONS
           },
           timestamp: Date.now(),
-          narrate: true
         },
         {
           id: generateEventId(),
@@ -139,7 +135,6 @@ export function createVictoryDaemon(
             mainScore
           },
           timestamp: Date.now(),
-          narrate: false
         }
       ];
     }

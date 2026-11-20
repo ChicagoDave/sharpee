@@ -80,7 +80,6 @@ export const pullMatAction: Action = {
       data: {
         messageId: result.error || PullMatMessages.MAT_NOT_UNDER_DOOR
       },
-      narrate: true
     }];
   },
 
@@ -99,7 +98,6 @@ export const pullMatAction: Action = {
       data: {
         messageId: PullMatMessages.MAT_PULLED
       },
-      narrate: true
     }];
   }
 };

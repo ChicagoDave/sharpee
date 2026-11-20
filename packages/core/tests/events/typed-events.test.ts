@@ -41,7 +41,6 @@ describe('Typed Event System', () => {
         entities: { actor: 'player' },
         tags: ['combat'],
         priority: 10,
-        narrate: true,
         id: 'custom-id'
       });
 
@@ -49,7 +48,6 @@ describe('Typed Event System', () => {
       expect(event.entities).toEqual({ actor: 'player' });
       expect(event.tags).toEqual(['combat']);
       expect(event.priority).toBe(10);
-      expect(event.narrate).toBe(true);
     });
 
     it('should default entities to empty object', () => {

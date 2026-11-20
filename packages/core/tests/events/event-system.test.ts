@@ -100,17 +100,6 @@ describe('Event System Helpers', () => {
       expect(event.data).toEqual(complexPayload);
     });
 
-    it('should set narrate flag from metadata', () => {
-      const event = createEvent(
-        'narrative.event',
-        { text: 'Something happened' },
-        {},
-        { narrate: true }
-      );
-
-      expect(event.narrate).toBe(true);
-    });
-
     it('should set tags from metadata', () => {
       const tags = ['important', 'player-action', 'combat'];
       const event = createEvent(
@@ -149,7 +138,7 @@ describe('Event System Helpers', () => {
         'item.taken',
         { itemName: 'Golden Key' },
         { actor: 'player', target: 'key-001', location: 'dungeon' },
-        { narrate: true, priority: 10 }
+        { priority: 10 }
       );
 
       // Verify it matches SemanticEvent interface
@@ -158,7 +147,6 @@ describe('Event System Helpers', () => {
       expect(semanticEvent.type).toBe('item.taken');
       expect(semanticEvent.entities.actor).toBe('player');
       expect(semanticEvent.entities.target).toBe('key-001');
-      expect(semanticEvent.narrate).toBe(true);
       expect(semanticEvent.priority).toBe(10);
     });
   });

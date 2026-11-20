@@ -103,7 +103,7 @@ export class SchedulerConstructsSection {
           ctx.world.setStateValue(key, next + 1);
           ctx.world.setStateValue(firedKey, ctx.turn);
           const step = sequence.steps[next];
-          return this.core.narrated(this.core.statements.execStatements(step.body, { world: ctx.world, occurrence: next + 1 }));
+          return this.core.statements.execStatements(step.body, { world: ctx.world, occurrence: next + 1 });
         },
       });
     }
@@ -145,7 +145,7 @@ export class SchedulerConstructsSection {
           if (clause.once && fired > 1) return []; // `, once` (D5)
           ctx.world.setStateValue(key, fired);
           evalCtx.occurrence = fired;
-          return this.core.narrated(this.core.statements.execStatements(clause.body, evalCtx));
+          return this.core.statements.execStatements(clause.body, evalCtx);
         },
       });
     });
@@ -185,7 +185,7 @@ export class SchedulerConstructsSection {
               const at = this.core.placeOf(irEntity.id, ctx.world);
               out.push(...this.core.sourced(this.core.statements.execStatements(clause.body, evalCtx), irEntity.id, ctx.world, at));
             }
-            return this.core.narrated(out);
+            return out;
           },
         });
       });
@@ -269,7 +269,7 @@ export class SchedulerConstructsSection {
     world.setStateValue(key, fired);
     evalCtx.occurrence = fired;
     const at = this.core.placeOf(irEntity.id, world);
-    return this.core.narrated(this.core.sourced(this.core.statements.execStatements(clause.body, evalCtx), irEntity.id, world, at));
+    return this.core.sourced(this.core.statements.execStatements(clause.body, evalCtx), irEntity.id, world, at);
   }
 
   /**
@@ -326,6 +326,6 @@ export class SchedulerConstructsSection {
    * @param world the live world the effect runs against
    */
   execMachineBody(statements: IRStatement[], world: WorldModel): ISemanticEvent[] {
-    return this.core.narrated(this.core.statements.execStatements(statements, { world }));
+    return this.core.statements.execStatements(statements, { world });
   }
 }

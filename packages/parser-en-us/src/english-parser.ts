@@ -228,8 +228,7 @@ export class EnglishParser implements Parser {
           ...data
         },
         tags: ['platform', 'parser', 'debug'],
-        priority: 0,
-        narrate: false
+        priority: 0
       });
     }
   }

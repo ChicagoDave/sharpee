@@ -71,7 +71,7 @@ export function createPAAnnouncementDaemon(): Daemon {
           ctx.world.setStateValue('zoo.after_hours', true);
           break;
       }
-      return [{ id: `zoo-pa-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId }, narrate: true }];
+      return [{ id: `zoo-pa-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId } }];
     },
     getRunnerState(): Record<string, unknown> { return { announcementCount }; },
     restoreRunnerState(state: Record<string, unknown>): void { announcementCount = (state.announcementCount as number) ?? 0; },
@@ -94,7 +94,7 @@ export function createFeedingTimeFuse(): Fuse {
     trigger: (ctx: SchedulerContext): ISemanticEvent[] => {
       ctx.world.setStateValue('zoo.feeding_time_active', true);
       ctx.world.setStateValue('zoo.bleat_turns_remaining', 3);
-      return [{ id: `zoo-feeding-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: TimedMessages.FEEDING_TIME }, narrate: true }];
+      return [{ id: `zoo-feeding-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: TimedMessages.FEEDING_TIME } }];
     },
   };
 }
@@ -125,7 +125,7 @@ export function createGoatBleatingDaemon(): Daemon {
       const playerRoom = ctx.world.getEntity(ctx.playerLocation);
       const roomName = playerRoom?.get(IdentityTrait)?.name || '';
       if (roomName.includes('Petting Zoo')) {
-        return [{ id: `zoo-bleat-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: TimedMessages.GOATS_BLEATING }, narrate: true }];
+        return [{ id: `zoo-bleat-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: TimedMessages.GOATS_BLEATING } }];
       }
       return [];
     },
@@ -151,7 +151,7 @@ export function createVictoryDaemon(): Daemon {
       victoryTriggered = true;
       ctx.world.setStateValue('game.victory', true);
       ctx.world.setStateValue('game.ended', true);
-      return [{ id: `zoo-victory-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: ScoreMessages.VICTORY }, narrate: true }];
+      return [{ id: `zoo-victory-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: ScoreMessages.VICTORY } }];
     },
     getRunnerState(): Record<string, unknown> { return { victoryTriggered }; },
     restoreRunnerState(state: Record<string, unknown>): void { victoryTriggered = (state.victoryTriggered as boolean) ?? false; },
@@ -206,7 +206,6 @@ export function createAfterHoursDaemons(characters: CharacterIds): Daemon[] {
         timestamp: Date.now(),
         entities: {},
         data: { messageId: AfterHoursMessages.KEEPER_LEAVES },
-        narrate: true,
       }];
     },
     getRunnerState(): Record<string, unknown> { return { keeperLeft }; },
@@ -237,28 +236,28 @@ export function createAfterHoursDaemons(characters: CharacterIds): Daemon[] {
       if (roomName.includes('Petting Zoo') && !heardAnimals['goats']) {
         heardAnimals['goats'] = true;
         ctx.world.awardScore(ScoreIds.AFTER_HOURS_GOATS, ScorePoints[ScoreIds.AFTER_HOURS_GOATS], 'Heard the goats after hours');
-        events.push({ id: `zoo-ah-goats-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: AfterHoursMessages.GOATS_CANDID }, narrate: true });
+        events.push({ id: `zoo-ah-goats-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: AfterHoursMessages.GOATS_CANDID } });
       }
 
       // Rabbits — Petting Zoo
       if (roomName.includes('Petting Zoo') && !heardAnimals['rabbits']) {
         heardAnimals['rabbits'] = true;
         ctx.world.awardScore(ScoreIds.AFTER_HOURS_RABBITS, ScorePoints[ScoreIds.AFTER_HOURS_RABBITS], 'Heard the rabbits after hours');
-        events.push({ id: `zoo-ah-rabbits-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: AfterHoursMessages.RABBITS_CANDID }, narrate: true });
+        events.push({ id: `zoo-ah-rabbits-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: AfterHoursMessages.RABBITS_CANDID } });
       }
 
       // Parrot — Aviary (scored here; the actual behavior swap happens separately)
       if (roomName.includes('Aviary') && !heardAnimals['parrot']) {
         heardAnimals['parrot'] = true;
         ctx.world.awardScore(ScoreIds.AFTER_HOURS_PARROT, ScorePoints[ScoreIds.AFTER_HOURS_PARROT], 'Heard the parrot after hours');
-        events.push({ id: `zoo-ah-parrot-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: AfterHoursMessages.PARROT_CANDID }, narrate: true });
+        events.push({ id: `zoo-ah-parrot-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: AfterHoursMessages.PARROT_CANDID } });
       }
 
       // Snake / Nocturnal exhibit
       if (roomName.includes('Nocturnal') && !heardAnimals['snake']) {
         heardAnimals['snake'] = true;
         ctx.world.awardScore(ScoreIds.AFTER_HOURS_SNAKE, ScorePoints[ScoreIds.AFTER_HOURS_SNAKE], 'Heard the snake after hours');
-        events.push({ id: `zoo-ah-snake-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: AfterHoursMessages.SNAKE_CANDID }, narrate: true });
+        events.push({ id: `zoo-ah-snake-${ctx.turn}`, type: 'game.message', timestamp: Date.now(), entities: {}, data: { messageId: AfterHoursMessages.SNAKE_CANDID } });
       }
 
       return events;

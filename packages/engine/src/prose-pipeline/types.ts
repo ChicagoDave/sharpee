@@ -139,4 +139,16 @@ export interface IProsePipeline {
    *   covers the id (callers degrade gracefully)
    */
   renderPhraseText?(messageId: string): string | null;
+
+  /**
+   * Tell the pipeline the installed story's story-event vocabulary
+   * (ADR-405): the event types the story raises as signals for channels
+   * and machines. The pipeline renders none of them. Called by the engine
+   * once when a story is installed, and again on a pipeline swapped in by
+   * `setTextService`. Optional: a pipeline without it renders story events
+   * like any other event.
+   *
+   * @param types the story's story-event types; matched without regard to case
+   */
+  setStoryEvents?(types: readonly string[]): void;
 }

@@ -317,6 +317,8 @@ export class GameEngine implements StoryEngine {
   private platformEvents: ISemanticEventSource;
   private actionRegistry: StandardActionRegistry;
   private textService: IProsePipeline;
+  /** The installed story's story-event types (ADR-405); empty before a story is installed. */
+  private storyEvents: readonly string[] = [];
   private turnEvents = new Map<number, ISemanticEvent[]>();
   /**
    * Where this engine's opening stands (ADR-404). `pending` until either
@@ -601,6 +603,10 @@ export class GameEngine implements StoryEngine {
     }, STORY_INSTALL_STEPS);
 
     this.narrativeSettings = installed.narrativeSettings;
+    // ADR-405: the story's story events are not prose. Kept so a pipeline
+    // swapped in later by `setTextService` is told the same vocabulary.
+    this.storyEvents = installed.story.storyEvents ?? [];
+    this.textService.setStoryEvents?.(this.storyEvents);
     // The context is constructed here, not patched: it cannot be complete
     // before the story supplies the player (ADR-344 D6 as amended). Story
     // and context enter the phase together — they were always one fact, and
@@ -1270,7 +1276,6 @@ export class GameEngine implements StoryEngine {
           id: `meta_refused_${this.context.currentTurn}_${Date.now()}`,
           type: 'action.refused_meta',
           timestamp: Date.now(),
-          narrate: false,
           data: { actionId, actorId, reason: 'meta actions are the player role\'s alone' },
           entities: { actor: actorId },
         } as ISemanticEvent],
@@ -1364,10 +1369,15 @@ export class GameEngine implements StoryEngine {
   }
 
   /**
-   * Set a custom text service
+   * Set a custom text service. The replacement is told the installed
+   * story's story-event vocabulary (ADR-405), so swapping the pipeline
+   * never lets a story event print.
+   *
+   * @param service the prose pipeline to use from now on
    */
   setTextService(service: IProsePipeline): void {
     this.textService = service;
+    service.setStoryEvents?.(this.storyEvents);
   }
 
   /**

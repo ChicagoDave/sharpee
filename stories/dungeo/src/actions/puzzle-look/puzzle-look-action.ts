@@ -67,7 +67,6 @@ export const puzzleLookAction: Action & { metadata: ActionMetadata } = {
           roomName: 'Room in a Puzzle',
           roomDescription: 'You are in a maze of sandstone walls.'
         },
-        narrate: true
       }];
     }
 
@@ -83,7 +82,6 @@ export const puzzleLookAction: Action & { metadata: ActionMetadata } = {
         messageId: `${PUZZLE_LOOK_ACTION_ID}.puzzle_look_description`,
         message: `Room in a Puzzle\n${description}`
       },
-      narrate: true
     }];
   },
 

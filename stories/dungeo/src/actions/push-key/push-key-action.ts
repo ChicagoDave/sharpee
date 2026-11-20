@@ -89,7 +89,6 @@ export const pushKeyAction: Action = {
       data: {
         messageId: result.error || PushKeyMessages.NO_DOOR_HERE
       },
-      narrate: true
     }];
   },
 
@@ -103,7 +102,6 @@ export const pushKeyAction: Action = {
       timestamp: Date.now(),
       entities: {},
       data: { messageId },
-      narrate: true
     }];
   }
 };

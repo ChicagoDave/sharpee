@@ -303,6 +303,17 @@ export interface Story {
   readonly opening?: readonly OpeningRoutine[];
 
   /**
+   * The story's story-event vocabulary (ADR-405): the type of every event
+   * the story raises as a signal of its own, for its channels and state
+   * machines to hear. A story event is not prose. The engine hands this
+   * list to the prose pipeline when the story is installed, and the
+   * pipeline renders no event of these types, whatever its name or data;
+   * channels and plugins still receive every one. A story that leaves the
+   * field out declares none, and its events render as they always have.
+   */
+  readonly storyEvents?: readonly string[];
+
+  /**
    * The story's identity stamp (ADR-388 D4): a content hash the story's
    * compiler computed over every identity it can persist a key under. The
    * engine records it in each save's metadata, so a restore can tell a save

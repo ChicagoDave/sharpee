@@ -265,7 +265,7 @@ export class TimersSection {
         out.push(...this.core.statements.execStatements(def.meanwhile.body, ownerCtx));
       }
     }
-    return this.core.narrated(out);
+    return out;
   }
 
   /**

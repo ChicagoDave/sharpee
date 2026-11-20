@@ -144,8 +144,7 @@ describe('goingAction × computed exits (ADR-295)', () => {
       type: 'game.message',
       timestamp: 0,
       entities: {},
-      data: { messageId: 'test.cannot_get_bearings' },
-      narrate: true
+      data: { messageId: 'test.cannot_get_bearings' }
     };
     world.registerExitResolver(CARRIER_TYPE, () => ({
       kind: 'exit',

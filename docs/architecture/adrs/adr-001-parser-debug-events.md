@@ -6,6 +6,8 @@
 **Status:** Accepted
 **Context:** Parser troubleshooting and development
 
+> **Amended 2026-11-19 (ADR-405 Decision 5):** `narrate` is removed from `ISemanticEvent`, so a debug event no longer carries `narrate: false`. The sample below still shows it as it was written.
+
 ## Context
 
 During development and testing of interactive fiction games, it's crucial to understand how the parser interprets player input. Without visibility into the parser's internal workings, debugging parsing issues becomes a guessing game.

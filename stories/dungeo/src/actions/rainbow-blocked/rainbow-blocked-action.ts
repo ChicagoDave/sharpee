@@ -43,7 +43,6 @@ export const rainbowBlockedAction: Action = {
         messageId: RainbowBlockedMessages.BLOCKED,
         message: 'The rainbow is beautiful, but it looks far too insubstantial to walk on.'
       },
-      narrate: true
     }];
   },
 
