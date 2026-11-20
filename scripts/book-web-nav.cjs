@@ -156,10 +156,11 @@ for (const file of fs.readdirSync(WEB)) {
   const fp = path.join(WEB, file);
   let html = fs.readFileSync(fp, 'utf8');
   if (html.includes('id="book-nav"')) continue; // idempotent
-  // pandoc injects the --include-before-body title/copyright page into EVERY
-  // chunk. Keep it only on the index (landing) page; strip it elsewhere so
-  // chapters open on their own content, not the title page.
+  // pandoc injects the --include-before-body cover and title/copyright page
+  // into EVERY chunk. Keep them only on the index (landing) page; strip them
+  // elsewhere so chapters open on their own content, not the cover.
   if (file !== 'index.html') {
+    html = html.replace(/<div class="cover-page">[\s\S]*?<\/div>\s*/, '');
     html = html.replace(/<div class="title-page">[\s\S]*?<\/div>\s*/, '');
     html = html.replace(/<div class="copyright-page">[\s\S]*?<\/div>\s*/, '');
   }
