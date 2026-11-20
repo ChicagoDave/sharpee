@@ -79,12 +79,12 @@ describe('filterEvents', () => {
   });
 
   describe('story events (ADR-405)', () => {
-    const vocabulary: ReadonlySet<string> = new Set(['petted', 'media.sound.play']);
+    const vocabulary: ReadonlySet<string> = new Set(['petted', 'chime-played']);
 
     it('drops an event whose type is in the story-event vocabulary, whatever its data', () => {
       const bare = makeEvent('petted');
       const withText = makeEvent('petted', { message: 'never printed', text: 'nor this', messageId: 'taken' });
-      const media = makeEvent('media.sound.play', { src: 'chime.ogg', text: 'never printed' });
+      const media = makeEvent('chime-played', { src: 'chime.ogg', text: 'never printed' });
       const kept = makeEvent('game.message', { text: 'printed' });
 
       expect(filterEvents([bare, kept, withText, media], vocabulary)).toEqual([kept]);

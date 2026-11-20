@@ -76,12 +76,12 @@ describe('the engine and the story-event vocabulary (ADR-405)', () => {
 
   it('a pipeline swapped in after install is told the installed story\'s vocabulary', () => {
     const { engine } = setupTestEngine();
-    engine.installStory(new SignallingStory(['yard-bell-pushed', 'media.sound.play']));
+    engine.installStory(new SignallingStory(['yard-bell-pushed', 'yard-chime-played']));
     const replacement = new RecordingPipeline();
 
     engine.setTextService(replacement);
 
-    expect(replacement.told).toEqual(['yard-bell-pushed', 'media.sound.play']);
+    expect(replacement.told).toEqual(['yard-bell-pushed', 'yard-chime-played']);
   });
 
   it('a declared type is matched without regard to the case it was declared in', () => {
