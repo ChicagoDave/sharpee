@@ -1,10 +1,11 @@
 # Multi-World Stories — Overview
 
 **Date opened**: 2026-11-19
-**Status**: BRAINSTORM (will land as one or more ADRs)
+**Status**: BRAINSTORM, parked (David, 2026-11-19: "I don't plan to tackle this until next year"). Will land as one or more ADRs. Where it stopped: the sketch in `sketch/` and rulings S1 to S5 are recorded; the first thing waiting is a ruling on whether play follows a travelling actor (see "Claude's proposals inside the sketch").
 **Target**: Sharpee 6 / Chord 5
 **Absorbs**: [`multi-pc/overview.md`](../multi-pc/overview.md) — its open question "one shared `WorldModel` with per-PC scope filters, or separate `WorldModel` instances synchronized at boundaries?" is answered here: separate worlds, synchronized only through the controller.
-**Research**: [Multi-World Stories — Research for Sharpee 6 / Chord 5](https://claude.ai/artifact/TtTUJB17MrJ4GMJVaDaeAH) (prior art, design decisions, Chord sketches)
+**This file is the record.** Decisions are cited by this file's numbers only: D1 to D10 for what is locked, S1 to S5 for the syntax rulings made on the sketch, P1 to P7 for what is proposed. Nothing outside this file is needed to read it.
+**Origin**: drafted in a Claude Desktop conversation on 2026-11-19; its [research document](https://claude.ai/artifact/TtTUJB17MrJ4GMJVaDaeAH) is where this began and is not maintained. It numbers its decisions differently (its D1 is identity, its D4 shared facts, its D10 allowed vs authored), so its numbers are never cited here or in any ADR that follows.
 
 ## The idea in one paragraph
 
@@ -80,9 +81,13 @@ A being who moves between worlds at will (Pug, Feist's Riftwar) needs no platfor
 
 ## Leaning (spike to confirm)
 
-**One `GameEngine` per world under a controller host.** Sharpee already sets this up: one engine runs one world, and a whole world saves and restores as one blob. The host holds shared facts, ownership, story clock, input routing, and transitions. The spike should show:
+**One `GameEngine` per world under a controller host.** Sharpee already sets this up: one engine runs one world (`GameEngine` holds a single `private world`, `packages/engine/src/game-engine.ts`), and an engine saves and restores as one unit. The host holds shared facts, ownership, story clock, input routing, and transitions.
 
-1. World-switch cost compared with a single save/restore turn.
+**The unit that suspends is the engine's save data, not the world blob.** A dormant world is an `ISaveData` (`packages/core/src/types/save-data.ts`): the world snapshot plus the plugin states (daemons, fuses, state machines), the action random stream's seed, parser state and turn history. A world's deadline lives in a fuse or a state machine, so a world blob alone would lose it. This is also why the leaning is an engine per world and not one engine over a set of worlds.
+
+The spike should show:
+
+1. World-switch cost: one engine's full save data written and another's restored, compared with a single save/restore turn.
 2. Scratch-query cost with catch-up of 50 and 500 turns — and whether catch-up is N empty turns or a world-declared jump ahead.
 3. Tagged output from several engines merging cleanly into one stream.
 4. A byte-identical composite save on replay.
@@ -92,54 +97,57 @@ Spike story: two tiny worlds (~3 rooms each), one shared fact, Mara as NPC in on
 
 ## Proposed, not yet confirmed
 
-From the research doc; Claude's proposals, not David's decisions yet:
+Claude's proposals, not David's decisions yet:
 
-- **Identity**: worlds never share entities; persistent things are controller continuants projected in as fresh local entities.
-- **Lifecycle**: explicit enter / suspend / resume / reset / finish (SCXML-style); reset-on-entry vs persistent per world.
-- **Save**: composite — controller state + each world's blob + shared fact values + ownership table + redaction state, versioned separately.
-- **Narration**: the controller owns transition text; worlds narrate only inside themselves; output tagged by source world.
-- **Grammar**: per-world grammar on a shared base.
-- **World vs region + scene**: use a world when rules, vocabulary, PC, or physics differ, or when isolation buys testability; otherwise ADR-149 regions and scenes.
-- **Compiler rule**: a world that declares a deadline must define its state for arrival after the deadline.
+- **P1. Identity**: worlds never share entities; persistent things are controller continuants projected in as fresh local entities.
+- **P2. Lifecycle**: explicit enter / suspend / resume / reset / finish (SCXML-style); reset-on-entry vs persistent per world.
+- **P3. Save**: composite — controller state + each world's blob + shared fact values + ownership table + redaction state, versioned separately.
+- **P4. Narration**: the controller owns transition text; worlds narrate only inside themselves; output tagged by source world.
+- **P5. Grammar**: per-world grammar on a shared base.
+- **P6. World vs region + scene**: use a world when rules, vocabulary, PC, or physics differ, or when isolation buys testability; otherwise ADR-149 regions and scenes.
+- **P7. Compiler rule**: a world that declares a deadline must define its state for arrival after the deadline.
 
 ## Open questions (do not answer here, just record)
 
 - Interleaved write order: when a live but inactive world ticks in the same turn as the active one, both may write controller facts. Fixed per-turn order (Gauss-Seidel) plus the one-owner rule — confirm the shape.
-- Catch-up mechanism: run N turns with no input, or a declared fast-forward per world?
+- Catch-up mechanism: run N turns with no input, or a declared fast-forward per world? This is a determinism question as well as a cost one: NPCs take real turns through the standard actions, so N empty turns are N turns of NPC activity with no player, and a declared jump would reach a different state than running them.
+- A query answer that later proves false: D5 answers a dormant owner's fact by catching up a scratch copy, and D8 lets the active world write a controller fact that the dormant world reads on re-entry. A query can therefore report a future the real catch-up does not produce. Is the answer defined as "as things stand", or do queries see only controller inputs already committed?
+- An actor's other body: when Mara is the player in one world and her NPC entity sits in a dormant world that is not frozen, that entity keeps acting during catch-up. D2's "an actor embodied in one active world at a time" does not say what a catching-up world does with an actor who is elsewhere.
+- Per-world seeds: each engine owns the master seed its random streams derive from. What is the rule deriving each world's seed from the story's, so that a composite save replays byte-identically (spike item 4)?
 - Fact versioning: shared facts touch every world's saves; what is the versioning rule when a patched story changes a shared fact?
 - `remembers vaguely` and other per-world translations: a fixed vocabulary, or authored mappings?
 - Rift details: how a rift end is represented in a world (entity, exit, or both), and how one-way and collapsing rifts are declared.
 
-## Chord shape (illustrative only — not proposed grammar)
+## Chord shape (sketch syntax — not proposed grammar)
 
-```
-the world Infiltration
-  resets on entry
-  owns the vault
-  owns the flood, a deadline
-    when the dam fails
+The spike story is written out whole in [`sketch/`](./sketch/): `sluice.story` (the controller), `works.story` and `flood-year.story` (the two worlds). None of it compiles. Each invented line is marked `## NEW`, and three spellings not checked against today's Chord are marked `## UNCHECKED`. It replaces the fragment that stood here, whose `enter`, `owns` and per-world `asks about` lines the rulings below removed.
 
-the world Interrogation
-  asks about the vault
+### Syntax rulings (David, 2026-11-19, session eee4bd)
 
-the story controller
-  worlds Interrogation, Infiltration
-  begins in Interrogation
+Made by reading the sketch. They shape the Chord surface; D1 to D10 are unchanged.
 
-  defines the vault, opened or sealed
-  keeps Mara, an actor
+- **S1. Things own their things.** David: "things should own its things". An actor's roles and redactions sit under the actor (`keep Mara`). What belongs to a world (`resets on entry`, `keeps time while away`, its start, pause and resume blocks, the player when that player exists only there) sits in the world's own file. The controller's `define world` line carries the name and the file.
+- **S2. `before the world starts`.** David: "probably would add 'before the world starts' and the original syntax is elevated to setup for all worlds". It runs when a world is first entered, and on every entry for a world that resets. `before the game starts` stays in the controller as setup for all worlds.
+- **S3. Travel, not enter and return.** David: "return is bad, we should use a travel concept like 'mira transports to The Works in the Valley'". An actor transports to a place in a world: `Mara transports to the Yard in the Flood Year`. Going back is the same statement pointed the other way.
+- **S4. Transport has pause and resume logic.** David: "we'll definitely need world transport logic for pausing a left world and restarting an arrival world or allowing the author to emit a summary of 'what's changed'". Sketched as `before the world pauses` and `after the world resumes` in the world's file, with `keeps time while away` (the default, D8) or `pauses while away` on the world.
+- **S5. The summary of what changed is author driven or platform driven.** David: "the summary could be author driven or platform driven". Sketched as: catch-up prints nothing as it runs and keeps what it would have said; with no resume block the platform recounts those lines; with one the author decides, and `recount the time away` asks for the platform's account inside it.
 
-  in Interrogation, Mara is an NPC
-  in Infiltration, Mara is the player
-    with the vault code redacted
+### What the sketch showed
 
-  when Interrogation asks for a replay
-    enter Infiltration
-  when Mara sees the photograph
-    unredact the vault code for Mara
-```
+- A world file is ordinary Chord plus a `world` header and its start, pause and resume blocks.
+- A request (D5) needs no new statement inside a world: it is an `emit`, which prints nothing, and the controller answers `when <world> emits <event>`.
+- A deadline (D8) is a timer. The world declares nothing more: the running timer is what it is heading for, and `when <timer> expires` is the state for arrival after the deadline (P7).
+- Ownership (D4) is never written. The world that changes a fact owns it. The cost: a world file uses a name it does not create, so it cannot compile without the controller file.
 
-## Prior art (summary — detail in the research doc)
+### Claude's proposals inside the sketch, not ruled on
+
+- Play goes with an actor who is the player at either end of a trip; an actor who is an NPC at both ends travels without moving play.
+- The platform's recount covers the story's own happenings (timer stages, sequence steps, `when` rules), not ordinary NPC actions or `on every turn` text.
+- "Resumes" as the word for re-entry, since "restarts" reads like a reset.
+- A transport into a world that resets could leave out the room and use the actor's `starts in`.
+- `begins in the Works` is the one line that names a world with no actor travelling to it.
+
+## Prior art
 
 - **RSTS/RSX Task Builder** — root segment, overlays, ODL, co-trees, COMMON. The model, minus nesting.
 - **FMI co-simulation** — units with declared inputs/outputs, a master algorithm, a multi-model manifest; asking a unit when its next event is due.

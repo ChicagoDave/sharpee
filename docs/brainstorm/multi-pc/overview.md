@@ -1,6 +1,6 @@
 # Multi-PC Stories — Brainstorm Stub
 
-**Status**: STUB — captured 2026-04-19, no exploration yet
+**Status**: ABSORBED 2026-11-19 by [`multi-world-stories/overview.md`](../multi-world-stories/overview.md), which answers the world-model question below (separate worlds, synchronized only through the controller) and carries multi-PC forward as per-world roles and interleaved mode. Kept as the original stub, captured 2026-04-19; no further work happens here.
 **Distinct from**: multiuser server (ADR-153) — that work is about multiple *users* sharing one PC in one story instance. This is about multiple *player characters* within a single story, each with their own view of the world.
 
 ## Seed Idea
