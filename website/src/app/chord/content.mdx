@@ -48,8 +48,10 @@ define phrases en-US
 ```
 
 Other lines name a phrase too: `refuse <name>` stops the player's action and
-prints the phrase as the reason, and a blocked exit names the phrase it
-answers with. Examples often show the line and leave the definition out; the
+prints the phrase as the reason, a blocked exit names the phrase it answers
+with, and `win <name>` or `lose <name>` ends the story on one. What a
+character says is a phrase as well: each row of a conversation table holds
+ordinary statements, and a `phrase` line among them is the reply. Examples often show the line and leave the definition out; the
 name stands for words the story supplies. A phrase used in one place can be
 written right there instead, as prose indented under the `phrase` line.
 [define phrases](/chord/guide/vocabulary/define-phrases) is the plain form
