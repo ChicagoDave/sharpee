@@ -254,9 +254,9 @@ one desert can write it in ten lines and own every word.
 There is no companion snapshot for this chapter. The two examples above
 are complete stories, and you can build them as you built the first story
 in Part I. Each needs a folder of its own, because a folder holds one
-story. Make a folder called `cellar` beside your project, and later one
-called `yard` in the same place. Type the first example into a file
-called `cellar.story` inside it, and run these two commands there.
+story. Make a folder called `cellar` beside your project. Type the first
+example into a file called `cellar.story` inside it, and run these two
+commands there.
 
 ```shell
 sharpee compose cellar.story --check
@@ -264,8 +264,8 @@ sharpee play .
 ```
 
 Attack the rat, take the poker, and attack again until the rat is dead.
-Then make a folder called `yard`, type the second example into
-`yard.story` inside it, and do the same.
+Then make a folder called `yard` in the same place, type the second example
+into `yard.story` inside it, and do the same.
 
 ```shell
 sharpee compose yard.story --check

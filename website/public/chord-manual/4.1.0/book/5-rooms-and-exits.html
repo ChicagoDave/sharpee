@@ -143,8 +143,8 @@ class="header-section-number">5.3</span> The way back is free</h2>
 <code>north to the Gate Court</code>, the player can also go south from
 the Gate Court to the Lodge. You do not write the second line.</p>
 <p>You may write it if it makes the file easier to read, as long as it
-agrees. The Gate Court does so, and uses the second way of writing exits
-while it is about it:</p>
+agrees with the first. The Gate Court does so, and it also uses the
+second way of writing exits:</p>
 <pre class="chord"><code>create the Gate Court, a room
   exits: south to the Lodge, north to the Cloister</code></pre>
 <p>The <code>exits:</code> line holds several exits on one line,
@@ -167,8 +167,8 @@ again by that route. If the Attic has no other exit, going down from it
 prints the platform’s line for a room with no ways out at all:</p>
 <pre class="text"><code>&gt; down
 There are no obvious exits.</code></pre>
-<p>On an <code>exits:</code> line the words go before the colon and
-apply to every exit on the line, as in
+<p>On an <code>exits:</code> line, <code>one-way</code> goes before the
+colon and applies to every exit on the line, as in
 <code>exits, one-way: up to the Attic</code>.</p>
 <p>The Relighting has no one-way exits yet. Use them sparingly. A player
 who cannot go back the way they came should be able to tell why from the
@@ -281,11 +281,12 @@ and the chapters do not print every line of it. Copy
 <code>chapter-05</code> over your own file. It is the story with this
 chapter’s changes made, and it holds the descriptions the chapter did
 not print in full. “How to read this book” says where the companion
-folders are. To make the changes by hand instead, work from this list
-and take the rest from that file: add the seven new rooms and the
-changes to the Lodge, and raise <code>story-version:</code> to
-<code>0.2.0</code>, since this is the first chapter of Part II. Check
-the story, then play it.</p>
+folders are.</p>
+<p>To make the changes by hand instead, work from this list and take the
+rest from that file: add the seven new rooms and the changes to the
+Lodge, and raise <code>story-version:</code> to <code>0.2.0</code>,
+since this is the first chapter of Part II. Check the story, then play
+it.</p>
 <pre class="shell"><code>sharpee compose relighting.story --check
 sharpee play .</code></pre>
 <p>Walk the whole map. From the Lodge, the commands <code>north</code>,

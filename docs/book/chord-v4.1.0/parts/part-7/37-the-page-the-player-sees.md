@@ -15,7 +15,7 @@ keep saved games.
 Chord gives a story three ways to shape that page. The header chooses the
 client and its themes. A **channel** sends a named value to the page,
 beside the prose, for the page to show where it likes. And a folder beside
-the story holds a stylesheet, and if you want one, a page of your own.
+the story holds a stylesheet and, if you want one, a page of your own.
 
 This chapter builds The Relighting for the browser for the first time and
 gives it a panel that lists the workings Ansel has learned.

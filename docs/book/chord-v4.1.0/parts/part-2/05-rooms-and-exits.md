@@ -79,9 +79,9 @@ An exit works in both directions. Because the Lodge has `north to the Gate
 Court`, the player can also go south from the Gate Court to the Lodge. You do
 not write the second line.
 
-You may write it if it makes the file easier to read, as long as it agrees.
-The Gate Court does so, and uses the second way of writing exits while it is
-about it:
+You may write it if it makes the file easier to read, as long as it agrees
+with the first. The Gate Court does so, and it also uses the second way of
+writing exits:
 
 ```chord
 create the Gate Court, a room
@@ -120,8 +120,8 @@ platform's line for a room with no ways out at all:
 There are no obvious exits.
 ```
 
-On an `exits:` line the words go before the colon and apply to every exit on
-the line, as in `exits, one-way: up to the Attic`.
+On an `exits:` line, `one-way` goes before the colon and applies to every exit
+on the line, as in `exits, one-way: up to the Attic`.
 
 The Relighting has no one-way exits yet. Use them sparingly. A player who
 cannot go back the way they came should be able to tell why from the prose.
@@ -251,6 +251,7 @@ chapters do not print every line of it. Copy `relighting.story` from the
 companion folder `chapter-05` over your own file. It is the story with this
 chapter's changes made, and it holds the descriptions the chapter did not
 print in full. "How to read this book" says where the companion folders are.
+
 To make the changes by hand instead, work from this list and take the rest
 from that file: add the seven new rooms and the changes to the Lodge, and
 raise `story-version:` to `0.2.0`, since this is the first chapter of Part II.

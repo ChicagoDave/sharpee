@@ -42,7 +42,7 @@ create the Gate Court, a room
 ```
 
 The six rooms behind the arch each take `in the Hall` in the same way. A room
-may be in one region or in none. Two `in` lines on one room is an error:
+may be in one region or in none. Two `in` lines on one room are an error:
 
 ```text
 relighting.story:35:3 error [analysis.room-two-regions] `Lodge` already names a region on line 34 — a room is in at most one region. Remove one of the `in` lines.

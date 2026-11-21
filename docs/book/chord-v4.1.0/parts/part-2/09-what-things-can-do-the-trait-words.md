@@ -106,8 +106,8 @@ create the grimoire
   frost comes onto a window. Someone has written in one margin.
 ```
 
-This is one of the places chapter 1 promised, where quotation marks are
-needed. The text is one line, however long, and it cannot itself contain a
+This is one of the places where quotation marks are needed, as chapter 1
+promised. The text is one line, however long, and it cannot itself contain a
 quotation mark.
 
 A readable thing has two pieces of prose, and the player reaches them with two
@@ -155,7 +155,7 @@ create the seed cake
   Half a seed cake on a plate, cut with some care into two pieces.
 ```
 
-The line `servings`, with a number, says how many times the thing can be
+A `servings` line, with a number, says how many times the thing can be
 eaten before it is finished. Without it, one bite is the whole thing.
 
 ```text

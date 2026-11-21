@@ -474,16 +474,19 @@ an ending in that list is an ending no test has ever seen.
 Make the folder `relighting.tests` beside your story. Write the manifest
 into it, and `mainline.json` with its three skip cards, with their keys in
 alphabetical order and two spaces of indentation for each level. Run the
-command of "Reading what the story says". Then replace `mainline.json`
-with the whole file printed under "What a card can assert", and run
-`sharpee test .`. Write the other two segments, `onward01.json` and
-`thecake1.json`, and run it again. The second and third segments go in
-together, because a segment that continues a line is refused until a
-branch leaves the card it continues from. Then break something on
-purpose. In the story, find the phrase `cake-watched`, which the seed
-cake's refusal prints, and change its last sentence from "You find you
-cannot." to "You decide against it." Run the tree and read the failure.
-Then put the sentence back and run the tree again.
+command of "Reading what the story says".
+
+Then replace `mainline.json` with the whole file printed under "What a
+card can assert", and run `sharpee test .`. Write the other two segments,
+`onward01.json` and `thecake1.json`, and run it again. The second and
+third segments go in together, because a segment that continues a line is
+refused until a branch leaves the card it continues from.
+
+Then break something on purpose. In the story, find the phrase
+`cake-watched`, which the seed cake's refusal prints, and change its last
+sentence from "You find you cannot." to "You decide against it." Run the
+tree and read the failure. Then put the sentence back and run the tree
+again.
 
 When you have seen a failure and mended it, replace your `relighting.tests`
 folder with the `relighting.tests` folder from the companion folder

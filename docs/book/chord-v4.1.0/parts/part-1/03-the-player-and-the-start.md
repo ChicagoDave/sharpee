@@ -104,8 +104,8 @@ Lodge
 The porter's lodge is one small room built into the thickness of the gate arch. A chair, a kettle and thirty years of newspapers have filled most of it. On the sill a lamp is burning with a steady blue flame.
 ```
 
-The opening is not a turn. Nobody typed anything, so nothing that counts
-turns has counted one, and the first command the player types is turn 1.
+The opening is not a turn. Nobody typed anything, so no turn has been
+counted, and the first command the player types is turn 1.
 That will matter in chapter 19, where the story gets a clock.
 
 Each of the three has a name, and a second block lets you say which of
@@ -177,7 +177,8 @@ block, and you need not add one.
 
 ## When it goes wrong
 
-There are four mistakes to make here, and the compiler catches three of them.
+There are four mistakes you can make here, and the compiler catches three of
+them.
 
 If you leave the start block out, the story has no player:
 

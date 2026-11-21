@@ -245,13 +245,13 @@ There is a difficulty. The Lantern is on the roof, the grille is across the
 stair, and nothing in the story can lift the grille until chapter 24. No
 player can reach either ending yet.
 
-The start block trick from chapter 13 is made for this. Take a copy of the
-file as this chapter leaves it, which is the one "Build and try it" below
-copies in, since the endings are written there. In the copy, set the world
-up as it will be late in the game. Keep the copy, still named
-`relighting.story`, in a new folder beside your project called
-`relighting-endings`. It needs a folder of its own, since a project holds
-one story. Check and play it there.
+The start block trick from chapter 13 is made for this. First do "Build and
+try it" below, so that your file is the one this chapter leaves, with the
+endings written in it. Then make a new folder beside your project called
+`relighting-endings`, and put a copy of the file in it, still named
+`relighting.story`. The copy needs a folder of its own, because a project
+holds one story. In the copy, set the world up as it will be late in the
+game, and check and play it there.
 
 ```chord
 before the game starts

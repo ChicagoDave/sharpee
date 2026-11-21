@@ -184,7 +184,7 @@ define exchange the-price for Tamsin Vey
     Tamsin Vey gives the unbind page to Ansel
 ```
 
-And one of her topic rows has two answers, chosen by it.
+And one of her topic rows has two answers, chosen by that feeling.
 
 ```chord
 about "magic", "craft":
@@ -219,9 +219,10 @@ scale and not a switch: a story can move a person from `wary of` to
 knows the-last-night, witnessed, certain
 ```
 
-A `knows` line in a person's block says that the person holds a piece of knowledge when the story starts. The knowledge is a name of your choosing, a single hyphenated
-word, and it stands for the thing known. It does not need to be declared
-anywhere else.
+A `knows` line in a person's block says that the person holds a piece of
+knowledge when the story starts. The knowledge has a name of your choosing,
+a single hyphenated word, which stands for the thing known. The name does
+not need to be declared anywhere else.
 
 Two more words follow it. The first is how the person came by it, and is
 required: `witnessed`, `told`, `inferred`, `assumed` or `hallucinated`. The
@@ -281,7 +282,7 @@ The player, standing in the Yard, is told only that something was said.
 In another room the player would be told nothing, and Tom would know all
 the same.
 
-That is rumour, in two lines a person. A fact witnessed in the kitchen can
+That is rumour, in two lines for each person. A fact witnessed in the kitchen can
 reach the drawing room by way of whoever walks between them, and what the
 people there will say to the player changes as it arrives.
 

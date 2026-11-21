@@ -92,9 +92,9 @@ application with an editor, a play pane and a testing pane in one
 window. The <code>sharpee</code> command does the same work from a
 terminal. This book gives both wherever a step is something you do
 rather than something you write, under the heading “Build and try it”.
-The story file is the same either way. This chapter is steps from
-beginning to end, so it has no such heading. From chapter 5 on, each
-chapter has one near its end.</p>
+The story file is the same either way. This whole chapter is a sequence
+of steps, so it has no such heading. From chapter 5 on, each chapter has
+one near its end.</p>
 <!-- PENDING (plan D-3): the Chord Writer half of this chapter. No published
      Chord Writer pairs with this edition's pin yet (issues 653 and 729), so
      its steps cannot be written from the product. Each "Build and try it"
@@ -132,9 +132,9 @@ puts a story through a series of checks, which it calls gates, and a
 story that passes every one of them is gate-clean. A story that is not
 gate-clean cannot be played.</p>
 <p><code>compose</code> is the compiler’s name, and <code>--check</code>
-tells it to run the gates and stop. Run this command often. It takes a
-moment, and it is far easier to find a mistake among the five lines you
-have just typed than among fifty.</p>
+tells it to run the gates and stop. Run this command often. It takes
+only a moment, and it is far easier to find a mistake among the five
+lines you have just typed than among fifty.</p>
 <h2 data-number="4.4" id="playing-the-story"><span
 class="header-section-number">4.4</span> Playing the story</h2>
 <p>To play the story, tell <code>sharpee</code> to play the project you
@@ -173,8 +173,8 @@ Time passes...
 
 &gt; xyzzy
 I don&#39;t understand that.</code></pre>
-<p>Two of those answers are worth a second look, because you wrote
-neither of them.</p>
+<p>Three of those answers are worth a second look, because you wrote
+none of them.</p>
 <p>“You can’t see any such thing” is the story telling the truth. The
 Lodge’s description mentions a lamp, but a description is only words.
 There is no lamp in the story until you create one, and chapter 6 does.
@@ -265,11 +265,11 @@ easy to make in your first hour.</p>
 it the file, it says so in its own way:</p>
 <pre class="text"><code>play: &#39;relighting.story&#39; is neither a directory nor a registered story — run `sharpee register &lt;location&gt;`, or run `sharpee play` from the project directory</code></pre>
 <p>A project has one story. If you keep a second <code>.story</code>
-file in the folder, a copy you made before an experiment, for instance,
+file in the folder, such as a copy you made before an experiment,
 <code>play</code> refuses to choose between them:</p>
 <pre class="text"><code>Error loading story: project has 2 .story files (notes.story, relighting.story) — a project has exactly one; remove or rename the others</code></pre>
-<p>Keep your experiments in another folder, or give the copy a different
-ending.</p>
+<p>Keep your experiments in another folder, or give the copy a name that
+does not end in <code>.story</code>.</p>
 <div class="under-the-hood">
 <p><strong>Under the Hood: what <code>compose</code> writes</strong> ·
 <code>sharpee compose</code></p>

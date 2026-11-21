@@ -30,7 +30,7 @@ value you care about. Here is the spark page's clause again.
   end on
 ```
 
-The first line is `select on`, the thing with `'s state` after it. Each arm
+The first line is `select on`, then the thing, then `'s state`. Each arm
 opens with `when` and a state name, and its statements are indented beneath
 it. The block closes with `end select`.
 

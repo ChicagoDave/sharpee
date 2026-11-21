@@ -33,8 +33,8 @@ create the grimoire
 ```
 
 The grimoire's placement is new. Chapter 6 placed things with `in the`
-followed by a room. A thing may equally be `in the` a container or `on the` a
-supporter. The grimoire is `on the reading desk` because the desk is a
+followed by a room. A thing may equally be placed with `in the` followed by a
+container, or with `on the` followed by a supporter. The grimoire is `on the reading desk` because the desk is a
 supporter. Take care to use the word that fits the kind, because the compiler
 does not check it for you.
 
@@ -106,9 +106,9 @@ cannot be closed.
 
 ## How much it holds
 
-The line `holds`, followed by a number, limits how many things a container or
-a supporter can have in it or on it at once. The crate holds one, and that one
-is the lens. In a new game, before the lens has been taken out:
+A `holds` line gives a number, which limits how many things a container or a
+supporter can have in it or on it at once. The crate holds one, and that one
+is the lens. Here is a new game, before the lens has been taken out.
 
 ```text
 > open crate

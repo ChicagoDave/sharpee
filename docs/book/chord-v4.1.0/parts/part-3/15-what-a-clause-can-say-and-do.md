@@ -42,8 +42,7 @@ refused with the phrase.
 You reach for the word and find only the place where it was.
 ```
 
-A `must` line can ask the same things a condition can, in the form that
-follows `must`:
+A `must` line can ask the same things a condition can. These are its forms:
 
 | Form | Example |
 | --- | --- |
@@ -252,7 +251,7 @@ first reading would print the wrong one.
 
 For a clause with one or two conditional lines, the suffix is the right
 tool. For a clause that really has branches, chapter 17 has a better one,
-and it will rewrite this clause.
+and that chapter rewrites this clause.
 
 `refuse` takes no `when` suffix. Its conditional form is `refuse when`,
 which you have already.

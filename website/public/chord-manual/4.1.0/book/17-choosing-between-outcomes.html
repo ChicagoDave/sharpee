@@ -110,10 +110,10 @@ page’s clause again.</p>
         phrase spark-known
     end select
   end on</code></pre>
-<p>The first line is <code>select on</code>, the thing with
-<code>'s state</code> after it. Each arm opens with <code>when</code>
-and a state name, and its statements are indented beneath it. The block
-closes with <code>end select</code>.</p>
+<p>The first line is <code>select on</code>, then the thing, then
+<code>'s state</code>. Each arm opens with <code>when</code> and a state
+name, and its statements are indented beneath it. The block closes with
+<code>end select</code>.</p>
 <p>Exactly one arm runs: the one for the state the page is in when the
 block is reached. That removes both of the costs chapter 15 warned
 about. No condition is repeated, and the order of the statements inside

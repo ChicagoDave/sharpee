@@ -275,10 +275,9 @@ quotation mark every time you write a sentence for the player.</p>
 </div>
 <h2 data-number="1.7" id="how-text-is-emitted"><span
 class="header-section-number">1.7</span> How text is emitted</h2>
-<p>Chord has no statement that prints a string. Every sentence the
-player reads is written in one of four places. It helps to know all four
-now, because the examples in this book use them some chapters before the
-chapter that treats each one in full.</p>
+<p>Everything the player reads comes from one of four places. Later
+chapters teach each of them. This section names all four, so that you
+know them when you see them.</p>
 <p>The first place is a description. A paragraph under a
 <code>create</code> header describes whatever the block creates, and the
 story prints it without being told to. A room’s description appears when
@@ -293,12 +292,12 @@ prints the text at that moment.</p>
   stair-sealed:
     The grille stands across the stair, and there is no way round it.</code></pre>
 <p>Here <code>stair-sealed</code> is the key, and the sentence beneath
-it is what the player reads. Chapter 12 writes this phrase and the line
-that uses it, which blocks a stair. From chapter 14 on, a line that
-begins with <code>phrase</code> prints a phrase when something happens,
-and a line that begins with <code>refuse</code> stops what the player
-tried and prints a phrase as the reason. The sentence that ends a story
-is a phrase, and so is what a person says when the player asks them a
+it is what the player reads. Chapter 12 writes this phrase, for a stair
+that the player cannot climb. From chapter 14 on, a line that begins
+with <code>phrase</code> prints a phrase when something happens, and a
+line that begins with <code>refuse</code> stops what the player tried
+and prints a phrase as the reason. The sentence that ends a story is a
+phrase, and so is what a person says when the player asks them a
 question. Whenever you meet a hyphenated word such as
 <code>stair-sealed</code> where you expected a sentence, it is a key,
 and the sentence is in the <code>define phrases</code> block. Chapter 20
@@ -315,15 +314,14 @@ standard message for the whole story, and chapter 21 gives one thing
 words of its own.</p>
 <h2 data-number="1.8" id="what-you-have-so-far"><span
 class="header-section-number">1.8</span> What you have so far</h2>
-<p>You have not built anything yet, and that is deliberate. Type the
-story at the top of this chapter into a file called
-<code>relighting.story</code>, with spaces for indentation, and keep it.
-Make a new folder called <code>relighting</code> for it, with nothing
-else inside. The folder can be anywhere you keep your own work. Chapter
-2 explains its first block, chapter 3 explains Ansel and the block that
-ends the file, and chapter 4 builds the story and plays it. The Lodge
-waits for chapter 5, though it is already doing its work as the one
-place the story has.</p>
+<p>You have not built anything yet, and that is deliberate. Make a new
+folder called <code>relighting</code>, anywhere you keep your own work,
+with nothing else inside. Type the story at the top of this chapter into
+a file in that folder called <code>relighting.story</code>, with spaces
+for indentation, and keep it. Chapter 2 explains its first block,
+chapter 3 explains Ansel and the block that ends the file, and chapter 4
+builds the story and plays it. The Lodge waits for chapter 5, though it
+is already doing its work as the one place the story has.</p>
 <nav class="book-nav-bottom"><a class="prev" href="-part-i.-a-first-story.html">← Part I. A first story</a><a class="next" href="2-the-story-header.html">The story header →</a></nav>
 </body>
 </html>

@@ -51,14 +51,12 @@ He takes his time, of which he has had a great deal.
 "Vey? Takes the brass and leaves the hinges. I let her. Brass doesn't keep the rain out." He considers. "Her word's good. It's all of her that is."
 ```
 
-The sentence above each answer is one of three that Hobb's manner takes in
-turn, which a later section of this chapter explains. Which of the three
-you see depends on how many answers he has given in your game, so in this
-chapter and the three after it, that sentence in your play will often be
-a different one of the three from the one the page shows.
-
 Each answer has a sentence in front of it that is not in the phrase. That
-is Hobb's manner, and this chapter comes to it below.
+is Hobb's manner, which a later section of this chapter explains. The
+sentence is one of three that his manner takes in turn. Which of the three
+you see depends on how many answers he has given in your game, so in this
+chapter and the three after it, the sentence in your play will often be a
+different one of the three from the one the page shows.
 
 The player's article is dropped before the match, so "dimming" answers
 both `about dimming` and `about the dimming`. For the same reason you write

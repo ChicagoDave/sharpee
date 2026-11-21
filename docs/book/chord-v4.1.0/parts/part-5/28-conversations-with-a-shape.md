@@ -10,8 +10,8 @@ This chapter adds three blocks that give a conversation an order. A
 **conversation** is a subject that a person takes forward a step at a time.
 An **exchange** is a question the person puts to the player, with the
 answers it accepts. An **initiative** block lets a person speak without
-being asked. It then returns to the topic table for three small things a
-row can do once conversations have a memory.
+being asked. The chapter then returns to the topic table for three small
+things a row can do once conversations have a memory.
 
 The Relighting uses all of it for one purpose. Tamsin Vey has the unbind
 page, and she will part with it for a promise.

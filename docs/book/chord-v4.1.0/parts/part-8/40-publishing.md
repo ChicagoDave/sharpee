@@ -264,7 +264,8 @@ its source, so write `publish-source: yes` in the header; the report and
 the list of files in this chapter are those of a story that has the line.
 Run the
 tree. Then publish, and unzip `dist/relighting.zip` into an empty folder.
-Any unzipping tool will do. From a terminal in the project folder:
+Any unzipping tool will do. From a terminal in the project folder, the
+command is this.
 
 ```shell
 unzip dist/relighting.zip -d ../relighting-published

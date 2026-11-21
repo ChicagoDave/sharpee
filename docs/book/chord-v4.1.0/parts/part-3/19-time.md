@@ -20,13 +20,13 @@ the player's command has been dealt with. It usually carries a condition, so
 that it runs only while something is true.
 
 The cistern in the Undercroft has been frozen for thirty years. A lit lamp
-standing over it should thaw it. First the condition, with a name:
+standing over it should thaw it. First the condition gets a name.
 
 ```chord
 define condition lamplight-here: the hand lamp is lit and the hand lamp is here and the cistern is here
 ```
 
-Then two clauses on the cistern.
+Then the cistern gets two clauses.
 
 ```chord
 create the cistern

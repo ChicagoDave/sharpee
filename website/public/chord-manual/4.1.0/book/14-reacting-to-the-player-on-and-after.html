@@ -200,8 +200,8 @@ An <code>after</code> clause closes with <code>end after</code>.</p>
 <code>after</code> clause cannot refuse. If you write
 <code>refuse</code> in one, the compiler explains:</p>
 <pre class="text"><code>probe.story:23:5 error [parse.react-refusal] Refusals (`refuse`, `must`) cannot appear in an `after` clause — reactions run after the action succeeded. Use an `on` clause to intercept.</code></pre>
-<p>The choice between the two is the choice between those two sentences.
-Use <code>on</code> when the thing should prevent the action or tell it
+<p>The choice between the two kinds of clause follows from that. Use
+<code>on</code> when the thing should prevent the action or tell it
 differently. Use <code>after</code> when the action should happen as
 usual and the thing has something to add.</p>
 <h2 data-number="14.5" id="several-actions-one-clause"><span

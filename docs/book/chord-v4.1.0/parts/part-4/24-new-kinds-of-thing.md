@@ -274,10 +274,10 @@ create the spectacles
     Both arms are sound.
 ```
 
-One word on the kind line, and the mend working mends them.
+With one word on the kind line, the mend working mends them.
 
-The replies in this section were recorded with the bell already hushed,
-which the next section does. Mend anything while it is still tolling and
+The replies in this section were recorded with the bell already hushed, and
+the next section is where it is hushed. Mend anything while it is still tolling and
 the reply ends with the bell.
 
 ```text

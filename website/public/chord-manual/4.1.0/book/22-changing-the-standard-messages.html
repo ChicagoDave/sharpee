@@ -211,10 +211,10 @@ override changes a sentence everywhere. A clause changes it for one
 thing.</p>
 <h2 data-number="22.7" id="phrasebooks"><span
 class="header-section-number">22.7</span> Phrasebooks</h2>
-<p>Now the opposite problem. Two of the story’s own refusals should
-change once the Hall begins to wake. While it sleeps, the grille “does
-not so much as rattle”. Once it is waking, the iron should feel alive.
-The same goes for Hobb and his kettle.</p>
+<p>The phrasebook answers the opposite problem. Two of the story’s own
+refusals should change once the Hall begins to wake. While it sleeps,
+the grille “does not so much as rattle”. Once it is waking, the iron
+should feel alive. The same goes for Hobb and his kettle.</p>
 <p>You could put a <code>when</code> suffix on every
 <code>refuse</code>, except that <code>refuse</code> does not take one.
 You could split each key in two and choose between them in every clause
@@ -243,7 +243,7 @@ book whose condition holds. A book with no <code>while</code> always
 holds, so it is the book of last resort.</p>
 <pre class="text"><code>&gt; push grille
 It does not so much as rattle.</code></pre>
-<p>After the spark page has been read:</p>
+<p>After the spark page has been read, the answer changes.</p>
 <pre class="text"><code>&gt; push grille
 It hums under your hand, very faintly, like a rail with a train a long way off. It does not move.
 
@@ -251,17 +251,17 @@ The tower bell strikes once, and the sound goes through the stones under your fe
 <p>The grille’s clause still says <code>refuse grille-fixed</code>, as
 it has since chapter 14.</p>
 <p>Three rules keep phrasebooks working.</p>
-<p><strong>Order decides.</strong> Put the conditional books first and
-the book with no condition last. If <code>hall-asleep</code> stood first
-it would always be chosen, since it always holds, and the waking book
-would never be reached.</p>
-<p><strong>A key lives in the books or outside them.</strong> A key
-declared by <code>define phrases</code> or <code>define phrase</code>
-always wins over a phrasebook. When you move a key into phrasebooks,
-take its entry out of the <code>define phrases</code> block.</p>
-<p><strong>Books are for your keys.</strong> An entry in a phrasebook
-does not change a standard message. Those are changed by
-<code>override message</code>, and an override has no condition.</p>
+<p>Order decides. Put the conditional books first and the book with no
+condition last. If <code>hall-asleep</code> stood first it would always
+be chosen, since it always holds, and the waking book would never be
+reached.</p>
+<p>A key lives in the books or outside them. A key declared by
+<code>define phrases</code> or <code>define phrase</code> always wins
+over a phrasebook. When you move a key into phrasebooks, take its entry
+out of the <code>define phrases</code> block.</p>
+<p>Books are for your keys. An entry in a phrasebook does not change a
+standard message. Those are changed by <code>override message</code>,
+and an override has no condition.</p>
 <p>An entry may have variants and a strategy, written as in the list
 form with the strategy after the key:
 <code>kettle-is-hobbs, cycling:</code> and then the variants with

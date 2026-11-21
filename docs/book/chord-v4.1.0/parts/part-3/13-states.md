@@ -135,7 +135,7 @@ Statements cannot stand loose in a file. They live inside blocks that say
 when they run, and the block you will use most is the clause of chapter 14.
 There is one such block in the story already, the start block, and it will
 do for an experiment. The line needs the grille's `states` line, so try it
-once this chapter's story is in your folder, after the copy in "Build and
+once you have copied this chapter's story into your folder, in "Build and
 try it" below. Add the line to the start block for a moment.
 
 ```chord
@@ -167,7 +167,7 @@ probe.story:27:3 error [analysis.undeclared-state] `melted` is not a declared st
 ## States that go both ways
 
 Nothing in Lanternhall goes back to what it was, which is rather the point of
-the story. For a thing that does, here is a sluice from another one.
+the story. For a thing that does, here is a sluice from another story.
 
 ```chord
 create the sluice

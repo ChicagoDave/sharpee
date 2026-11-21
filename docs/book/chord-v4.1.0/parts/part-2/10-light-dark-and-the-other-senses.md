@@ -37,10 +37,10 @@ Cloister
 A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.
 ```
 
-Notice three things. The player was allowed to walk into the dark, and was
-allowed to walk out of it again. The exits of a dark room still work, so a
-player who blunders in is never trapped. And the first line the player read
-came from another story entirely.
+Notice three things. The player was allowed to walk into the dark. The player
+was also allowed to walk out of it again, because the exits of a dark room
+still work, so a player who blunders in is never trapped. And the first line
+the player read came from another story entirely.
 
 The grue is the platform's stock line for entering a dark room, kept in
 honour of the games that invented this kind of puzzle. It has no place in
@@ -195,8 +195,8 @@ You hear a clock.
 You hear faint sounds from inside the tin.
 ```
 
-This is a way of telling the player that a closed thing is worth opening
-without saying so. The sock, which is neither smelly nor loud, gives no sign
+This is a way of telling the player, without saying so, that a closed thing
+is worth opening. The sock, which is neither smelly nor loud, gives no sign
 of itself until the tin is open.
 
 Sound goes much further than this. A story can define sounds of its own, play
@@ -255,9 +255,9 @@ Both systems have this model, and it will feel like home. Inform 10 has dark
 rooms and lit things, and TADS 3 has a brightness on rooms and on light
 sources. Chord's version is the simple one: a room is dark or it is not, a
 light source is lit or it is not, and one lit source in the room is enough.
-There are no degrees of brightness. The surprise for both kinds of author is
-further on, in that lighting a light source is an ordinary standard action
-that you restrict, not a rule you write from nothing.
+There are no degrees of brightness. The surprise for both kinds of author
+comes later: lighting a light source is an ordinary standard action that you
+restrict, not a rule you write from nothing.
 :::
 
 ## What you have so far

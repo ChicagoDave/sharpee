@@ -177,7 +177,7 @@ everywhere. A clause changes it for one thing.
 
 ## Phrasebooks
 
-Now the opposite problem. Two of the story's own refusals should change once
+The phrasebook answers the opposite problem. Two of the story's own refusals should change once
 the Hall begins to wake. While it sleeps, the grille "does not so much as
 rattle". Once it is waking, the iron should feel alive. The same goes for
 Hobb and his kettle.
@@ -216,7 +216,7 @@ takes the entry from the first book whose condition holds. A book with no
 It does not so much as rattle.
 ```
 
-After the spark page has been read:
+After the spark page has been read, the answer changes.
 
 ```text
 > push grille
@@ -230,15 +230,15 @@ chapter 14.
 
 Three rules keep phrasebooks working.
 
-**Order decides.** Put the conditional books first and the book with no
+Order decides. Put the conditional books first and the book with no
 condition last. If `hall-asleep` stood first it would always be chosen,
 since it always holds, and the waking book would never be reached.
 
-**A key lives in the books or outside them.** A key declared by `define
+A key lives in the books or outside them. A key declared by `define
 phrases` or `define phrase` always wins over a phrasebook. When you move a
 key into phrasebooks, take its entry out of the `define phrases` block.
 
-**Books are for your keys.** An entry in a phrasebook does not change a
+Books are for your keys. An entry in a phrasebook does not change a
 standard message. Those are changed by `override message`, and an override
 has no condition.
 

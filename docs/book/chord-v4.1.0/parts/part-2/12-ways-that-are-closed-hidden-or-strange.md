@@ -73,10 +73,10 @@ the story is concerned. The line stops the player, and the thing gives them
 something to look at. Keeping them in step is your job.
 
 As it stands the stair is blocked for good, which makes the Lantern Gallery
-unreachable. A blocked line may carry a condition, written `up is blocked
-while` and then the condition before the colon, and then the way is blocked
-only while the condition holds. Lifting the grille is the business of chapter
-24. Conditions are chapter 16.
+unreachable. A blocked line may carry a condition. It is written `up is blocked
+while`, then the condition, then the colon, and the way is blocked only while
+the condition holds. Conditions are the business of chapter 16, and lifting
+the grille is the business of chapter 24.
 
 ## A way that kills
 
@@ -109,11 +109,11 @@ You step up onto the parapet to see the court. The court comes up to meet you.
 Be sparing with this, and be fair. The Gallery's description now says, "To
 the east a low parapet is all there is between you and the court." A player
 who has read that and walks east has been warned. A deadly way that the prose
-did not signal is a trap, and players forgive very little less.
+did not signal is a trap, and there is very little that players forgive less.
 
 Because the stair is sealed, you cannot reach the parapet in the story as it
-stands. To see it work, wait until this chapter's story is in your folder,
-which is the copy in "Build and try it" below. Then take out the
+stands. To see it work, wait until you have copied this chapter's story into
+your folder, in "Build and try it" below. Then take out the
 `up is blocked` line for a moment, walk up and step off, and put the line
 back.
 

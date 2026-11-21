@@ -234,10 +234,9 @@ Story v0.1.0
 
 Lodge
 The porter&#39;s lodge is one small room built into the thickness of the gate arch. A chair, a kettle and thirty years of newspapers have filled most of it. On the sill a lamp is burning with a steady blue flame.</code></pre>
-<p>The opening is not a turn. Nobody typed anything, so nothing that
-counts turns has counted one, and the first command the player types is
-turn 1. That will matter in chapter 19, where the story gets a
-clock.</p>
+<p>The opening is not a turn. Nobody typed anything, so no turn has been
+counted, and the first command the player types is turn 1. That will
+matter in chapter 19, where the story gets a clock.</p>
 <p>Each of the three has a name, and a second block lets you say which
 of them run and in what order.</p>
 <pre class="chord"><code>when the game starts
@@ -287,8 +286,8 @@ the opening and arranges nothing.</p>
 opening block, and you need not add one.</p>
 <h2 data-number="3.5" id="when-it-goes-wrong"><span
 class="header-section-number">3.5</span> When it goes wrong</h2>
-<p>There are four mistakes to make here, and the compiler catches three
-of them.</p>
+<p>There are four mistakes you can make here, and the compiler catches
+three of them.</p>
 <p>If you leave the start block out, the story has no player:</p>
 <pre class="text"><code>relighting.story:4:1 error [analysis.start-block-missing] This story never says who the player is. Add a `before the game starts` block assigning the role: `change the player to &lt;character&gt;`.</code></pre>
 <p>If you hand the role to a person who is not <code>playable</code>,

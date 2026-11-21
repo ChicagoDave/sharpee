@@ -31,7 +31,8 @@ create the Bell Stair, a room
 
 A room may have two blocked lines for one direction, each with its own
 condition and its own phrase. While the grille stands, the player still
-reads the grille's phrase. With the grille lifted and the lens in hand:
+reads the grille's phrase. With the grille lifted and the lens in hand, the
+second phrase answers.
 
 ```text
 > up

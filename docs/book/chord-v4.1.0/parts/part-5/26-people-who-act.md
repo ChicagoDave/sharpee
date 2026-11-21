@@ -258,7 +258,7 @@ Hobb closes the oak press.
 Hobb is a porter. He has spent thirty years shutting things that other
 people left open, and now the story says so in one line.
 
-Three rules govern the statement.
+Four rules govern the statement.
 
 The words after the name must be a command the story understands. Any
 standard action will do, and so will an action of your own from chapter 23:

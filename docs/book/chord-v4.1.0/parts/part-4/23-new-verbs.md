@@ -352,7 +352,7 @@ Before the bell begins, the story does not know the word.
 I don't understand that.
 ```
 
-Once it is tolling:
+Once it is tolling, the word works.
 
 ```text
 > shout

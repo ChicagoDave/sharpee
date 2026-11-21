@@ -148,8 +148,7 @@ cannot refuse. If you write `refuse` in one, the compiler explains:
 probe.story:23:5 error [parse.react-refusal] Refusals (`refuse`, `must`) cannot appear in an `after` clause — reactions run after the action succeeded. Use an `on` clause to intercept.
 ```
 
-The choice between the two is the choice between those two sentences. Use
-`on` when the thing should prevent the action or tell it differently. Use
+The choice between the two kinds of clause follows from that. Use `on` when the thing should prevent the action or tell it differently. Use
 `after` when the action should happen as usual and the thing has something
 to add.
 

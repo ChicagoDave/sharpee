@@ -118,7 +118,7 @@ create the Gate Court, a room
   exits: south to the Lodge, north to the Cloister</code></pre>
 <p>The six rooms behind the arch each take <code>in the Hall</code> in
 the same way. A room may be in one region or in none. Two
-<code>in</code> lines on one room is an error:</p>
+<code>in</code> lines on one room are an error:</p>
 <pre class="text"><code>relighting.story:35:3 error [analysis.room-two-regions] `Lodge` already names a region on line 34 — a room is in at most one region. Remove one of the `in` lines.</code></pre>
 <p>This is the same word <code>in</code> that places a thing in a room,
 and the compiler tells the two apart by what is being placed and where.

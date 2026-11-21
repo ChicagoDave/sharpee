@@ -169,7 +169,7 @@ that a player in several rooms would expect to be able to look at.
 
 ## What Ansel carries
 
-A person can begin the story holding things. The line `carries`, in the
+A person can begin the story holding things. A `carries` line, in the
 person's own block, names one.
 
 ```chord
@@ -197,7 +197,8 @@ You are carrying:
 a wax taper
 ```
 
-A thing with no placement at all, and that nobody carries, is not an error.
+A thing that has no placement at all, and that nobody carries, is not an
+error.
 It exists and is nowhere. That is useful later, for things that enter the
 story part of the way through, and chapter 15 shows how to bring one on.
 

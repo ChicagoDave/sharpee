@@ -188,7 +188,7 @@ confidence from someone they hate.
 
 ## What the lines add up to
 
-Six people were each told the same secret in confidence, and each was
+Seven people were each told the same secret in confidence, and each was
 asked for it by the player. This is what they did.
 
 | The person's lines | Asked, they |

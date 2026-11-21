@@ -249,9 +249,10 @@ Notice the order of the last three statements. The state changes last,
 because every `when` above it reads the state. Had `change Hobb to settled`
 come first, nothing after it would have run.
 
-Ansel is where the player left them, and the wisp has waited. A follower
-follows the player, but it follows a person: the wisp was brought on beside
-Ansel's lamp, and it stays with Ansel.
+Ansel is where the player left them, and the wisp has waited. Chapter 26
+said that a follower goes where the player goes. What it follows is a
+person: the wisp was brought on beside Ansel's lamp, and it stays with
+Ansel.
 
 ## When to do this
 

@@ -169,10 +169,10 @@ in the same room, `take key` had two possible meanings. The story asked:
 Which do you mean: the key ring or the library key?
 ```
 
-The ring was taken out of the story for this reason alone. You cannot
-give two keys names that share no word, since both are keys, so plan instead
-for them never to be carried at once, or accept that the player will sometimes
-be asked.
+The ring was taken out of the story for this reason alone. Two keys are both
+keys, so you cannot give them names that share no word. Plan instead for them
+never to be carried at once, or accept that the player will sometimes be
+asked.
 
 ## Build and try it
 

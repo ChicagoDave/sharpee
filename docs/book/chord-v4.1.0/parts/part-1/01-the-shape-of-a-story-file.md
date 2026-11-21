@@ -220,10 +220,9 @@ sentence for the player.
 
 ## How text is emitted
 
-Chord has no statement that prints a string. Every sentence the player reads
-is written in one of four places. It helps to know all four now, because the
-examples in this book use them some chapters before the chapter that treats
-each one in full.
+Everything the player reads comes from one of four places.
+Later chapters teach each of them. This section names all four, so that you
+know them when you see them.
 
 The first place is a description. A paragraph under a `create` header
 describes whatever the block creates, and the story prints it without being
@@ -242,8 +241,8 @@ define phrases en-US
 ```
 
 Here `stair-sealed` is the key, and the sentence beneath it is what the player
-reads. Chapter 12 writes this phrase and the line that uses it, which blocks a
-stair. From chapter 14 on, a line that begins with `phrase` prints a phrase
+reads. Chapter 12 writes this phrase, for a stair that the player cannot
+climb. From chapter 14 on, a line that begins with `phrase` prints a phrase
 when something happens, and a line that begins with `refuse` stops what the
 player tried and prints a phrase as the reason. The sentence that ends a story
 is a phrase, and so is what a person says when the player asks them a
@@ -264,10 +263,10 @@ chapter 21 gives one thing words of its own.
 
 ## What you have so far
 
-You have not built anything yet, and that is deliberate. Type the story at the
-top of this chapter into a file called `relighting.story`, with spaces for
-indentation, and keep it. Make a new folder called `relighting` for it, with
-nothing else inside. The folder can be anywhere you keep your own work. Chapter 2 explains its first block, chapter 3
-explains Ansel and the block that ends the file, and chapter 4 builds the story
-and plays it. The Lodge waits for chapter 5, though it is already doing its
+You have not built anything yet, and that is deliberate. Make a new folder
+called `relighting`, anywhere you keep your own work, with nothing else
+inside. Type the story at the top of this chapter into a file in that folder
+called `relighting.story`, with spaces for indentation, and keep it. Chapter 2
+explains its first block, chapter 3 explains Ansel and the block that ends the
+file, and chapter 4 builds the story and plays it. The Lodge waits for chapter 5, though it is already doing its
 work as the one place the story has.

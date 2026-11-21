@@ -9,9 +9,9 @@ There are two ways to work with a Chord story. Chord Writer is an application
 with an editor, a play pane and a testing pane in one window. The `sharpee`
 command does the same work from a terminal. This book gives both wherever a
 step is something you do rather than something you write, under the heading
-"Build and try it". The story file is the same either way. This chapter is
-steps from beginning to end, so it has no such heading. From chapter 5 on,
-each chapter has one near its end.
+"Build and try it". The story file is the same either way. This whole chapter
+is a sequence of steps, so it has no such heading. From chapter 5 on, each
+chapter has one near its end.
 
 <!-- PENDING (plan D-3): the Chord Writer half of this chapter. No published
      Chord Writer pairs with this edition's pin yet (issues 653 and 729), so
@@ -70,7 +70,7 @@ series of checks, which it calls gates, and a story that passes every one of
 them is gate-clean. A story that is not gate-clean cannot be played.
 
 `compose` is the compiler's name, and `--check` tells it to run the gates and
-stop. Run this command often. It takes a moment, and it is far easier to find
+stop. Run this command often. It takes only a moment, and it is far easier to find
 a mistake among the five lines you have just typed than among fifty.
 
 ## Playing the story
@@ -122,7 +122,7 @@ Time passes...
 I don't understand that.
 ```
 
-Two of those answers are worth a second look, because you wrote neither of
+Three of those answers are worth a second look, because you wrote none of
 them.
 
 "You can't see any such thing" is the story telling the truth. The Lodge's
@@ -228,15 +228,16 @@ says so in its own way:
 play: 'relighting.story' is neither a directory nor a registered story — run `sharpee register <location>`, or run `sharpee play` from the project directory
 ```
 
-A project has one story. If you keep a second `.story` file in the folder, a
-copy you made before an experiment, for instance, `play` refuses to choose
-between them:
+A project has one story. If you keep a second `.story` file in the folder,
+such as a copy you made before an experiment, `play` refuses to choose between
+them:
 
 ```text
 Error loading story: project has 2 .story files (notes.story, relighting.story) — a project has exactly one; remove or rename the others
 ```
 
-Keep your experiments in another folder, or give the copy a different ending.
+Keep your experiments in another folder, or give the copy a name that does
+not end in `.story`.
 
 ::: under-the-hood
 **Under the Hood: what `compose` writes** · `sharpee compose`

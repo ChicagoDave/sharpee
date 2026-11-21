@@ -3,8 +3,8 @@
 A player does not know which words you chose. They will type `fix lens`
 where you wrote `mend`, `sit on chair` where the platform knows `enter`, and
 `light lamp` where the whole point of your story is that lamps are sparked.
-A story that answers "I don't understand that" to a reasonable sentence has
-lost a little of the player's trust each time.
+A story that answers "I don't understand that" to a reasonable sentence
+loses a little of the player's trust each time.
 
 This chapter is about the grammar of actions that already exist: adding
 words to them, taking words away, and moving a word from one action to
@@ -60,7 +60,8 @@ extend action entering
     sit down on or in the portal
 ```
 
-With that in the story, which is how this chapter's companion file has it:
+With that in the story, as it is in this chapter's companion file, the
+command works.
 
 ```text
 > sit on chair

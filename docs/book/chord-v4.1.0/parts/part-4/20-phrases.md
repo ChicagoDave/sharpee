@@ -255,7 +255,7 @@ Markers of this kind matter most in a phrase that several things share, and
 you will use them in earnest in chapter 23, where one refusal has to name
 whichever thing the player typed.
 
-One caution. A marker with a plain lower-case word and nothing else, such as
+One caution is needed. A marker with a plain lower-case word and nothing else, such as
 `{count}`, is not read as a value. It is read as the key of another phrase,
 which is the subject of the next section, and the compiler will tell you
 that no such phrase exists.
@@ -302,7 +302,7 @@ room's block had to know.
 A phrase set into a description may have variants and a strategy as well,
 and then the description changes a little each time the player looks.
 
-Three things to know about this form.
+There are three things to know about this form.
 
 It works in the description of a room. A marker in the description of a
 thing is not filled in. For a thing, the tool is the `detail` phrase of the

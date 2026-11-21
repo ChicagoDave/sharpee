@@ -222,7 +222,8 @@ Tamsin Vey pushes the iron grille.
 Iron shrieks on iron, close by, and stops.
 ```
 
-Waiting in the Library, two rooms from it:
+Here is the same turn for a player waiting in the Library, two rooms from
+it.
 
 ```text
 > wait
