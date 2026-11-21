@@ -218,6 +218,50 @@ habit to unlearn is reaching for a quotation mark every time you write a
 sentence for the player.
 :::
 
+## How text is emitted
+
+Chord has no statement that prints a string. Every sentence the player reads
+is written in one of four places. It helps to know all four now, because the
+examples in this book use them some chapters before the chapter that treats
+each one in full.
+
+The first place is a description. A paragraph under a `create` header
+describes whatever the block creates, and the story prints it without being
+told to. A room's description appears when the player arrives or looks, and a
+thing's appears when the player examines it. The story at the top of this
+chapter has two descriptions, the Lodge's and Ansel's.
+
+The second place is a **phrase**, which is a piece of text with a name. The
+name is called its **key**. The text is written once, in a block of its own,
+and any line that gives the key prints the text at that moment.
+
+```chord
+define phrases en-US
+  stair-sealed:
+    The grille stands across the stair, and there is no way round it.
+```
+
+Here `stair-sealed` is the key, and the sentence beneath it is what the player
+reads. Chapter 12 writes this phrase and the line that uses it, which blocks a
+stair. From chapter 14 on, a line that begins with `phrase` prints a phrase
+when something happens, and a line that begins with `refuse` stops what the
+player tried and prints a phrase as the reason. The sentence that ends a story
+is a phrase, and so is what a person says when the player asks them a
+question. Whenever you meet a hyphenated word such as `stair-sealed` where you
+expected a sentence, it is a key, and the sentence is in the `define phrases`
+block. Chapter 20 is the chapter about phrases.
+
+The third place is a **marker**, which is a key in braces inside a paragraph,
+such as `{grille-across}`. It drops a phrase into the middle of a description,
+so that the description can change while the story is played. Chapter 20
+covers markers too.
+
+The fourth place is not in your file. The platform answers the ordinary
+commands itself, and those answers are the **standard messages**. When the
+player takes the lamp and the story says "Taken.", you wrote nothing to make
+that happen. Chapter 22 changes a standard message for the whole story, and
+chapter 21 gives one thing words of its own.
+
 ## What you have so far
 
 You have not built anything yet, and that is deliberate. Type the story at the

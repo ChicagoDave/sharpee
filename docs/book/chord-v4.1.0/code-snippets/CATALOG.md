@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **360 snippets** across 41 chapters (359 author, 1 reference).
+- **361 snippets** across 41 chapters (360 author, 1 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -32,6 +32,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-the-shape-of-a-story-file.story` | The shape of a story file | chord | author | 19 |
 | 02 | `02-how-a-block-ends.story` | How a block ends | chord | author | 125 |
 | 03 | `03-comments.story` | Comments | chord | author | 160 |
+| 04 | `04-how-text-is-emitted.story` | How text is emitted | chord | author | 238 |
 
 ## The story header
 
