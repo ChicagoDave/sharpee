@@ -7,11 +7,13 @@ want it said differently.
 
 Each entry lists the action's **message keys**, the IDs stdlib emits
 instead of English (the `lang` layer supplies the words). Override one per
-entity with an `on`/`after` clause carrying your own phrase
-(chord-language.md), or story-wide with a `define phrase` under the
-dotted ID itself (dotted keys register whole since ADR-230 D5, see
-chord-language.md; a TypeScript story overrides the ID through the
-language provider). In transcripts and event payloads, the ID is how you
+entity with an `on`/`after` clause carrying your own phrase, or
+story-wide with an `override message <alias>` block, where the alias is
+the action name and message name in kebab-case
+(`taking-fixed-in-place`); a dotted ID is never written in a `.story`
+file (see [define phrase](/chord/guide/vocabulary/define-phrase); a
+TypeScript story overrides the ID through the language provider). In
+transcripts and event payloads, the ID is how you
 recognize which moment fired. The worked example in
 [taking and dropping](/chord/stdlib/manipulation/taking-and-dropping)
 shows the per-entity guard and the story-wide override side by side. The

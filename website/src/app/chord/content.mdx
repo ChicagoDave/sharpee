@@ -25,6 +25,46 @@ That is the whole definition of a room: what it is, when it is dark, what it is
 called, how it reads, and what happens the first time you stumble into it in
 the dark. The description is simply the paragraph written inside the block.
 
+## How text is emitted
+
+Chord has no print statement and no string to pass to one. Everything the
+player reads comes from one of four places, and every example in this
+documentation uses at least one of them.
+
+**Descriptions.** A bare paragraph inside a `create` block is that thing's
+description. Nothing prints it explicitly: the player sees a room's
+description on entering or looking, and a thing's on examining it. See
+[Prose, paragraphs, and markers](/chord/guide/world/prose-paragraphs-and-markers).
+
+**Phrases.** A phrase is a piece of text with a name. The story defines the
+text once, and a line that names it prints it at that moment. `phrase stumble`
+in the room above prints the text called `stumble`, which the same file
+supplies:
+
+```chord
+define phrases en-US
+  stumble:
+    Blundering around in the dark isn't a good idea!
+```
+
+Other lines name a phrase too: `refuse <name>` stops the player's action and
+prints the phrase as the reason, and a blocked exit names the phrase it
+answers with. Examples often show the line and leave the definition out; the
+name stands for words the story supplies. A phrase used in one place can be
+written right there instead, as prose indented under the `phrase` line.
+[define phrases](/chord/guide/vocabulary/define-phrases) is the plain form
+above; [define phrase](/chord/guide/vocabulary/define-phrase) gives a phrase
+variants that cycle or vary at random.
+
+**Markers.** A `{name}` inside prose splices the phrase of that name into the
+sentence, so a description can change from one visit to the next.
+
+**Standard messages.** The platform answers the ordinary actions itself:
+"Taken.", "You can't go that way." A story writes nothing to get these. To
+reword one, an `override message` block replaces it for the whole story, and
+a `phrase <name>:` line in a `create` block replaces a phrase for that one
+thing. See [Per-entity phrase overrides](/chord/guide/world/per-entity-phrase-overrides).
+
 ## "Modeling language" is the important part
 
 Chord is deliberately not a general-purpose programming language. It has no
@@ -49,6 +89,7 @@ leaving the story.
 
 * **Things and rooms** — `create the X`, composed from kinds, traits, and settings rather than a class hierarchy
 * **Prose** — descriptions are paragraphs, not string literals; blank lines are paragraph breaks
+* **Phrases** — named text, defined once and printed by a `phrase <name>` line, with variants that cycle or vary at random
 * **Exits** — declared on the room, including blocked exits with their own refusal message
 * **Named conditions** — give a world state a name once, then read it as English wherever it is tested
 * **Event clauses** — `after the player entering while in-darkness`, with ordinal forms like `first time` and `third time`

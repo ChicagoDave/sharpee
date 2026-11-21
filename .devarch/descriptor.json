@@ -1,11 +1,16 @@
 {
   "schemaVersion": 1,
-  "version": "9.5.3",
+  "version": "10.3.0",
   "capabilities": [
     "base"
   ],
   "initializedAt": "2026-05-10T03:21:49Z",
   "documentationStandard": "always",
   "adrLocationCheck": "declined",
-  "adrRecords": {"dirs": ["docs/architecture/adrs"], "glob": "adr-*.md"}
+  "adrRecords": {
+    "dirs": [
+      "docs/architecture/adrs"
+    ],
+    "glob": "adr-*.md"
+  }
 }
