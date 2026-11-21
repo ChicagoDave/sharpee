@@ -262,10 +262,14 @@ it for the same story, and the version tells the two releases apart.
 Set `story-version:` to `1.0.0` in your own copy. The Relighting ships
 its source, so write `publish-source: yes` in the header; the report and
 the list of files in this chapter are those of a story that has the line.
-Run the
-tree. Then publish, and unzip `dist/relighting.zip` into an empty folder.
-Any unzipping tool will do. From a terminal in the project folder, the
-command is this.
+Run the tree. Then publish.
+
+```shell
+sharpee publish relighting.story
+```
+
+Unzip `dist/relighting.zip` into an empty folder. Any unzipping tool will
+do. From a terminal in the project folder, the command is this.
 
 ```shell
 unzip dist/relighting.zip -d ../relighting-published
@@ -273,10 +277,6 @@ unzip dist/relighting.zip -d ../relighting-published
 
 Serve that folder with `npx serve .` from inside it, and play the story
 you wrote from the lodge to the beacon, as a stranger will.
-
-```shell
-sharpee publish relighting.story
-```
 
 The companion folder `chapter-40` holds the story as it was published
 for this book.

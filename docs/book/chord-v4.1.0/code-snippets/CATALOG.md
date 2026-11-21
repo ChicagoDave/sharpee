@@ -32,7 +32,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-the-shape-of-a-story-file.story` | The shape of a story file | chord | author | 19 |
 | 02 | `02-how-a-block-ends.story` | How a block ends | chord | author | 125 |
 | 03 | `03-comments.story` | Comments | chord | author | 160 |
-| 04 | `04-how-text-is-emitted.story` | How text is emitted | chord | author | 238 |
+| 04 | `04-how-text-is-emitted.story` | How text is emitted | chord | author | 237 |
 
 ## The story header
 
@@ -67,7 +67,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 03 | `03-checking-the-story.sh` | Checking the story | shell | author | 60 |
 | 04 | `04-playing-the-story.sh` | Playing the story | shell | author | 81 |
 | 05 | `05-reading-an-error.sh` | Reading an error | shell | author | 147 |
-| 06 | `06-two-mistakes-with-the-folder.reference.sh` | Two mistakes with the folder | shell | reference | 247 |
+| 06 | `06-two-mistakes-with-the-folder.reference.sh` | Two mistakes with the folder | shell | reference | 248 |
 
 # Part II. The world
 
@@ -85,7 +85,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 06 | `06-the-rest-of-lanternhall.story` | The rest of Lanternhall | chord | author | 135 |
 | 07 | `07-the-first-visit.story` | The first visit | chord | author | 185 |
 | 08 | `08-a-heading-of-its-own.story` | A heading of its own | chord | author | 228 |
-| 09 | `09-build-and-try-it.sh` | Build and try it | shell | author | 259 |
+| 09 | `09-build-and-try-it.sh` | Build and try it | shell | author | 260 |
 
 ## Things
 
@@ -100,9 +100,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-other-words-for-a-thing.story` | Other words for a thing | chord | author | 128 |
 | 06 | `06-a-thing-in-several-rooms.story` | A thing in several rooms | chord | author | 152 |
 | 07 | `07-what-ansel-carries.story` | What Ansel carries | chord | author | 175 |
-| 08 | `08-hidden-things.story` | Hidden things | chord | author | 210 |
-| 09 | `09-hidden-things.story` | Hidden things | chord | author | 239 |
-| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 259 |
+| 08 | `08-hidden-things.story` | Hidden things | chord | author | 211 |
+| 09 | `09-hidden-things.story` | Hidden things | chord | author | 240 |
+| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 260 |
 
 ## Containers and supporters
 
@@ -222,13 +222,13 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 03 | `03-speaking-in-the-action-s-place.story` | Speaking in the action's place | chord | author | 75 |
 | 04 | `04-speaking-in-the-action-s-place.story` | Speaking in the action's place | chord | author | 91 |
 | 05 | `05-adding-to-an-action-after.story` | Adding to an action: after | chord | author | 121 |
-| 06 | `06-several-actions-one-clause.story` | Several actions, one clause | chord | author | 161 |
-| 07 | `07-the-other-thing-in-the-command.story` | The other thing in the command | chord | author | 201 |
-| 08 | `08-the-other-thing-in-the-command.story` | The other thing in the command | chord | author | 226 |
-| 09 | `09-the-other-thing-in-the-command.story` | The other thing in the command | chord | author | 240 |
-| 10 | `10-conditions-and-once.story` | Conditions and once | chord | author | 260 |
-| 11 | `11-clauses-about-the-person.story` | Clauses about the person | chord | author | 293 |
-| 12 | `12-build-and-try-it.sh` | Build and try it | shell | author | 338 |
+| 06 | `06-several-actions-one-clause.story` | Several actions, one clause | chord | author | 160 |
+| 07 | `07-the-other-thing-in-the-command.story` | The other thing in the command | chord | author | 200 |
+| 08 | `08-the-other-thing-in-the-command.story` | The other thing in the command | chord | author | 225 |
+| 09 | `09-the-other-thing-in-the-command.story` | The other thing in the command | chord | author | 239 |
+| 10 | `10-conditions-and-once.story` | Conditions and once | chord | author | 259 |
+| 11 | `11-clauses-about-the-person.story` | Clauses about the person | chord | author | 292 |
+| 12 | `12-build-and-try-it.sh` | Build and try it | shell | author | 337 |
 
 ## What a clause can say and do
 
@@ -237,14 +237,14 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-requirements-must.story` | Requirements: must | chord | author | 21 |
-| 02 | `02-requirements-must.story` | Requirements: must | chord | author | 58 |
-| 03 | `03-prohibitions-refuse-when.story` | Prohibitions: refuse when | chord | author | 75 |
-| 04 | `04-printing-phrase.story` | Printing: phrase | chord | author | 123 |
-| 05 | `05-changing-and-moving.story` | Changing and moving | chord | author | 154 |
-| 06 | `06-changing-and-moving.story` | Changing and moving | chord | author | 163 |
-| 07 | `07-changing-and-moving.story` | Changing and moving | chord | author | 202 |
-| 08 | `08-the-when-suffix.story` | The when suffix | chord | author | 221 |
-| 09 | `09-build-and-try-it.sh` | Build and try it | shell | author | 284 |
+| 02 | `02-requirements-must.story` | Requirements: must | chord | author | 57 |
+| 03 | `03-prohibitions-refuse-when.story` | Prohibitions: refuse when | chord | author | 74 |
+| 04 | `04-printing-phrase.story` | Printing: phrase | chord | author | 122 |
+| 05 | `05-changing-and-moving.story` | Changing and moving | chord | author | 153 |
+| 06 | `06-changing-and-moving.story` | Changing and moving | chord | author | 162 |
+| 07 | `07-changing-and-moving.story` | Changing and moving | chord | author | 201 |
+| 08 | `08-the-when-suffix.story` | The when suffix | chord | author | 220 |
+| 09 | `09-build-and-try-it.sh` | Build and try it | shell | author | 283 |
 
 ## Conditions
 
@@ -415,11 +415,11 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-adding-words-to-an-action.story` | Adding words to an action | chord | author | 19 |
 | 02 | `02-extending-a-standard-action.story` | Extending a standard action | chord | author | 56 |
-| 03 | `03-taking-words-away.story` | Taking words away | chord | author | 92 |
-| 04 | `04-moving-a-word.story` | Moving a word | chord | author | 119 |
-| 05 | `05-a-file-for-the-grammar.story` | A file for the grammar | chord | author | 192 |
-| 06 | `06-a-file-for-the-grammar.story` | A file for the grammar | chord | author | 199 |
-| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 237 |
+| 03 | `03-taking-words-away.story` | Taking words away | chord | author | 93 |
+| 04 | `04-moving-a-word.story` | Moving a word | chord | author | 120 |
+| 05 | `05-a-file-for-the-grammar.story` | A file for the grammar | chord | author | 193 |
+| 06 | `06-a-file-for-the-grammar.story` | A file for the grammar | chord | author | 200 |
+| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 238 |
 
 # Part V. People
 
@@ -449,15 +449,15 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-a-table-of-topics.story` | A table of topics | chord | author | 17 |
-| 02 | `02-a-thing-as-a-subject.story` | A thing as a subject | chord | author | 78 |
-| 03 | `03-what-a-row-can-do.story` | What a row can do | chord | author | 113 |
-| 04 | `04-what-a-row-can-do.story` | What a row can do | chord | author | 124 |
-| 05 | `05-a-subject-nobody-has.story` | A subject nobody has | chord | author | 170 |
-| 06 | `06-looking-things-up.story` | Looking things up | chord | author | 193 |
-| 07 | `07-greetings.story` | Greetings | chord | author | 221 |
-| 08 | `08-the-line-a-greeting-needs.story` | The line a greeting needs | chord | author | 272 |
-| 09 | `09-manner.story` | Manner | chord | author | 290 |
-| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 332 |
+| 02 | `02-a-thing-as-a-subject.story` | A thing as a subject | chord | author | 76 |
+| 03 | `03-what-a-row-can-do.story` | What a row can do | chord | author | 111 |
+| 04 | `04-what-a-row-can-do.story` | What a row can do | chord | author | 122 |
+| 05 | `05-a-subject-nobody-has.story` | A subject nobody has | chord | author | 168 |
+| 06 | `06-looking-things-up.story` | Looking things up | chord | author | 191 |
+| 07 | `07-greetings.story` | Greetings | chord | author | 219 |
+| 08 | `08-the-line-a-greeting-needs.story` | The line a greeting needs | chord | author | 270 |
+| 09 | `09-manner.story` | Manner | chord | author | 288 |
+| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 330 |
 
 ## Conversations with a shape
 
@@ -491,9 +491,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 08 | `08-changing-a-feeling.story` | Changing a feeling | chord | author | 178 |
 | 09 | `09-changing-a-feeling.story` | Changing a feeling | chord | author | 189 |
 | 10 | `10-what-a-person-knows.story` | What a person knows | chord | author | 218 |
-| 11 | `11-what-a-person-knows.story` | What a person knows | chord | author | 233 |
-| 12 | `12-telling-one-another.story` | Telling one another | chord | author | 246 |
-| 13 | `13-build-and-try-it.sh` | Build and try it | shell | author | 299 |
+| 11 | `11-what-a-person-knows.story` | What a person knows | chord | author | 234 |
+| 12 | `12-telling-one-another.story` | Telling one another | chord | author | 247 |
+| 13 | `13-build-and-try-it.sh` | Build and try it | shell | author | 300 |
 
 ## Principles
 
@@ -526,7 +526,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 06 | `06-what-a-room-says-about-someone.story` | What a room says about someone | chord | author | 158 |
 | 07 | `07-keeping-a-scene-where-it-belongs.story` | Keeping a scene where it belongs | chord | author | 179 |
 | 08 | `08-handing-it-back.story` | Handing it back | chord | author | 200 |
-| 09 | `09-build-and-try-it.sh` | Build and try it | shell | author | 279 |
+| 09 | `09-build-and-try-it.sh` | Build and try it | shell | author | 280 |
 
 # Part VI. Larger machinery
 
@@ -552,13 +552,13 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-a-problem-for-a-vehicle.story` | A problem for a vehicle | chord | author | 24 |
-| 02 | `02-the-book-hoist.story` | The book hoist | chord | author | 46 |
-| 03 | `03-a-vehicle-that-is-driven.story` | A vehicle that is driven | chord | author | 169 |
-| 04 | `04-flight.story` | Flight | chord | author | 226 |
-| 05 | `05-a-vehicle-the-player-steers.story` | A vehicle the player steers | chord | author | 271 |
-| 06 | `06-a-vehicle-the-player-steers.story` | A vehicle the player steers | chord | author | 305 |
-| 07 | `07-a-vehicle-with-rooms-inside.story` | A vehicle with rooms inside | chord | author | 319 |
-| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 374 |
+| 02 | `02-the-book-hoist.story` | The book hoist | chord | author | 47 |
+| 03 | `03-a-vehicle-that-is-driven.story` | A vehicle that is driven | chord | author | 170 |
+| 04 | `04-flight.story` | Flight | chord | author | 227 |
+| 05 | `05-a-vehicle-the-player-steers.story` | A vehicle the player steers | chord | author | 272 |
+| 06 | `06-a-vehicle-the-player-steers.story` | A vehicle the player steers | chord | author | 306 |
+| 07 | `07-a-vehicle-with-rooms-inside.story` | A vehicle with rooms inside | chord | author | 320 |
+| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 375 |
 
 ## Open water and open ground
 
@@ -609,13 +609,13 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-what-a-sound-sounds-like.story` | What a sound sounds like | chord | author | 144 |
 | 06 | `06-from-afar-and-with-no-file.story` | From afar, and with no file | chord | author | 176 |
 | 07 | `07-from-afar-and-with-no-file.story` | From afar, and with no file | chord | author | 187 |
-| 08 | `08-a-bed-of-sound.story` | A bed of sound | chord | author | 245 |
-| 09 | `09-showing-a-picture.story` | Showing a picture | chord | author | 267 |
-| 10 | `10-showing-a-picture.story` | Showing a picture | chord | author | 282 |
-| 11 | `11-music-named-beds-and-layers.story` | Music, named beds and layers | chord | author | 298 |
-| 12 | `12-music-named-beds-and-layers.story` | Music, named beds and layers | chord | author | 339 |
-| 13 | `13-asking-what-the-client-can-do.story` | Asking what the client can do | chord | author | 368 |
-| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 408 |
+| 08 | `08-a-bed-of-sound.story` | A bed of sound | chord | author | 246 |
+| 09 | `09-showing-a-picture.story` | Showing a picture | chord | author | 268 |
+| 10 | `10-showing-a-picture.story` | Showing a picture | chord | author | 283 |
+| 11 | `11-music-named-beds-and-layers.story` | Music, named beds and layers | chord | author | 299 |
+| 12 | `12-music-named-beds-and-layers.story` | Music, named beds and layers | chord | author | 340 |
+| 13 | `13-asking-what-the-client-can-do.story` | Asking what the client can do | chord | author | 369 |
+| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 409 |
 
 ## The page the player sees
 
@@ -644,7 +644,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-reading-what-the-story-says.sh` | Reading what the story says | shell | author | 129 |
 | 02 | `02-running-the-tree.sh` | Running the tree | shell | author | 271 |
-| 03 | `03-build-and-try-it.sh` | Build and try it | shell | author | 492 |
+| 03 | `03-build-and-try-it.sh` | Build and try it | shell | author | 495 |
 
 ## Claims
 
@@ -659,7 +659,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-a-claim-written-by-hand.story` | A claim written by hand | chord | author | 310 |
 | 06 | `06-a-claim-no-line-reaches.story` | A claim no line reaches | chord | author | 372 |
 | 07 | `07-the-needs-lines.story` | The needs lines | chord | author | 463 |
-| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 527 |
+| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 528 |
 
 ## Publishing
 
@@ -673,6 +673,6 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 04 | `04-whether-the-source-goes-too.story` | Whether the source goes too | chord | author | 121 |
 | 05 | `05-publish.sh` | Publish | shell | author | 138 |
 | 06 | `06-publish.sh` | Publish | shell | author | 148 |
-| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 269 |
-| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 276 |
+| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 267 |
+| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 274 |
 

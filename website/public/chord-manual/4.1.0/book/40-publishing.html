@@ -346,14 +346,15 @@ class="header-section-number">40.7</span> Build and try it</h2>
 copy. The Relighting ships its source, so write
 <code>publish-source: yes</code> in the header; the report and the list
 of files in this chapter are those of a story that has the line. Run the
-tree. Then publish, and unzip <code>dist/relighting.zip</code> into an
-empty folder. Any unzipping tool will do. From a terminal in the project
-folder, the command is this.</p>
+tree. Then publish.</p>
+<pre class="shell"><code>sharpee publish relighting.story</code></pre>
+<p>Unzip <code>dist/relighting.zip</code> into an empty folder. Any
+unzipping tool will do. From a terminal in the project folder, the
+command is this.</p>
 <pre class="shell"><code>unzip dist/relighting.zip -d ../relighting-published</code></pre>
 <p>Serve that folder with <code>npx serve .</code> from inside it, and
 play the story you wrote from the lodge to the beacon, as a stranger
 will.</p>
-<pre class="shell"><code>sharpee publish relighting.story</code></pre>
 <p>The companion folder <code>chapter-40</code> holds the story as it
 was published for this book.</p>
 <div class="under-the-hood">

@@ -56,7 +56,7 @@ for each stretch of the play-through.
 
 That is the whole manifest. `story` is the story's `id`. `version` is the
 version of the tree format, which is 3. `seed` fixes the story's luck:
-every `one chance in` condition and every `select random` of chapter 17
+every `one chance in` condition and every `select randomly` of chapter 17
 falls the same way on every run at the same seed, so a tree that passes
 once passes always, until the story changes.
 

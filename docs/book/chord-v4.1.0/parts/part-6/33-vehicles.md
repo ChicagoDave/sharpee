@@ -18,7 +18,7 @@ load sends it, and then shows the other kinds in short examples.
 ## A problem for a vehicle
 
 The lens of the Great Lantern is a disc of glass as wide as a cartwheel.
-Since chapter 9 Ansel has carried it up a winding tower stair without
+Since chapter 7 Ansel has carried it up a winding tower stair without
 comment. One line ends that.
 
 ```chord

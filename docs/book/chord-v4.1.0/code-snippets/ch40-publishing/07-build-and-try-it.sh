@@ -1,1 +1,1 @@
-unzip dist/relighting.zip -d ../relighting-published
+sharpee publish relighting.story
