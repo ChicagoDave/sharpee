@@ -1,6 +1,6 @@
 # Sharpee
 
-[![npm](https://img.shields.io/npm/v/@sharpee/sharpee/latest?label=npm&color=orange)](https://www.npmjs.com/package/@sharpee/sharpee)
+[![npm](https://img.shields.io/npm/v/@sharpee/sharpee/latest?label=npm)](https://www.npmjs.com/package/@sharpee/sharpee)
 
 Sharpee is a platform for writing parser-based interactive fiction. It has three parts:
 
