@@ -286,5 +286,5 @@ test inline.
 
 Conditions can be joined, named and left open, and one clause can now reach
 every thing of a sort. The reading clauses are getting crowded, though. Each
-has three or four lines ending in `when`, all about the same state. The next
+has two or three lines ending in `when`, all about the same state. The next
 chapter gives them a proper shape.

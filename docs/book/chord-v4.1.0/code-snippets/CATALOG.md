@@ -372,18 +372,18 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-declaring-an-action.story` | Declaring an action | chord | author | 16 |
-| 02 | `02-the-grammar.story` | The grammar | chord | author | 52 |
-| 03 | `03-the-grammar.story` | The grammar | chord | author | 62 |
-| 04 | `04-what-must-be-true-of-the-thing-named.story` | What must be true of the thing named | chord | author | 84 |
-| 05 | `05-what-must-be-true-of-the-player.story` | What must be true of the player | chord | author | 110 |
-| 06 | `06-when-nothing-answers.story` | When nothing answers | chord | author | 149 |
-| 07 | `07-when-nothing-answers.story` | When nothing answers | chord | author | 178 |
-| 08 | `08-the-four-workings.story` | The four workings | chord | author | 188 |
-| 09 | `09-a-verb-that-only-answers.story` | A verb that only answers | chord | author | 228 |
-| 10 | `10-verbs-with-a-subject.story` | Verbs with a subject | chord | author | 263 |
-| 11 | `11-other-kinds-of-slot.story` | Other kinds of slot | chord | author | 317 |
-| 12 | `12-a-verb-that-comes-and-goes.story` | A verb that comes and goes | chord | author | 341 |
-| 13 | `13-build-and-try-it.sh` | Build and try it | shell | author | 391 |
+| 02 | `02-the-grammar.story` | The grammar | chord | author | 53 |
+| 03 | `03-the-grammar.story` | The grammar | chord | author | 63 |
+| 04 | `04-what-must-be-true-of-the-thing-named.story` | What must be true of the thing named | chord | author | 85 |
+| 05 | `05-what-must-be-true-of-the-player.story` | What must be true of the player | chord | author | 111 |
+| 06 | `06-when-nothing-answers.story` | When nothing answers | chord | author | 150 |
+| 07 | `07-when-nothing-answers.story` | When nothing answers | chord | author | 179 |
+| 08 | `08-the-four-workings.story` | The four workings | chord | author | 189 |
+| 09 | `09-a-verb-that-only-answers.story` | A verb that only answers | chord | author | 229 |
+| 10 | `10-verbs-with-a-subject.story` | Verbs with a subject | chord | author | 264 |
+| 11 | `11-other-kinds-of-slot.story` | Other kinds of slot | chord | author | 318 |
+| 12 | `12-a-verb-that-comes-and-goes.story` | A verb that comes and goes | chord | author | 342 |
+| 13 | `13-build-and-try-it.sh` | Build and try it | shell | author | 392 |
 
 ## New kinds of thing
 
@@ -572,14 +572,14 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 04 | `04-rooms-seen-from-the-water.story` | Rooms seen from the water | chord | author | 79 |
 | 05 | `05-rooms-seen-from-the-water.story` | Rooms seen from the water | chord | author | 102 |
 | 06 | `06-a-vehicle-on-open-water.story` | A vehicle on open water | chord | author | 111 |
-| 07 | `07-a-vehicle-on-open-water.story` | A vehicle on open water | chord | author | 151 |
-| 08 | `08-looking-across-water.story` | Looking across water | chord | author | 196 |
-| 09 | `09-looking-across-water.story` | Looking across water | chord | author | 205 |
-| 10 | `10-things-adrift.story` | Things adrift | chord | author | 308 |
-| 11 | `11-the-new-ending.story` | The new ending | chord | author | 326 |
-| 12 | `12-the-new-ending.story` | The new ending | chord | author | 340 |
-| 13 | `13-the-new-ending.story` | The new ending | chord | author | 347 |
-| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 392 |
+| 07 | `07-a-vehicle-on-open-water.story` | A vehicle on open water | chord | author | 152 |
+| 08 | `08-looking-across-water.story` | Looking across water | chord | author | 197 |
+| 09 | `09-looking-across-water.story` | Looking across water | chord | author | 206 |
+| 10 | `10-things-adrift.story` | Things adrift | chord | author | 309 |
+| 11 | `11-the-new-ending.story` | The new ending | chord | author | 327 |
+| 12 | `12-the-new-ending.story` | The new ending | chord | author | 341 |
+| 13 | `13-the-new-ending.story` | The new ending | chord | author | 348 |
+| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 393 |
 
 ## The opt-in systems
 
@@ -669,10 +669,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-the-identifier.story` | The identifier | chord | author | 48 |
 | 02 | `02-the-identifier.sh` | The identifier | shell | author | 76 |
-| 03 | `03-the-version.story` | The version | chord | author | 102 |
-| 04 | `04-whether-the-source-goes-too.story` | Whether the source goes too | chord | author | 121 |
-| 05 | `05-publish.sh` | Publish | shell | author | 138 |
-| 06 | `06-publish.sh` | Publish | shell | author | 148 |
-| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 267 |
-| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 274 |
+| 03 | `03-the-version.story` | The version | chord | author | 103 |
+| 04 | `04-whether-the-source-goes-too.story` | Whether the source goes too | chord | author | 122 |
+| 05 | `05-publish.sh` | Publish | shell | author | 139 |
+| 06 | `06-publish.sh` | Publish | shell | author | 149 |
+| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 268 |
+| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 275 |
 

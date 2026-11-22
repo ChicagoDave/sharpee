@@ -211,7 +211,7 @@ Each of the four pages emits the same event with its own two strings. The
 channel hears all four.
 
 An event is not prose, and `emit` prints nothing. In a terminal, reading
-the spark page looks exactly as it did in chapter 13. On the page, a
+the spark page looks exactly as it did before this chapter. On the page, a
 column opens beside the story.
 
 ```text

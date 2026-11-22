@@ -221,8 +221,8 @@ exit with the cat.
 
 Two more keys, `entered` and `exited`, are reserved for a thing that comes
 into the player's room or leaves it. They are for things and people that
-move about, and this book takes them up in chapter 26 with the people who
-do the moving.
+move about. The Relighting does not use them, and this book goes no further
+with them.
 
 ## The general rule: a thing may answer for itself
 

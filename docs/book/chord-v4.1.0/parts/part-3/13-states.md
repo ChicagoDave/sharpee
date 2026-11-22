@@ -298,7 +298,7 @@ One line, in ink that is still wet. It is a single word, and it will not stay in
 ::: under-the-hood
 **Under the Hood: where a state lives** · Story IR `states`
 
-Compile the story with `sharpee compose relighting.story -o relighting.json`
+Compile the story with `sharpee compose relighting.story -o relighting.ir.json`
 and look at the entry for the grille. Its `states` field holds the list in
 the order you wrote it, and a field beside it records whether the set is
 reversible. The trait states are not there. `is locked` and `is lit` are read

@@ -114,9 +114,10 @@ the name and one quoted path. The path is relative to a folder called
 <p>The compiler checks the names and not the files. A statement that
 plays a sound nobody declared is an error, and so is one that shows a
 sound as if it were a picture. A path to a file that does not exist is
-not noticed until the story is built for the browser, in chapter 40. You
-can write this chapter’s lines, and play the story in a terminal, before
-any of the recordings exist.</p>
+not noticed. Neither the compiler nor the build of the next chapter
+looks for the file, so check the paths yourself. You can write this
+chapter’s lines, and play the story in a terminal, before any of the
+recordings exist.</p>
 <h2 data-number="36.2" id="playing-a-sound"><span
 class="header-section-number">36.2</span> Playing a sound</h2>
 <pre class="chord"><code>on every turn while the tower bell is tolling
@@ -426,8 +427,8 @@ and <code>hide image</code> lines.</p>
 sharpee play .</code></pre>
 <p>Light the lamp and read its last line. Then wait in the Library for
 the bell, look in the newspapers as Hobb, and keep waiting as Ansel
-until iron complains about iron. Nothing will play in the terminal.
-Chapter 40 builds the page where it does.</p>
+until iron complains about iron. Nothing will play in the terminal. The
+next chapter builds the page where it does.</p>
 <div class="under-the-hood">
 <p><strong>Under the Hood: media events</strong> · event ids
 <code>media.sound.play</code>, <code>media.ambient.play</code>,

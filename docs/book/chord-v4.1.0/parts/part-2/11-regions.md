@@ -9,8 +9,8 @@ speak about all its rooms at once.
 A region changes nothing the player can do. It is a tool for you. This chapter
 uses it for three things: placing scenery across many rooms, making a run of
 similar rooms without writing each one, and laying out a set of exits as a
-table. Part III adds a fourth, which is making something happen when the
-player crosses from one region to another.
+table. Part III adds a fourth, which is making something happen on every
+turn the player spends in a region.
 
 ## Making a region
 

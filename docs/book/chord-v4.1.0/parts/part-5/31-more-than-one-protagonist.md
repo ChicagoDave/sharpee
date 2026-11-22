@@ -144,7 +144,7 @@ The bell tolls again, and the rooks go up off the roof.
 There is no condition that asks who the player is. The working form is the
 one used here: give the second protagonist a state that is true while they
 are being played, and test the state. Hobb is `roused` for exactly the
-length of his scene, and three things in the story lean on it.
+length of his scene, and four things in the story lean on it.
 
 ### What a room says about someone
 

@@ -282,7 +282,7 @@ word.
 ## What you have so far
 
 That is Part IV, and with it the game has its centre. The Relighting has
-four workings that can be typed three or four ways each, things that answer
+four workings, three of which can be typed three or four ways, things that answer
 them through traits, prose that varies and belongs to its speakers, and a
 standard library that has been taught this story's manners. A player can
 win it, lose it two ways, or run out of day.

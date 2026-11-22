@@ -53,8 +53,8 @@ A thing may have several `on every turn` clauses, and they are tried in the
 order they are written. The order here is deliberate. On the first turn of
 lamplight the upper clause finds the cistern `frozen` and does nothing, and
 the lower clause changes it to `thawing`. On the next turn the upper clause
-runs. Written the other way round, the cistern would freeze, thaw and run
-within a single turn, because the first clause would set up the condition
+runs. Written the other way round, the cistern would thaw and run within a
+single turn, because the first clause would set up the condition
 for the second.
 
 ```text
@@ -436,7 +436,7 @@ counts named turns where a fuse counts a number.
 
 That is Part III. Lanternhall has states, clauses, conditions, a score,
 three endings and a clock. A player can read the first working, light the
-lamp, thaw the cistern, find three of the four pages, and run out of day.
+lamp, thaw the cistern, find all four pages, and run out of day.
 
 What they read while doing it is still rough. Every refusal is one fixed
 sentence, the standard messages are the platform's and not this story's, and

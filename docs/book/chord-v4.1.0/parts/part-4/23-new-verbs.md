@@ -26,8 +26,9 @@ The head line names the action. An action's name is a gerund, the same
 "-ing" word that will later appear in clause heads as `on the player
 mending`. The block has no `end` line. It runs until the indentation stops.
 
-The four lines beneath are four different kinds of line, and each gets a
-section.
+The block beneath it has four kinds of line: the grammar, a line about the
+thing named, a line about the player, and a last line for when nothing
+answers. Each gets a section.
 
 ## The grammar
 

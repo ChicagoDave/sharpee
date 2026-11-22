@@ -134,7 +134,8 @@ create the skiff
   end sailing
 ```
 
-This is a vehicle of chapter 33 with a sixth movement type, `open`.
+This is a vehicle of chapter 33 with a movement type that chapter did not
+show, `open`.
 
 Its placement says where on the expanse it starts: `in the Mere at 0, 2`.
 That is the Water Stair's position, and a vehicle at a landmark's position

@@ -311,7 +311,7 @@ A beat is not printed before a refusal or before the stock answer for an
 unknown subject. Those are not the person speaking in their own voice.
 
 The value of the block is that it is separate from the answers. Hobb has
-five rows in his table and may have fifteen by the end of the book. None
+six rows in his table and may have fifteen by the end of the book. None
 of their phrases needs to mention the kettle.
 
 ## Build and try it

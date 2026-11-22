@@ -84,9 +84,10 @@ C6ABD976-A999-4F4F-92A8-B393F82127A6
 ## The version
 
 `story-version:` has stood at `0.7.0` since Part VII. The number is
-yours to count as you please, and the player sees it. The published page
-prints it under the title when it opens. The terminal prints the same
-four lines with the version last.
+yours to count as you please, and the player sees it. The terminal
+prints it as the last of four lines when the story opens. The published
+page prints the same four lines with the version under the title, in
+this order.
 
 ```text
 The Relighting

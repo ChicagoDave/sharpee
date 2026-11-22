@@ -43,10 +43,10 @@ means `assets/audio/toll.mp3`.
 
 The compiler checks the names and not the files. A statement that plays a
 sound nobody declared is an error, and so is one that shows a sound as if
-it were a picture. A path to a file that does not exist is not noticed
-until the story is built for the browser, in chapter 40. You can write
-this chapter's lines, and play the story in a terminal, before any of the
-recordings exist.
+it were a picture. A path to a file that does not exist is not noticed.
+Neither the compiler nor the build of the next chapter looks for the file,
+so check the paths yourself. You can write this chapter's lines, and play
+the story in a terminal, before any of the recordings exist.
 
 ## Playing a sound
 
@@ -413,8 +413,8 @@ sharpee play .
 
 Light the lamp and read its last line. Then wait in the Library for the
 bell, look in the newspapers as Hobb, and keep waiting as Ansel until iron
-complains about iron. Nothing will play in the terminal. Chapter 40 builds
-the page where it does.
+complains about iron. Nothing will play in the terminal. The next chapter
+builds the page where it does.
 
 ::: under-the-hood
 **Under the Hood: media events** · event ids `media.sound.play`, `media.ambient.play`, `media.image.show`

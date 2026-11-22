@@ -1,7 +1,7 @@
 # Choosing between outcomes
 
 The reading clauses of the last two chapters work, and they are hard to
-read. Four lines each end in `when`, the order of the lines matters, and
+read. Two or three lines in each end in `when`, the order of the lines matters, and
 the reader has to hold a state in their head to see which lines will run.
 The clause is really saying something simple: if the page is legible, do
 this, and if it is learned, do that.

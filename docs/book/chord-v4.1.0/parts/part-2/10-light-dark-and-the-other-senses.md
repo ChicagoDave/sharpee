@@ -127,7 +127,7 @@ the player types `light lamp`. In the finished story, lighting that lamp is
 the first act of magic anyone has performed in thirty years, and it should not
 be available for the asking. For now it is. The standard action that lights a
 light source does not know that this one is special. Teaching it takes a
-requirement from chapter 15 and a new verb from chapter 25, and until then the
+requirement from chapter 15 and a new verb from chapter 23, and until then the
 lamp is merely a lamp.
 
 ## Seeing in the dark
