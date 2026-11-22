@@ -1,0 +1,156 @@
+/*
+ * decorations.css — platform prose decoration vocabulary.
+ *
+ * Owner: @sharpee/platform-browser (the published browser engine layer).
+ *
+ * Per ADR-174, every in-prose decoration on the wire is an
+ * IDecoration { className, content }. Platform-vocabulary names are
+ * resolved at parse time to `sharpee-{name}`; author names pass
+ * through verbatim. This file ships the default style for every
+ * platform name. Stories override by re-declaring `.sharpee-*` rules
+ * in a theme package or the author override, or by attaching their own
+ * author classes (which the platform never styles).
+ *
+ * Load order (ADR-188): base.css → engine.css → decorations.css →
+ * [theme packages] → [author override]. Loaded before theme packages so
+ * a theme may recolor decorations.
+ *
+ * Closed enumeration matches
+ * `packages/engine/src/prose-pipeline/decorations/platform-vocabulary.ts`.
+ *
+ * @see ADR-174 §Closed platform vocabulary
+ * @see ADR-188 §Engine layer
+ */
+
+/* ----- Switches ----- */
+
+.sharpee-em {
+  font-style: italic;
+}
+
+.sharpee-strong {
+  font-weight: bold;
+}
+
+.sharpee-u {
+  text-decoration: underline;
+}
+
+.sharpee-st {
+  text-decoration: line-through;
+}
+
+.sharpee-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.sharpee-super {
+  vertical-align: super;
+  font-size: 0.83em;
+}
+
+.sharpee-sub {
+  vertical-align: sub;
+  font-size: 0.83em;
+}
+
+/* ----- IF-semantic classes ----- */
+/* Subtle defaults — themes should override colors to match. */
+
+.sharpee-item {
+  font-style: italic;
+}
+
+.sharpee-npc {
+  font-style: italic;
+}
+
+.sharpee-room {
+  font-weight: bold;
+}
+
+.sharpee-direction {
+  text-transform: lowercase;
+  font-variant: small-caps;
+}
+
+.sharpee-command {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.sharpee-quote {
+  font-style: italic;
+}
+
+/* ----- Color palette (foreground) ----- */
+
+.sharpee-color-red     { color: #c0392b; }
+.sharpee-color-blue    { color: #2980b9; }
+.sharpee-color-green   { color: #27ae60; }
+.sharpee-color-yellow  { color: #b58900; }
+.sharpee-color-magenta { color: #9b59b6; }
+.sharpee-color-cyan    { color: #16a2a8; }
+.sharpee-color-white   { color: #fefefe; }
+.sharpee-color-grey    { color: #7f8c8d; }
+.sharpee-color-black   { color: #111111; }
+
+/* ----- Color palette (background) ----- */
+
+/* Background colors paired with text color that meets WCAG AA (4.5:1).
+   Lighter hues use #111 text; darker hues use #fff. */
+.sharpee-bgcolor-red     { background-color: #c0392b; color: #fff; }
+.sharpee-bgcolor-blue    { background-color: #1f5f8b; color: #fff; }
+.sharpee-bgcolor-green   { background-color: #1a7c44; color: #fff; }
+.sharpee-bgcolor-yellow  { background-color: #b58900; color: #111; }
+.sharpee-bgcolor-magenta { background-color: #9b59b6; color: #fff; }
+.sharpee-bgcolor-cyan    { background-color: #0e6b6f; color: #fff; }
+.sharpee-bgcolor-white   { background-color: #fefefe; color: #111; }
+.sharpee-bgcolor-grey    { background-color: #5a6166; color: #fff; }
+.sharpee-bgcolor-black   { background-color: #111111; color: #fff; }
+
+/* ----- Sizes ----- */
+
+.sharpee-size-small { font-size: 0.85em; }
+.sharpee-size-large { font-size: 1.15em; }
+
+/* ----- Fonts ----- */
+
+.sharpee-font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ----- Layout macros (ADR-183) ----- */
+/* All block-level; the void br/p render as empty spans. Presentation lives
+   here so authors override en masse by re-declaring these classes. */
+
+/* An empty block between inline runs collapses to a single line break. */
+.sharpee-br {
+  display: block;
+}
+
+/* An empty block with height gives a blank-line (paragraph) gap. */
+.sharpee-p {
+  display: block;
+  height: 1em;
+}
+
+.sharpee-center {
+  display: block;
+  text-align: center;
+}
+
+.sharpee-right {
+  display: block;
+  text-align: right;
+}
+
+.sharpee-indent {
+  display: block;
+  margin-left: 2em;
+}
+
+/* `[center=N:…]` and `[indent=N:…]` carry N as `data-value`. The platform
+   default applies the unparameterized behavior (center / one indent level) so
+   markup degrades gracefully; honoring an arbitrary value (width %, indent
+   level) is left to author CSS or a client pass — the value is present on the
+   element either way. */
