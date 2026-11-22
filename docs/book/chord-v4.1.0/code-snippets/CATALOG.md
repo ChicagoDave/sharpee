@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **361 snippets** across 41 chapters (360 author, 1 reference).
+- **362 snippets** across 41 chapters (361 author, 1 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -167,13 +167,13 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-making-a-region.story` | Making a region | chord | author | 19 |
-| 02 | `02-putting-rooms-in-it.story` | Putting rooms in it | chord | author | 34 |
-| 03 | `03-scenery-for-a-whole-region.story` | Scenery for a whole region | chord | author | 63 |
-| 04 | `04-a-run-of-rooms.story` | A run of rooms | chord | author | 99 |
-| 05 | `05-a-table-of-exits.story` | A table of exits | chord | author | 123 |
-| 06 | `06-a-backdrop-for-the-stacks.story` | A backdrop for the stacks | chord | author | 166 |
-| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 190 |
+| 01 | `01-making-a-region.story` | Making a region | chord | author | 20 |
+| 02 | `02-putting-rooms-in-it.story` | Putting rooms in it | chord | author | 35 |
+| 03 | `03-scenery-for-a-whole-region.story` | Scenery for a whole region | chord | author | 64 |
+| 04 | `04-a-run-of-rooms.story` | A run of rooms | chord | author | 100 |
+| 05 | `05-a-table-of-exits.story` | A table of exits | chord | author | 124 |
+| 06 | `06-a-backdrop-for-the-stacks.story` | A backdrop for the stacks | chord | author | 167 |
+| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 191 |
 
 ## Ways that are closed, hidden or strange
 
@@ -227,8 +227,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 08 | `08-the-other-thing-in-the-command.story` | The other thing in the command | chord | author | 225 |
 | 09 | `09-the-other-thing-in-the-command.story` | The other thing in the command | chord | author | 239 |
 | 10 | `10-conditions-and-once.story` | Conditions and once | chord | author | 259 |
-| 11 | `11-clauses-about-the-person.story` | Clauses about the person | chord | author | 292 |
-| 12 | `12-build-and-try-it.sh` | Build and try it | shell | author | 337 |
+| 11 | `11-clauses-about-the-person.story` | Clauses about the person | chord | author | 293 |
+| 12 | `12-build-and-try-it.sh` | Build and try it | shell | author | 338 |
 
 ## What a clause can say and do
 
@@ -314,7 +314,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 08 | `08-a-sequence.story` | A sequence | chord | author | 253 |
 | 09 | `09-chapters.story` | Chapters | chord | author | 302 |
 | 10 | `10-chapters.story` | Chapters | chord | author | 331 |
-| 11 | `11-build-and-try-it.sh` | Build and try it | shell | author | 395 |
+| 11 | `11-crossing-into-a-region.story` | Crossing into a region | chord | author | 383 |
+| 12 | `12-build-and-try-it.sh` | Build and try it | shell | author | 452 |
 
 # Part IV. Words
 

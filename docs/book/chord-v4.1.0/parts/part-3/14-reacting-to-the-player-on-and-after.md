@@ -280,8 +280,9 @@ There is a smell in here that was not here thirty years ago, or was here and you
 ```
 
 This clause is on a room, and on a room the gerund `entering` means the
-player's arrival there. On anything else it means the player getting into
-the thing, as with Hobb's chair.
+player's arrival there. On a thing it means the player getting into the
+thing, as with Hobb's chair. On a region it means crossing into the region,
+which chapter 19 shows.
 
 ## Clauses about the person
 

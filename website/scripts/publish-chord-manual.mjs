@@ -24,11 +24,12 @@
  * Public interface: the command above; no arguments.
  * Fails loudly: a missing output stops it before anything is written, so the
  * site never carries a download from one build beside a web edition from
- * another.
+ * another. So does a revision date that differs between the title page and
+ * src/app/chord/manual/content.mdx.
  *
  * Owner context: website build tooling; the Chord manual plan, Phase 9.
  */
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -58,6 +59,18 @@ for (const [path, how] of [
   [join(web, 'index.html'), `./scripts/build-book.sh chord-v${VERSION} web`],
 ]) {
   if (!existsSync(path)) die(`missing ${path} (run ${how})`);
+}
+
+// Invariant: the revision date a reader compares is the same in both places
+// it is written by hand: the title page and the site's page for the book. A
+// copy that disagrees with the site would tell a reader to download again, or
+// not to, wrongly.
+const titlePage = readFileSync(join(EDITION, 'frontmatter', '00-title-page.md'), 'utf-8');
+const revised = /\[Revised ([^\]]+)\]/.exec(titlePage)?.[1];
+if (!revised) die('frontmatter/00-title-page.md has no [Revised <date>] line');
+const sitePage = join(here, '..', 'src', 'app', 'chord', 'manual', 'content.mdx');
+if (!readFileSync(sitePage, 'utf-8').includes(revised)) {
+  die(`${sitePage} does not carry the title page's revision date, "${revised}"`);
 }
 
 mkdirSync(DOWNLOADS, { recursive: true });

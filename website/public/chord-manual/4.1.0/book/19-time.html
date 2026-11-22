@@ -433,15 +433,64 @@ where it would otherwise say <code>while</code>, as in
 purpose. A state is something clauses change. A chapter begins by itself
 when its trigger comes true, and it never goes back. Use chapters for
 the large movements of the plot and states for the facts.</p>
-<h2 data-number="19.6" id="when-something-moves"><span
-class="header-section-number">19.6</span> When something moves</h2>
+<h2 data-number="19.6" id="crossing-into-a-region"><span
+class="header-section-number">19.6</span> Crossing into a region</h2>
+<p>Chapter 11 said that Part III would make something happen when the
+player crosses into a region or out of it. Chapter 14 put
+<code>after the player entering</code> on a room. The same head on a
+region runs when the player comes into the region from outside it. A
+region may also have <code>after the player leaving</code>, which runs
+when the player goes out of it.</p>
+<p>The Relighting uses neither clause, but the Grounds could have
+both.</p>
+<pre class="chord"><code>create the Grounds, a region
+
+  after the player leaving
+    phrase arch-in
+  end after
+
+  after the player entering
+    phrase arch-out
+  end after</code></pre>
+<p>With those two clauses, and a phrase for each, the walk through the
+cloister arch and back reads like this.</p>
+<pre class="text"><code>&gt; north
+Cloister
+A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.
+
+The arch closes over you, and the noise of the road stops as if a door had shut on it.
+
+&gt; east
+Refectory
+Three long tables, each with its row of candles, and a hearth you could stable a horse in. The benches are stacked against the wall, where someone left them for the holidays. The cloister is back to the west.
+
+&gt; west
+Cloister
+A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.
+
+&gt; south
+Gate Court
+A square of worn flagstones between the gate and the cloister arch. Grass has come up through the joints and been left to get on with it. Over the gate, a line of cut letters says that the craft needs a light to come home to.
+
+You come out from under the arch into the part of Lanternhall a visitor is allowed to see.</code></pre>
+<p>The clauses run on the move that crosses the edge of the region, and
+on no other. Going from the Cloister to the Refectory is a move inside
+the Hall, so nothing is said. The line is printed after the description
+of the room the player arrives in. A move from one region straight into
+another runs the leaving clause of the first and the entering clause of
+the second. Either head may carry a <code>while</code> condition.</p>
+<p><code>leaving</code> belongs to regions. On a room or a thing the
+story will not load, and the message tells you to put the clause on the
+region.</p>
+<h2 data-number="19.7" id="when-something-moves"><span
+class="header-section-number">19.7</span> When something moves</h2>
 <p>One more clause waits for an event. A clause that opens
 <code>when Hobb moves</code> runs after that person has changed rooms.
 Nobody in Lanternhall moves by themselves yet, so it waits for chapter
 26, where people do. It concerns people arriving. Picking a thing up and
 carrying it is not a move in this sense.</p>
-<h2 data-number="19.7" id="build-and-try-it-15"><span
-class="header-section-number">19.7</span> Build and try it</h2>
+<h2 data-number="19.8" id="build-and-try-it-15"><span
+class="header-section-number">19.8</span> Build and try it</h2>
 <p>This is the largest change so far. Copy <code>relighting.story</code>
 from the companion folder <code>chapter-19</code> over your own file. It
 is the story with this chapter’s changes made, and it holds the mend
@@ -487,8 +536,8 @@ on a trigger, they come in a fixed order, and they do not end except by
 the next one beginning. The timer is the odd one out. It counts named
 turns where a fuse counts a number.</p>
 </div>
-<h2 data-number="19.8" id="what-you-have-so-far-18"><span
-class="header-section-number">19.8</span> What you have so far</h2>
+<h2 data-number="19.9" id="what-you-have-so-far-18"><span
+class="header-section-number">19.9</span> What you have so far</h2>
 <p>That is Part III. Lanternhall has states, clauses, conditions, a
 score, three endings and a clock. A player can read the first working,
 light the lamp, thaw the cistern, find all four pages, and run out of

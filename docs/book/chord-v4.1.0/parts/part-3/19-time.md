@@ -370,6 +370,63 @@ A state is something clauses change. A chapter begins by itself when its
 trigger comes true, and it never goes back. Use chapters for the large
 movements of the plot and states for the facts.
 
+## Crossing into a region
+
+Chapter 11 said that Part III would make something happen when the player
+crosses into a region or out of it. Chapter 14 put `after the player
+entering` on a room. The same head on a region runs when the player comes
+into the region from outside it. A region may also have `after the player
+leaving`, which runs when the player goes out of it.
+
+The Relighting uses neither clause, but the Grounds could have both.
+
+```chord
+create the Grounds, a region
+
+  after the player leaving
+    phrase arch-in
+  end after
+
+  after the player entering
+    phrase arch-out
+  end after
+```
+
+With those two clauses, and a phrase for each, the walk through the cloister
+arch and back reads like this.
+
+```text
+> north
+Cloister
+A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.
+
+The arch closes over you, and the noise of the road stops as if a door had shut on it.
+
+> east
+Refectory
+Three long tables, each with its row of candles, and a hearth you could stable a horse in. The benches are stacked against the wall, where someone left them for the holidays. The cloister is back to the west.
+
+> west
+Cloister
+A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.
+
+> south
+Gate Court
+A square of worn flagstones between the gate and the cloister arch. Grass has come up through the joints and been left to get on with it. Over the gate, a line of cut letters says that the craft needs a light to come home to.
+
+You come out from under the arch into the part of Lanternhall a visitor is allowed to see.
+```
+
+The clauses run on the move that crosses the edge of the region, and on no
+other. Going from the Cloister to the Refectory is a move inside the Hall,
+so nothing is said. The line is printed after the description of the room
+the player arrives in. A move from one region straight into another runs the
+leaving clause of the first and the entering clause of the second. Either
+head may carry a `while` condition.
+
+`leaving` belongs to regions. On a room or a thing the story will not load,
+and the message tells you to put the clause on the region.
+
 ## When something moves
 
 One more clause waits for an event. A clause that opens `when Hobb moves`
