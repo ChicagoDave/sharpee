@@ -15,13 +15,30 @@
  * The analysis itself is not here. `analyzeStoryIR` is, so this command and the
  * package's own `cli.js` cannot disagree about what a failure is called.
  *
- * Public interface: runWorldIndex(args).
+ * WHY THE CLI SUPPLIES THE LANGUAGE (ADR-407 D8). The analyzer names no
+ * language; this command hands it the lookup that loads the story language's
+ * `@sharpee/lang-<code>/nouns` by convention, through Node's own `require`, so
+ * the IDE's Incomplete view reads prose through the same extractor every lens
+ * does. A language with no nouns module is a failure document whose message is
+ * the one refusal line (D6), with exit 1.
+ *
+ * Public interface: runWorldIndex(args), nounExtractorLookup.
  */
+import { resolveNounExtractor, type NounExtractorLookup, type NounsModule } from '@sharpee/if-domain/nouns';
 import { analyzeStoryIR } from '@sharpee/world-index';
 import { platformVersion } from '../standalone/init.js';
 
 /** Exit status when the document on stdout is a failure, not an analysis. */
 const EXIT_FAILURE = 1;
+
+/**
+ * Find a story language's noun extractor, loading its nouns module through `require`.
+ *
+ * @param languageCode the IR's `phrases.defaultLocale`, e.g. 'en-US'
+ * @returns the extractor, or the refusal line naming the code (never throws)
+ */
+export const nounExtractorLookup: NounExtractorLookup = (languageCode) =>
+  resolveNounExtractor(languageCode, (moduleName) => require(moduleName) as NounsModule);
 
 /**
  * Analyze a compiled story and write one JSON document to stdout.
@@ -40,7 +57,7 @@ const EXIT_FAILURE = 1;
  */
 export function runWorldIndex(args: string[]): number {
   const irPath = args.find((arg) => !arg.startsWith('-'));
-  const response = analyzeStoryIR(irPath, platformVersion());
+  const response = analyzeStoryIR(irPath, platformVersion(), nounExtractorLookup);
   process.stdout.write(`${JSON.stringify(response)}\n`);
   return response.ok ? 0 : EXIT_FAILURE;
 }

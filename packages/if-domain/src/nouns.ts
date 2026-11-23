@@ -11,7 +11,7 @@
  * published story never carries the lookup: only readers of prose import it,
  * from this subpath (ADR-407 AC-3).
  *
- * Public interface: the types `NounCandidate`, `NounExtractor`, `NounsModule`,
+ * Public interface: the types `NounCandidate`, `NounFilters`, `NounExtractor`, `NounsModule`,
  * `NounsModuleLoader`, `NounExtractorResolution`, `NounExtractorLookup`; the
  * functions `resolveNounExtractor`, `nounExtractorModule`,
  * `noNounExtractorRefusal`, `languageMismatchRefusal`.
@@ -34,6 +34,24 @@ export interface NounCandidate {
 }
 
 /**
+ * What counts as a head worth reporting, as data (ADR-407 Amendment 3).
+ *
+ * The extractor applies these itself; it also publishes them, because readers
+ * that chunk prose their own way must agree with it on what a reportable head
+ * is (ADR-321 D11: the IDE's part-of-speech pass reads them off the World Index
+ * document), and the Incomplete view reads the stopwords when it asks which of
+ * a phrase's words a thing is missing. One home for each list: the language's.
+ */
+export interface NounFilters {
+  /** Head nouns that never name a thing an author forgot to implement, lowercased. */
+  readonly headStopwords: readonly string[];
+  /** The shortest a head noun may be, in characters. */
+  readonly minHeadLength: number;
+  /** The most words a candidate phrase may carry. */
+  readonly maxPhraseWords: number;
+}
+
+/**
  * A language's noun extractor (ADR-407 D3).
  *
  * Each language package exports one, named `nounExtractor`, from a `nouns`
@@ -44,6 +62,8 @@ export interface NounCandidate {
 export interface NounExtractor {
   /** The language this extractor reads, in `LanguageProvider.languageCode` form (e.g. 'en-US'). */
   readonly languageCode: string;
+  /** The head filters `extract` applies, published for readers that must agree with it (Amendment 3). */
+  readonly filters: NounFilters;
   /** Candidate noun phrases in reading order; an empty passage returns []. Never throws on prose. */
   extract(text: string): NounCandidate[];
   /**
@@ -117,7 +137,8 @@ export function languageMismatchRefusal(engineLanguageCode: string, storyLanguag
  *
  * Loads {@link nounExtractorModule}(languageCode) through `load`, and accepts it
  * only when it exports a `nounExtractor` that has `extract` and `tokenize`
- * functions and whose `languageCode` is exactly the code asked for. Every other
+ * functions, `filters` of the {@link NounFilters} shape, and whose `languageCode`
+ * is exactly the code asked for. Every other
  * outcome (the module is missing, it throws while loading, it exports no
  * extractor, or the extractor is for another language) is the refusal line
  * {@link noNounExtractorRefusal}. Never throws.
@@ -140,9 +161,29 @@ export function resolveNounExtractor(languageCode: string, load: NounsModuleLoad
     extractor === null ||
     typeof extractor.extract !== 'function' ||
     typeof extractor.tokenize !== 'function' ||
+    !isNounFilters(extractor.filters) ||
     extractor.languageCode !== languageCode
   ) {
     return refused;
   }
   return { found: true, extractor };
+}
+
+/**
+ * Whether a value has the {@link NounFilters} shape.
+ *
+ * @param value what a module's extractor carries as `filters`
+ * @returns true for a string array of stopwords and two positive whole numbers
+ */
+function isNounFilters(value: NounFilters | undefined): boolean {
+  return (
+    value !== undefined &&
+    value !== null &&
+    Array.isArray(value.headStopwords) &&
+    value.headStopwords.every((word) => typeof word === 'string') &&
+    Number.isInteger(value.minHeadLength) &&
+    value.minHeadLength > 0 &&
+    Number.isInteger(value.maxPhraseWords) &&
+    value.maxPhraseWords > 0
+  );
 }

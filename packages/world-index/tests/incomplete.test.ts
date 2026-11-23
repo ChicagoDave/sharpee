@@ -5,19 +5,25 @@
  * declare no `adjectives` field, because ADR-321 D5's claim is precisely that
  * Chord needs no adjective syntax: the name's own words do the work.
  *
- * The corpus pin records what the extractor currently finds in all three
- * stories. Its stop and boundary lists are the specification (D6b), so tuning
- * them must show up here as a diff in expected findings rather than as a silent
- * change in what the author is told.
+ * The corpus pin records what the English extractor finds in all three stories.
+ * The extractor is the story language's (ADR-407 D8), reached here through the
+ * test-only devDependency on `@sharpee/lang-en-us`; its stop and boundary lists
+ * are still the specification (D6b), so tuning them must show up here as a diff
+ * in expected findings rather than as a silent change in what the author is
+ * told. The extractor's own cases live with it, in lang-en-us's `nouns.test.ts`.
  *
  * Owner context: @sharpee/world-index — tests.
  *
- * @see ADR-321 D5, D6, D6b, AC-7
+ * @see ADR-321 D5, D6, D6b, AC-7; ADR-407 D8, AC-4
  */
 
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { StoryIR } from '@sharpee/chord';
-import { deriveIncomplete, extractNounPhrases, publishFilters, readsAsThing } from '../src/incomplete.js';
+import type { NounExtractor } from '@sharpee/if-domain';
+import { nounExtractor as english } from '@sharpee/lang-en-us/nouns';
+import { deriveIncomplete, publishFilters, readsAsThing } from '../src/incomplete.js';
 import { matchNoun, type NounMatchTier } from '@sharpee/world-model';
 import { buildVocabularyIndex, entityVocabulary, irNamingSurface, localeWordsOf, resolvePhrase } from '../src/vocabulary.js';
 import { collectProse } from '../src/prose.js';
@@ -157,7 +163,7 @@ create the red ball
 
   A red ball.
 `);
-    expect(deriveIncomplete(clean).counts).toEqual({ missingWord: 0, ambiguous: 0, noObject: 0, undescribed: 0 });
+    expect(deriveIncomplete(clean, english).counts).toEqual({ missingWord: 0, ambiguous: 0, noObject: 0, undescribed: 0 });
   });
 
   it('reports the ambiguity when the prose names a ball with three of them present', () => {
@@ -180,7 +186,7 @@ create the blue ball
 
   A blue ball.
 `);
-    const result = deriveIncomplete(ambiguous);
+    const result = deriveIncomplete(ambiguous, english);
     expect(result.counts.ambiguous).toBe(1);
     expect(result.ambiguous[0]).toMatchObject({
       site: expect.objectContaining({ owner: 'hall' }),
@@ -252,9 +258,9 @@ create the ring
       const index = buildVocabularyIndex(ir);
       const phrases = new Set<string>();
       for (const site of collectProse(ir)) {
-        for (const noun of extractNounPhrases(site.text)) {
-          phrases.add(noun.phrase);
-          phrases.add(noun.words[noun.words.length - 1]);
+        for (const noun of english.extract(site.text)) {
+          phrases.add(noun.words.join(' '));
+          phrases.add(noun.head);
         }
       }
       for (const phrase of phrases) {
@@ -281,7 +287,7 @@ create the oil lamp
   });
 
   it('names a real thing by a word it does not answer to', () => {
-    const result = deriveIncomplete(story);
+    const result = deriveIncomplete(story, english);
     expect(result.missingWord).toContainEqual(
       expect.objectContaining({
         site: expect.objectContaining({ owner: 'hall' }),
@@ -294,7 +300,7 @@ create the oil lamp
   });
 
   it('names something with nothing behind it', () => {
-    const result = deriveIncomplete(story);
+    const result = deriveIncomplete(story, english);
     expect(result.noObject).toContainEqual(
       expect.objectContaining({ site: expect.objectContaining({ owner: 'hall' }), phrase: 'scrollwork' }),
     );
@@ -309,51 +315,7 @@ create the oil lamp
 
   An oil lamp.
 `);
-    expect(deriveIncomplete(fixed).counts.missingWord).toBe(0);
-  });
-});
-
-describe('the extractor reads noun phrases, not clauses', () => {
-  it('starts at an article and stops at a boundary word', () => {
-    expect(extractNounPhrases('The brass key lies on the worn doormat.').map((n) => n.phrase)).toEqual([
-      'brass key',
-      'worn doormat',
-    ]);
-  });
-
-  it('drops a run longer than three words', () => {
-    expect(extractNounPhrases('A very old cracked leather satchel.')).toEqual([]);
-  });
-
-  it('drops a head that is a direction, an abstraction, or a participle', () => {
-    expect(extractNounPhrases('The quiet moment. The far corner. The shape standing.').map((n) => n.phrase))
-      .toEqual([]);
-  });
-
-  it('keeps a three-letter head — interactive fiction is full of them', () => {
-    expect(extractNounPhrases('The brass key. The tin lid.').map((n) => n.phrase)).toEqual([
-      'brass key',
-      'tin lid',
-    ]);
-  });
-
-  it('stops at a locative rather than heading the phrase on it', () => {
-    expect(extractNounPhrases('Someone left the ball here.').map((n) => n.phrase)).toEqual(['ball']);
-  });
-
-  it('loses a phrase to a verb the boundary list does not name — the documented limit', () => {
-    expect(extractNounPhrases('The hurricane lamp burns.').map((n) => n.phrase)).toEqual([
-      'hurricane lamp burns',
-    ]);
-    expect(extractNounPhrases('The hurricane lamp stands.').map((n) => n.phrase)).toEqual([
-      'hurricane lamp',
-    ]);
-  });
-
-  it('reports each distinct phrase once', () => {
-    expect(extractNounPhrases('The brass key. The brass key again.').map((n) => n.phrase)).toEqual([
-      'brass key',
-    ]);
+    expect(deriveIncomplete(fixed, english).counts.missingWord).toBe(0);
   });
 });
 
@@ -370,7 +332,7 @@ describe('D6b — the corpus pin', () => {
 
   /** The three classes, counted over the passages of one kind (D10). */
   function countsFrom(ir: StoryIR, source: 'description' | 'response') {
-    const result = deriveIncomplete(ir);
+    const result = deriveIncomplete(ir, english);
     const of = (list: Array<{ site: { kind: string } }>) =>
       list.filter((finding) => (finding.site.kind === 'response') === (source === 'response')).length;
     return { missingWord: of(result.missingWord), ambiguous: of(result.ambiguous), noObject: of(result.noObject) };
@@ -386,16 +348,24 @@ describe('D6b — the corpus pin', () => {
   // the seven added missing-word findings are compound-adjective phrases the hyphen
   // boundary used to shred (*cast-iron estate boiler*, *long-handled primer plunger*,
   // *wooden-handled tin opener*), and the seven lost no-object rows are their fragments.
-  it("finds in Fernhill's descriptions what the compound-aware extractor sees", () => {
-    expect(countsFrom(fernhill, 'description')).toEqual({ missingWord: 27, ambiguous: 10, noObject: 48 });
+  //
+  // THEY MOVED AGAIN, deliberately, when this view began reading prose through the
+  // story language's extractor (ADR-407 D8; census reviewed by David, 2026-11-22). The
+  // English extractor is the heuristic above united with a part-of-speech tagger,
+  // which reads nouns no article introduces, nouns that open a sentence, and names.
+  // Every phrase the heuristic found is still found (AC-4); the growth is new nouns.
+  // Fernhill's descriptions went 27/10/48 → 44/14/125, its response prose
+  // 3/5/70 → 10/10/170.
+  it("finds in Fernhill's descriptions what the English extractor sees", () => {
+    expect(countsFrom(fernhill, 'description')).toEqual({ missingWord: 44, ambiguous: 14, noObject: 125 });
   });
 
   it("finds in Fernhill's response prose what only D10 can see", () => {
-    expect(countsFrom(fernhill, 'response')).toEqual({ missingWord: 3, ambiguous: 5, noObject: 70 });
-    expect(deriveIncomplete(fernhill).counts).toEqual({
-      missingWord: 30,
-      ambiguous: 15,
-      noObject: 118,
+    expect(countsFrom(fernhill, 'response')).toEqual({ missingWord: 10, ambiguous: 10, noObject: 170 });
+    expect(deriveIncomplete(fernhill, english).counts).toEqual({
+      missingWord: 54,
+      ambiguous: 24,
+      noObject: 295,
       undescribed: 0,
     });
   });
@@ -410,16 +380,19 @@ describe('D6b — the corpus pin', () => {
   // Ides of March is the case the section split exists for: 94 of its 113 passages are
   // response prose, so its candidate list is 7x its description list. Merged into one
   // list the description findings would be unfindable.
+  //
+  // Re-recorded with the English extractor (census, 2026-11-22): The Alderman was
+  // 5/0/30 and 1/0/80, Ides of March 3/0/27 and 11/1/150.
   it('finds what it currently finds in the other two stories, both halves', () => {
-    expect(countsFrom(alderman, 'description')).toEqual({ missingWord: 5, ambiguous: 0, noObject: 30 });
-    expect(countsFrom(alderman, 'response')).toEqual({ missingWord: 1, ambiguous: 0, noObject: 80 });
+    expect(countsFrom(alderman, 'description')).toEqual({ missingWord: 6, ambiguous: 0, noObject: 68 });
+    expect(countsFrom(alderman, 'response')).toEqual({ missingWord: 2, ambiguous: 0, noObject: 224 });
 
-    expect(countsFrom(idesOfMarch, 'description')).toEqual({ missingWord: 3, ambiguous: 0, noObject: 27 });
-    expect(countsFrom(idesOfMarch, 'response')).toEqual({ missingWord: 11, ambiguous: 1, noObject: 150 });
+    expect(countsFrom(idesOfMarch, 'description')).toEqual({ missingWord: 5, ambiguous: 0, noObject: 70 });
+    expect(countsFrom(idesOfMarch, 'response')).toEqual({ missingWord: 14, ambiguous: 1, noObject: 387 });
   });
 
   it('names the sharpest missing-word cases ADR-321 quotes', () => {
-    const { missingWord } = deriveIncomplete(fernhill);
+    const { missingWord } = deriveIncomplete(fernhill, english);
     const byPhrase = new Map(missingWord.map((finding) => [finding.phrase, finding]));
 
     expect(byPhrase.get('hurricane lamp')).toMatchObject({ entity: 'oil-lamp', missing: ['hurricane'] });
@@ -430,10 +403,10 @@ describe('D6b — the corpus pin', () => {
   // name; breaking at the hyphen made the analyzer blind to the compound and left the
   // IDE's own pass reporting a phrase — "tiring house door" — nobody ever wrote.
   it('reads a hyphenated compound as the one word the author wrote', () => {
-    const phrases = extractNounPhrases('The tiring-house door stands west; the yard is south.');
-    expect(phrases.map((found) => found.phrase)).toContain('tiring-house door');
+    const phrases = english.extract('The tiring-house door stands west; the yard is south.');
+    expect(phrases.map((found) => found.words.join(' '))).toContain('tiring-house door');
 
-    const { missingWord, noObject } = deriveIncomplete(idesOfMarch);
+    const { missingWord, noObject } = deriveIncomplete(idesOfMarch, english);
     const bogus = [...missingWord, ...noObject].filter((finding) => finding.phrase.includes('tiring house'));
     expect(bogus).toEqual([]);
   });
@@ -441,10 +414,10 @@ describe('D6b — the corpus pin', () => {
   // A POSSESSIVE NAMES ITS OWNER. No player types "house's first play", so reporting
   // the play-book for not answering to "house's" is a finding about nothing.
   it('stops a phrase at a possessive rather than naming one', () => {
-    const phrases = extractNounPhrases("The house's first play is chalked on the plot-board.");
-    expect(phrases.map((found) => found.phrase)).not.toContain("house's first play");
+    const phrases = english.extract("The house's first play is chalked on the plot-board.");
+    expect(phrases.map((found) => found.words.join(' '))).not.toContain("house's first play");
 
-    const { missingWord } = deriveIncomplete(idesOfMarch);
+    const { missingWord } = deriveIncomplete(idesOfMarch, english);
     expect(missingWord.filter((finding) => finding.phrase.includes("'s"))).toEqual([]);
   });
 
@@ -452,7 +425,7 @@ describe('D6b — the corpus pin', () => {
   // is a class defined by a negative — "nothing answers to this" — so it catches every
   // noun in the prose that is not an object, which is most of English.
   it('does not report a manner or an act as a missing thing', () => {
-    const { noObject, notThings } = deriveIncomplete(idesOfMarch);
+    const { noObject, notThings } = deriveIncomplete(idesOfMarch, english);
     const phrases = noObject.map((finding) => finding.phrase);
 
     expect(phrases).not.toContain('flourish');
@@ -472,7 +445,7 @@ describe('D6b — the corpus pin', () => {
       expect(thing(status), `${status} is a thing a story can give someone`).toBe(true);
     }
 
-    const { noObject } = deriveIncomplete(idesOfMarch);
+    const { noObject } = deriveIncomplete(idesOfMarch, english);
     expect(noObject.map((finding) => finding.phrase)).toContain('knighthood');
   });
 
@@ -534,7 +507,7 @@ describe('D6b — the corpus pin', () => {
   // on a document that describes one story; the IDE only ever asks about words this
   // story contains, so those are answered in advance and the dictionary stays here.
   it('publishes verdicts for this story rather than the lexicon', () => {
-    const filters = publishFilters(collectProse(idesOfMarch));
+    const filters = publishFilters(english, collectProse(idesOfMarch));
 
     expect(filters.notThingHeads.length).toBeGreaterThan(0);
     expect(filters.notThingHeads.length).toBeLessThan(500);
@@ -546,7 +519,7 @@ describe('D6b — the corpus pin', () => {
   // A THING IS A THING BY DEMONSTRATION. A story that implements `the flourish` as
   // an object never meets this rule: it is asked only of phrases that reached nothing.
   it('never suppresses a phrase that resolves', () => {
-    const { edges } = deriveIncomplete(fernhill);
+    const { edges } = deriveIncomplete(fernhill, english);
     expect(edges.length).toBeGreaterThan(0);
     expect(edges.every((edge) => edge.phrase.length > 0)).toBe(true);
   });
@@ -571,7 +544,7 @@ create the lantern
   A tin lantern.
 `);
 
-    const { undescribed, counts } = deriveIncomplete(story);
+    const { undescribed, counts } = deriveIncomplete(story, english);
     expect(undescribed).toContain('bankside-sign');
     expect(undescribed).not.toContain('lantern');
     expect(undescribed).not.toContain('hall');
@@ -582,15 +555,15 @@ create the lantern
   // The corpus is well described, and that is the pin: a class that fires on a clean
   // story is a class nobody will trust when it fires on a dirty one.
   it('finds nothing to report in two finished stories', () => {
-    expect(deriveIncomplete(fernhill).undescribed).toEqual([]);
-    expect(deriveIncomplete(idesOfMarch).undescribed).toEqual([]);
+    expect(deriveIncomplete(fernhill, english).undescribed).toEqual([]);
+    expect(deriveIncomplete(idesOfMarch, english).undescribed).toEqual([]);
   });
 
   // SAY WHICH WORD REACHED IT (Amendment 2). The target is otherwise an assertion the
   // reader cannot check: `play-book` for *roman play* is arbitrary until the row says
   // the head word `play` is the one in its vocabulary.
   it('carries the word that reached the target', () => {
-    const { missingWord } = deriveIncomplete(fernhill);
+    const { missingWord } = deriveIncomplete(fernhill, english);
     const lamp = missingWord.find((finding) => finding.phrase === 'hurricane lamp');
     expect(lamp).toMatchObject({ entity: 'oil-lamp', matched: 'lamp' });
     expect(missingWord.every((finding) => finding.knownAs.includes(finding.matched))).toBe(true);
@@ -602,7 +575,7 @@ create the lantern
   // (one line up since 2026-10-18: ADR-377 dropped the header's `use
   // state-machines` line).
   it('publishes the whole passage span, not its first line', () => {
-    const stage = deriveIncomplete(idesOfMarch)
+    const stage = deriveIncomplete(idesOfMarch, english)
       .edges.map((edge) => edge.site)
       .find((site) => site.key === 'stage.description');
 
@@ -611,7 +584,7 @@ create the lantern
   });
 
   it('reports the study door as ambiguous across the three real doors', () => {
-    const { ambiguous } = deriveIncomplete(fernhill);
+    const { ambiguous } = deriveIncomplete(fernhill, english);
     expect(ambiguous).toContainEqual(
       expect.objectContaining({
         phrase: 'study door',
@@ -621,22 +594,31 @@ create the lantern
   });
 
   it('reports the four no-object cases ADR-321 quotes', () => {
-    const phrases = new Set(deriveIncomplete(fernhill).noObject.map((finding) => finding.phrase));
+    const phrases = new Set(deriveIncomplete(fernhill, english).noObject.map((finding) => finding.phrase));
     for (const phrase of ['scrollwork', 'keyhole', 'bolt', 'cache']) {
       expect(phrases).toContain(phrase);
     }
   });
 
   it('reads first-visit prose as well as the ordinary description', () => {
-    const { noObject } = deriveIncomplete(fernhill);
+    const { noObject } = deriveIncomplete(fernhill, english);
     const firstVisit = noObject.filter((finding) => finding.site.kind === 'first-visit');
-    expect(firstVisit.map((finding) => finding.phrase).sort()).toEqual(['cab', 'estate', 'lane']);
+    // `dawn`, `lamps` (after the possessive *its*, GH #514's gap) and `order` joined
+    // with the English extractor (census, 2026-11-22).
+    expect(firstVisit.map((finding) => finding.phrase).sort()).toEqual([
+      'cab',
+      'dawn',
+      'estate',
+      'lamps',
+      'lane',
+      'order',
+    ]);
   });
 
   // D10: the passage, not the entity, is the unit — and both attribution fields are
   // independently optional, which is why the phrase key is the attribution of record.
   it('reads response prose and attributes it to the clause that fires it', () => {
-    const findings = [...deriveIncomplete(fernhill).noObject, ...deriveIncomplete(fernhill).ambiguous];
+    const findings = [...deriveIncomplete(fernhill, english).noObject, ...deriveIncomplete(fernhill, english).ambiguous];
     const responses = findings.filter((finding) => finding.site.kind === 'response');
     expect(responses.length).toBeGreaterThan(0);
 
@@ -646,5 +628,89 @@ create the lantern
 
     // Story-level prose hangs off no entity at all — 22 of Fernhill's passages.
     expect(responses.some((finding) => finding.site.owner === null)).toBe(true);
+  });
+});
+
+/**
+ * An extractor that reports exactly one phrase per passage, with filters the
+ * test chooses, so what the view does with its input is visible on its own.
+ */
+function fixedExtractor(words: string[], headStopwords: string[]): NounExtractor {
+  return {
+    languageCode: 'en-US',
+    filters: { headStopwords, minHeadLength: 4, maxPhraseWords: 2 },
+    extract: (text) =>
+      text.length === 0 ? [] : [{ text: words.join(' '), words, head: words[words.length - 1], offset: 0 }],
+    tokenize: (text) => text.toLowerCase().split(/\s+/).filter(Boolean),
+  };
+}
+
+describe('the view reads prose only through the extractor it is given (ADR-407 D8, Amendment 3)', () => {
+  let story: StoryIR;
+
+  beforeAll(() => {
+    story = compileSource(`${ROOMS}
+create the oil lamp
+  a thing
+  in the Hall
+
+  An oil lamp.
+`);
+  });
+
+  it('classifies the phrases the extractor returns, and no others', () => {
+    const result = deriveIncomplete(story, fixedExtractor(['brass', 'lamp'], []));
+    const phrases = [...result.missingWord, ...result.ambiguous, ...result.noObject, ...result.edges].map(
+      (finding) => finding.phrase,
+    );
+    expect(phrases.length).toBeGreaterThan(0);
+    expect(new Set(phrases)).toEqual(new Set(['brass lamp']));
+    expect(result.missingWord[0]).toMatchObject({ entity: 'oil-lamp', missing: ['brass'], matched: 'lamp' });
+  });
+
+  it("never reports a modifier the extractor's filters call a stopword as a missing word", () => {
+    const result = deriveIncomplete(story, fixedExtractor(['brass', 'lamp'], ['brass']));
+    expect(result.missingWord).toEqual([]);
+    expect(result.edges.map((edge) => edge.entity)).toContain('oil-lamp');
+  });
+
+  it("publishes the extractor's filters on the wire as they are", () => {
+    const filters = publishFilters(fixedExtractor(['lamp'], ['brass', 'north']), collectProse(story));
+    expect(filters).toMatchObject({ headStopwords: ['brass', 'north'], minHeadLength: 4, maxPhraseWords: 2 });
+
+    const englishFilters = publishFilters(english);
+    expect(englishFilters.headStopwords).toEqual([...english.filters.headStopwords]);
+    expect(englishFilters.minHeadLength).toBe(english.filters.minHeadLength);
+    expect(englishFilters.maxPhraseWords).toBe(english.filters.maxPhraseWords);
+  });
+});
+
+/** The heuristic half of the English extractor, as lang-en-us built it. */
+interface BuiltHeuristic {
+  extractHeuristicPhrases(text: string): Array<{ words: readonly string[] }>;
+}
+
+describe('AC-4 — the English extractor never loses a heuristic phrase on the D6b corpus (ADR-407)', () => {
+  it('finds every phrase the heuristic alone finds, in every passage of all three stories', () => {
+    // The heuristic is not on the nouns subpath's surface, so this reads the built
+    // module the subpath is made from: the same code the extractor runs, never a copy.
+    const { extractHeuristicPhrases } = createRequire(import.meta.url)(
+      fileURLToPath(new URL('../../lang-en-us/dist/nouns/heuristic.js', import.meta.url)),
+    ) as BuiltHeuristic;
+
+    let checked = 0;
+    const lost: string[] = [];
+    for (const path of [CORPUS.fernhill, CORPUS.alderman, CORPUS.idesOfMarch]) {
+      for (const site of collectProse(compileStory(path))) {
+        const union = new Set(english.extract(site.text).map((candidate) => candidate.words.join(' ')));
+        for (const phrase of extractHeuristicPhrases(site.text)) {
+          checked += 1;
+          const key = phrase.words.join(' ');
+          if (!union.has(key)) lost.push(`${path}: "${key}"`);
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(500);
+    expect(lost).toEqual([]);
   });
 });

@@ -7,12 +7,13 @@
  * is that the CLI face keeps the contract Chord Writer's World tab decodes
  * against — one JSON document, always, and an exit code that says which kind.
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import { noNounExtractorRefusal } from '@sharpee/if-domain/nouns';
 import { runCompose } from './compose.js';
-import { runWorldIndex } from './world-index.js';
+import { nounExtractorLookup, runWorldIndex } from './world-index.js';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', '..', 'chord', 'tests', 'fixtures');
 const OUT_DIR = mkdtempSync(join(tmpdir(), 'world-index-test-'));
@@ -20,7 +21,7 @@ const OUT_DIR = mkdtempSync(join(tmpdir(), 'world-index-test-'));
 afterAll(() => rmSync(OUT_DIR, { recursive: true, force: true }));
 
 /** Runs the command, capturing the one document it writes to stdout. */
-function runCapturing(args: string[]): { code: number; document: Record<string, unknown> } {
+function runCapturing(args: string[]): { code: number; document: Record<string, unknown>; lines: number } {
   const written: string[] = [];
   const stdout = vi
     .spyOn(process.stdout, 'write')
@@ -30,7 +31,12 @@ function runCapturing(args: string[]): { code: number; document: Record<string, 
     });
   try {
     const code = runWorldIndex(args);
-    return { code, document: JSON.parse(written.join('')) as Record<string, unknown> };
+    const output = written.join('');
+    return {
+      code,
+      document: JSON.parse(output) as Record<string, unknown>,
+      lines: output.trimEnd().split('\n').length,
+    };
   } finally {
     stdout.mockRestore();
   }
@@ -71,5 +77,33 @@ describe('sharpee world-index', () => {
     expect(code).toBe(1);
     expect((document.failure as { cause: string }).cause).toBe('malformed-ir');
     expect((document.failure as { path: string }).path).toBe(junk);
+  });
+
+  // ADR-407 D6, AC-2: the story's language (the IR's phrases.defaultLocale) has no
+  // @sharpee/lang-<code>/nouns, so the command refuses by name before reading prose.
+  // The lookup runs for real through require; the IR is a temporary copy.
+  it('refuses a story whose language has no noun extractor, naming the code, at exit 1', async () => {
+    const ir = join(OUT_DIR, 'english.ir.json');
+    expect(await runCompose([join(CHORD_FIXTURES, 'ac5-random.story'), '-o', ir])).toBe(0);
+    const compiled = JSON.parse(readFileSync(ir, 'utf8')) as { phrases: Record<string, unknown> };
+    const foreign = join(OUT_DIR, 'foreign.ir.json');
+    writeFileSync(foreign, JSON.stringify({ ...compiled, phrases: { ...compiled.phrases, defaultLocale: 'xx-YY' } }));
+
+    const { code, document, lines } = runCapturing([foreign]);
+    expect(code).toBe(1);
+    expect(lines).toBe(1);
+    expect(document.ok).toBe(false);
+    expect(document.failure).toEqual({
+      cause: 'no-noun-extractor',
+      message: noNounExtractorRefusal('xx-YY'),
+      path: foreign,
+    });
+  });
+
+  it('finds the English extractor for en-US through a real require', () => {
+    const resolution = nounExtractorLookup('en-US');
+    expect(resolution.found).toBe(true);
+    if (resolution.found) expect(resolution.extractor.languageCode).toBe('en-US');
+    expect(nounExtractorLookup('xx-YY')).toEqual({ found: false, refusal: noNounExtractorRefusal('xx-YY') });
   });
 });

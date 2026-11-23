@@ -43,6 +43,7 @@ import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 
 import { compile } from '@sharpee/chord';
+import { nounExtractor as english } from '@sharpee/lang-en-us/nouns';
 import { buildDocument, type WorldIndexResponse } from '../src/document.js';
 import type { StoryRatios } from './corpus-shape.js';
 import { generateStory, type CorpusShape } from './synthetic-corpus.js';
@@ -168,8 +169,8 @@ export function measure(
   const serialized = JSON.stringify(compiled.ir);
   writeFileSync(path, serialized, 'utf8');
 
-  buildDocument(compiled.ir, 'timing');
-  const analysisMs = timed(runs.analysis, () => void buildDocument(compiled.ir, 'timing'));
+  buildDocument(compiled.ir, 'timing', english);
+  const analysisMs = timed(runs.analysis, () => void buildDocument(compiled.ir, 'timing', english));
 
   let findings = -1;
   const subprocessMs = timed(runs.subprocess, () => {

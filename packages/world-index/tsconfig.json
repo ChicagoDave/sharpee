@@ -8,5 +8,5 @@
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
-  "references": [{ "path": "../chord" }, { "path": "../world-model" }]
+  "references": [{ "path": "../chord" }, { "path": "../if-domain" }, { "path": "../world-model" }]
 }

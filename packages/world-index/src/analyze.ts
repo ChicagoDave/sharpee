@@ -23,19 +23,28 @@
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import type { NounExtractorLookup } from '@sharpee/if-domain';
 import { buildDocument, buildFailure, type WorldIndexResponse } from './document.js';
 import { readStoryIR, StoryIRReadError } from './story.js';
 
 /**
  * Analyze one compiled story, or say why not.
  *
+ * The story's language is the IR's `phrases.defaultLocale` (ADR-407 D2). It is
+ * looked up once the IR is read and before any prose is: a language with no
+ * noun extractor is refused by name (D6), never read with another language's rules.
+ *
  * @param irPath path to a `<story>.ir.json`, or undefined when none was given
  * @param version the analyzer version to stamp on the document (diagnostics only)
+ * @param lookup the caller's map from a language code to its noun extractor or
+ *   the refusal line (ADR-407 D8); this package names no language itself
  * @returns the document to hand the caller — an analysis, or a named failure
+ *   (`no-noun-extractor` carries the refusal line as its message)
  */
 export function analyzeStoryIR(
   irPath: string | undefined,
   version: string,
+  lookup: NounExtractorLookup,
 ): WorldIndexResponse {
   if (irPath === undefined || irPath.length === 0) {
     return buildFailure(
@@ -62,8 +71,22 @@ export function analyzeStoryIR(
     throw error;
   }
 
+  const languageCode = ir.phrases?.defaultLocale;
+  if (typeof languageCode !== 'string' || languageCode.length === 0) {
+    return buildFailure(
+      'malformed-ir',
+      `${irPath} names no language: a compiled Chord story carries phrases.defaultLocale.`,
+      version,
+      irPath,
+    );
+  }
+  const resolution = lookup(languageCode);
+  if (!resolution.found) {
+    return buildFailure('no-noun-extractor', resolution.refusal, version, irPath);
+  }
+
   try {
-    return buildDocument(ir, version);
+    return buildDocument(ir, version, resolution.extractor);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     return buildFailure('internal', `The World Index analysis failed: ${detail}`, version, irPath);

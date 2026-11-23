@@ -24,7 +24,12 @@ import {
 
 /** A minimal extractor for a given language. */
 function extractorFor(languageCode: string): NounExtractor {
-  return { languageCode, extract: () => [], tokenize: () => [] };
+  return {
+    languageCode,
+    filters: { headStopwords: ['north'], minHeadLength: 3, maxPhraseWords: 3 },
+    extract: () => [],
+    tokenize: () => [],
+  };
 }
 
 /** A loader that answers one module name and throws for every other, as `require` does. */
@@ -75,6 +80,26 @@ describe('resolveNounExtractor (ADR-407 D3, D6)', () => {
     expect(
       resolveNounExtractor('en-US', loaderFor('@sharpee/lang-en-us/nouns', { nounExtractor: notAnExtractor })),
     ).toEqual({ found: false, refusal: noNounExtractorRefusal('en-US') });
+  });
+
+  it('refuses an extractor whose filters are missing or not the NounFilters shape (Amendment 3)', () => {
+    const english = extractorFor('en-US');
+    const withFilters = (filters: object | undefined): NounsModule => ({
+      nounExtractor: { ...english, filters } as NounExtractor,
+    });
+    const shapes: Array<object | undefined> = [
+      undefined,
+      { minHeadLength: 3, maxPhraseWords: 3 },
+      { headStopwords: ['north', 7], minHeadLength: 3, maxPhraseWords: 3 },
+      { headStopwords: [], minHeadLength: 0, maxPhraseWords: 3 },
+      { headStopwords: [], minHeadLength: 3, maxPhraseWords: 2.5 },
+    ];
+    for (const filters of shapes) {
+      expect(resolveNounExtractor('en-US', loaderFor('@sharpee/lang-en-us/nouns', withFilters(filters)))).toEqual({
+        found: false,
+        refusal: noNounExtractorRefusal('en-US'),
+      });
+    }
   });
 });
 

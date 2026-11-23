@@ -26,6 +26,7 @@
  */
 
 import type { Span, StoryIR } from '@sharpee/chord';
+import type { NounExtractor } from '@sharpee/if-domain';
 import { deriveIncomplete, publishFilters, type ExtractorFilters, type IncompleteResult } from './incomplete.js';
 import { collectProse, type ProseSite } from './prose.js';
 import { layoutMap, type Cell, type DirectionSkew, type ResolvedCollision } from './map.js';
@@ -99,7 +100,13 @@ export type FailureCause =
   /** The file is not JSON, or is not a Story IR. */
   | 'malformed-ir'
   /** The analysis itself threw — a defect in this package. */
-  | 'internal';
+  | 'internal'
+  /**
+   * The story's language (the IR's `phrases.defaultLocale`) supplies no noun
+   * extractor, so no prose is read (ADR-407 D6). The message is the one refusal
+   * line every reader of prose prints.
+   */
+  | 'no-noun-extractor';
 
 /** A successful analysis. */
 export interface WorldIndexDocument {
@@ -254,9 +261,11 @@ function declared(value: string | undefined): string | null {
  *
  * @param ir the story IR to analyze
  * @param analyzerVersion this package's version
+ * @param extractor the noun extractor for the story's language (ADR-407 D8);
+ *   every prose reading below goes through it
  * @returns the document the IDE renders
  */
-export function buildDocument(ir: StoryIR, analyzerVersion: string): WorldIndexDocument {
+export function buildDocument(ir: StoryIR, analyzerVersion: string, extractor: NounExtractor): WorldIndexDocument {
   const map = layoutMap(ir);
   const reach = deriveReach(ir);
   // Collected once: the passages are the Incomplete view's input, the prose surface
@@ -282,13 +291,13 @@ export function buildDocument(ir: StoryIR, analyzerVersion: string): WorldIndexD
       connections: map.connections,
     },
     reach,
-    incomplete: deriveIncomplete(ir, reach),
+    incomplete: deriveIncomplete(ir, extractor, reach),
     roles: Object.fromEntries(roles),
     vocabulary: publishVocabulary(buildVocabularyIndex(ir)),
     prose,
-    filters: publishFilters(prose),
+    filters: publishFilters(extractor, prose),
     declarations: declarationsOf(ir),
-    unnamedTools: deriveUnnamedTools(ir, roles, prose),
+    unnamedTools: deriveUnnamedTools(ir, roles, prose, extractor),
   };
 }
 

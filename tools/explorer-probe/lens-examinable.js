@@ -135,7 +135,14 @@ const path = require('node:path');
 
 const REPO = path.resolve(__dirname, '..', '..');
 const { explore } = require('./explore.js');
-const { extractNounPhrases, readsAsThing } = require(path.join(REPO, 'packages/world-index/dist/index.js'));
+const { readsAsThing } = require(path.join(REPO, 'packages/world-index/dist/index.js'));
+// BRIDGE until the description-noun-lens plan's Phase 4: ADR-321's article heuristic
+// moved, unchanged, from world-index to lang-en-us (ADR-407 D8), so the lens reads it
+// there and its pins do not move. Phase 4 replaces this with the story language's
+// whole extractor, found through if-domain's lookup.
+const { extractHeuristicPhrases } = require(path.join(REPO, 'packages/lang-en-us/dist/nouns/heuristic.js'));
+const extractNounPhrases = (text) =>
+  extractHeuristicPhrases(text).map((found) => ({ phrase: found.words.join(' '), words: found.words }));
 
 /** Examine message ids that mean "resolved, but the author wrote nothing." */
 const DEFAULT_RESPONSE_SUFFIXES = ['.default_description', '.default_description_self', '.nothing_special'];

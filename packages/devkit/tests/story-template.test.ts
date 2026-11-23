@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, type StoryIR } from '@sharpee/chord';
+import { nounExtractor as english } from '@sharpee/lang-en-us/nouns';
 import { buildDocument } from '@sharpee/world-index';
 
 const TEMPLATE = join(__dirname, '..', 'templates', 'story-chord', 'story.story.template');
@@ -50,7 +51,7 @@ describe('the New Story template', () => {
   });
 
   it('gives the World Index nothing to report', () => {
-    const document = buildDocument(compiledTemplate(), '0.0.0');
+    const document = buildDocument(compiledTemplate(), '0.0.0', english);
     expect(document.incomplete.counts).toEqual({
       missingWord: 0,
       ambiguous: 0,

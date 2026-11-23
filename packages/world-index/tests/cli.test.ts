@@ -21,6 +21,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { noNounExtractorRefusal } from '@sharpee/if-domain/nouns';
+import { nounExtractor as english } from '@sharpee/lang-en-us/nouns';
 import { buildDocument, WORLD_INDEX_SCHEMA, type WorldIndexResponse } from '../src/document.js';
 import { CORPUS, compileStory } from './corpus.js';
 
@@ -98,10 +100,12 @@ describe('a compiled story', () => {
     expect(run.document.reach.findingCount).toBe(0);
     // Both prose sources cross the wire (Amendment 1 D10) — the description half of
     // these figures is pinned against the pre-amendment numbers in incomplete.test.ts.
+    // Re-recorded after the census of 2026-11-22 (ADR-407 D8): the English extractor
+    // was 30/15/118 as the article heuristic alone.
     expect(run.document.incomplete.counts).toEqual({
-      missingWord: 30,
-      ambiguous: 15,
-      noObject: 118,
+      missingWord: 54,
+      ambiguous: 24,
+      noObject: 295,
       undescribed: 0,
     });
   });
@@ -123,7 +127,7 @@ describe('a compiled story', () => {
   });
 
   it('loses nothing crossing the wire', () => {
-    const inProcess = buildDocument(compileStory(CORPUS.fernhill), '');
+    const inProcess = buildDocument(compileStory(CORPUS.fernhill), '', english);
     expect(run.document.ok).toBe(true);
     if (!run.document.ok) return;
 
@@ -174,6 +178,28 @@ describe('AC-9 — failure is a document, not a crash', () => {
     expect(run.status).toBe(1);
     expect(run.stderr).toBe('');
     expect(run.document).toMatchObject({ ok: false, failure: { cause: 'malformed-ir', path: wrongShape } });
+  });
+
+  // ADR-407 D6, AC-2 (world-index half): a story whose language supplies no noun
+  // extractor is refused by name before any prose is read, never read with English
+  // rules and reported clean. The IR is a temporary copy; no story file is edited.
+  it('refuses a story whose language has no noun extractor, naming the code', () => {
+    const ir = compileStory(CORPUS.fernhill);
+    const foreign = join(scratch, 'fernhill-xx.ir.json');
+    writeFileSync(foreign, JSON.stringify({ ...ir, phrases: { ...ir.phrases, defaultLocale: 'xx-YY' } }));
+    const result = spawnSync(process.execPath, [CLI, foreign], { encoding: 'utf8' });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toBe('');
+    expect(result.stdout.trimEnd().split('\n')).toHaveLength(1);
+    const document = JSON.parse(result.stdout) as WorldIndexResponse;
+    expect(document).toEqual({
+      schema: WORLD_INDEX_SCHEMA,
+      analyzerVersion: expect.any(String),
+      ok: false,
+      failure: { cause: 'no-noun-extractor', message: noNounExtractorRefusal('xx-YY'), path: foreign },
+    });
+    expect(noNounExtractorRefusal('xx-YY')).toContain("'xx-YY'");
   });
 
   it('carries the schema stamp on a failure too, so the IDE parses one shape', () => {

@@ -16,7 +16,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { StoryIR } from '@sharpee/chord';
 import { buildDocument } from '../src/document.js';
-import { extractNounPhrases } from '../src/incomplete.js';
+import { nounExtractor as english } from '@sharpee/lang-en-us/nouns';
 import { collectProse } from '../src/prose.js';
 import {
   buildVocabularyIndex,
@@ -90,10 +90,11 @@ describe('the published vocabulary surface (D11)', () => {
       const surface = publishVocabulary(index);
 
       for (const site of collectProse(ir)) {
-        for (const noun of extractNounPhrases(site.text)) {
-          const viaIndex = resolvePhrase(index, noun.phrase).sort();
-          const viaSurface = resolveFromSurface(surface, noun.phrase, noun.words).sort();
-          expect(viaSurface, `${name}: "${noun.phrase}"`).toEqual(viaIndex);
+        for (const noun of english.extract(site.text)) {
+          const phrase = noun.words.join(' ');
+          const viaIndex = resolvePhrase(index, phrase).sort();
+          const viaSurface = resolveFromSurface(surface, phrase, [...noun.words]).sort();
+          expect(viaSurface, `${name}: "${phrase}"`).toEqual(viaIndex);
           compared += 1;
         }
       }
@@ -105,7 +106,7 @@ describe('the published vocabulary surface (D11)', () => {
 
   it('rides the document', () => {
     const [, fernhill] = stories[0];
-    const document = buildDocument(fernhill, 'test');
+    const document = buildDocument(fernhill, 'test', english);
     expect(Object.keys(document.vocabulary.wordsOf)).toHaveLength(64);
     expect(document.vocabulary.wordsOf['oil-lamp']).toEqual(
       expect.arrayContaining(['oil', 'lamp']),

@@ -17,6 +17,7 @@
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { StoryIR } from '@sharpee/chord';
+import { nounExtractor as english } from '@sharpee/lang-en-us/nouns';
 import { buildDocument } from '../src/document.js';
 import { collectProse } from '../src/prose.js';
 import { deriveReach } from '../src/reach.js';
@@ -27,7 +28,7 @@ import { CORPUS, compileSource, compileStory, entity, faultable } from './corpus
 /** Run the finding the way `buildDocument` runs it. */
 function unnamed(ir: StoryIR) {
   const reach = deriveReach(ir);
-  return deriveUnnamedTools(ir, roleTable(ir, reach), collectProse(ir));
+  return deriveUnnamedTools(ir, roleTable(ir, reach), collectProse(ir), english);
 }
 
 /** A two-room fixture with prose that names nothing in particular. */
@@ -139,21 +140,23 @@ describe('D13 — a thing the mechanics need that nothing announces', () => {
   it('never reports a thing the prose names but the extractor misses', () => {
     const reach = deriveReach(fernhill);
     const edges = new Set(
-      deriveUnnamedTools(fernhill, roleTable(fernhill, reach), collectProse(fernhill)).map((f) => f.id),
+      deriveUnnamedTools(fernhill, roleTable(fernhill, reach), collectProse(fernhill), english).map((f) => f.id),
     );
-    const document = buildDocument(fernhill, '0.0.0');
+    const document = buildDocument(fernhill, '0.0.0', english);
 
     // The premise: no resolved edge reaches it, so only the direct search can clear it.
     expect(document.incomplete.edges.some((edge) => edge.entity === 'winding-key')).toBe(false);
     expect(edges).not.toContain('winding-key');
   });
 
-  // The second guard, on a real entity. `crowbar` is named by no passage but its own,
-  // and the extractor never resolves it either — but it lies loose in the cellar, and
-  // `looking` lists what sits in a room. Reporting it would report the platform.
+  // The second guard, on a real entity. `crowbar` is named by no passage but its own
+  // — but it lies loose in the cellar, and `looking` lists what sits in a room.
+  // Reporting it would report the platform. (The English extractor now reads
+  // `crowbar` in its own description, which the old one never resolved; D13 skips a
+  // thing's own passages, so the finding is unchanged. Census, 2026-11-22.)
   it('never reports what the room listing announces on its own', () => {
-    const document = buildDocument(fernhill, '0.0.0');
-    expect(document.incomplete.edges.some((edge) => edge.entity === 'crowbar')).toBe(false);
+    const document = buildDocument(fernhill, '0.0.0', english);
+    expect(document.unnamedTools.map((finding) => finding.id)).not.toContain('crowbar');
     expect(unnamed(fernhill).map((finding) => finding.id)).not.toContain('crowbar');
   });
 
@@ -238,7 +241,7 @@ create the zarquon frieze
   });
 
   it('rides the wire as a list of its own, uncounted by Reach', () => {
-    const document = buildDocument(fernhill, '0.0.0');
+    const document = buildDocument(fernhill, '0.0.0', english);
     expect(document.unnamedTools).toEqual(unnamed(fernhill));
     // Fernhill is AC-1's clean story and stays clean: this finding is Reach-adjacent,
     // never a Reach finding, because a story can be perfectly reachable and still

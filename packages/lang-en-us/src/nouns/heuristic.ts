@@ -17,8 +17,8 @@
  * the corpus pins in `@sharpee/world-index` show it as a diff.
  *
  * Public interface (within the `nouns` subpath): `tokenize`, `tokenizeWithOffsets`,
- * `extractHeuristicPhrases`, `isReportableHead`, and the `HeuristicPhrase` and
- * `Token` shapes.
+ * `extractHeuristicPhrases`, `isReportableHead`, `ENGLISH_NOUN_FILTERS`, and the
+ * `HeuristicPhrase` and `Token` shapes.
  *
  * Owner context: @sharpee/lang-en-us, `nouns` subpath — English prose reading
  * for lenses and static readers, outside the story runtime.
@@ -26,6 +26,7 @@
  * @see ADR-321 D6b, D16; ADR-407 D4, D8
  */
 
+import type { NounFilters } from '@sharpee/if-domain';
 import { englishWords } from '../data/words.js';
 
 /** Words that open a noun phrase: a phrase is read forward from an article. */
@@ -83,6 +84,18 @@ export const MAX_PHRASE_WORDS = 3;
  * box, lid, tin, pot, rug, axe, urn), and a four-letter floor drops every one.
  */
 const MIN_HEAD_LENGTH = 3;
+
+/**
+ * The head filters above, as the data the contract publishes (ADR-407 Amendment 3).
+ *
+ * Built from the same constants `isReportableHead` and the run limit read, so
+ * what a reader is told and what `extract` does cannot differ.
+ */
+export const ENGLISH_NOUN_FILTERS: NounFilters = Object.freeze({
+  headStopwords: Object.freeze([...HEAD_STOPWORDS]),
+  minHeadLength: MIN_HEAD_LENGTH,
+  maxPhraseWords: MAX_PHRASE_WORDS,
+});
 
 /** The sentinel a non-word character becomes: it ends a run. */
 const BREAK = '|';

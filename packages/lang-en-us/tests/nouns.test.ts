@@ -213,6 +213,35 @@ describe('the union never loses a candidate (ADR-407 D4, AC-4 unit half)', () =>
   });
 });
 
+describe('the filters the extractor publishes are the ones it applies (ADR-407 Amendment 3)', () => {
+  it('publishes the stopwords, the three-letter floor and the three-word cap', () => {
+    const { headStopwords, minHeadLength, maxPhraseWords } = nounExtractor.filters;
+    expect(minHeadLength).toBe(3);
+    expect(maxPhraseWords).toBe(3);
+    for (const word of ['north', 'floor', 'light', 'thing', 'corner']) expect(headStopwords).toContain(word);
+    expect(new Set(headStopwords).size).toBe(headStopwords.length);
+  });
+
+  it('never reports a candidate whose head is a published stopword or under the floor', () => {
+    const { headStopwords } = nounExtractor.filters;
+    // Each stopword heads an article phrase the heuristic would otherwise take.
+    const passage = headStopwords.map((word) => `You see the old ${word}.`).join(' ') + ' There is a key and an ox.';
+    const heads = nounExtractor.extract(passage).map((candidate) => candidate.head);
+    for (const word of headStopwords) expect(heads).not.toContain(word);
+    expect(heads).toContain('key');
+    expect(heads).not.toContain('ox');
+  });
+
+  it('never reports a phrase longer than the published cap', () => {
+    const { maxPhraseWords } = nounExtractor.filters;
+    const candidates = nounExtractor.extract(
+      'A great tall carved oak door stands open. The battered old tin bucket sits by the small brass key.',
+    );
+    expect(candidates.length).toBeGreaterThan(0);
+    for (const candidate of candidates) expect(candidate.words.length).toBeLessThanOrEqual(maxPhraseWords);
+  });
+});
+
 /**
  * Run a script in a fresh Node from the package directory, so the package's own
  * exports map resolves `@sharpee/lang-en-us/...` against `dist/` and `dist-esm/`.

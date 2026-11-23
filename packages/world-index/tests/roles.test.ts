@@ -14,6 +14,7 @@
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { StoryIR } from '@sharpee/chord';
+import { nounExtractor as english } from '@sharpee/lang-en-us/nouns';
 import { buildDocument } from '../src/document.js';
 import { deriveIncomplete } from '../src/incomplete.js';
 import { deriveReach } from '../src/reach.js';
@@ -32,7 +33,7 @@ function edgeRoles(ir: StoryIR): Record<MentionRole, number> {
     'progression-info': 0,
     'atmosphere-info': 0,
   };
-  for (const edge of deriveIncomplete(ir).edges) counts[edge.role] += 1;
+  for (const edge of deriveIncomplete(ir, english).edges) counts[edge.role] += 1;
   return counts;
 }
 
@@ -153,23 +154,29 @@ end before
 
   it('roles every declared entity, not only the ones this extractor reached', () => {
     // The table is published whole so Chord Writer can role edges the analyzer
-    // never made. The Alderman is the proof it must be: all six `accusable`
-    // suspects are proper-named, so the article-gated extractor resolves not one
-    // of them, yet each is a tool the moment D11's chunking finds it.
+    // never made. The six `accusable` suspects were once the proof: proper-named,
+    // so the article-gated extractor reached none of them. The English extractor's
+    // tagger reads names (ADR-407 D4), so now every suspect is reached and is a
+    // tool, and the proof is the four entities no edge reaches, which the table
+    // roles all the same (census, 2026-11-22).
     const roles = rolesOf(alderman);
     expect(roles.size).toBe(alderman.entities.length);
 
-    const named = new Set(deriveIncomplete(alderman).edges.map((edge) => edge.entity));
+    const named = new Set(deriveIncomplete(alderman, english).edges.map((edge) => edge.entity));
     const accusable = alderman.entities.filter((e) => e.traits.some((t) => t.name === 'accusable'));
     expect(accusable.length).toBe(6);
     for (const suspect of accusable) {
-      expect(named.has(suspect.id)).toBe(false);
+      expect(named.has(suspect.id)).toBe(true);
       expect(roles.get(suspect.id)).toBe('tool');
     }
+
+    const unreached = alderman.entities.filter((e) => !named.has(e.id)).map((e) => e.id).sort();
+    expect(unreached).toEqual(['alex', 'room-three-oh-eight', 'room-three-oh-two', 'staircase']);
+    for (const id of unreached) expect(roles.get(id)).toBe('atmosphere-info');
   });
 
   it('rides the wire as a table of its own', () => {
-    const document = buildDocument(fernhill, 'test');
+    const document = buildDocument(fernhill, 'test', english);
     expect(Object.keys(document.roles)).toHaveLength(fernhill.entities.length);
     expect(document.roles['stopcock']).toBe('progression-info');
     expect(document.incomplete.edges.length).toBeGreaterThan(0);
@@ -182,35 +189,44 @@ end before
   });
 
   // THE PIN. These are the counts the World tab ranks by, and the reason the
-  // three-way split replaced a two-way one: Fernhill's seven progression edges
-  // are the five the ADR measured plus the two D14's machine reading recovered,
-  // and they stay separable from twenty-six tool edges instead of being lost
-  // inside a single "info" list of fifty.
+  // three-way split replaced a two-way one: progression edges stay separable from
+  // tool edges instead of being lost inside a single "info" list.
+  //
+  // THE FIGURES MOVED ONCE, deliberately, when the analyzer began reading prose
+  // through the story language's extractor (ADR-407 D8, census of 2026-11-22). Its
+  // tagger reads nouns no article introduces and proper names, so Fernhill went
+  // 25/7/43 → 49/19/73, The Alderman 7/0/18 → 54/0/25 (its suspects are named),
+  // and Ides of March 43/0/26 → 129/0/42.
   it('splits the corpus the way D12 says it should', () => {
     expect(edgeRoles(fernhill)).toEqual({
-      tool: 25,
-      'progression-info': 7,
-      'atmosphere-info': 43,
+      tool: 49,
+      'progression-info': 19,
+      'atmosphere-info': 73,
     });
     expect(edgeRoles(alderman)).toEqual({
-      tool: 7,
+      tool: 54,
       'progression-info': 0,
-      'atmosphere-info': 18,
+      'atmosphere-info': 25,
     });
     expect(edgeRoles(idesOfMarch)).toEqual({
-      tool: 43,
+      tool: 129,
       'progression-info': 0,
-      'atmosphere-info': 26,
+      'atmosphere-info': 42,
     });
   });
 
   it('keeps a resolved phrase as an edge rather than discarding it', () => {
     // The edge is the resolution `classify` used to throw away: a phrase naming
     // exactly one thing is not a finding, and it is not nothing either.
-    const result = deriveIncomplete(fernhill);
+    const result = deriveIncomplete(fernhill, english);
     const lamp = result.edges.filter((edge) => edge.entity === 'oil-lamp');
     expect(lamp.length).toBeGreaterThan(0);
     expect(lamp[0].role).toBe('tool');
-    expect(result.edges.every((edge) => edge.site.text.includes(edge.phrase.split(' ')[0]))).toBe(true);
+    // A candidate's words are lowercased by contract, and the tagger reads nouns that
+    // open a sentence (`Copper pans`) and names (`Mrs Kettle`), so the passage is
+    // compared lowercased: every edge still comes from the passage it cites.
+    expect(
+      result.edges.every((edge) => edge.site.text.toLowerCase().includes(edge.phrase.split(' ')[0])),
+    ).toBe(true);
   });
 });

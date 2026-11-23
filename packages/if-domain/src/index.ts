@@ -23,6 +23,7 @@ export * from './parser-language-provider.js';
 // `@sharpee/if-domain/nouns` subpath and the story runtime stays its size.
 export type {
   NounCandidate,
+  NounFilters,
   NounExtractor,
   NounsModule,
   NounsModuleLoader,

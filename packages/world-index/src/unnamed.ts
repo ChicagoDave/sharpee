@@ -51,8 +51,8 @@
  */
 
 import type { IREntity, StoryIR } from '@sharpee/chord';
+import type { NounExtractor } from '@sharpee/if-domain';
 import { holderIndex, roomOf, type ContainmentIndex } from './containment.js';
-import { tokenizeProse } from './incomplete.js';
 import { isPortableByDefault } from './loader-semantics.js';
 import type { ProseSite } from './prose.js';
 import type { MentionRole } from './roles.js';
@@ -169,13 +169,19 @@ function isAnnouncedByTheInventory(entity: IREntity, index: ContainmentIndex): b
  *
  * @param prose every authored passage
  * @param entityId the entity whose own passages to skip
+ * @param tokenize the story language's tokenizer, the one its extractor reads
+ *   with (ADR-321 D16, ADR-407 Amendment 1)
  * @returns the words the rest of the story says
  */
-function wordsSpokenElsewhere(prose: readonly ProseSite[], entityId: string): Set<string> {
+function wordsSpokenElsewhere(
+  prose: readonly ProseSite[],
+  entityId: string,
+  tokenize: NounExtractor['tokenize'],
+): Set<string> {
   const spoken = new Set<string>();
   for (const site of prose) {
     if (site.owner === entityId) continue;
-    for (const word of tokenizeProse(site.text)) spoken.add(word);
+    for (const word of tokenize(site.text)) spoken.add(word);
   }
   return spoken;
 }
@@ -186,6 +192,9 @@ function wordsSpokenElsewhere(prose: readonly ProseSite[], entityId: string): Se
  * @param ir the story IR
  * @param roles the role table, exactly as published on the wire
  * @param prose every authored passage, exactly as the Incomplete view reads them
+ * @param extractor the story language's noun extractor; its `tokenize` splits the
+ *   prose searched, so a thing is named for this question exactly when it is for
+ *   the Incomplete view (ADR-321 D16, ADR-407 D8)
  * @returns the findings, in declaration order — empty is the answer a story that
  *   introduces everything it needs gives
  */
@@ -193,6 +202,7 @@ export function deriveUnnamedTools(
   ir: StoryIR,
   roles: ReadonlyMap<string, MentionRole>,
   prose: readonly ProseSite[],
+  extractor: NounExtractor,
 ): UnnamedTool[] {
   const index = holderIndex(ir);
   const words = localeWordsOf(ir);
@@ -210,7 +220,7 @@ export function deriveUnnamedTools(
     // looked for.
     if (vocabulary.length === 0) continue;
 
-    const spoken = wordsSpokenElsewhere(prose, entity.id);
+    const spoken = wordsSpokenElsewhere(prose, entity.id, extractor.tokenize);
     if (vocabulary.some((word) => spoken.has(word))) continue;
 
     found.push({
