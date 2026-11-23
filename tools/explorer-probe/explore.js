@@ -276,8 +276,7 @@ const STATEFUL_TRAITS = new Set([
  * @param mode  'full' | 'coarse' | 'play'
  * @returns a hex digest
  */
-function declaredHash(snap, sig, profile) {
-  const playerId = snap.playerId;
+function declaredHash(snap, sig, profile, playerId) {
 
   // Runtime entity id -> the IR id the Chord loader stamped on it.
   const irIdOf = new Map();
@@ -346,7 +345,14 @@ function stateHash(world, mode, profile, sig) {
   if (mode === 'full') return sha1(world.toJSON());
 
   const snap = JSON.parse(world.toJSON());
-  if (mode === 'declared') return declaredHash(snap, sig, profile);
+  // The player is a role the world derives from an actor's flag (ADR-390);
+  // the snapshot no longer carries a `playerId`. Read it from the live world,
+  // as branch-tester's claims snapshot does. Until 2026-11-22 this read
+  // `snap.playerId`, which ADR-390 Phase 2 (19a7c6a61) removed. That left the
+  // player out of every identity, so every move hashed as the starting state
+  // and the walk stopped after one state (GH #805).
+  const playerId = world.hasPlayerCharacter ? world.playerCharacter.id : undefined;
+  if (mode === 'declared') return declaredHash(snap, sig, profile, playerId);
 
   const state = { ...(snap.state || {}) };
   for (const key of VOLATILE_STATE_KEYS) delete state[key];
@@ -372,7 +378,6 @@ function stateHash(world, mode, profile, sig) {
   // identity — where you left the key matters — and exists to measure one
   // thing: how much of the state space is object-placement permutation
   // rather than story progress.
-  const playerId = snap.playerId;
   const pairs = [];
   for (const row of (snap.spatialIndex && snap.spatialIndex.parentToChildren) || []) {
     for (const child of row.children || []) {

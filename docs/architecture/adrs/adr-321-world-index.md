@@ -18,6 +18,14 @@ manner or an act stops counting as a missing thing. **Wire bumped to `world-inde
 become their own tab strip, a phrase can be dismissed story-wide, each candidate becomes a card
 that carries its own fix, a new declaration lands beside what named it, a fixed card marks itself
 done rather than ignored, and `Undescribed` joins as the fourth Incomplete class.
+**Amended by ADR-407** (2026-11-22, session `1efc0f`; its Amendment 1 the same day): D6b's
+extractor, `extractNounPhrases`, and D16's tokenizer, `tokenizeProse`, move out of `world-index` to
+`@sharpee/lang-en-us/nouns`, with the test cases that exercise the extractor itself. There they
+become the English `NounExtractor`'s `extract` (combined with the `compromise` tagger) and `tokenize`.
+D6b's count pins stay in `world-index`. `deriveIncomplete` and D13's unnamed-tool check take that
+extractor as an input; `analyzeStoryIR` takes a lookup from language code to extractor and applies it
+to the IR's `phrases.defaultLocale`. D5's resolution against the validator's vocabulary, D11's
+`NLTagger` re-heading, and every other decision here stand.
 **Date**: 2026-08-19 (session 317706)
 **Supersedes in part**: [ADR-131](adr-131-automated-world-explorer.md) — its BFS walk is
 demoted from the centre of the feature to an optional later stage. ADR-131 is not
@@ -250,7 +258,10 @@ junk rate proves worse on a real mid-authoring story than it looks on finished o
 not taken now, since `lang-en-us`'s `commonAdjectives` is recorded by ADR-093 as never
 having been wired up, so there is no lexicon to build on. *(Superseded by D11, Amendment 1:
 macOS ships the lexicon this paragraph looked for, and the measured effect is the opposite of
-what was expected here — the pass raises recall rather than cutting junk.)*
+what was expected here — the pass raises recall rather than cutting junk.)* *(Moved by
+ADR-407 D8, 2026-11-22: the extractor and its extractor-level tests now live in
+`@sharpee/lang-en-us/nouns`; this decision's count pins stay in `world-index`, which takes its
+extractor from the story's language.)*
 
 **D7 — The map auto-lays out on a compass grid, with collision resolution and persisted
 manual nudges.** Walking exits from the start and stepping one cell per compass

@@ -7,21 +7,25 @@
  *      engine really emits (measured 2026-09-23, recorded in the lens header);
  *   2. the fold and the console form, on synthetic rows;
  *   3. the real path — `runLens` through the real engine — pinned twice:
- *      the one-room fixture under `fixtures/lens-fixture/` (compiled here,
- *      from source, so a stale artifact never pins yesterday's compiler),
- *      and fernhill at seed 1209 / 600 states, whose expected findings are
- *      the specification the same way `@sharpee/world-index`'s
- *      `incomplete.test.ts` pins its extractor: a prose or extractor change
- *      that moves a finding shows up here as a diff.
+ *      the one-room fixture under `fixtures/lens-fixture/`, and the test
+ *      story `test-stories/orchard` at its test set's seed (obligation OB-35),
+ *      whose expected findings are the specification the same way
+ *      `@sharpee/world-index`'s `incomplete.test.ts` pins its extractor: a
+ *      prose or extractor change that moves a finding shows up here as a
+ *      diff. Both are compiled here, from source, so a stale artifact never
+ *      pins yesterday's compiler.
  *
- * The fernhill pin is bounded by STATES, not seconds: states are
- * deterministic at a seed, wall-clock is not. Measured 2026-09-23: 600
- * states takes ~13s and reaches the same 11 of 13 rooms with the same
- * counts as 1500 states (~36s).
+ * The corpus pin was on Fernhill until 2026-11-22. ADR-395 D7 keeps
+ * exploring tests off real stories, and David ruled on 2026-11-11 that the
+ * pin moves to orchard once the lens is repaired. Orchard is found through
+ * `SHARPEE_TEST_STORIES` when it is set, and otherwise at the repository's
+ * `test-stories/`: this directory has no package and no test configuration,
+ * like `scripts/__tests__`, which locates orchard the same way.
  *
- * Fernhill's compiled IR must exist (`branch-stories/fernhill/dist/
- * fernhill.ir.json`, as `./repokit build` leaves it). A missing build fails
- * the pin loudly rather than skipping it — a pin that skips is not a pin.
+ * The orchard pin is bounded by STATES, not seconds: states are
+ * deterministic at a seed, wall-clock is not. Orchard's five rooms are all
+ * reached in 5 states, so the walk stops on `all-rooms-reached` well inside
+ * the budget.
  *
  * Run: `node --test 'tools/explorer-probe/tests/*.test.js'`
  *
@@ -199,7 +203,8 @@ describe('printReport', () => {
 // ---------------------------------------------------------------------------
 
 const FIXTURE = path.join(__dirname, '..', 'fixtures', 'lens-fixture', 'lens-fixture.story');
-const FERNHILL = path.join(REPO, 'branch-stories', 'fernhill', 'fernhill.story');
+const TEST_STORIES = process.env.SHARPEE_TEST_STORIES || path.join(REPO, 'test-stories');
+const ORCHARD = path.join(TEST_STORIES, 'orchard', 'orchard.story');
 
 /** Compile a `.story` to the `dist/<stem>.ir.json` the lens loads, from source. */
 function compose(storyPath) {
@@ -256,54 +261,51 @@ describe('the fixture, through the real engine', () => {
   });
 });
 
-describe('fernhill at seed 1209 / 600 states — the corpus pin', () => {
+describe('orchard at seed 42 / 600 states — the corpus pin (OB-35)', () => {
   let report;
   before(async () => {
-    const ir = path.join(path.dirname(FERNHILL), 'dist', 'fernhill.ir.json');
-    assert.ok(fs.existsSync(ir), 'fernhill is not built: ' + ir + ' is missing — run ./repokit build first');
-    report = await runLens(FERNHILL, { seed: 1209, maxStates: 600, maxSeconds: 600, maxDepth: 40 });
+    assert.ok(fs.existsSync(ORCHARD), 'orchard is missing: ' + ORCHARD + ' (set SHARPEE_TEST_STORIES or run from the repository)');
+    compose(ORCHARD);
+    report = await runLens(ORCHARD, { seed: 42, maxStates: 600, maxSeconds: 120, maxDepth: 40 });
   });
 
-  test('reaches the same 11 of 13 rooms, in the same order, and stops on the state budget', () => {
-    assert.equal(report.walk.stopReason, 'max-states');
-    assert.equal(report.walk.statesDiscovered, 600);
-    assert.equal(report.walk.roomsReached, 11);
-    assert.equal(report.walk.roomsDeclared, 13);
-    assert.deepEqual(report.rooms.map((r) => r.room), [
-      'Iron Gates', 'Gravel Drive', 'Fountain Court', 'Entrance Hall', 'Greenhouse', 'Boiler Shed',
-      'Kitchen', 'Cellar Stairs', 'Pantry', 'Study', 'Folly Hill',
+  test('reaches every one of the five rooms, in order, and stops because all are reached', () => {
+    assert.equal(report.walk.stopReason, 'all-rooms-reached');
+    assert.equal(report.walk.statesDiscovered, 5);
+    assert.equal(report.walk.roomsReached, 5);
+    assert.equal(report.walk.roomsDeclared, 5);
+    assert.deepEqual(report.rooms.map((r) => r.room), ['Gate', 'Rows', 'Press House', 'Hive Yard', 'Cellar']);
+  });
+
+  test('executes 31 phrases: 27 not-in-scope, 4 described, nothing ambiguous or unclassified', () => {
+    assert.equal(report.phrasesExecuted, 31);
+    assert.deepEqual(report.counts, { 'not-in-scope': 27, 'resolved-described': 4 });
+  });
+
+  test('described things resolve to the thing that answers them, with the message examining chose', () => {
+    const described = report.rooms.flatMap((r) => r.rows.filter((row) => row.kind === 'resolved-described')
+      .map((row) => [row.phrase, row.target, row.detail]));
+    assert.deepEqual(described, [
+      ['water valve', 'water valve', 'if.action.examining.examined'],
+      ['bee smoker', 'bee smoker', 'if.action.examining.examined_wearable'],
+      ['cider press', 'cider press', 'if.action.examining.examined'],
+      ['press', 'cider press', 'if.action.examining.examined'],
     ]);
   });
 
-  test('executes 119 phrases: 92 not-in-scope, 27 described, nothing ambiguous or unclassified', () => {
-    assert.equal(report.phrasesExecuted, 119);
-    assert.deepEqual(report.counts, { 'not-in-scope': 92, 'resolved-described': 27 });
+  test('pins the phrases nothing answers to, folded, with the rooms each recurs in', () => {
+    assert.deepEqual(report.findings.map((f) => [f.phrase, f.rooms.length]), [
+      ['cellar', 2], ['brass valve', 1], ['cider press fills', 1], ['cool cellar', 1], ['door', 1], ['hook', 1],
+      ['iron crank handle', 1], ['lane', 1], ['leather strap', 1], ['long ash pole', 1], ['low wall', 1], ['oldest hive', 1],
+      ['oldest tree', 1], ['orchard', 1], ['orchard gate', 1], ['orchard keeper', 1], ['painted sign', 1], ['pipe', 1],
+      ['rows', 1], ['screw', 1], ['slab', 1], ['slope', 1], ['small green apple', 1], ['stone', 1], ['top bar', 1], ['wall', 1],
+    ]);
+    assert.ok(report.findings.every((f) => f.thing && f.kind === 'not-in-scope' && f.detail === NOT_FOUND));
   });
 
-  test('pins the findings, folded, with the rooms each recurs in', () => {
-    assert.deepEqual(report.findings.filter((f) => f.thing).map((f) => [f.phrase, f.rooms.length]), [
-      ['house', 5], ['greenhouse', 3], ['bolt', 2], ['door', 2], ['kitchen', 2], ['north wall', 2], ['plain white-painted door', 2],
-      ['back wall', 1], ['black iron range', 1], ['buried heating pipes', 1], ['buried pipes', 1], ['cast-iron estate boiler', 1],
-      ['cellar steps', 1], ['cherub', 1], ['clean chimney', 1], ['colder passage', 1], ['dead fireplace', 1], ['drive', 1],
-      ['dusty bottle', 1], ['estate', 1], ['feed pipe', 1], ['firedog', 1], ['flagstone', 1], ['flat tin', 1], ['front door', 1],
-      ['frost', 1], ['full reservoir', 1], ['furnace grate', 1], ['gatepost', 1], ['gates', 1], ['glasshouse', 1], ['good stuff', 1],
-      ['gravel drive', 1], ['heart', 1], ['heavy grey door', 1], ['hill', 1], ['housekeeper', 1], ['hurricane lamp', 1], ['keyhole', 1],
-      ['leather-topped desk', 1], ['length', 1], ['lid', 1], ['lip', 1], ['little brass door', 1], ['little proud', 1],
-      ['little stone temple', 1], ['long iron poker', 1], ['long-handled primer plunger', 1], ['pantry mice', 1], ['paved court', 1],
-      ['person whole', 1], ['pockets', 1], ['quarter-turn stopcock', 1], ['rain tank', 1], ['scrollwork', 1],
-      ['single framed photograph', 1], ['smoke-grey cat', 1], ['stairs', 1], ['stone-framed door', 1], ['study', 1], ['study door', 1],
-      ['tomb', 1], ['wall', 1], ['wide mantel', 1], ['wide stone mantel', 1], ['winding hole', 1], ['window', 1], ['windows', 1],
-      ['wrist', 1],
-    ]);
-    assert.deepEqual(report.findings.filter((f) => !f.thing).map((f) => [f.phrase, f.rooms.length]), [
-      ['deed tonight', 11], ['seedling now', 1],
-    ]);
-    assert.ok(report.findings.every((f) => f.kind === 'not-in-scope' && f.detail === NOT_FOUND));
-  });
-
-  test('a carried item explains the recurrence: the letter is the source in every room', () => {
-    const deed = report.findings.find((f) => f.phrase === 'deed tonight');
-    assert.deepEqual(deed.sources, ["solicitor's letter"]);
-    assert.equal(deed.rooms.length, report.rooms.length);
+  test('a phrase found in two rooms is one finding naming both rooms and both sources', () => {
+    const cellar = report.findings.find((f) => f.phrase === 'cellar');
+    assert.deepEqual(cellar.rooms.map((r) => r.room), ['Press House', 'Cellar']);
+    assert.deepEqual(cellar.sources, ['room', 'crank handle']);
   });
 });

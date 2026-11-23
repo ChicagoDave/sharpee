@@ -188,19 +188,76 @@ function classify(events, result, error) {
 // ---------------------------------------------------------------------------
 
 /**
- * The prose a player sees on arriving in `room`: the room's own description
- * and each visible entity's, through the same computed `description` getter
- * `examining-data.ts` reads.
+ * Resolve a description message id to its registered text, the way the
+ * engine's prose pipeline does (ADR-107 id mode, ADR-333 D1a). It reads the
+ * raw template, never the substituted message. Mirrors
+ * `resolveDescriptionId` in `packages/engine/src/prose-pipeline/handlers/description-id.ts`,
+ * which `@sharpee/engine` does not export.
  *
- * @returns Array<{ source: string, text: string }>
+ * @param language the engine's language provider
+ * @param id the message id, or undefined
+ * @returns the registered text, or undefined when there is no id or it is unregistered
  */
-function visibleProse(world, room) {
+function resolveDescriptionText(language, id) {
+  if (!id || !language) return undefined;
+  if (typeof language.getTemplate === 'function') return language.getTemplate(id);
+  const message = language.getMessage(id, {});
+  return message && message !== id ? message : undefined;
+}
+
+/**
+ * A thing's description as examining shows it. A trait-state literal (open
+ * or closed, on or off, lit or unlit: the `description` getter's priority)
+ * wins when it is in force. Otherwise the identity's `descriptionId` resolves,
+ * and the identity literal is the last resort
+ * (`packages/stdlib/src/actions/standard/examining/examining-data.ts`, the id-mode block).
+ */
+function thingText(entity, language) {
+  const identity = entity.get('identity');
+  const stateText = entity.description;
+  if (identity && identity.descriptionId && (!stateText || stateText === identity.description)) {
+    const resolved = resolveDescriptionText(language, identity.descriptionId);
+    if (resolved) return resolved;
+  }
+  return stateText || undefined;
+}
+
+/**
+ * The prose a player sees on arriving in `room`, resolved the way the engine
+ * renders it (ADR-107: a message id takes precedence over a literal):
+ * - the room's first-visit text, if it has one (`RoomTrait.initialDescriptionId`
+ *   or `initialDescription`, which looking shows on the first visit, the visit
+ *   this hook runs on);
+ * - the room's standard description, which the player reads on every later visit;
+ * - each visible thing's description, as examining shows it.
+ *
+ * Until 2026-11-22 this read only the `description` getter's literal. That
+ * went empty for every Chord entity when id-mode descriptions (fa80abaea)
+ * reached the lens's branch in merge 1b671e015 (2026-09-27). The loader now
+ * stores only the key (`packages/story-loader/src/build/entity.ts`, the
+ * `descriptionId` line), so the lens executed no phrase (GH #805, #583).
+ *
+ * @param world the world, in the state the walk arrived in
+ * @param room the room first seen
+ * @param language the engine's language provider (`game.engine.getLanguageProvider()`)
+ * @returns Array<{ source: string, text: string }>; source is 'room (first visit)',
+ *   'room', or the thing's name
+ */
+function visibleProse(world, room, language) {
   const player = world.playerCharacter;
   const out = [];
-  if (room.description) out.push({ source: 'room', text: String(room.description) });
+  const roomTrait = room.get('room');
+  const identity = room.get('identity');
+  const firstVisit = roomTrait
+    ? (resolveDescriptionText(language, roomTrait.initialDescriptionId) || roomTrait.initialDescription)
+    : undefined;
+  if (firstVisit) out.push({ source: 'room (first visit)', text: String(firstVisit) });
+  const standard = resolveDescriptionText(language, identity && identity.descriptionId) || room.description;
+  if (standard) out.push({ source: 'room', text: String(standard) });
   for (const e of world.getVisible(player.id) || []) {
     if (e.id === room.id || e.id === player.id) continue;
-    if (e.description) out.push({ source: e.name, text: String(e.description) });
+    const text = thingText(e, language);
+    if (text) out.push({ source: e.name, text: String(text) });
   }
   return out;
 }
@@ -244,7 +301,7 @@ async function examineRoom(ctx, tally) {
     return { roomId: room.id, room: room.name, path: ctx.path, ended: true, prose: [], rows: [] };
   }
 
-  const prose = visibleProse(world, room);
+  const prose = visibleProse(world, room, game.engine.getLanguageProvider());
   const folded = phrasesIn(prose);
 
   const rows = [];

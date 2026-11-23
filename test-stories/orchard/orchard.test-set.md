@@ -1,14 +1,14 @@
 # Test set: orchard
 
 **Carries**: OB-33 to OB-45
-**Read by**: `scripts/__tests__/narrative-*.test.ts` through `scripts/__tests__/support/story-run.ts`; `tools/ide/web/testing-surface/tests/derived-real-path.test.ts` and `line-verdict.test.ts`. OB-35 has no reader yet: the examinable lens is broken (GH #583) and its pin moves here when it is repaired
+**Read by**: `scripts/__tests__/narrative-*.test.ts` through `scripts/__tests__/support/story-run.ts`; `tools/ide/web/testing-surface/tests/derived-real-path.test.ts` and `line-verdict.test.ts`; `tools/explorer-probe/tests/lens-examinable.test.js` (OB-35, the examinable lens's pin, moved here from Fernhill when the lens was repaired, 2026-11-22)
 **Seed**: 42
 
 ## Obligations
 
 - OB-33: the IDE web surface folds every derived row and the summary of a real run, and its report lines are the command's own.
 - OB-34: with one planted failing line, that line and its fork heading read as failed and every other line as passed.
-- OB-35: a bounded walk's findings about what can be examined are pinned: described and undescribed things, a phrase nothing answers to, and a carried thing's text.
+- OB-35: a bounded walk's findings about what can be examined are pinned: every room reached, described things, phrases nothing answers to, and one phrase found in two rooms, folded into one finding. (Narrowed 2026-11-22, David's ruling "b": orchard has no undescribed thing and the player carries nothing, so those two parts belong to `test-stories/scullery`'s set; the lens fixture also pins an undescribed thing.)
 - OB-36: the three coverage ratios with their gaps; in this story: 16 of 20 branches with four skipped, 2 of 3 endings with `bellyache` unreached at its source line, 5 of 5 rooms.
 - OB-37: END STATE cards are asserted from the engine's ending record; the main line reaches `harvest-home` and the wait branch `stung`; a line that stops short fails at its END STATE card; a removed END STATE card leaves a named gap.
 - OB-38: the story-agnostic beats hold on this story.
