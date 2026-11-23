@@ -187,6 +187,8 @@ upstream → devkit by hand), not accidental drift. A shared module would couple
 shipped author tool to in-progress platform-dev work; full separation keeps devkit
 stable and makes promotion an explicit, reviewed act.
 
+> **Note (2026-11-23, session c68c7b, ADR-408 D6).** Analysis commands an author's IDE spawns ship in devkit only, with no repokit stage. Examples are `sharpee world-index` (`packages/devkit/src/commands/world-index.ts`), `sharpee claim` (`claim.ts`) and, from ADR-408, `sharpee lens examinable`. The IDE runs the project's own `sharpee` (ADR-185), and repokit is never in an author's project, so a repokit copy would have no consumer. Build and test features with an in-repo consumer still follow the staging above.
+
 To make that promotion cheap, **each command/function is its own class in its own file**
 (one class per file) in both tools; the CLI is a thin dispatcher. A feature is then a
 self-contained portable unit — promoting it from repokit → devkit is copying one class

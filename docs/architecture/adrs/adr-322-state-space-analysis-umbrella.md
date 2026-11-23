@@ -308,6 +308,8 @@ convention.
 
 ### D12. How this connects to the IDE is decided after measurement, not before
 
+> **Note (2026-11-23, session c68c7b, ADR-408 D5).** D12 and AC-8 govern the sweep (L1), the exhaustive enumeration ADR-294 D23 retired. They do not govern a budgeted lens, which never claims exhaustiveness and states its seed, budget, stop reason and rooms reached in every report (D7). ADR-408 connects the examinable lens to Chord Writer's Testing tab on that reading. Its timings on six test stories and seven real ones, measured before that connection, are in `docs/work/lens-findings-in-ide/timings.md`.
+
 **No IDE integration surface is specified or built until real sweeps have run on
 real stories and their performance is measured.** David's call. What waits is the
 *connection*, not the sweep — the sweep is how the numbers get made, so gating it
