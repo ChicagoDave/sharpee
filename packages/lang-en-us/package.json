@@ -10,6 +10,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
       "require": "./dist/index.js"
+    },
+    "./nouns": {
+      "types": "./dist/nouns/index.d.ts",
+      "import": "./dist-esm/nouns/index.js",
+      "require": "./dist/nouns/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "nouns": [
+        "./dist/nouns/index.d.ts"
+      ]
     }
   },
   "scripts": {
@@ -25,7 +37,8 @@
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
-    "@sharpee/if-domain": "workspace:*"
+    "@sharpee/if-domain": "workspace:*",
+    "compromise": "14.20.0"
   },
   "devDependencies": {
     "@types/node": "^18.15.11",

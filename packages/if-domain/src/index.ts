@@ -18,6 +18,18 @@ export * from './changes.js';
 export * from './language-provider.js';
 export * from './parser-language-provider.js';
 
+// Noun-extractor contract (ADR-407 D3): types only. The lookup helper is
+// runtime code a story never needs, so readers of prose import it from the
+// `@sharpee/if-domain/nouns` subpath and the story runtime stays its size.
+export type {
+  NounCandidate,
+  NounExtractor,
+  NounsModule,
+  NounsModuleLoader,
+  NounExtractorResolution,
+  NounExtractorLookup,
+} from './nouns.js';
+
 // Parser contracts
 export * from './parser-contracts/index.js';
 

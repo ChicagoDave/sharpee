@@ -12,11 +12,13 @@
 - AC-2's mismatch case is unit-tested on the guard until a second language exists.
 - AC-5's pin is recorded on `test-stories/orchard`, per ADR-395 D7 and David's ruling of 2026-11-11.
 
+**Amended**: Amendment 2 (2026-11-22, session 337133, at David's direction "i need the elegant solution here", during Phase 2 of the issue-835 plan). D3's contract and D8's lookup helper live in one module, `packages/if-domain/src/nouns.ts`, exported from the subpath `@sharpee/if-domain/nouns`. The package root re-exports only its types. The reason is AC-3: if-domain is part of the story runtime and the publish bundle keeps unused exports, so the helper at the root grew The Relighting's `game.js` by 643 bytes (1,971,319 to 1,971,962, measured 2026-11-22). As a subpath it is the contract-side twin of `@sharpee/lang-en-us/nouns`, and readers of prose import the lookup from it. After the move the same build is 1,971,319 bytes again. Both subpaths declare `exports` and `typesVersions`, as chord's `clause-ids` does, so `moduleResolution: node` consumers find their types.
+
 ## Date: 2026-11-22
 
 **Kind**: technical
 
-**Scope**: `packages/if-domain` (`src/language-provider.ts`), `packages/lang-en-us` (a new subpath, `package.json` exports, its first third-party dependency), `packages/world-index` (`src/incomplete.ts`, which loses `extractNounPhrases` and `tokenizeProse` and takes an extractor as input; `src/unnamed.ts`, which tokenizes through it; `src/document.ts`, `src/analyze.ts`, `src/cli.ts`, which pass it through), `test-stories/orchard` (the lens's pin, AC-5), `packages/devkit` (`src/commands/world-index.ts`), `tools/explorer-probe` (`lens-examinable.js` and every later lens)
+**Scope**: `packages/if-domain` (`src/nouns.ts` and its subpath, Amendment 2), `packages/lang-en-us` (a new subpath, `package.json` exports, its first third-party dependency), `packages/world-index` (`src/incomplete.ts`, which loses `extractNounPhrases` and `tokenizeProse` and takes an extractor as input; `src/unnamed.ts`, which tokenizes through it; `src/document.ts`, `src/analyze.ts`, `src/cli.ts`, which pass it through), `test-stories/orchard` (the lens's pin, AC-5), `packages/devkit` (`src/commands/world-index.ts`), `tools/explorer-probe` (`lens-examinable.js` and every later lens)
 
 ## Context
 

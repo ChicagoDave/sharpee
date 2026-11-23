@@ -10,6 +10,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
       "require": "./dist/index.js"
+    },
+    "./nouns": {
+      "types": "./dist/nouns.d.ts",
+      "import": "./dist-esm/nouns.js",
+      "require": "./dist/nouns.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "nouns": [
+        "./dist/nouns.d.ts"
+      ]
     }
   },
   "scripts": {
