@@ -110,3 +110,32 @@ Phase 6's entry state needs David to name the verbs and to rule whether this ext
 ---
 
 **Progressive update**: checkpoint 2026-11-22 23:12 — Phase 5 DONE (AC-3, gates, ADR-294/407 records, GH #835/#583/#805/#514), Phase 6 CURRENT pending David's verb ruling.
+
+## Activity Log (auto-captured)
+```
+[05:00:32] BUILD: Build passed — grep -rh "BUILD:" docs/context/ 2>/dev/null | tail -2; npx tsc --noEmit 2>&1 | t
+[05:02:58] EDIT: File changed via Bash — stories/dungeo/src/version.ts
+[05:06:22] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/302e23cd-40fd-46d4-b747-22b18f7b7203/scratchpad/recall-514.js
+[05:06:35] EDIT: File edited — /private/tmp/claude-501/-Users-david-repos-sharpee/302e23cd-40fd-46d4-b747-22b18f7b7203/scratchpad/recall-514.js
+[05:06:46] EDIT: File edited — /private/tmp/claude-501/-Users-david-repos-sharpee/302e23cd-40fd-46d4-b747-22b18f7b7203/scratchpad/recall-514.js
+[05:08:23] EDIT: File edited — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[05:08:24] EDIT: File edited — docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md
+[05:08:24] EDIT: File edited — docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md
+[05:08:24] EDIT: File edited — docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md
+[05:08:27] EDIT: File changed via Bash — docs/architecture/adrs/INDEX.md
+[05:08:27] EDIT: File changed via Bash — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[05:08:27] EDIT: File changed via Bash — docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md
+[05:08:38] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/302e23cd-40fd-46d4-b747-22b18f7b7203/scratchpad/gh-835.md
+[05:08:43] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/302e23cd-40fd-46d4-b747-22b18f7b7203/scratchpad/gh-514.md
+[05:09:00] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/302e23cd-40fd-46d4-b747-22b18f7b7203/scratchpad/gh-583.md
+[05:09:03] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/302e23cd-40fd-46d4-b747-22b18f7b7203/scratchpad/gh-805.md
+[05:09:19] EDIT: File edited — docs/work/description-noun-lens/plan-20261122-description-noun-lens.md
+[05:09:19] EDIT: File changed via Bash — docs/work/description-noun-lens/plan-20261122-description-noun-lens.md
+[05:11:46] EDIT: File edited — docs/work/description-noun-lens/plan-20261122-description-noun-lens.md
+[05:12:21] EDIT: File written — docs/context/session-20261122-2300-description-noun-lens.md
+[05:12:23] EDIT: File changed via Bash — docs/context/session-20261122-2300-description-noun-lens.md
+[05:12:58] TEST: Tests passed — 14 passed 143 passed
+[05:13:03] EDIT: File written — .commit-files
+[05:13:03] EDIT: File written — .commit-msg
+[05:13:04] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh
+```

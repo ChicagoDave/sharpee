@@ -1,7 +1,7 @@
 # Session Plan: The examinable lens reports the description nouns a player cannot use, read through the story's language (GH #835, ADR-407)
 
 **Created**: 2026-11-22 (session 1efc0f)
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-11-22, session c68c7b: Phases 1–5 DONE, Phase 6 ABANDONED)
 **Overall scope**: Repair the broken examinable lens, then give every reader of prose a noun extractor that belongs to the story's language (an if-domain contract, an English extractor in a lang-en-us subpath combining `compromise` with ADR-321's heuristic, world-index taking its extractor from its caller), and have the lens try both number forms of every noun and refuse a language with no extractor. ADR-407's AC-1 to AC-6 are the acceptance criteria. Verbs beyond examine are the last phase and wait on David's choice of verbs.
 **Bounded contexts touched**: N/A (testing infrastructure and a language-layer capability; no story-domain behavior changes)
 **Key domain language**: N/A. Working vocabulary from ADR-407: lens, noun extractor, candidate, head noun, number form, census.
@@ -158,7 +158,8 @@ Approving the plan as written takes each recommendation that remains open. Each 
 - **Exit state**: `node --test tools/explorer-probe/tests/lens-examinable.test.js` reports no failures, with each named verb's resolution pinned on scullery through the real engine.
 - **Demonstration**: `node --test tools/explorer-probe/tests/lens-examinable.test.js` prints fail 0 with the per-verb tests among the passes.
 - **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-22)
+- **Status**: ABANDONED (2026-11-22, session c68c7b, David's ruling)
+- **Why abandoned**: No standard verb narrows which nouns it accepts, so a per-verb lens finds nothing the examinable lens does not. All 571 rules in `packages/parser-en-us/src/grammar.ts` declare their entity slots by seat (direct, indirect) or type (instrument, topic) only, with no scope or trait constraint. A noun that resolves for examine therefore resolves for every standard verb. What differs per verb is the action's required scope level (for example `ScopeLevel.REACHABLE` in `pushing.ts:102` and `reading.ts:77`), and a refusal there is the world answering ("it is in the glass case"), not a vocabulary gap. The one way a verb can narrow its slot is a story grammar `.where()` constraint, and no story, test story or tutorial in the repository uses one (grep of `stories/`, `test-stories/` and `tutorials/`, 2026-11-22). TAKE CANDLE in the Refectory was not re-probed. If it failed on number (GH #836), the examinable lens already reports it, because it has tried both forms since Phase 4.
 
 ## Named follow-ons (not phases of this plan)
 
