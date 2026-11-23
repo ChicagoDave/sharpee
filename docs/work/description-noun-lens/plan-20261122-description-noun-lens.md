@@ -140,8 +140,13 @@ Approving the plan as written takes each recommendation that remains open. Each 
 - **Files**: `docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md`, `docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md`, `docs/architecture/adrs/INDEX.md`
 - **Exit state**: The rebuilt game.js is the baseline's size to the byte (AC-3). Every gate has a recorded result, with every failure named and attributed. ADR-407 reads IMPLEMENTED in a rebuilt index.
 - **Demonstration**: `ls -l tutorials/relighting/chord-v4.1.0/chapter-40/dist/web/relighting/game.js` after the rebuild shows the Phase 2 baseline's byte count, and `pnpm exec turbo run test:ci` completes with its result recorded.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-22)
+- **Demonstrated**: 2026-11-22, session 055db7. AC-3: after `./repokit build` (23:01 CST, CLI bundle 5,401,919 bytes), `node packages/devkit/dist/cli.js publish relighting.story` in the chapter-40 folder; `ls -l dist/web/relighting/game.js` → 1,971,319 bytes, the Phase 2 baseline to the byte. Gates, once each:
+  - `pnpm exec turbo run test:ci` → 73 of 73 tasks successful, all 73 cache hits (FULL TURBO), replaying a passing run at 22:59 on identical inputs; not re-run uncached.
+  - `node --test tools/explorer-probe/tests/*.test.js` → tests 57, pass 56, fail 1: `lens-declared-state.test.js:228`, "41 dimensions and no findings", 91 against 41 (GH #805), as at baseline.
+  - `pnpm test:scripts` after `./repokit build dungeo` → 23 files, 155 passed.
+
+  Records: ADR-294 gains a dated note under "The first lens has shipped"; ADR-407 Planning → IMPLEMENTED, Summary updated, an Implemented line added; `adr-index.sh` rebuilt the index (ADR-407 row reads IMPLEMENTED). GitHub: #835 has the AC results (comment 7092155669); #583 closed (the lens suite passes 39 of 39); #805 left open with a status comment (the declared-state count); #514 closed with the measurement: the lens on Secret Letter (120s, 14 rooms, 100 passages), entity-name head mentions 234, heuristic alone 86 (36.8%), combined extractor 201 (85.9%), and 86 of the heuristic's 101 article-less misses found (85.1%); the method is a reconstruction, since the September script was not kept. [verified: work-summary-writer's own checks, no source edit this session — `ls -l tutorials/relighting/chord-v4.1.0/chapter-40/dist/web/relighting/game.js` → 1,971,319 bytes, written 2026-11-22 23:01 CST; `dist/cli/sharpee.js` → 5,401,919 bytes, 23:02 CST; `node --test tools/explorer-probe/tests/*.test.js` → tests 57, pass 56, fail 1 (actual 91, expected 41), 2026-11-22 23:11 CST. The hooks logged no test row: `turbo run test:ci` 73/73 and `pnpm test:scripts` 155 passed are reported by session, unverified]
+- **Status**: DONE
 
 ### Phase 6: Verbs beyond examine (issue 835; outside ADR-407; David chooses the verbs)
 - **Tier**: Medium
@@ -153,7 +158,7 @@ Approving the plan as written takes each recommendation that remains open. Each 
 - **Exit state**: `node --test tools/explorer-probe/tests/lens-examinable.test.js` reports no failures, with each named verb's resolution pinned on scullery through the real engine.
 - **Demonstration**: `node --test tools/explorer-probe/tests/lens-examinable.test.js` prints fail 0 with the per-verb tests among the passes.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-22)
 
 ## Named follow-ons (not phases of this plan)
 

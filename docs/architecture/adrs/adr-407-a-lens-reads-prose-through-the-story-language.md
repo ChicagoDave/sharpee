@@ -1,8 +1,8 @@
 # ADR-407: A lens reads prose through the story's language
 
-**Planning**: OPEN
+**Planning**: IMPLEMENTED
 
-**Summary**: Lenses run in the CLI with no native OS library. Each language supplies the extractor that finds nouns in prose, from a subpath kept out of the story runtime. English uses `compromise` together with ADR-321's heuristic, which moves into `lang-en-us`. `world-index` receives its extractor from its caller, and a lens refuses a language that has none. Nothing is built yet.
+**Summary**: Lenses run in the CLI with no native OS library. Each language supplies the extractor that finds nouns in prose, from a subpath kept out of the story runtime. English uses `compromise` together with ADR-321's heuristic, which moves into `lang-en-us`. `world-index` receives its extractor from its caller, and a lens refuses a language that has none. Built 2026-11-22 under issue 835.
 
 **Status**: **ACCEPTED** (David, 2026-11-22, session 1efc0f: "yes", to "Mark ADR-407 ACCEPTED?", after the open-questions interview and a clean second `adr-review`, 17 of 17). The ADR-321 amendment note D8 requires was added in the same edit. Acceptance does not authorize implementation; issue 835's plan is a separate step. Written 2026-11-22, session 1efc0f, at David's direction: "yes, write the ADR". D1, D2 and D8 are David's rulings in that session (D8 from the open-questions interview, answer "b"). The `adr-review` fixes (callers, the D3 contract and lookup, the language source for static readers, the acceptance criteria) were folded in at his direction: "yes, fold them in". The rest is proposed. No `packages/` change may start from this record until he accepts it.
 
@@ -24,6 +24,8 @@
 - **`lemmatize` is not one of the number functions**, and is left as it is; its own issue records that it has no caller and does not return a base form.
 
 Rejected: fixing `lemmatize` in the provider (it changes the story runtime now, breaking AC-3, and takes issue 836's decision inside this plan); a singularizer inside the `nouns` subpath (the runtime could never import it, so issue 836 would need a second copy); English number rules in the lens (against D2).
+
+**Implemented**: 2026-11-22 (sessions 1efc0f, 337133, df5bd8, 21bbd6; gates re-run in 055db7). AC-1 was shown on GH #835. AC-2 and AC-4 to AC-6 are pinned by tests. AC-3: `game.js` 1,971,319 bytes before and after.
 
 ## Date: 2026-11-22
 

@@ -287,6 +287,14 @@ pinned by `tools/explorer-probe/tests/`. Run on fernhill and secret-letter it
 produced six filed defects (#509 through #513) and one platform discussion item
 (#514). Nothing under `packages/` changed.
 
+*Note (2026-11-22, session 055db7, ADR-407):* the lens no longer reads
+`@sharpee/world-index`'s `extractNounPhrases`, which has left world-index. It reads
+nouns through the story language's extractor, found from the IR's
+`phrases.defaultLocale`. For English that is `@sharpee/lang-en-us/nouns`: ADR-321's
+heuristic and the `compromise` tagger, unioned. It types both number forms of each
+candidate and refuses a language with no extractor. #514 closed on the tagger's
+coverage.
+
 **Where this lens sits among the existing designs** — named, not merged:
 
 - `docs/proposals/state-space-analysis.md` §4C's "undeclared referent, forward
