@@ -1,7 +1,7 @@
 # Test set: scullery
 
-**Carries**: OB-54 to OB-60
-**Read by**: `tools/explorer-probe/tests/lens-examinable.test.js` (the examinable lens's number forms, its refusal, and the two parts of OB-35 orchard cannot carry)
+**Carries**: OB-54 to OB-61
+**Read by**: `packages/branch-tester/tests/examinable-lens-real-path.test.ts` and `packages/devkit/src/commands/lens.test.ts` (the examinable lens's number forms, its refusal, its sources, and the two parts of OB-35 orchard cannot carry); `packages/devkit/tests/test-lens.test.ts` and `tools/ide/web/testing-surface/tests/lens-real-path.test.ts` (the lens tier of `sharpee test`, OB-61). The spike that first read it, `tools/explorer-probe/lens-examinable.js`, was retired 2026-11-23.
 **Seed**: 42
 
 ## Obligations
@@ -13,6 +13,7 @@
 - OB-58: a singular thing that resolves has its plural tried, and the plural's failure is a number-form finding.
 - OB-59: nouns in the prose with no entity behind them are reported as not in scope, and one candidate that is extractor noise is typed and settled by the engine as not in scope.
 - OB-60: a copy of the story's compiled IR whose language has no noun extractor is refused by the lens in one line naming the language, with a non-zero exit and no walk.
+- OB-61: the story has a test tree (`scullery.tests/`, one line: the opening, then north), so `sharpee test --json` runs its tiers on it, the examinable lens's among them; the run exits 0 with lens findings present. (Added 2026-11-23 for the lens tier.)
 
 ## What the story's parts are for
 

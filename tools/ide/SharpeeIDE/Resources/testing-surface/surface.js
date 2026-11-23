@@ -1262,12 +1262,57 @@
     if (!isObject(value)) return false;
     return hasEnvelopeAndType(value, "claims-summary") && typeof value.source === "string" && typeof value.declared === "number" && typeof value.held === "number" && typeof value.unproven === "number" && typeof value.walks === "number" && typeof value.totalWalkMs === "number" && (value.seed === void 0 || typeof value.seed === "number") && typeof value.floored === "boolean";
   }
+  var EXAMINABLE_KINDS = ["resolved-described", "resolved-default", "not-in-scope", "number-form", "ambiguous", "unclassified"];
+  function isExaminableKind(value) {
+    return typeof value === "string" && EXAMINABLE_KINDS.includes(value);
+  }
+  function isLensFindingSource(value) {
+    if (!isObject(value)) return false;
+    return (value.key === null || typeof value.key === "string") && (value.kind === "description" || value.kind === "first-visit" || value.kind === "state") && (value.ownerId === null || typeof value.ownerId === "string") && typeof value.ownerName === "string" && "span" in value && isSpanOrNull(value.span);
+  }
+  function isLensRoomRef(value) {
+    return isObject(value) && typeof value.roomId === "string" && typeof value.room === "string";
+  }
+  function isUnreachedRoom(value) {
+    return isObject(value) && typeof value.roomId === "string" && typeof value.room === "string" && typeof value.reason === "string";
+  }
+  function isLensReach(value) {
+    if (!isObject(value)) return false;
+    return typeof value.roomsReached === "number" && typeof value.roomsDeclared === "number" && Array.isArray(value.unreached) && value.unreached.every(isUnreachedRoom) && typeof value.commandsTyped === "number" && typeof value.ms === "number" && typeof value.maxSeconds === "number" && (value.stoppedBy === "every-route" || value.stoppedBy === "budget");
+  }
+  function isCountMap(value) {
+    return isObject(value) && Object.values(value).every((count) => typeof count === "number");
+  }
+  function isLensFindingEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "lens-finding") && value.lens === "examinable" && typeof value.phrase === "string" && isExaminableKind(value.kind) && typeof value.detail === "string" && typeof value.thing === "boolean" && (value.target === void 0 || typeof value.target === "string") && (value.targetId === void 0 || typeof value.targetId === "string") && (value.targetSpan === void 0 || isSpanOrNull(value.targetSpan)) && (value.resolvedForm === void 0 || typeof value.resolvedForm === "string") && Array.isArray(value.sources) && value.sources.every(isLensFindingSource) && Array.isArray(value.rooms) && value.rooms.every(isLensRoomRef);
+  }
+  function isLensSummaryEvent(value) {
+    if (!isObject(value)) return false;
+    if (!(hasEnvelopeAndType(value, "lens-summary") && value.lens === "examinable" && typeof value.seed === "number" && typeof value.maxSeconds === "number")) return false;
+    const measured = value.reach !== void 0 || value.phrasesExecuted !== void 0 || value.counts !== void 0;
+    if (value.refusal !== void 0) return typeof value.refusal === "string" && !measured;
+    return isLensReach(value.reach) && typeof value.phrasesExecuted === "number" && isCountMap(value.counts);
+  }
   function isRunEndEvent(value) {
     if (!isObject(value)) return false;
     return hasEnvelopeAndType(value, "run-end") && typeof value.totalPassed === "number" && typeof value.totalFailed === "number" && typeof value.totalExpectedFailures === "number" && typeof value.totalSkipped === "number" && typeof value.totalErrors === "number" && typeof value.totalUnreached === "number" && typeof value.totalDuration === "number" && typeof value.exitCode === "number";
   }
   function isRunEvent(value) {
-    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isDerivedBranchEvent(value) || isDerivedRunSummaryEvent(value) || isClaimResultEvent(value) || isClaimsSummaryEvent(value) || isRunEndEvent(value);
+    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isDerivedBranchEvent(value) || isDerivedRunSummaryEvent(value) || isClaimResultEvent(value) || isClaimsSummaryEvent(value) || isLensFindingEvent(value) || isLensSummaryEvent(value) || isRunEndEvent(value);
+  }
+
+  // tools/ide/web/testing-surface/src/lens.ts
+  function lensFindingRowOf(event) {
+    const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...row } = event;
+    return row;
+  }
+  function lensSummaryOf(event) {
+    const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...summary } = event;
+    return summary;
+  }
+  function lensAbsenceAt(exitCode) {
+    return exitCode >= 2 ? "run-stopped-early" : "toolchain-without-lens";
   }
 
   // tools/ide/web/testing-surface/src/run.ts
@@ -1289,8 +1334,14 @@
       pendingCommands: /* @__PURE__ */ new Map(),
       replaying: /* @__PURE__ */ new Set(),
       derived: [],
-      claims: []
+      claims: [],
+      lensFindings: []
     };
+  }
+  function clearLens(state) {
+    state.lensFindings = [];
+    delete state.lensSummary;
+    delete state.lensAbsence;
   }
   function beginRun(state) {
     state.inFlight = true;
@@ -1302,6 +1353,7 @@
     delete state.derivedSummary;
     state.claims = [];
     delete state.claimsSummary;
+    clearLens(state);
     delete state.tally;
     delete state.note;
     delete state.baseline;
@@ -1446,6 +1498,7 @@
           }
           state.tally.rules = rules;
         }
+        if (state.lensSummary === void 0) state.lensAbsence = lensAbsenceAt(event.exitCode);
         return;
       }
       case "derived-branch": {
@@ -1462,6 +1515,14 @@
       }
       case "claims-summary": {
         state.claimsSummary = claimsSummaryOf(event);
+        return;
+      }
+      case "lens-finding": {
+        state.lensFindings.push(lensFindingRowOf(event));
+        return;
+      }
+      case "lens-summary": {
+        state.lensSummary = lensSummaryOf(event);
         return;
       }
       default:

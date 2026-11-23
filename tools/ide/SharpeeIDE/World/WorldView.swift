@@ -210,6 +210,8 @@ final class WorldView: NSView {
             return "The built story IR could not be read. \(failure.message) Rebuilding (\u{2318}B) usually rewrites it."
         case .internal:
             return "The World Index analyzer failed on this story. \(failure.message)"
+        case .noNounExtractor:
+            return "The World tab reads prose through the story language's noun extractor, and this language has none. \(failure.message)"
         case .unavailable:
             return failure.message
         }

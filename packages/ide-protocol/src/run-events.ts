@@ -23,13 +23,18 @@
  *   `claims-summary` with the held-over-declared ratio, before `run-end`.
  *   Verdicts never move the exit code (ADR-365 D9).
  *
+ *   The examinable lens's tier (ADR-408 D8) follows the claims tier: one
+ *   `lens-finding` per folded finding, each passage with its span resolved,
+ *   then one `lens-summary` with the soundness line, or the refusal of a
+ *   language with no extractor, before `run-end`. A lens never gates (D7).
+ *
  *   Supersedes `test-results.ts` (ADR-277 D1), whose records were constructed
  *   from a COMPLETED `TranscriptResult` and written together — which made
  *   `transcript-start` ("a transcript is about to run") false by construction.
  *   That module stays until its consumers move; new emitters use this one.
  *
- * Public interface: RUN_EVENT_SCHEMA_VERSION, RunEvent and its twelve variants,
- *   isRunEvent plus one guard per variant.
+ * Public interface: RUN_EVENT_SCHEMA_VERSION, RunEvent and its fourteen
+ *   variants, isRunEvent plus one guard per variant.
  * Owner context: @sharpee/ide-protocol — the shared wire contract. TypeScript
  *   producers (the transcript runner, the tree runner, eventually the explorer)
  *   write these shapes; the IDE's Testing tab imports this module DIRECTLY
@@ -38,6 +43,7 @@
  */
 
 import type { Span } from '@sharpee/chord';
+import type { ExaminableKind, LensReach, LensRoomRef, LensSource, UnreachedRoom } from './lens-output.js';
 
 /**
  * Version of the run-event shapes. Distinct from `COMPOSE_JSON_SCHEMA_VERSION`
@@ -567,6 +573,74 @@ export interface ClaimsSummaryEvent extends RunEventEnvelope {
   floored: boolean;
 }
 
+/**
+ * One passage a lens finding was read from, with its span resolved by
+ * devkit's test command as the consumer (ADR-333 D2, ADR-408 D8): the lens
+ * document's `LensSource` plus where the passage sits.
+ */
+export interface LensFindingSource extends LensSource {
+  /**
+   * The passage's whole region for a keyed source; the owner's declaration
+   * for a source with no key (the literal sits there); null when the IR
+   * carries neither.
+   */
+  span: Span | null;
+}
+
+/**
+ * One examinable-lens finding (ADR-408 D8), folded across the rooms it was
+ * seen in: a phrase in the prose a player reads that the parser cannot use,
+ * or that names a thing with no text. Emitted after the claims tier, one per
+ * finding, before `lens-summary`. Never moves the exit code (D7).
+ */
+export interface LensFindingEvent extends RunEventEnvelope {
+  type: 'lens-finding';
+  lens: 'examinable';
+  phrase: string;
+  kind: ExaminableKind;
+  /** The engine's message id or refusal reason the class was read from. */
+  detail: string;
+  /** False when the phrase's head noun is not a thing an author could implement. */
+  thing: boolean;
+  /** The display name of the thing that answered, when one did. */
+  target?: string;
+  /** The IR id of the thing that answered, when one did. */
+  targetId?: string;
+  /** The answering thing's declaration span; present with `targetId`, null when the IR carries none. */
+  targetSpan?: Span | null;
+  /** For a number-form finding: the form that did resolve. */
+  resolvedForm?: string;
+  sources: LensFindingSource[];
+  /** The rooms it was seen in, by IR id, in the order the lens reached them. */
+  rooms: LensRoomRef[];
+}
+
+/**
+ * The examinable lens's soundness line (ADR-408 D8, ADR-322 D7), once per
+ * run, after every `lens-finding` and before `run-end`. A run the lens
+ * refused carries `refusal` and nothing it would have measured; a run it
+ * made carries `reach`, `phrasesExecuted` and `counts`, and no `refusal`.
+ */
+export interface LensSummaryEvent extends RunEventEnvelope {
+  type: 'lens-summary';
+  lens: 'examinable';
+  /** The seed the lens booted at: the tree document's. */
+  seed: number;
+  /** The tier's fixed time budget, in seconds. */
+  maxSeconds: number;
+  /**
+   * Why the lens did not report: the one refusal line when the story's
+   * language has no extractor (ADR-407 D6), or the reason a lens that could
+   * not finish stopped, named.
+   */
+  refusal?: string;
+  /** How far the lens got: rooms reached of declared, each room unreached with its reason, and why it stopped. */
+  reach?: LensReach;
+  phrasesExecuted?: number;
+  /** Rows per class, keyed by `ExaminableKind`. */
+  counts?: Record<string, number>;
+}
+
 /** Last event of every run: the aggregate and the process exit code. */
 export interface RunEndEvent extends RunEventEnvelope {
   type: 'run-end';
@@ -604,6 +678,8 @@ export type RunEvent =
   | DerivedRunSummaryEvent
   | ClaimResultEvent
   | ClaimsSummaryEvent
+  | LensFindingEvent
+  | LensSummaryEvent
   | RunEndEvent;
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -941,6 +1017,84 @@ export function isClaimsSummaryEvent(value: unknown): value is ClaimsSummaryEven
   );
 }
 
+const EXAMINABLE_KINDS: readonly ExaminableKind[] = ['resolved-described', 'resolved-default', 'not-in-scope', 'number-form', 'ambiguous', 'unclassified'];
+
+function isExaminableKind(value: unknown): value is ExaminableKind {
+  return typeof value === 'string' && (EXAMINABLE_KINDS as readonly string[]).includes(value);
+}
+
+/** Narrow a value to a valid {@link LensFindingSource}. */
+function isLensFindingSource(value: unknown): value is LensFindingSource {
+  if (!isObject(value)) return false;
+  return (
+    (value.key === null || typeof value.key === 'string') &&
+    (value.kind === 'description' || value.kind === 'first-visit' || value.kind === 'state') &&
+    (value.ownerId === null || typeof value.ownerId === 'string') &&
+    typeof value.ownerName === 'string' &&
+    'span' in value &&
+    isSpanOrNull(value.span)
+  );
+}
+
+function isLensRoomRef(value: unknown): value is LensRoomRef {
+  return isObject(value) && typeof value.roomId === 'string' && typeof value.room === 'string';
+}
+
+function isUnreachedRoom(value: unknown): value is UnreachedRoom {
+  return isObject(value) && typeof value.roomId === 'string' && typeof value.room === 'string' && typeof value.reason === 'string';
+}
+
+function isLensReach(value: unknown): value is LensReach {
+  if (!isObject(value)) return false;
+  return (
+    typeof value.roomsReached === 'number' &&
+    typeof value.roomsDeclared === 'number' &&
+    Array.isArray(value.unreached) &&
+    value.unreached.every(isUnreachedRoom) &&
+    typeof value.commandsTyped === 'number' &&
+    typeof value.ms === 'number' &&
+    typeof value.maxSeconds === 'number' &&
+    (value.stoppedBy === 'every-route' || value.stoppedBy === 'budget')
+  );
+}
+
+function isCountMap(value: unknown): value is Record<string, number> {
+  return isObject(value) && Object.values(value).every((count) => typeof count === 'number');
+}
+
+/** Narrow a value to a valid {@link LensFindingEvent}. */
+export function isLensFindingEvent(value: unknown): value is LensFindingEvent {
+  if (!isObject(value)) return false;
+  return (
+    hasEnvelopeAndType(value, 'lens-finding') &&
+    value.lens === 'examinable' &&
+    typeof value.phrase === 'string' &&
+    isExaminableKind(value.kind) &&
+    typeof value.detail === 'string' &&
+    typeof value.thing === 'boolean' &&
+    (value.target === undefined || typeof value.target === 'string') &&
+    (value.targetId === undefined || typeof value.targetId === 'string') &&
+    (value.targetSpan === undefined || isSpanOrNull(value.targetSpan)) &&
+    (value.resolvedForm === undefined || typeof value.resolvedForm === 'string') &&
+    Array.isArray(value.sources) &&
+    value.sources.every(isLensFindingSource) &&
+    Array.isArray(value.rooms) &&
+    value.rooms.every(isLensRoomRef)
+  );
+}
+
+/**
+ * Narrow a value to a valid {@link LensSummaryEvent}: exactly one of a
+ * refusal or the measurements (reach, phrases, counts) is present.
+ */
+export function isLensSummaryEvent(value: unknown): value is LensSummaryEvent {
+  if (!isObject(value)) return false;
+  if (!(hasEnvelopeAndType(value, 'lens-summary') && value.lens === 'examinable' && typeof value.seed === 'number' && typeof value.maxSeconds === 'number')) return false;
+  const measured = value.reach !== undefined || value.phrasesExecuted !== undefined || value.counts !== undefined;
+  if (value.refusal !== undefined) return typeof value.refusal === 'string' && !measured;
+  return isLensReach(value.reach) && typeof value.phrasesExecuted === 'number' && isCountMap(value.counts);
+}
+
 /** Narrow a value to a valid {@link RunEndEvent}. */
 export function isRunEndEvent(value: unknown): value is RunEndEvent {
   if (!isObject(value)) return false;
@@ -974,6 +1128,8 @@ export function isRunEvent(value: unknown): value is RunEvent {
     isDerivedRunSummaryEvent(value) ||
     isClaimResultEvent(value) ||
     isClaimsSummaryEvent(value) ||
+    isLensFindingEvent(value) ||
+    isLensSummaryEvent(value) ||
     isRunEndEvent(value)
   );
 }

@@ -748,7 +748,7 @@ struct WorldIndexDocument: Decodable, Equatable {
 
 /// Why there is no analysis, as a word the tab switches on.
 ///
-/// The first four are the analyzer's own vocabulary; `unavailable` is the IDE's,
+/// The first five are the analyzer's own vocabulary; `unavailable` is the IDE's,
 /// for the failures that happen before the analyzer can speak — no `node`, no
 /// analyzer on disk, a process that died without writing a document (AC-9's
 /// third case is one of these, and is unrenderable from inside a Node process).
@@ -761,6 +761,10 @@ enum WorldFailureCause: String, Decodable {
     case malformedIR = "malformed-ir"
     /// The analysis itself threw — a defect in the analyzer.
     case `internal`
+    /// The story's language supplies no noun extractor, so no prose is read
+    /// (ADR-407 D6, GH #837). The message is the one refusal line every reader
+    /// of prose prints, naming the language.
+    case noNounExtractor = "no-noun-extractor"
     /// The analyzer could not be run at all, or did not answer with a document.
     case unavailable
 }

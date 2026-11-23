@@ -18,7 +18,10 @@
  *   never a failure — D5a), and the one `derived-summary` per run, kept as
  *   the latest seen. The claims tier (ADR-365 D6, ADR-367 D6; GH #555)
  *   follows it the same way: one `claim-result` row per declared claim in
- *   arrival order and the one `claims-summary` per run. Decoding goes
+ *   arrival order and the one `claims-summary` per run. The examinable
+ *   lens's tier (ADR-408 D8) follows the claims: one `lens-finding` row per
+ *   finding and the one `lens-summary`; a run that closes with none is
+ *   recorded as a lens absence (`lens.ts`, AC-4). Decoding goes
  *   through the wire's own `isRunEvent` guard (DEVARCH 8b — the shapes are
  *   imported, never mirrored).
  *
@@ -32,6 +35,7 @@
 import { isRunEvent, type CommandCause, type RunEvent } from '@sharpee/ide-protocol/run-events';
 import { claimRowOf, claimsSummaryOf, type ClaimRow, type ClaimsSummary } from './claims';
 import { derivedRowOf, derivedSummaryOf, type DerivedBranchRow, type DerivedSummary } from './derived';
+import { lensAbsenceAt, lensFindingRowOf, lensSummaryOf, type LensAbsence, type LensFindingRow, type LensSummary } from './lens';
 import type { RunBaseline } from './staleness';
 
 /** One assertion's verdict, as the wire carried it (the detail view's row). */
@@ -198,6 +202,12 @@ export interface RunColumnState {
   claims: ClaimRow[];
   /** The claims tier's ratio — the latest `claims-summary` (one per run). */
   claimsSummary?: ClaimsSummary;
+  /** Lens findings in arrival order (ADR-408 D8; one per `lens-finding`). */
+  lensFindings: LensFindingRow[];
+  /** The lens's soundness line or refusal — the latest `lens-summary` (one per run). */
+  lensSummary?: LensSummary;
+  /** Set at `run-end` when no `lens-summary` came: why (ADR-408 AC-4). */
+  lensAbsence?: LensAbsence;
   /**
    * What the run ran against (ADR-357 D11): captured by the caller at run
    * start, restored with a stored run, cleared by `resetRun`. Absent means
@@ -218,7 +228,15 @@ export function createRunState(): RunColumnState {
     replaying: new Set(),
     derived: [],
     claims: [],
+    lensFindings: [],
   };
+}
+
+/** Clears the lens tier's fields: a new run or a reset reports nothing of the last. */
+function clearLens(state: RunColumnState): void {
+  state.lensFindings = [];
+  delete state.lensSummary;
+  delete state.lensAbsence;
 }
 
 /** A new run starts: prior results clear — the column reports THIS run. */
@@ -232,6 +250,7 @@ export function beginRun(state: RunColumnState): void {
   delete state.derivedSummary;
   state.claims = [];
   delete state.claimsSummary;
+  clearLens(state);
   delete state.tally;
   delete state.note;
   delete state.baseline;
@@ -410,6 +429,8 @@ function fold(state: RunColumnState, event: RunEvent): void {
         }
         state.tally.rules = rules;
       }
+      // A closed stream with no lens summary names why (ADR-408 AC-4).
+      if (state.lensSummary === undefined) state.lensAbsence = lensAbsenceAt(event.exitCode);
       return;
     }
     case 'derived-branch': {
@@ -431,6 +452,15 @@ function fold(state: RunColumnState, event: RunEvent): void {
     }
     case 'claims-summary': {
       state.claimsSummary = claimsSummaryOf(event);
+      return;
+    }
+    case 'lens-finding': {
+      // One row per finding; it never touches the tally — a lens never gates (D7).
+      state.lensFindings.push(lensFindingRowOf(event));
+      return;
+    }
+    case 'lens-summary': {
+      state.lensSummary = lensSummaryOf(event);
       return;
     }
     default:
@@ -455,6 +485,7 @@ export function resetRun(state: RunColumnState): void {
   delete state.derivedSummary;
   state.claims = [];
   delete state.claimsSummary;
+  clearLens(state);
   delete state.tally;
   delete state.note;
   delete state.baseline;

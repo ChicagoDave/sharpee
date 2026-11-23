@@ -33,6 +33,11 @@
  * claims floor (ADR-367 D5): every positive claim evaluated at every card,
  * every lock checked at its card; the reading goes to the claims tier.
  *
+ * The examinable lens's tier (ADR-408 D8) runs last, at the same seed, on
+ * the story compiled here, through `test-lens.ts`: its findings and its
+ * summary ride the stream before `run-end`, and it never moves the exit
+ * code (D7).
+ *
  * Public interface: findTreeDirectory(projectDir), readTreeFiles(treePath),
  * runTreeDocumentCommand(options) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
@@ -44,6 +49,7 @@ import { deriveReach, explainRefusal } from '@sharpee/world-index';
 import { compileChordStory, findStoryFile, loadAuthorGame } from '../standalone/author-game.js';
 import { runDerivedTests } from './test-derived.js';
 import { compileClaimsFragment, runClaimsTests, type CompiledClaimsFragment } from './test-claims.js';
+import { LENS_TIER_MAX_SECONDS, runLensTier } from './test-lens.js';
 
 /**
  * Find a project's test tree: the `<story-id>.tests/` directory beside the
@@ -331,6 +337,23 @@ export async function runTreeDocumentCommand(
     compiledClaims === undefined
       ? 0
       : await runClaimsTests({ compiled: compiledClaims, seed: document.seed, floor: floor?.reading(), json, verbose, stream });
+  // ADR-408 D8: the examinable lens's tier, after the claims, at the same
+  // seed, on the IR compiled from the story file here. It never returns a
+  // code: no lens outcome moves the run's exit (D7).
+  // A story the lens cannot read is still a summary, so the page never takes
+  // a silent tier for a toolchain without the lens (AC-4).
+  let lensInput: { storyFile: string; ir: ReturnType<typeof compileChordStory> } | string;
+  try {
+    const storyFile = findStoryFile(dir);
+    lensInput = storyFile === null ? `no .story file in ${dir}` : { storyFile, ir: compileChordStory(storyFile) };
+  } catch (error) {
+    lensInput = error instanceof Error ? error.message : String(error);
+  }
+  if (typeof lensInput === 'string') {
+    stream?.lensSummary({ lens: 'examinable', seed: document.seed, maxSeconds: LENS_TIER_MAX_SECONDS, refusal: `the lens could not read the story: ${lensInput}` });
+  } else {
+    await runLensTier({ ...lensInput, seed: document.seed, json, verbose, stream });
+  }
   const code = Math.max(treeCode, derivedCode, claimsCode);
 
   const results = run.lines.filter((l) => l.result !== undefined).map((l) => l.result!);

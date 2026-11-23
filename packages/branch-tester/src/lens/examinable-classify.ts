@@ -13,23 +13,20 @@
  * (`classify`, `otherNumber`, `classifyCandidates`, `foldFindings`), whose
  * pins this module must reproduce (ADR-408 AC-1).
  *
+ * The rows and findings are `@sharpee/ide-protocol`'s lens types (ADR-408
+ * D4): a row names each passage it was read from by key and owner IR id, and
+ * the IR id of the thing that answered.
+ *
  * Public interface: `classifyExamine`, `classifyCandidates`,
- *   `foldFindings`, `isFinding`, and the row and finding types.
+ *   `foldFindings`, `isFinding`, `ExamineVerdict`, `ExamineTurn`,
+ *   `FoldedCandidates`, `ExaminableRoomRows`.
  * Owner context: @sharpee/branch-tester — the lenses (ADR-294 D23, ADR-408 D3).
  */
 
 import type { NounExtractor } from '@sharpee/if-domain/nouns';
+import type { ExaminableFinding, ExaminableKind, ExaminableRow, LensRoomRef, LensSource } from '@sharpee/ide-protocol';
 import { readsAsThing } from '@sharpee/world-index';
 import type { ClaimsTurnEvent } from '../claims/claims-game.js';
-
-/** One class per executed phrase. Every class but `resolved-described` is a finding. */
-export type ExaminableKind =
-  | 'resolved-described'
-  | 'resolved-default'
-  | 'not-in-scope'
-  | 'number-form'
-  | 'ambiguous'
-  | 'unclassified';
 
 /** The engine's answer to one `examine <form>`. */
 export interface ExamineVerdict {
@@ -37,36 +34,12 @@ export interface ExamineVerdict {
   readonly detail: string;
   /** The display name of the thing that answered, when one did. */
   readonly target?: string;
+  /** The IR id of the thing that answered, when one did and the IR declares it. */
+  readonly targetId?: string;
 }
 
-/** One row of a room: a phrase from its prose, or the other number of one. */
-export interface ExaminableRow {
-  readonly phrase: string;
-  readonly kind: ExaminableKind;
-  readonly detail: string;
-  readonly target?: string;
-  /** For a number-form row: the form that did resolve. */
-  readonly resolvedForm?: string;
-  /** Where in the room's prose the phrase was read: `room`, `room (first visit)`, or a thing's name. */
-  readonly sources: readonly string[];
-  /** False only for a non-resolution whose head noun is not a thing an author could implement. */
-  readonly thing: boolean;
-}
-
-/** A room's candidates, folded across its prose: one entry per distinct phrase. */
-export type FoldedCandidates = ReadonlyMap<string, { readonly words: readonly string[]; readonly sources: readonly string[] }>;
-
-/** One finding, folded across every room it was seen in. */
-export interface ExaminableFinding {
-  readonly phrase: string;
-  readonly kind: ExaminableKind;
-  readonly detail: string;
-  readonly target?: string;
-  readonly resolvedForm?: string;
-  readonly thing: boolean;
-  readonly sources: readonly string[];
-  readonly rooms: ReadonlyArray<{ readonly roomId: string; readonly room: string }>;
-}
+/** A room's candidates, folded across its prose: one entry per distinct phrase, with every passage it was read from. */
+export type FoldedCandidates = ReadonlyMap<string, { readonly words: readonly string[]; readonly sources: readonly LensSource[] }>;
 
 /** A room's rows, as `foldFindings` reads them. */
 export interface ExaminableRoomRows {
@@ -82,6 +55,8 @@ const DEFAULT_RESPONSE_SUFFIXES = ['.default_description', '.default_description
 interface ExaminedData {
   readonly messageId?: string;
   readonly blocked?: boolean;
+  /** The engine's runtime id of the examined entity. */
+  readonly targetId?: string;
   readonly targetName?: string;
   readonly isContentsMessage?: boolean;
 }
@@ -108,24 +83,30 @@ export interface ExamineTurn {
   readonly thrown?: string;
 }
 
+/** The engine's runtime entity id to the IR id the story declares it by, or undefined for an entity the IR does not declare. */
+export type IrIdOf = (entityId: string) => string | undefined;
+
 /**
  * Classify one executed `examine <phrase>` from what the turn produced.
  *
  * @param turn the turn's events and result
+ * @param irIdOf maps the examined event's runtime target id to its IR id
  * @returns the verdict. `unclassified` is a lens defect to look at, never
  *   dropped: it names what the turn threw and the event types it saw.
  */
-export function classifyExamine(turn: ExamineTurn): ExamineVerdict {
+export function classifyExamine(turn: ExamineTurn, irIdOf: IrIdOf): ExamineVerdict {
   const examined = turn.events.find((event) => event.type === 'if.event.examined' && !(event.data as ExaminedData | undefined)?.isContentsMessage);
   if (examined) {
     const data = (examined.data as ExaminedData | undefined) ?? {};
     const id = String(data.messageId ?? '');
     const target = data.targetName;
-    if (data.blocked) return { kind: 'not-in-scope', detail: id, ...(target !== undefined ? { target } : {}) };
+    const targetId = data.targetId === undefined ? undefined : irIdOf(data.targetId);
+    const answered = { ...(target !== undefined ? { target } : {}), ...(targetId !== undefined ? { targetId } : {}) };
+    if (data.blocked) return { kind: 'not-in-scope', detail: id, ...answered };
     if (DEFAULT_RESPONSE_SUFFIXES.some((suffix) => id.endsWith(suffix))) {
-      return { kind: 'resolved-default', detail: id, ...(target !== undefined ? { target } : {}) };
+      return { kind: 'resolved-default', detail: id, ...answered };
     }
-    return { kind: 'resolved-described', detail: id, ...(target !== undefined ? { target } : {}) };
+    return { kind: 'resolved-described', detail: id, ...answered };
   }
 
   const query = turn.events.find((event) => event.type === 'client.query');
@@ -165,12 +146,17 @@ const resolves = (verdict: ExamineVerdict): boolean => verdict.kind === 'resolve
 /** No entity answered at all; a blocked examine named one, so it does not count. */
 const nothingAnswered = (verdict: ExamineVerdict): boolean => verdict.kind === 'not-in-scope' && verdict.target === undefined;
 
-function numberFormRow(phrase: string, failed: ExamineVerdict, resolvedForm: string, resolved: ExamineVerdict, sources: readonly string[]): ExaminableRow {
+/** The verdict's answering thing, as a row carries it. */
+function answeredBy(verdict: ExamineVerdict): Pick<ExaminableRow, 'target' | 'targetId'> {
+  return { ...(verdict.target !== undefined ? { target: verdict.target } : {}), ...(verdict.targetId !== undefined ? { targetId: verdict.targetId } : {}) };
+}
+
+function numberFormRow(phrase: string, failed: ExamineVerdict, resolvedForm: string, resolved: ExamineVerdict, sources: readonly LensSource[]): ExaminableRow {
   return {
     phrase,
     kind: 'number-form',
     detail: failed.detail,
-    ...(resolved.target !== undefined ? { target: resolved.target } : {}),
+    ...answeredBy(resolved),
     resolvedForm,
     sources: [...sources],
     thing: true,
@@ -218,7 +204,7 @@ export async function classifyCandidates(
         phrase,
         kind: written.kind,
         detail: written.detail,
-        ...(written.target !== undefined ? { target: written.target } : {}),
+        ...answeredBy(written),
         sources: [...sources],
         // Only a non-resolution is asked "is this even a thing"; a phrase
         // that resolved is a thing by demonstration.
@@ -240,18 +226,45 @@ export function isFinding(row: ExaminableRow): boolean {
 }
 
 /**
- * Fold the finding rows of every room by (phrase, kind, detail).
+ * A source's identity for a union: its passage key, or, for text with no
+ * key, its kind and owner. Two rooms reading one passage name one source.
+ */
+export function sourceIdentity(source: LensSource): string {
+  return source.key !== null ? `key:${source.key}` : JSON.stringify([source.kind, source.ownerId, source.ownerName]);
+}
+
+/**
+ * Add each source not already in `into`, by `sourceIdentity`, keeping first-seen order.
+ *
+ * @param into the list to extend, changed in place
+ * @param sources the sources to union in
+ */
+export function unionSources(into: LensSource[], sources: readonly LensSource[]): void {
+  const seen = new Set(into.map(sourceIdentity));
+  for (const source of sources) {
+    const identity = sourceIdentity(source);
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    into.push(source);
+  }
+}
+
+/**
+ * Fold the finding rows of every room by (phrase, kind, detail, target id).
+ * The target id is part of the fold so that one phrase answered by two
+ * different things in two rooms stays two findings, each naming its own
+ * declaration.
  *
  * @param rooms the per-room rows, in discovery order
  * @returns findings sorted most-rooms first, then by phrase; each carries the
- *   rooms it was seen in (discovery order) and the union of its sources
+ *   rooms it was seen in (discovery order) and the union of its sources by key
  */
 export function foldFindings(rooms: readonly ExaminableRoomRows[]): ExaminableFinding[] {
-  const byKey = new Map<string, { finding: Omit<ExaminableFinding, 'sources' | 'rooms'>; sources: string[]; rooms: Array<{ roomId: string; room: string }> }>();
+  const byKey = new Map<string, { finding: Omit<ExaminableFinding, 'sources' | 'rooms'>; sources: LensSource[]; rooms: LensRoomRef[] }>();
   for (const room of rooms) {
     for (const row of room.rows) {
       if (!isFinding(row)) continue;
-      const key = JSON.stringify([row.phrase, row.kind, row.detail]);
+      const key = JSON.stringify([row.phrase, row.kind, row.detail, row.targetId ?? null]);
       let entry = byKey.get(key);
       if (!entry) {
         entry = {
@@ -261,6 +274,7 @@ export function foldFindings(rooms: readonly ExaminableRoomRows[]): ExaminableFi
             detail: row.detail,
             thing: row.thing,
             ...(row.target !== undefined ? { target: row.target } : {}),
+            ...(row.targetId !== undefined ? { targetId: row.targetId } : {}),
             ...(row.resolvedForm !== undefined ? { resolvedForm: row.resolvedForm } : {}),
           },
           sources: [],
@@ -268,7 +282,7 @@ export function foldFindings(rooms: readonly ExaminableRoomRows[]): ExaminableFi
         };
         byKey.set(key, entry);
       }
-      for (const source of row.sources) if (!entry.sources.includes(source)) entry.sources.push(source);
+      unionSources(entry.sources, row.sources);
       entry.rooms.push({ roomId: room.roomId, room: room.room });
     }
   }

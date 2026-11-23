@@ -191,6 +191,29 @@ final class WorldIndexTests: XCTestCase {
         XCTAssertTrue(WorldView.explanation(for: failure).contains("could not be read"))
     }
 
+    /// A story whose language has no noun extractor (ADR-407 D6, GH #837),
+    /// through the REAL analyzer: Fernhill's own IR with its language changed,
+    /// since Chord writes every story's language as `en-US`.
+    func testLanguageWithNoNounExtractorRendersItsOwnState() throws {
+        let story = try fernhillStory()
+        let composed = try composeIR(for: story)
+        var ir = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: composed)) as? [String: Any])
+        var phrases = try XCTUnwrap(ir["phrases"] as? [String: Any], "a Story IR carries its phrase table")
+        phrases["defaultLocale"] = "xx-YY"
+        ir["phrases"] = phrases
+        let foreign = tempDir.appendingPathComponent("foreign.ir.json")
+        try JSONSerialization.data(withJSONObject: ir).write(to: foreign)
+
+        let response = try analyzeReal(foreign, near: story)
+
+        let failure = try XCTUnwrap(response.failure, "a language with no extractor must not decode as an analysis")
+        XCTAssertEqual(failure.cause, .noNounExtractor)
+        XCTAssertTrue(failure.message.contains("xx-YY"), "the refusal names the language: \(failure.message)")
+        let shown = WorldView.explanation(for: failure)
+        XCTAssertTrue(shown.contains("no noun extractor") || shown.contains("has none"), shown)
+        XCTAssertTrue(shown.contains(failure.message), "the tab shows the analyzer's own line: \(shown)")
+    }
+
     /// AC-9's third case: the analyzer never speaks. Unreachable from inside a
     /// Node process — an absent `node` kills the child before it can write a
     /// document — so it is asserted at the seam that has to render it.

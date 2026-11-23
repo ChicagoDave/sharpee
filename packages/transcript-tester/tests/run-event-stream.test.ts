@@ -7,7 +7,7 @@
  * Owner context: transcript-tester test suite (tooling).
  */
 import { describe, expect, it } from 'vitest';
-import type { RunEvent } from '@sharpee/ide-protocol';
+import { isLensFindingEvent, isLensSummaryEvent, type RunEvent } from '@sharpee/ide-protocol';
 import { RunEventStream, type StreamableDerivedOutcome, type StreamableDerivedSummary } from '../src/index.js';
 
 function recorder(): { events: RunEvent[]; stream: RunEventStream; tick: () => void } {
@@ -146,5 +146,30 @@ describe('RunEventStream — claim-result and claims-summary', () => {
     expect(events.map((event) => event.seq)).toEqual([0, 1, 2, 3, 4]);
     expect(events.map((event) => event.elapsedMs)).toEqual([0, 250, 500, 750, 1000]);
     expect(events.every((event) => event.schemaVersion === 2)).toBe(true);
+  });
+});
+
+// ── the examinable lens's tier on the same stream (ADR-408 D8) ───
+
+describe('RunEventStream — lens-finding and lens-summary', () => {
+  it('writes each lens event with the envelope and the payload verbatim, seq monotonic, and each decodes through the wire guard', () => {
+    const { events, stream, tick } = recorder();
+    stream.runStart('tree', 1);
+    tick();
+    stream.lensFinding({
+      lens: 'examinable', phrase: 'whetstone', kind: 'resolved-default', detail: 'if.action.examining.default_description', thing: true,
+      target: 'whetstone', targetId: 'whetstone', targetSpan: { line: 35, column: 1, endLine: 37, endColumn: 18 },
+      sources: [{ key: 'scullery.description', kind: 'description', ownerId: 'scullery', ownerName: 'Scullery', span: { line: 18, column: 3, endLine: 19, endColumn: 36 } }],
+      rooms: [{ roomId: 'scullery', room: 'Scullery' }],
+    });
+    tick();
+    stream.lensSummary({ lens: 'examinable', seed: 42, maxSeconds: 30, refusal: "No noun extractor for language 'xx-YY': @sharpee/lang-xx-yy/nouns does not provide one." });
+
+    const [, finding, summary] = events as Array<Record<string, unknown>>;
+    expect(finding).toMatchObject({ type: 'lens-finding', seq: 1, elapsedMs: 250, phrase: 'whetstone', targetId: 'whetstone', targetSpan: { line: 35 } });
+    expect(summary).toMatchObject({ type: 'lens-summary', seq: 2, elapsedMs: 500, seed: 42, maxSeconds: 30 });
+    expect('reach' in summary).toBe(false);
+    expect(isLensFindingEvent(finding)).toBe(true);
+    expect(isLensSummaryEvent(summary)).toBe(true);
   });
 });

@@ -22,28 +22,35 @@
  * The lens holds no language rules of its own and never falls back to
  * English.
  *
+ * Attribution (ADR-408 D4): the run writes `@sharpee/ide-protocol`'s lens
+ * document. Each passage names its phrase key (the description or
+ * first-visit id the loader set from the IR, null for a trait-state literal)
+ * and its owner's IR id; each row names the IR id of the thing that answered;
+ * every room id is an IR id. Spans are a consumer's to resolve (ADR-333 D2).
+ *
  * Public interface: `runExaminableLens`, `ExaminableLensOptions`,
- *   `ExaminableLensReport`, `ExaminableLensRefusal`, `ExaminableLensResult`,
- *   `LensGame`, `ExaminableRoom`, `UnreachedRoom`, `countDeclaredRooms`.
+ *   `LensEngine`, `LensGame`, `countDeclaredRooms`.
  * Owner context: @sharpee/branch-tester — the lenses (ADR-408 D3).
  */
 
 import type { StoryIR } from '@sharpee/chord';
 import { languageMismatchRefusal, type NounExtractor, type NounExtractorLookup } from '@sharpee/if-domain/nouns';
+import {
+  LENS_OUTPUT_FORMAT,
+  type ExaminableKind,
+  type ExaminableRoom,
+  type LensOutput,
+  type LensPassage,
+  type LensSource,
+  type LensSourceKind,
+  type UnreachedRoom,
+} from '@sharpee/ide-protocol';
 import { captureSave, restoreSave } from '@sharpee/transcript-tester';
 import { deriveReach, roomsOf } from '@sharpee/world-index';
 import type { ClaimsEngine, ClaimsEntity, ClaimsGame, ClaimsTurnEvent, ClaimsWorld } from '../claims/claims-game.js';
 import { irIdOf } from '../claims/claims-game.js';
 import { planRoomRoutes } from './room-routes.js';
-import {
-  classifyCandidates,
-  classifyExamine,
-  foldFindings,
-  type ExaminableFinding,
-  type ExaminableKind,
-  type ExaminableRow,
-  type ExamineVerdict,
-} from './examinable-classify.js';
+import { classifyCandidates, classifyExamine, foldFindings, unionSources, type ExamineVerdict } from './examinable-classify.js';
 
 /** The language provider as the lens reads it. */
 interface LensLanguage {
@@ -82,62 +89,6 @@ export interface ExaminableLensOptions {
   readonly lookup: NounExtractorLookup;
 }
 
-/** One passage a player reads in a room. */
-export interface ProsePassage {
-  /** `room (first visit)`, `room`, or the thing's display name. */
-  readonly source: string;
-  readonly text: string;
-}
-
-/** One room's record: the prose read there and its rows. */
-export interface ExaminableRoom {
-  readonly roomId: string;
-  readonly room: string;
-  readonly path: readonly string[];
-  /** True when the room was first seen in the move that ended the game: no rows. */
-  readonly ended?: true;
-  readonly prose: readonly ProsePassage[];
-  readonly rows: readonly ExaminableRow[];
-}
-
-/** A declared room the lens did not examine, and why. */
-export interface UnreachedRoom {
-  readonly roomId: string;
-  readonly room: string;
-  readonly reason: string;
-}
-
-/** The lens's report. */
-export interface ExaminableLensReport {
-  readonly lens: 'examinable';
-  readonly format: 2;
-  readonly story: string;
-  readonly seed: number;
-  /** How far the lens got (ADR-322 D7, ADR-408 Amendment 1): rooms reached of declared, and each one it did not reach. */
-  readonly reach: {
-    readonly roomsReached: number;
-    readonly roomsDeclared: number;
-    readonly unreached: readonly UnreachedRoom[];
-    readonly commandsTyped: number;
-    readonly ms: number;
-    readonly maxSeconds: number;
-  };
-  readonly phrasesExecuted: number;
-  readonly counts: Readonly<Partial<Record<ExaminableKind, number>>>;
-  readonly findings: readonly ExaminableFinding[];
-  readonly rooms: readonly ExaminableRoom[];
-}
-
-/** A refused run: no walk was made. */
-export interface ExaminableLensRefusal {
-  readonly lens: 'examinable';
-  readonly format: 2;
-  readonly story: string;
-  readonly refused: string;
-}
-
-export type ExaminableLensResult = ExaminableLensReport | ExaminableLensRefusal;
-
 /** Rooms the story declares, so rooms reached reads against a total (ADR-322 D7): world-index's own count. */
 export function countDeclaredRooms(ir: StoryIR): number {
   return roomsOf(ir).length;
@@ -154,51 +105,75 @@ function resolveDescriptionText(language: LensLanguage, id: string | undefined):
   return message && message !== id ? message : undefined;
 }
 
-/** A thing's description as examining shows it: a trait-state literal in force, else its id's text, else its literal. */
-function thingText(entity: LensEntity, language: LensLanguage): string | undefined {
+/** A passage's text and where it came from: its key, or null for text no key registers. */
+interface ReadText {
+  readonly text: string;
+  readonly key: string | null;
+  readonly kind: LensSourceKind;
+}
+
+/**
+ * A thing's description as examining shows it: a trait-state literal in
+ * force (kind `state`, no key), else its id's text (its key), else its
+ * literal (no key).
+ */
+function thingText(entity: LensEntity, language: LensLanguage): ReadText | undefined {
   const identity = entity.get('identity') as { descriptionId?: string; description?: string } | undefined;
   const stateText = entity.description;
-  if (identity?.descriptionId && (!stateText || stateText === identity.description)) {
+  const stateInForce = !!stateText && stateText !== identity?.description;
+  if (identity?.descriptionId && !stateInForce) {
     const resolved = resolveDescriptionText(language, identity.descriptionId);
-    if (resolved) return resolved;
+    if (resolved) return { text: resolved, key: identity.descriptionId, kind: 'description' };
   }
-  return stateText || undefined;
+  if (!stateText) return undefined;
+  return { text: stateText, key: null, kind: stateInForce ? 'state' : 'description' };
 }
 
 /**
  * The prose a player sees on arriving in a room: its first-visit text, its
- * description, and each visible thing's description.
+ * description, and each visible thing's description, each with the passage
+ * it came from (ADR-408 D4).
  *
  * @param world the world, in the state the walk arrived in
  * @param room the room first seen
  * @param language the engine's language provider
  * @returns the passages, in that order
  */
-function visibleProse(world: ClaimsWorld, room: LensEntity, language: LensLanguage): ProsePassage[] {
+function visibleProse(world: ClaimsWorld, room: LensEntity, language: LensLanguage): LensPassage[] {
   const player = world.playerCharacter;
-  const out: ProsePassage[] = [];
+  const out: LensPassage[] = [];
+  const passage = (owner: LensEntity, read: ReadText): LensPassage => ({
+    source: { key: read.key, kind: read.kind, ownerId: irIdOf(owner) ?? null, ownerName: owner.name },
+    text: String(read.text),
+  });
   const roomTrait = room.get('room') as { initialDescriptionId?: string; initialDescription?: string } | undefined;
-  const identity = room.get('identity') as { descriptionId?: string } | undefined;
-  const firstVisit = roomTrait ? (resolveDescriptionText(language, roomTrait.initialDescriptionId) || roomTrait.initialDescription) : undefined;
-  if (firstVisit) out.push({ source: 'room (first visit)', text: String(firstVisit) });
-  const standard = resolveDescriptionText(language, identity?.descriptionId) || room.description;
-  if (standard) out.push({ source: 'room', text: String(standard) });
+  const identity = room.get('identity') as { descriptionId?: string; description?: string } | undefined;
+  if (roomTrait) {
+    const resolved = resolveDescriptionText(language, roomTrait.initialDescriptionId);
+    if (resolved) out.push(passage(room, { text: resolved, key: roomTrait.initialDescriptionId ?? null, kind: 'first-visit' }));
+    else if (roomTrait.initialDescription) out.push(passage(room, { text: roomTrait.initialDescription, key: null, kind: 'first-visit' }));
+  }
+  const resolved = resolveDescriptionText(language, identity?.descriptionId);
+  if (resolved) out.push(passage(room, { text: resolved, key: identity?.descriptionId ?? null, kind: 'description' }));
+  else if (room.description) {
+    out.push(passage(room, { text: room.description, key: null, kind: room.description !== identity?.description ? 'state' : 'description' }));
+  }
   for (const entity of world.getVisible(player.id) as LensEntity[]) {
     if (entity.id === room.id || entity.id === player.id) continue;
-    const text = thingText(entity, language);
-    if (text) out.push({ source: entity.name, text: String(text) });
+    const read = thingText(entity, language);
+    if (read) out.push(passage(entity, read));
   }
   return out;
 }
 
-/** The room's candidates, folded across its prose: one entry per distinct phrase, with every source. */
-function phrasesIn(prose: readonly ProsePassage[], extractor: NounExtractor): Map<string, { words: readonly string[]; sources: string[] }> {
-  const folded = new Map<string, { words: readonly string[]; sources: string[] }>();
+/** The room's candidates, folded across its prose: one entry per distinct phrase, with every passage it was read from. */
+function phrasesIn(prose: readonly LensPassage[], extractor: NounExtractor): Map<string, { words: readonly string[]; sources: LensSource[] }> {
+  const folded = new Map<string, { words: readonly string[]; sources: LensSource[] }>();
   for (const { source, text } of prose) {
     for (const candidate of extractor.extract(text)) {
       const phrase = candidate.words.join(' ');
       const row = folded.get(phrase) ?? { words: candidate.words, sources: [] };
-      if (!row.sources.includes(source)) row.sources.push(source);
+      unionSources(row.sources, [source]);
       folded.set(phrase, row);
     }
   }
@@ -227,11 +202,12 @@ function guardLanguage(storyLanguageCode: string, engineLanguageCode: string, lo
  *   called when the story's language has no extractor
  * @param options the report's story and seed, the time budget, and the
  *   extractor lookup
- * @returns the report, or a refusal typed before any route
+ * @returns the lens document (ADR-408 D4): `ok` with the report, or not `ok`
+ *   with the refusal, made before any route is typed
  * @throws when the engine refuses a save or a restore, naming the state
  */
-export async function runExaminableLens(ir: StoryIR, loadGame: () => Promise<LensGame>, options: ExaminableLensOptions): Promise<ExaminableLensResult> {
-  const refused = (line: string): ExaminableLensRefusal => ({ lens: 'examinable', format: 2, story: options.story, refused: line });
+export async function runExaminableLens(ir: StoryIR, loadGame: () => Promise<LensGame>, options: ExaminableLensOptions): Promise<LensOutput> {
+  const refused = (message: string): LensOutput => ({ lens: 'examinable', format: LENS_OUTPUT_FORMAT, story: options.story, ok: false, refusal: { message } });
 
   const storyLanguageCode = String(ir.phrases?.defaultLocale ?? '');
   const early = options.lookup(storyLanguageCode);
@@ -251,10 +227,15 @@ export async function runExaminableLens(ir: StoryIR, loadGame: () => Promise<Len
     phrasesExecuted++;
     try {
       const result = await engine.executeTurn(`examine ${form}`);
-      return classifyExamine({ events: result.events ?? [], success: result.success, error: result.error });
+      return classifyExamine({ events: result.events ?? [], success: result.success, error: result.error }, irIdOfRuntime);
     } catch (thrown) {
-      return classifyExamine({ events: [], thrown: thrown instanceof Error ? thrown.message : String(thrown) });
+      return classifyExamine({ events: [], thrown: thrown instanceof Error ? thrown.message : String(thrown) }, irIdOfRuntime);
     }
+  };
+  /** The engine's runtime id to its IR id, read off the live entity (a thing the IR declares keeps it). */
+  const irIdOfRuntime = (entityId: string): string | undefined => {
+    const entity = world.getEntity(entityId);
+    return entity ? irIdOf(entity) : undefined;
   };
 
   // The story's opening, so every route starts from the state a player first
@@ -283,8 +264,10 @@ export async function runExaminableLens(ir: StoryIR, loadGame: () => Promise<Len
     try { await engine.executeTurn(command); } catch { /* a refused move is read off where the player ends up */ }
   };
 
+  let budgetRanOut = false;
   for (const route of plan.routes) {
     if ((Date.now() - started) / 1000 >= maxSeconds) {
+      budgetRanOut = true;
       unreached.push({ roomId: route.roomId, room: nameOf(route.roomId), reason: `the time budget (${maxSeconds}s) ran out first` });
       continue;
     }
@@ -303,7 +286,7 @@ export async function runExaminableLens(ir: StoryIR, loadGame: () => Promise<Len
     // A room reached by the move that ends the game is not a room the player
     // ever gets a turn in, so its phrases are not findings.
     if (world.getEnding()) {
-      if (arrived && room) rooms.push({ roomId: room.id, room: room.name, path, ended: true, prose: [], rows: [] });
+      if (arrived && room) rooms.push({ roomId: route.roomId, room: room.name, path, ended: true, prose: [], rows: [] });
       else unreached.push({ roomId: route.roomId, room: nameOf(route.roomId), reason: `the game ended on the way, after "${path.join(', ')}"` });
       continue;
     }
@@ -314,29 +297,33 @@ export async function runExaminableLens(ir: StoryIR, loadGame: () => Promise<Len
     const arrival = await saveOrThrow(engine, `"${path.join(', ')}"`);
     const prose = visibleProse(world, room as LensEntity, language);
     const rows = await classifyCandidates(phrasesIn(prose, extractor), examineFrom(() => restoreOrThrow(engine, arrival, `"${path.join(', ')}"`)), extractor);
-    rooms.push({ roomId: room.id, room: room.name, path, prose, rows });
+    rooms.push({ roomId: route.roomId, room: room.name, path, prose, rows });
   }
 
-  const counts: Partial<Record<ExaminableKind, number>> = {};
-  for (const room of rooms) for (const row of room.rows) counts[row.kind] = (counts[row.kind] ?? 0) + 1;
+  const counts: Record<string, number> = {};
+  for (const room of rooms) for (const row of room.rows) counts[row.kind satisfies ExaminableKind] = (counts[row.kind] ?? 0) + 1;
 
   return {
     lens: 'examinable',
-    format: 2,
+    format: LENS_OUTPUT_FORMAT,
     story: options.story,
-    seed: options.seed,
-    reach: {
-      roomsReached: rooms.length,
-      roomsDeclared,
-      unreached,
-      commandsTyped,
-      ms: Date.now() - started,
-      maxSeconds,
+    ok: true,
+    report: {
+      seed: options.seed,
+      reach: {
+        roomsReached: rooms.length,
+        roomsDeclared,
+        unreached,
+        commandsTyped,
+        ms: Date.now() - started,
+        maxSeconds,
+        stoppedBy: budgetRanOut ? 'budget' : 'every-route',
+      },
+      phrasesExecuted,
+      counts,
+      findings: foldFindings(rooms),
+      rooms,
     },
-    phrasesExecuted,
-    counts,
-    findings: foldFindings(rooms),
-    rooms,
   };
 }
 

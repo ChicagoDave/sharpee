@@ -20,7 +20,8 @@ import { compile, type StoryIR } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { assembleGame } from '@sharpee/bootstrap';
 import { languageMismatchRefusal, resolveNounExtractor, type NounExtractorLookup, type NounsModule } from '@sharpee/if-domain/nouns';
-import { runExaminableLens, type ExaminableLensReport, type ExaminableLensResult, type LensGame } from '../src/lens/examinable-lens.js';
+import type { ExaminableLensReport, LensOutput, LensSource } from '@sharpee/ide-protocol';
+import { runExaminableLens, type LensGame } from '../src/lens/examinable-lens.js';
 
 const SEED = 42;
 const BUDGETS = { maxSeconds: 120 };
@@ -47,10 +48,13 @@ function loaderFor(ir: StoryIR): () => Promise<LensGame> {
   };
 }
 
-function asReport(result: ExaminableLensResult): ExaminableLensReport {
-  if ('refused' in result) throw new Error(`the lens refused: ${result.refused}`);
-  return result;
+function asReport(output: LensOutput): ExaminableLensReport {
+  if (!output.ok || !output.report) throw new Error(`the lens refused: ${output.refusal?.message}`);
+  return output.report;
 }
+
+/** A row's sources as their passage keys, the attribution of record (ADR-408 D4). */
+const keysOf = (sources: readonly LensSource[]): Array<string | null> => sources.map((source) => source.key);
 
 const describeWith = (file: string | undefined) => (file && existsSync(file) ? describe : describe.skip);
 
@@ -88,27 +92,28 @@ describeWith(ORCHARD)('REAL-PATH — orchard at seed 42 / 600 states on the shar
   });
 
   it('each singular thing that resolves has its plural tried, and the plural is a number-form finding', () => {
-    expect(report.findings.filter((finding) => finding.kind === 'number-form').map((finding) => [finding.phrase, finding.resolvedForm, finding.target, finding.sources])).toEqual([
-      ['bee smokers', 'bee smoker', 'bee smoker', ['bee smoker']],
-      ['cider presses', 'cider press', 'cider press', ['room', 'cider press']],
-      ['honeycombs', 'honeycomb', 'honeycomb', ['honeycomb']],
-      ['presses', 'press', 'cider press', ['keeper']],
-      ['trees', 'tree', 'apple tree', ['room']],
-      ['water valves', 'water valve', 'water valve', ['room']],
+    expect(report.findings.filter((finding) => finding.kind === 'number-form').map((finding) => [finding.phrase, finding.resolvedForm, finding.target, finding.targetId, keysOf(finding.sources)])).toEqual([
+      ['bee smokers', 'bee smoker', 'bee smoker', 'bee-smoker', ['bee-smoker.description']],
+      ['cider presses', 'cider press', 'cider press', 'cider-press', ['press-house.description', 'cider-press.description']],
+      ['honeycombs', 'honeycomb', 'honeycomb', 'honeycomb', ['honeycomb.description']],
+      ['presses', 'press', 'cider press', 'cider-press', ['keeper.description']],
+      ['trees', 'tree', 'apple tree', 'apple-tree', ['rows.description']],
+      ['water valves', 'water valve', 'water valve', 'water-valve', ['press-house.description']],
     ]);
   });
 
-  it('a phrase found in two rooms is one finding naming both rooms and both sources', () => {
+  it('a phrase found in two rooms is one finding naming both rooms, by IR id, and the union of its passages by key', () => {
     const cellar = report.findings.find((finding) => finding.phrase === 'cellar')!;
-    expect(cellar.rooms.map((room) => room.room)).toEqual(['Press House', 'Cellar']);
-    expect(cellar.sources).toEqual(['room', 'crank handle']);
+    expect(cellar.rooms).toEqual([{ roomId: 'press-house', room: 'Press House' }, { roomId: 'cellar', room: 'Cellar' }]);
+    expect(keysOf(cellar.sources)).toEqual(['press-house.description', 'crank-handle.description']);
+    expect(cellar.targetId).toBeUndefined();
   });
 });
 
 describeWith(SCULLERY)('REAL-PATH — scullery at seed 42 / 600 states on the shared walk (OB-54 to OB-59)', () => {
   let report: ExaminableLensReport;
   const rowsOf = (room: string) => report.rooms.find((r) => r.room === room)!.rows
-    .map((row) => [row.phrase, row.kind, row.target, row.resolvedForm, row.sources]);
+    .map((row) => [row.phrase, row.kind, row.target, row.resolvedForm, keysOf(row.sources)]);
   beforeAll(async () => {
     const ir = compileStory(SCULLERY!);
     report = asReport(await runExaminableLens(ir, loaderFor(ir), { story: 'scullery.story', seed: SEED, lookup, ...BUDGETS }));
@@ -123,21 +128,43 @@ describeWith(SCULLERY)('REAL-PATH — scullery at seed 42 / 600 states on the sh
 
   it('a plural thing and its plural alias resolve, and each singular is a number-form finding (OB-56)', () => {
     expect(rowsOf('Scullery').slice(0, 4)).toEqual([
-      ['jars', 'resolved-described', 'jars', undefined, ['room', 'jars']],
-      ['jar', 'number-form', 'jars', 'jars', ['room', 'jars']],
-      ['crocks', 'resolved-described', 'jars', undefined, ['room']],
-      ['crock', 'number-form', 'jars', 'crocks', ['room']],
+      ['jars', 'resolved-described', 'jars', undefined, ['scullery.description', 'jars.description']],
+      ['jar', 'number-form', 'jars', 'jars', ['scullery.description', 'jars.description']],
+      ['crocks', 'resolved-described', 'jars', undefined, ['scullery.description']],
+      ['crock', 'number-form', 'jars', 'crocks', ['scullery.description']],
     ]);
   });
 
   it('a thing with no description answers with the default response, and its plural is tried (OB-54, OB-58)', () => {
-    expect(rowsOf('Scullery').find((row) => row[0] === 'whetstone')).toEqual(['whetstone', 'resolved-default', 'whetstone', undefined, ['room']]);
-    expect(rowsOf('Scullery').find((row) => row[0] === 'whetstones')).toEqual(['whetstones', 'number-form', 'whetstone', 'whetstone', ['room']]);
-    expect(rowsOf('Larder').find((row) => row[0] === 'cheeses')).toEqual(['cheeses', 'number-form', 'cheese', 'cheese', ['room']]);
+    expect(rowsOf('Scullery').find((row) => row[0] === 'whetstone')).toEqual(['whetstone', 'resolved-default', 'whetstone', undefined, ['scullery.description']]);
+    expect(rowsOf('Scullery').find((row) => row[0] === 'whetstones')).toEqual(['whetstones', 'number-form', 'whetstone', 'whetstone', ['scullery.description']]);
+    expect(rowsOf('Larder').find((row) => row[0] === 'cheeses')).toEqual(['cheeses', 'number-form', 'cheese', 'cheese', ['larder.description']]);
+  });
+
+  it('the whetstone\'s no-text finding names the Scullery\'s description passage and owner, and the whetstone\'s IR id (ADR-408 D4, AC-2)', () => {
+    const whetstone = report.findings.find((finding) => finding.phrase === 'whetstone' && finding.kind === 'resolved-default')!;
+    expect(whetstone.targetId).toBe('whetstone');
+    expect(whetstone.sources).toEqual([{ key: 'scullery.description', kind: 'description', ownerId: 'scullery', ownerName: 'Scullery' }]);
+    expect(whetstone.rooms).toEqual([{ roomId: 'scullery', room: 'Scullery' }]);
+  });
+
+  it('every room id is an IR id, and each passage read names its key, kind and owner', () => {
+    expect(report.rooms.map((room) => room.roomId)).toEqual(['scullery', 'larder']);
+    expect(report.rooms[0].prose.map((passage) => passage.source)).toEqual([
+      { key: 'scullery.description', kind: 'description', ownerId: 'scullery', ownerName: 'Scullery' },
+      { key: 'jars.description', kind: 'description', ownerId: 'jars', ownerName: 'jars' },
+      { key: 'chore-list.description', kind: 'description', ownerId: 'chore-list', ownerName: 'chore list' },
+    ]);
+  });
+
+  it('a phrase read in two rooms from one passage is one finding with one source', () => {
+    const bellows = report.findings.find((finding) => finding.phrase === 'bellows')!;
+    expect(bellows.rooms.map((room) => room.roomId)).toEqual(['scullery', 'larder']);
+    expect(keysOf(bellows.sources)).toEqual(['chore-list.description']);
   });
 
   it("a plural in a thing's own description with nothing behind it is not in scope, never a number form (OB-57)", () => {
-    expect(rowsOf('Scullery').find((row) => row[0] === 'corks')).toEqual(['corks', 'not-in-scope', undefined, undefined, ['jars']]);
+    expect(rowsOf('Scullery').find((row) => row[0] === 'corks')).toEqual(['corks', 'not-in-scope', undefined, undefined, ['jars.description']]);
     expect(report.findings.some((finding) => finding.phrase === 'cork')).toBe(false);
   });
 
@@ -160,7 +187,7 @@ describeWith(SCULLERY)('REAL-PATH — the language guard (ADR-407 D2, D6)', () =
     const foreign: StoryIR = { ...ir, phrases: { ...ir.phrases, defaultLocale: 'xx-YY' } };
     let loads = 0;
     const result = await runExaminableLens(foreign, async () => { loads++; return loaderFor(ir)(); }, { story: 'scullery.story', seed: SEED, lookup, ...BUDGETS });
-    expect(result).toEqual({ lens: 'examinable', format: 2, story: 'scullery.story', refused: "No noun extractor for language 'xx-YY': @sharpee/lang-xx-yy/nouns does not provide one." });
+    expect(result).toEqual({ lens: 'examinable', format: 3, story: 'scullery.story', ok: false, refusal: { message: "No noun extractor for language 'xx-YY': @sharpee/lang-xx-yy/nouns does not provide one." } });
     expect(loads).toBe(0);
   });
 
@@ -178,7 +205,7 @@ describeWith(SCULLERY)('REAL-PATH — the language guard (ADR-407 D2, D6)', () =
       return game;
     };
     const result = await runExaminableLens(relabelled, counting, { story: 'scullery.story', seed: SEED, lookup: both, ...BUDGETS });
-    expect(result).toEqual({ lens: 'examinable', format: 2, story: 'scullery.story', refused: languageMismatchRefusal('en-US', 'en-GB') });
+    expect(result).toEqual({ lens: 'examinable', format: 3, story: 'scullery.story', ok: false, refusal: { message: languageMismatchRefusal('en-US', 'en-GB') } });
     expect(turns).toBe(0);
   });
 });
@@ -216,17 +243,20 @@ describe('REAL-PATH — a room first seen in the move that ends the game', () =>
 const FIXTURE = resolve(__dirname, 'fixtures/lens-fixture/lens-fixture.story');
 
 describe('REAL-PATH — the lens fixture, through the real engine (ported from the spike)', () => {
+  let output: LensOutput;
   let report: ExaminableLensReport;
   beforeAll(async () => {
     const ir = compileStory(FIXTURE);
-    report = asReport(await runExaminableLens(ir, loaderFor(ir), { story: 'lens-fixture.story', seed: SEED, lookup, ...BUDGETS }));
+    output = await runExaminableLens(ir, loaderFor(ir), { story: 'lens-fixture.story', seed: SEED, lookup, ...BUDGETS });
+    report = asReport(output);
   }, 60_000);
 
-  it('carries format 2 with exactly the documented top-level keys', () => {
-    expect(report.lens).toBe('examinable');
-    expect(report.format).toBe(2);
-    expect(Object.keys(report)).toEqual(['lens', 'format', 'story', 'seed', 'reach', 'phrasesExecuted', 'counts', 'findings', 'rooms']);
-    expect(Object.keys(report.reach)).toEqual(['roomsReached', 'roomsDeclared', 'unreached', 'commandsTyped', 'ms', 'maxSeconds']);
+  it('is a format-3 document, ok with a report and no refusal, with exactly the documented keys', () => {
+    expect(Object.keys(output)).toEqual(['lens', 'format', 'story', 'ok', 'report']);
+    expect(output).toMatchObject({ lens: 'examinable', format: 3, story: 'lens-fixture.story', ok: true });
+    expect(Object.keys(report)).toEqual(['seed', 'reach', 'phrasesExecuted', 'counts', 'findings', 'rooms']);
+    expect(Object.keys(report.reach)).toEqual(['roomsReached', 'roomsDeclared', 'unreached', 'commandsTyped', 'ms', 'maxSeconds', 'stoppedBy']);
+    expect(report.reach.stoppedBy).toBe('every-route');
   });
 
   it('reaches the one room and types every form in both numbers', () => {
@@ -236,15 +266,15 @@ describe('REAL-PATH — the lens fixture, through the real engine (ported from t
   });
 
   it('classifies the described bucket, the descriptionless pebble, the entity-less crack, and each plural', () => {
-    expect(report.rooms[0].rows.map((row) => [row.phrase, row.kind, row.detail, row.target, row.resolvedForm, row.sources, row.thing])).toEqual([
-      ['bare shed', 'not-in-scope', NOT_FOUND, undefined, undefined, ['room'], true],
-      ['pebble', 'resolved-default', 'if.action.examining.default_description', 'pebble', undefined, ['room'], true],
-      ['pebbles', 'number-form', NOT_FOUND, 'pebble', 'pebble', ['room'], true],
-      ['bucket', 'resolved-described', 'if.action.examining.examined', 'bucket', undefined, ['room'], true],
-      ['buckets', 'number-form', NOT_FOUND, 'bucket', 'bucket', ['room'], true],
-      ['crack', 'not-in-scope', NOT_FOUND, undefined, undefined, ['room'], true],
-      ['dented tin bucket', 'not-in-scope', NOT_FOUND, undefined, undefined, ['bucket'], true],
-      ['tin bucket', 'not-in-scope', NOT_FOUND, undefined, undefined, ['bucket'], true],
+    expect(report.rooms[0].rows.map((row) => [row.phrase, row.kind, row.detail, row.target, row.targetId, row.resolvedForm, keysOf(row.sources), row.thing])).toEqual([
+      ['bare shed', 'not-in-scope', NOT_FOUND, undefined, undefined, undefined, ['shed.description'], true],
+      ['pebble', 'resolved-default', 'if.action.examining.default_description', 'pebble', 'pebble', undefined, ['shed.description'], true],
+      ['pebbles', 'number-form', NOT_FOUND, 'pebble', 'pebble', 'pebble', ['shed.description'], true],
+      ['bucket', 'resolved-described', 'if.action.examining.examined', 'bucket', 'bucket', undefined, ['shed.description'], true],
+      ['buckets', 'number-form', NOT_FOUND, 'bucket', 'bucket', 'bucket', ['shed.description'], true],
+      ['crack', 'not-in-scope', NOT_FOUND, undefined, undefined, undefined, ['shed.description'], true],
+      ['dented tin bucket', 'not-in-scope', NOT_FOUND, undefined, undefined, undefined, ['bucket.description'], true],
+      ['tin bucket', 'not-in-scope', NOT_FOUND, undefined, undefined, undefined, ['bucket.description'], true],
     ]);
   });
 
@@ -261,7 +291,10 @@ describe('REAL-PATH — the lens fixture, through the real engine (ported from t
   });
 
   it('records the prose the player saw, by source', () => {
-    expect(report.rooms[0].prose.map((passage) => passage.source)).toEqual(['room', 'bucket']);
+    expect(report.rooms[0].prose.map((passage) => passage.source)).toEqual([
+      { key: 'shed.description', kind: 'description', ownerId: 'shed', ownerName: 'Shed' },
+      { key: 'bucket.description', kind: 'description', ownerId: 'bucket', ownerName: 'bucket' },
+    ]);
     expect(report.rooms[0].prose[1].text).toMatch(/dented tin bucket/);
   });
 });

@@ -69,6 +69,9 @@ export type {
   ClaimLock,
   ClaimResultEvent,
   ClaimsSummaryEvent,
+  LensFindingSource,
+  LensFindingEvent,
+  LensSummaryEvent,
   RunEndEvent,
   RunEvent,
   WorldEntityRef,
@@ -89,6 +92,8 @@ export {
   isDerivedRunSummaryEvent,
   isClaimResultEvent,
   isClaimsSummaryEvent,
+  isLensFindingEvent,
+  isLensSummaryEvent,
   isRunEndEvent,
   isRunEvent,
 } from './run-events.js';
@@ -127,3 +132,22 @@ export type {
   ClaimJsonOutput,
 } from './claim-output.js';
 export { isClaimJsonOutput } from './claim-output.js';
+
+// `sharpee lens examinable --json` — the examinable lens's document, sources
+// as passage keys and IR ids (ADR-408 D4).
+export type {
+  LensOutput,
+  LensRefusal,
+  ExaminableLensReport,
+  LensReach,
+  UnreachedRoom,
+  ExaminableRoom,
+  LensPassage,
+  LensSource,
+  LensSourceKind,
+  ExaminableRow,
+  ExaminableFinding,
+  ExaminableKind,
+  LensRoomRef,
+} from './lens-output.js';
+export { LENS_OUTPUT_FORMAT } from './lens-output.js';

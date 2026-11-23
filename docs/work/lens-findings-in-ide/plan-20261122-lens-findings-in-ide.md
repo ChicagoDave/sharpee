@@ -151,10 +151,22 @@ David approved the plan with option (b) from the plan review:
   - The console form prints file and line for each source, resolved from the IR's phrase spans by devkit as a consumer (ADR-333 D2).
   - A real-path test on scullery: the whetstone's no-text finding carries the room's description key and the whetstone's IR id, and that key equals a `prose[].key` in `sharpee world-index`'s document for the same IR. This test is the join the IDE depends on.
 - **Files**: `packages/branch-tester/src/lens/`, `packages/devkit/src/commands/lens.ts`, `packages/ide-protocol/src/lens-output.ts` (new), `packages/ide-protocol/src/index.ts`, `packages/branch-tester/tests/`, `packages/devkit/tests/`
+  - **As built (2026-11-23, session 48a616):**
+    - `packages/ide-protocol/src/lens-output.ts` holds `LensOutput` = `{ lens, format: 3, story, ok, report?, refusal? }`, where `refusal` is `{ message }`. `lens`, `format` and `story` moved from the report onto the document. `counts` is a `Record<string, number>` and `ended` a boolean, the generator's model (ADR-352 D5). There are no generator roots and no guard, because nothing decodes the document yet.
+    - branch-tester writes it typed and imports the row, finding and room types from ide-protocol. They are no longer exported from branch-tester.
+    - Two consequences of the keys, folded in:
+      - Findings fold by (phrase, kind, detail, targetId). One phrase answered by two different things stays two findings, each naming its own declaration.
+      - Every room id is now an IR id. Format 2 gave reached rooms the runtime id and unreached rooms the IR id.
+    - The console form's locator lives in `packages/devkit/src/commands/lens-sources.ts` (`resolveSourceSpan`, which Phase 4's tier reuses). A source with no key resolves to its owner's declaration.
+    - Orchard and scullery findings and counts are unchanged (44 and 20).
 - **Exit state**: On scullery, `--json` yields findings whose keys join world-index's prose list and whose target ids join its declarations. The generated protocol targets are unchanged and fresh.
 - **Demonstration**: `./repokit protocol --check` exits 0. The devkit lens tests (pnpm --filter '@sharpee/devkit' test lens) pass, including the scullery join test asserting the whetstone's key and id.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-23)
+- **Demonstrated**: 2026-11-23, session 48a616. [verified: work-summary-writer re-run 2026-11-23 12:59–13:00 CST, after the last edit at 12:58 — `./repokit protocol --check` "generated protocol types match the TypeScript wire contract"; `pnpm --filter '@sharpee/devkit' test` 37 files 252 passed 1 skipped, `src/commands/lens.test.ts` 7 passed; `pnpm --filter '@sharpee/branch-tester' test` 43 files 525 passed]
+  - `./repokit protocol --check` printed "generated protocol types match the TypeScript wire contract" and exited 0.
+  - `pnpm --filter '@sharpee/devkit' test lens`: 1 file, 7 passed. Among them is "JOIN — the whetstone's passage key is a prose key in `sharpee world-index`'s document for the same IR, and its target id a declaration at line 35 (ADR-408 AC-2)", which asserts key `scullery.description`, owner `scullery` and target `whetstone`.
+  - `pnpm --filter '@sharpee/branch-tester' test`: 43 files, 525 passed.
+  - `pnpm --filter '@sharpee/branch-tester' typecheck` reports 5 test-file errors that predate this phase, in `claim-predicates`, `claims-walk`, `derived-one-boot` and `room-routes`, plus the `assembleGame` cast at `examinable-lens-real-path.test.ts:47`. No line this phase changed is among them.
+- **Status**: DONE
 
 ### Phase 4: The lens rides `sharpee test` as a tier, and the Testing tab folds it
 - **Tier**: Medium
@@ -174,6 +186,15 @@ David approved the plan with option (b) from the plan review:
     - devkit: the tier's events on scullery through the real command; the no-extractor copy (AC-4); and both runs exiting 0 (AC-5).
     - testing-surface vitest: the fold and the state, plus a committed run-event fixture with no lens events (AC-4), plus a real-path test that spawns the real CLI on scullery, as `claims-real-path.test.ts` does through `tests/spawn-cli.ts`.
     - SharpeeIDETests: `WorldIndexTests.swift` for #837.
+  - **As built (2026-11-23, session 48a616):**
+    - **`transcript-tester`.** `RunEventStream` gained `lensFinding` and `lensSummary`, plus the `StreamableLensFinding`/`StreamableLensSummary` types and their barrel exports. That stream is the only writer of run events, so the tier cannot emit without them. David approved the package "yes, add the two methods".
+    - **`stoppedBy`.** The lens report's `reach` gained `stoppedBy: 'every-route' | 'budget'` (`lens-output.ts`, set in `examinable-lens.ts`). It is the summary's "stop reason" (ADR-408 D8).
+    - **`refusal`.** A `lens-summary` carries `refusal` in three cases, each with no measurements and no finding: the language has no extractor; the lens threw; the tree run could not find or compile the `.story` file. In none of them does the page call the toolchain lens-less.
+    - **The page's absence logic.** It reads the `run-end` exit code. Exit 0 or 1 with no summary names a toolchain without the lens. Exit 2 or 3 names a run that stopped before its tiers.
+    - **Scullery's test tree.** Scullery had no test tree, so it gained a one-line one (`test-stories/scullery/scullery.tests/`, OB-61 in its test set).
+    - **The AC-4 fixture.** It was recorded from that tree by the devkit before the tier existed: `tools/ide/web/testing-surface/tests/fixtures/scullery-run-without-lens.ndjson`.
+    - **Report heading.** The lens report's heading on the console is `Examinable lens:`. No ADR is cited in the author's text, per `record-citations.test.ts`.
+    - **Updated assertions.** Three existing assertions about what the stream and report end with now admit the lens tier after the claims (David's "yes"): `devkit tests/test-claims.test.ts` at :127 and :263, and `testing-surface tests/derived-real-path.test.ts:79`.
 - **Files**: `packages/ide-protocol/src/run-events.ts`, `packages/devkit/src/commands/test-lens.ts` (new), `packages/devkit/src/commands/test-tree-document.ts`, `packages/devkit/tests/`, `tools/ide/web/testing-surface/src/run.ts`, `tools/ide/web/testing-surface/src/lens.ts` (new), `tools/ide/web/testing-surface/tests/lens.test.ts` (new), `tools/ide/web/testing-surface/tests/lens-real-path.test.ts` (new), `tools/ide/SharpeeIDE/World/WorldIndexDocument.swift` (#837), `tools/ide/SharpeeIDE/World/WorldView.swift` (#837), `tools/ide/SharpeeIDETests/WorldIndexTests.swift` (#837)
 - **Exit state**:
   - `sharpee test --json` on scullery emits the whetstone's `lens-finding`, with its key, its span, its target id and the target's declaration span, then a `lens-summary`, and exits 0.
@@ -184,8 +205,18 @@ David approved the plan with option (b) from the plan review:
   - The devkit lens tests (`pnpm --filter '@sharpee/devkit' test lens`) report no failures.
   - From `tools/ide/web/testing-surface`, `npx vitest run lens` reports no failures, with the real-path test among the passes.
   - The pinned xcodebuild invocation (project memory ide-xcodebuild-practice), limited to `WorldIndexTests`, reports "with 0 failures".
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-23, session 48a616. [verified: work-summary-writer re-run 2026-11-23 12:59–13:00 CST, after the last edit at 12:58 — devkit 37 files 252 passed 1 skipped incl. `tests/test-lens.test.ts` 3 passed; testing-surface `npx vitest run` 28 files 273 passed incl. `tests/lens.test.ts` 7 and `tests/lens-real-path.test.ts` 1; transcript-tester 29 files 386 passed; ide-protocol `test:ci` 7 files 67 passed; branch-tester 43 files 525 passed] [reported by session, unverified: xcodebuild WorldIndexTests "Executed 41 tests, with 0 failures" — not logged by the hooks, not re-run]
+  - `pnpm --filter '@sharpee/devkit' test lens`: 2 files, 10 passed. `tests/test-lens.test.ts` runs the real command on scullery: 20 `lens-finding` events. The whetstone's carries `scullery.description` with span line 18–19, target `whetstone` and declaration line 35. One `lens-summary` follows at seed 42 with a 30 s budget, 2 of 2 rooms and `every-route`, then `run-end`, and the exit is 0. The no-extractor IR copy gives one refusal summary and no finding.
+  - From `tools/ide/web/testing-surface`, `npx vitest run lens`: 2 files, 8 passed. Among them is "the lens tier from a real run of the scullery test story", which spawns `packages/devkit/dist/cli.js test … --json`. `lens.test.ts` folds the committed no-lens fixture to `toolchain-without-lens`, and an exit-2 run to `run-stopped-early`, each with its own sentence.
+  - The pinned xcodebuild with `-only-testing:SharpeeIDETests/WorldIndexTests` printed "Executed 41 tests, with 0 failures". Among them is `testLanguageWithNoNounExtractorRendersItsOwnState`, which runs the real analyzer on Fernhill's IR with its language set to xx-YY.
+  - Full suites after the fix-ups:
+    - devkit: 37 files, 252 passed, 1 skipped (the skip predates this work).
+    - testing-surface: 28 files, 273 passed.
+    - branch-tester: 43 files, 525 passed.
+    - transcript-tester: 29 files, 386 passed.
+    - ide-protocol: 7 files, 67 passed.
+  - The Chord pin and the toolchain are both 4.1.0.
+- **Status**: DONE
 
 ### Phase 5: Chord Writer shows where a noun has no text
 - **Tier**: Large
@@ -212,7 +243,7 @@ David approved the plan with option (b) from the plan review:
   - The pinned xcodebuild invocation, limited to the lens real-path test, reports "with 0 failures", and that test asserts the selected range's text reads "whetstone".
   - `dotnet test tools/ide/PaneHost.Tests` reports no failures for the range-request tests.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-23)
 
 ### Phase 6: The gates pass and the records point at what landed
 - **Tier**: Small

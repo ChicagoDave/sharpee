@@ -1,0 +1,25 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Scullery",
+          "Jars and crocks crowd the shelf above the sink."
+        ]
+      },
+      "id": "sclopen1",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Larder"
+        ]
+      },
+      "command": "north",
+      "id": "sclturn1",
+      "type": "turn"
+    }
+  ],
+  "id": "sclmain1"
+}

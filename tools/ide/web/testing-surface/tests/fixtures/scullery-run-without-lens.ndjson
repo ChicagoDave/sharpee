@@ -1,0 +1,8 @@
+{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","transcriptCount":1,"mode":"tree"}
+{"schemaVersion":2,"seq":1,"elapsedMs":24,"type":"transcript-start","file":"sclmain1","label":"opening-scullery","index":0,"commandCount":2}
+{"schemaVersion":2,"seq":2,"elapsedMs":24,"type":"command-result","file":"sclmain1","line":0,"input":"(opening)","passed":true,"expectedFailure":false,"skipped":false,"cardId":"sclopen1","assertionResults":[{"description":"contains \"Scullery\"","passed":true},{"description":"contains \"Jars and crocks crowd the shelf above the sink.\"","passed":true}]}
+{"schemaVersion":2,"seq":3,"elapsedMs":29,"type":"command-result","file":"sclmain1","line":0,"input":"north","passed":true,"expectedFailure":false,"skipped":false,"cardId":"sclturn1","turn":1,"assertionResults":[{"description":"contains \"Larder\"","passed":true}]}
+{"schemaVersion":2,"seq":4,"elapsedMs":29,"type":"transcript-end","file":"sclmain1","status":"passed","passed":2,"failed":0,"expectedFailures":0,"skipped":0,"duration":5}
+{"schemaVersion":2,"seq":5,"elapsedMs":37,"type":"derived-branch","label":"story · before the game starts","span":{"line":59,"column":1,"endLine":61,"endColumn":11},"status":"passed"}
+{"schemaVersion":2,"seq":6,"elapsedMs":38,"type":"derived-summary","branches":{"declared":1,"exercised":1,"passed":1,"failed":0,"gaps":[]},"endings":{"declared":0,"reached":0,"unreached":[],"unnamed":[]},"rooms":{"declared":2,"entered":2,"unentered":[]}}
+{"schemaVersion":2,"seq":7,"elapsedMs":38,"type":"run-end","totalPassed":2,"totalFailed":0,"totalExpectedFailures":0,"totalSkipped":0,"totalErrors":0,"totalUnreached":0,"totalDuration":5,"exitCode":0}

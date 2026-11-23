@@ -124,7 +124,11 @@ describe('sharpee test — the claims tier runs when the manifest names a file (
     expect(derivedAt).toBeGreaterThan(-1);
     expect(claimsAt).toBeGreaterThan(derivedAt);
     expect(ratioAt).toBeGreaterThan(claimsAt);
-    expect(types.indexOf('run-end')).toBe(ratioAt + 1);
+    // Only the examinable lens's tier (ADR-408 D8) comes between the claims ratio and `run-end`.
+    const runEndAt = types.indexOf('run-end');
+    expect(runEndAt).toBeGreaterThan(ratioAt);
+    expect(types.slice(ratioAt + 1, runEndAt).every((type) => typeof type === 'string' && type.startsWith('lens-'))).toBe(true);
+    expect(types[runEndAt - 1]).toBe('lens-summary');
     const claims = events.filter((event) => event.type === 'claim-result');
     expect(claims.map((event) => [event.name, event.verdict, event.settledBy])).toEqual([
       ['the note has been read', 'held', 'witness'],
@@ -260,7 +264,11 @@ describeFerry('REAL-PATH: the ferry\'s claims through sharpee test (ADR-365 end-
     expect(withClaims.stdout[withTally]).toBe('10 cards passing, 12 assertions passing');
     expect(without.stdout[withoutTally]).toBe('10 cards passing, 11 assertions passing');
     const butTally = (lines: string[], tally: number) => lines.filter((_, index) => index !== tally);
-    expect(butTally(withClaims.stdout.slice(1, heading - 1), withTally - 1)).toEqual(butTally(without.stdout.slice(1), withoutTally - 1));
+    // Without the claims, the examinable lens's report (ADR-408 D8) follows the
+    // derived report where the claims would; both are cut at the tier after it.
+    const lensHeading = without.stdout.indexOf('Examinable lens:');
+    expect(lensHeading).toBeGreaterThan(withoutTally);
+    expect(butTally(withClaims.stdout.slice(1, heading - 1), withTally - 1)).toEqual(butTally(without.stdout.slice(1, lensHeading - 1), withoutTally - 1));
   });
 });
 

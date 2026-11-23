@@ -10,9 +10,10 @@
  * Public interface: `RunEventStream`, `ndjsonEventLine`, and the five
  * `Streamable*` result shapes its methods take — kept (ADR-340 D4) because
  * they are the parameter types of public methods; the barrel exports them.
- * The two derived shapes (ADR-356) and the two claims shapes (ADR-365 D6,
- * ADR-367 D6) are the wire's own payloads minus the envelope:
- * `branch-tester` maps its outcomes onto them, this module sequences them.
+ * The two derived shapes (ADR-356), the two claims shapes (ADR-365 D6,
+ * ADR-367 D6) and the two lens shapes (ADR-408 D8) are the wire's own
+ * payloads minus the envelope: `branch-tester` and devkit map their outcomes
+ * onto them, this module sequences them.
  * Owner context: transcript-tester (testing tooling). The wire SHAPES are owned
  *   by `@sharpee/ide-protocol`; this module only builds and sequences them.
  *
@@ -32,6 +33,8 @@ import type {
   DerivedRunSummaryEvent,
   ClaimResultEvent,
   ClaimsSummaryEvent,
+  LensFindingEvent,
+  LensSummaryEvent,
   RunEventEnvelope,
   CommandCause,
 } from '@sharpee/ide-protocol';
@@ -61,6 +64,16 @@ export type StreamableClaimResult = Omit<ClaimResultEvent, keyof RunEventEnvelop
 
 /** The claims tier's ratio as the wire carries it: the `claims-summary` payload without its envelope. */
 export type StreamableClaimsSummary = Omit<ClaimsSummaryEvent, keyof RunEventEnvelope | 'type'>;
+
+/**
+ * One examinable-lens finding as the wire carries it (ADR-408 D8): the
+ * `lens-finding` payload without its envelope, built by devkit's lens tier
+ * with every span resolved.
+ */
+export type StreamableLensFinding = Omit<LensFindingEvent, keyof RunEventEnvelope | 'type'>;
+
+/** The lens tier's soundness line or refusal as the wire carries it: the `lens-summary` payload without its envelope. */
+export type StreamableLensSummary = Omit<LensSummaryEvent, keyof RunEventEnvelope | 'type'>;
 
 /**
  * What the stream needs from ONE command's outcome — structurally, not by name.
@@ -439,6 +452,22 @@ export class RunEventStream {
   /** The claims tier's held-over-declared ratio (ADR-365 D6) — once per run, after every `claim-result`. */
   claimsSummary(summary: StreamableClaimsSummary): void {
     const event: ClaimsSummaryEvent = { ...this.envelope(), type: 'claims-summary', ...summary };
+    this.write(event);
+  }
+
+  /**
+   * One examinable-lens finding (ADR-408 D8) — emitted after the claims
+   * tier, one per folded finding. devkit's lens tier builds the payload;
+   * this only sequences it.
+   */
+  lensFinding(row: StreamableLensFinding): void {
+    const event: LensFindingEvent = { ...this.envelope(), type: 'lens-finding', ...row };
+    this.write(event);
+  }
+
+  /** The lens tier's soundness line or refusal (ADR-408 D8) — once per run, after every `lens-finding`. */
+  lensSummary(summary: StreamableLensSummary): void {
+    const event: LensSummaryEvent = { ...this.envelope(), type: 'lens-summary', ...summary };
     this.write(event);
   }
 

@@ -160,18 +160,14 @@ export {
 } from './walk/story-walk.js';
 // The examinable lens (ADR-294 D23, ADR-407, ADR-408): description nouns the
 // player cannot use, or that name a thing with no text, through the real engine.
+// The document it writes is `@sharpee/ide-protocol`'s `LensOutput` (ADR-408
+// D4); import the document's types from there.
 export {
   runExaminableLens,
   countDeclaredRooms,
   type ExaminableLensOptions,
-  type ExaminableLensReport,
-  type ExaminableLensRefusal,
-  type ExaminableLensResult,
-  type ExaminableRoom,
   type LensEngine,
   type LensGame,
-  type ProsePassage,
-  type UnreachedRoom,
 } from './lens/examinable-lens.js';
 export { planRoomRoutes, type RoomRoute, type RoomRoutes, type RouteStep, type UnroutedRoom } from './lens/room-routes.js';
 export {
@@ -179,13 +175,13 @@ export {
   classifyCandidates,
   foldFindings,
   isFinding,
-  type ExaminableFinding,
-  type ExaminableKind,
-  type ExaminableRow,
+  sourceIdentity,
+  unionSources,
   type ExamineTurn,
   type ExamineVerdict,
+  type IrIdOf,
 } from './lens/examinable-classify.js';
-export { formatExaminableReport } from './lens/examinable-report.js';
+export { formatExaminableReport, type LensSourceLocator, type LensSourcePlace } from './lens/examinable-report.js';
 export { necessaryIdentity, IDENTITY_IGNORES, type IdentityIgnore } from './claims/claim-identity.js';
 export { runClaims, formatClaimsRun, type ClaimsRunOptions } from './claims/claims-runner.js';
 // The claims tier's result data, declared once and browser-safe: the walk,

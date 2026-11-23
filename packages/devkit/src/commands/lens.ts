@@ -12,6 +12,9 @@
  * each room it did not reach with the reason. All of that is branch-tester's
  * `runExaminableLens` and its words are `formatExaminableReport`; this module
  * owns the arguments, the story file, the extractor lookup and the output.
+ * `--json` prints `@sharpee/ide-protocol`'s `LensOutput` (ADR-408 D4); the
+ * console form prints each source's file and line, resolved here from the
+ * IR (`lens-sources.ts`, ADR-333 D2).
  *
  * The story is compiled here (`compileChordStory`), never read from a `dist/`
  * IR, so a stale build cannot reach the lens. The defaults are seed 1209 and
@@ -30,6 +33,7 @@ import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 import { formatExaminableReport, runExaminableLens, type LensGame } from '@sharpee/branch-tester';
 import { compileChordStory, findStoryFile, loadAuthorGame } from '../standalone/author-game.js';
+import { lensSourceLocator } from './lens-sources.js';
 import { nounExtractorLookup } from './world-index.js';
 
 const USAGE = 'usage: sharpee lens examinable [name|dir|file.story] [--seed N] [--max-seconds N] [--all] [--json]';
@@ -93,18 +97,22 @@ export async function runLensCommand(args: readonly string[]): Promise<number> {
   }
 
   const ir = compileChordStory(storyFile);
-  const result = await runExaminableLens(
+  const storyName = path.basename(storyFile);
+  const output = await runExaminableLens(
     ir,
     (): Promise<LensGame> => loadAuthorGame(storyFile, { seed: parsed.seed, undoSnapshots: 0 }),
-    { story: path.basename(storyFile), seed: parsed.seed, lookup: nounExtractorLookup, maxSeconds: parsed.maxSeconds },
+    { story: storyName, seed: parsed.seed, lookup: nounExtractorLookup, maxSeconds: parsed.maxSeconds },
   );
 
-  if ('refused' in result) {
-    if (parsed.json) process.stdout.write(`${JSON.stringify(result)}\n`);
-    else console.error(result.refused);
+  if (!output.ok || !output.report) {
+    if (parsed.json) process.stdout.write(`${JSON.stringify(output)}\n`);
+    else console.error(output.refusal?.message ?? 'lens: the lens wrote neither a report nor a refusal');
     return 1;
   }
-  if (parsed.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  else process.stdout.write(`${formatExaminableReport(result, { all: parsed.all }).join('\n')}\n`);
+  if (parsed.json) process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+  else {
+    const lines = formatExaminableReport(output.story, output.report, { all: parsed.all, locate: lensSourceLocator(ir, storyName) });
+    process.stdout.write(`${lines.join('\n')}\n`);
+  }
   return 0;
 }

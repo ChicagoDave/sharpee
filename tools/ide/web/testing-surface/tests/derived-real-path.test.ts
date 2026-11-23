@@ -74,8 +74,11 @@ describe.skipIf(!available)('the derived tier from a real run of the orchard tes
     expect(at).toBeGreaterThan(0);
     const expected = derivedReportLines(summary, 'orchard.story');
     expect(stderrLines.slice(at - 1, at - 1 + expected.length)).toEqual(expected);
-    // The orchard's manifest selects no claims fragment, so the derived
-    // report is the end of stderr: nothing follows it.
-    expect(stderrLines.slice(at - 1 + expected.length)).toEqual([]);
+    // The orchard's manifest selects no claims fragment, so what follows the
+    // derived report is the examinable lens's tier (ADR-408 D8) — a blank
+    // line, its heading, then its report — and nothing of the derived tier's.
+    const rest = stderrLines.slice(at - 1 + expected.length);
+    expect(rest.slice(0, 2)).toEqual(['', 'Examinable lens:']);
+    expect(rest.some(line => line.startsWith('Branches exercised:'))).toBe(false);
   }, 300_000);
 });
