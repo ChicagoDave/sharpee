@@ -642,6 +642,7 @@ function fixedExtractor(words: string[], headStopwords: string[]): NounExtractor
     extract: (text) =>
       text.length === 0 ? [] : [{ text: words.join(' '), words, head: words[words.length - 1], offset: 0 }],
     tokenize: (text) => text.toLowerCase().split(/\s+/).filter(Boolean),
+    numberForms: (noun) => ({ singular: noun, plural: noun }),
   };
 }
 

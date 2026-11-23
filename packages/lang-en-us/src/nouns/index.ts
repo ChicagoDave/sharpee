@@ -11,7 +11,8 @@
  * module, so a published story never carries `compromise` (ADR-407 D3, AC-3).
  * Readers find it by convention through if-domain's `resolveNounExtractor`.
  *
- * Public interface: `nounExtractor` (languageCode 'en-US', `filters`, `extract`, `tokenize`).
+ * Public interface: `nounExtractor` (languageCode 'en-US', `filters`, `extract`, `tokenize`,
+ * `numberForms`, which reads `../singularize.ts` and `../pluralize.ts`; ADR-407 Amendment 4).
  *
  * Owner context: @sharpee/lang-en-us, `nouns` subpath — English prose reading.
  *
@@ -21,6 +22,7 @@
 import type { NounCandidate, NounExtractor } from '@sharpee/if-domain';
 import { ENGLISH_NOUN_FILTERS, extractHeuristicPhrases, tokenize, type HeuristicPhrase } from './heuristic.js';
 import { extractTaggedPhrases } from './tagger.js';
+import { numberForms } from '../singularize.js';
 
 /**
  * The tagger's phrases, or none when it fails.
@@ -82,4 +84,5 @@ export const nounExtractor: NounExtractor = {
   filters: ENGLISH_NOUN_FILTERS,
   extract,
   tokenize: tokenizeEnglish,
+  numberForms,
 };

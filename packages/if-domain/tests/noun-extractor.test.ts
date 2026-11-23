@@ -29,6 +29,7 @@ function extractorFor(languageCode: string): NounExtractor {
     filters: { headStopwords: ['north'], minHeadLength: 3, maxPhraseWords: 3 },
     extract: () => [],
     tokenize: () => [],
+    numberForms: (noun: string) => ({ singular: noun, plural: noun + 's' }),
   };
 }
 
@@ -80,6 +81,15 @@ describe('resolveNounExtractor (ADR-407 D3, D6)', () => {
     expect(
       resolveNounExtractor('en-US', loaderFor('@sharpee/lang-en-us/nouns', { nounExtractor: notAnExtractor })),
     ).toEqual({ found: false, refusal: noNounExtractorRefusal('en-US') });
+  });
+
+  it('refuses an extractor with no numberForms function (Amendment 4)', () => {
+    const { numberForms: _dropped, ...withoutNumber } = extractorFor('en-US');
+    const module: NounsModule = { nounExtractor: withoutNumber as NounExtractor };
+    expect(resolveNounExtractor('en-US', loaderFor('@sharpee/lang-en-us/nouns', module))).toEqual({
+      found: false,
+      refusal: noNounExtractorRefusal('en-US'),
+    });
   });
 
   it('refuses an extractor whose filters are missing or not the NounFilters shape (Amendment 3)', () => {

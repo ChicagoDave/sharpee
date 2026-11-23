@@ -149,3 +149,158 @@ The extractor now reaches more phrases (Fernhill 238 → 514), and the moved pin
 ---
 
 **Progressive update**: checkpoint 2026-11-22 21:58 — Phase 3 recorded DONE with its Demonstrated line verified by reruns; 838 filed for the website landing wording.
+
+## Activity Log (auto-captured)
+```
+[03:24:47] EDIT: File edited — docs/work/description-noun-lens/plan-20261122-description-noun-lens.md
+[03:24:51] EDIT: File changed via Bash — docs/work/description-noun-lens/plan-20261122-description-noun-lens.md
+[03:28:21] EDIT: File edited — packages/if-domain/src/nouns.ts
+[03:28:21] EDIT: File edited — packages/if-domain/src/nouns.ts
+[03:28:21] EDIT: File edited — packages/if-domain/src/nouns.ts
+[03:28:21] EDIT: File edited — packages/if-domain/src/nouns.ts
+[03:28:22] EDIT: File edited — packages/if-domain/src/index.ts
+[03:28:30] EDIT: File edited — packages/if-domain/tests/noun-extractor.test.ts
+[03:28:30] EDIT: File edited — packages/if-domain/tests/noun-extractor.test.ts
+[03:28:43] EDIT: File edited — packages/lang-en-us/src/nouns/heuristic.ts
+[03:28:43] EDIT: File edited — packages/lang-en-us/src/nouns/heuristic.ts
+[03:28:43] EDIT: File edited — packages/lang-en-us/src/nouns/heuristic.ts
+[03:28:43] EDIT: File edited — packages/lang-en-us/src/nouns/index.ts
+[03:28:43] EDIT: File edited — packages/lang-en-us/src/nouns/index.ts
+[03:28:44] EDIT: File edited — packages/lang-en-us/src/nouns/index.ts
+[03:28:49] EDIT: File changed via Bash — packages/if-domain/src/index.ts
+[03:28:49] EDIT: File changed via Bash — packages/if-domain/src/nouns.ts
+[03:28:49] EDIT: File changed via Bash — packages/if-domain/tests/noun-extractor.test.ts
+[03:28:49] EDIT: File changed via Bash — packages/lang-en-us/src/nouns/heuristic.ts
+[03:28:49] EDIT: File changed via Bash — packages/lang-en-us/src/nouns/index.ts
+[03:29:01] EDIT: File edited — packages/lang-en-us/tests/nouns.test.ts
+[03:29:05] EDIT: File changed via Bash — packages/lang-en-us/tests/nouns.test.ts
+[03:29:51] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:29:51] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:29:51] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:20] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:20] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:21] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:42] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:43] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:43] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:43] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:43] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:44] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:30:44] EDIT: File edited — packages/world-index/src/incomplete.ts
+[03:31:10] EDIT: File edited — packages/world-index/src/unnamed.ts
+[03:31:11] EDIT: File edited — packages/world-index/src/unnamed.ts
+[03:31:11] EDIT: File edited — packages/world-index/src/unnamed.ts
+[03:31:11] EDIT: File edited — packages/world-index/src/unnamed.ts
+[03:31:11] EDIT: File edited — packages/world-index/src/document.ts
+[03:31:12] EDIT: File edited — packages/world-index/src/document.ts
+[03:31:12] EDIT: File edited — packages/world-index/src/document.ts
+[03:31:12] EDIT: File edited — packages/world-index/src/document.ts
+[03:31:12] EDIT: File edited — packages/world-index/src/document.ts
+[03:31:26] EDIT: File edited — packages/world-index/src/analyze.ts
+[03:31:27] EDIT: File edited — packages/world-index/src/analyze.ts
+[03:31:34] EDIT: File changed via Bash — packages/world-index/src/analyze.ts
+[03:31:34] EDIT: File changed via Bash — packages/world-index/src/document.ts
+[03:31:34] EDIT: File changed via Bash — packages/world-index/src/incomplete.ts
+[03:31:34] EDIT: File changed via Bash — packages/world-index/src/unnamed.ts
+[03:31:50] EDIT: File written — packages/world-index/src/cli.ts
+[03:32:01] EDIT: File edited — packages/devkit/src/commands/world-index.ts
+[03:32:01] EDIT: File edited — packages/devkit/src/commands/world-index.ts
+[03:32:08] EDIT: File edited — packages/world-index/src/index.ts
+[03:32:09] EDIT: File changed via Bash — packages/devkit/src/commands/world-index.ts
+[03:32:09] EDIT: File changed via Bash — packages/world-index/src/cli.ts
+[03:32:09] EDIT: File changed via Bash — packages/world-index/src/index.ts
+[03:32:31] EDIT: File edited — tools/explorer-probe/lens-examinable.js
+[03:32:31] EDIT: File changed via Bash — tools/explorer-probe/lens-examinable.js
+[03:32:40] EDIT: File edited — packages/world-index/package.json
+[03:32:40] EDIT: File edited — packages/world-index/tsconfig.json
+[03:32:40] EDIT: File edited — packages/devkit/package.json
+[03:32:42] EDIT: File changed via Bash — packages/devkit/package.json
+[03:32:42] EDIT: File changed via Bash — packages/world-index/package.json
+[03:32:42] EDIT: File changed via Bash — packages/world-index/tsconfig.json
+[03:32:42] EDIT: File changed via Bash — pnpm-lock.yaml
+[03:33:27] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:27] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:28] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:28] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:28] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:28] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:29] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:29] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:29] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:29] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:30] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:30] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:30] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:33:38] EDIT: File changed via Bash — packages/world-index/tests/incomplete.test.ts
+[03:33:57] EDIT: File written — packages/world-index/tests/language-boundary.test.ts
+[03:33:57] EDIT: File changed via Bash — packages/world-index/tests/language-boundary.test.ts
+[03:34:18] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:34:18] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:34:39] EDIT: File edited — packages/world-index/tests/roles.test.ts
+[03:34:39] EDIT: File edited — packages/world-index/tests/roles.test.ts
+[03:34:39] EDIT: File edited — packages/world-index/tests/roles.test.ts
+[03:34:39] EDIT: File edited — packages/world-index/tests/roles.test.ts
+[03:34:39] EDIT: File edited — packages/world-index/tests/roles.test.ts
+[03:34:40] EDIT: File edited — packages/world-index/tests/vocabulary.test.ts
+[03:34:40] EDIT: File edited — packages/world-index/tests/vocabulary.test.ts
+[03:34:40] EDIT: File changed via Bash — packages/world-index/tests/roles.test.ts
+[03:34:40] EDIT: File changed via Bash — packages/world-index/tests/vocabulary.test.ts
+[03:34:53] EDIT: File edited — packages/world-index/tests/vocabulary.test.ts
+[03:34:53] EDIT: File edited — packages/world-index/tests/unnamed.test.ts
+[03:34:53] EDIT: File edited — packages/world-index/tests/unnamed.test.ts
+[03:34:53] EDIT: File edited — packages/world-index/tests/unnamed.test.ts
+[03:34:54] EDIT: File edited — packages/world-index/tests/unnamed.test.ts
+[03:34:54] EDIT: File edited — packages/world-index/tests/scale-timing.ts
+[03:34:54] EDIT: File edited — packages/world-index/tests/scale-timing.ts
+[03:35:06] EDIT: File edited — packages/world-index/tests/cli.test.ts
+[03:35:06] EDIT: File edited — packages/world-index/tests/cli.test.ts
+[03:35:07] EDIT: File edited — packages/world-index/tests/cli.test.ts
+[03:35:21] EDIT: File edited — packages/devkit/src/commands/world-index.test.ts
+[03:35:21] EDIT: File edited — packages/devkit/src/commands/world-index.test.ts
+[03:35:22] EDIT: File edited — packages/devkit/src/commands/world-index.test.ts
+[03:35:22] EDIT: File edited — packages/devkit/src/commands/world-index.test.ts
+[03:35:28] EDIT: File changed via Bash — packages/devkit/src/commands/world-index.test.ts
+[03:35:28] EDIT: File changed via Bash — packages/world-index/tests/cli.test.ts
+[03:35:28] EDIT: File changed via Bash — packages/world-index/tests/scale-timing.ts
+[03:35:28] EDIT: File changed via Bash — packages/world-index/tests/unnamed.test.ts
+[03:36:52] EDIT: File changed via Bash — packages/sharpee/docs/genai-api/if-domain.md
+[03:36:52] EDIT: File changed via Bash — packages/sharpee/docs/genai-api/index.md
+[03:37:38] EDIT: File edited — packages/devkit/tests/story-template.test.ts
+[03:37:38] EDIT: File edited — packages/devkit/tests/story-template.test.ts
+[03:37:40] EDIT: File changed via Bash — packages/devkit/tests/story-template.test.ts
+[03:38:04] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/9377e908-756e-4b8c-9f3d-a6d37828274c/scratchpad/probe-moves.cjs
+[03:38:31] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/9377e908-756e-4b8c-9f3d-a6d37828274c/scratchpad/probe-overlap.cjs
+[03:38:49] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/9377e908-756e-4b8c-9f3d-a6d37828274c/scratchpad/compare-ac4.cjs
+[03:39:08] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/9377e908-756e-4b8c-9f3d-a6d37828274c/scratchpad/probe-counts.cjs
+[03:39:36] EDIT: File written — docs/work/description-noun-lens/census-world-index.md
+[03:39:47] EDIT: File edited — docs/work/description-noun-lens/census-world-index.md
+[03:39:47] EDIT: File edited — docs/work/description-noun-lens/plan-20261122-description-noun-lens.md
+[03:39:54] EDIT: File changed via Bash — docs/work/description-noun-lens/census-world-index.md
+[03:54:56] EDIT: File edited — packages/devkit/templates/story-chord/story.story.template
+[03:54:56] EDIT: File changed via Bash — packages/devkit/templates/story-chord/story.story.template
+[03:54:56] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/story-templates/story.story.template
+[03:55:19] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/9377e908-756e-4b8c-9f3d-a6d37828274c/scratchpad/probe-unreached.cjs
+[03:55:35] EDIT: File edited — packages/world-index/tests/roles.test.ts
+[03:55:35] EDIT: File edited — packages/world-index/tests/roles.test.ts
+[03:56:04] EDIT: File edited — packages/world-index/tests/roles.test.ts
+[03:56:04] EDIT: File edited — packages/world-index/tests/unnamed.test.ts
+[03:56:04] EDIT: File edited — packages/world-index/tests/cli.test.ts
+[03:56:18] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:56:18] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:56:28] EDIT: File edited — packages/world-index/tests/incomplete.test.ts
+[03:56:52] BUILD: Build passed — grep -n '"typecheck' packages/devkit/package.json packages/if-domain/package.jso
+[03:56:58] BUILD: Build passed — npx tsc -p tsconfig.test.json 2>&1 | grep -E "world-index|story-template" | head
+[03:57:11] EDIT: File edited — docs/work/description-noun-lens/census-world-index.md
+[03:57:12] EDIT: File edited — docs/work/description-noun-lens/census-world-index.md
+[03:57:24] EDIT: File edited — docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md
+[03:57:24] EDIT: File edited — docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md
+[03:57:27] EDIT: File changed via Bash — docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md
+[03:57:34] EDIT: File edited — docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md
+[03:58:02] EDIT: File edited — docs/work/description-noun-lens/plan-20261122-description-noun-lens.md
+[03:59:54] EDIT: File edited — docs/work/description-noun-lens/plan-20261122-description-noun-lens.md
+[04:01:04] EDIT: File written — docs/context/session-20261122-2021-description-noun-lens.md
+[04:01:10] EDIT: File changed via Bash — docs/context/session-20261122-2021-description-noun-lens.md
+[04:18:21] TEST: Tests passed — 14 passed 143 passed
+[04:18:29] EDIT: File written — .commit-msg
+[04:18:32] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh
+```

@@ -11,7 +11,7 @@
  * published story never carries the lookup: only readers of prose import it,
  * from this subpath (ADR-407 AC-3).
  *
- * Public interface: the types `NounCandidate`, `NounFilters`, `NounExtractor`, `NounsModule`,
+ * Public interface: the types `NounCandidate`, `NounFilters`, `NounNumberForms`, `NounExtractor`, `NounsModule`,
  * `NounsModuleLoader`, `NounExtractorResolution`, `NounExtractorLookup`; the
  * functions `resolveNounExtractor`, `nounExtractorModule`,
  * `noNounExtractorRefusal`, `languageMismatchRefusal`.
@@ -52,6 +52,19 @@ export interface NounFilters {
 }
 
 /**
+ * One noun's two grammatical numbers, by a language's number rules (ADR-407 D5, Amendment 4).
+ *
+ * The noun is plural when it equals `plural` and differs from `singular`. When
+ * the two are the same word (`sheep`), the noun has no other form to try.
+ */
+export interface NounNumberForms {
+  /** The singular, lowercased: `candle` for `candles`. */
+  readonly singular: string;
+  /** The plural, lowercased: `candles` for `candle`. */
+  readonly plural: string;
+}
+
+/**
  * A language's noun extractor (ADR-407 D3).
  *
  * Each language package exports one, named `nounExtractor`, from a `nouns`
@@ -72,6 +85,14 @@ export interface NounExtractor {
    * `extract` splits words the same way. An empty passage returns []. Never throws on prose.
    */
   tokenize(text: string): string[];
+  /**
+   * One noun's singular and plural, from the language's own number rules, never a
+   * tagger (ADR-407 D5, Amendment 4). A lens types the other form a player might.
+   *
+   * @param noun one word, any casing (`candles`, `Candle`)
+   * @returns both forms, lowercased; never throws
+   */
+  numberForms(noun: string): NounNumberForms;
 }
 
 /** What a language's `nouns` module exports, as far as a reader of prose is concerned. */
@@ -136,8 +157,8 @@ export function languageMismatchRefusal(engineLanguageCode: string, storyLanguag
  * Find a language's noun extractor by convention (ADR-407 D3, D6).
  *
  * Loads {@link nounExtractorModule}(languageCode) through `load`, and accepts it
- * only when it exports a `nounExtractor` that has `extract` and `tokenize`
- * functions, `filters` of the {@link NounFilters} shape, and whose `languageCode`
+ * only when it exports a `nounExtractor` that has `extract`, `tokenize` and
+ * `numberForms` functions, `filters` of the {@link NounFilters} shape, and whose `languageCode`
  * is exactly the code asked for. Every other
  * outcome (the module is missing, it throws while loading, it exports no
  * extractor, or the extractor is for another language) is the refusal line
@@ -161,6 +182,7 @@ export function resolveNounExtractor(languageCode: string, load: NounsModuleLoad
     extractor === null ||
     typeof extractor.extract !== 'function' ||
     typeof extractor.tokenize !== 'function' ||
+    typeof extractor.numberForms !== 'function' ||
     !isNounFilters(extractor.filters) ||
     extractor.languageCode !== languageCode
   ) {

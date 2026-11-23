@@ -24,6 +24,7 @@ export * from './parser-language-provider.js';
 export type {
   NounCandidate,
   NounFilters,
+  NounNumberForms,
   NounExtractor,
   NounsModule,
   NounsModuleLoader,

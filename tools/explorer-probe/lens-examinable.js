@@ -15,25 +15,35 @@
  *
  * The three design questions from the plan, and how each was settled:
  *
- * 1. EXTRACTION — `@sharpee/world-index`'s `extractNounPhrases` (ADR-321 D6b),
- *    the shipping, corpus-pinned heuristic the IDE's world index already uses.
- *    No NLP dependency, no second heuristic. `readsAsThing` from the same
- *    module is used ONLY to hide non-resolutions whose head noun is not a
- *    thing an author could implement (`the dark`, `the cold`); it never
- *    decides whether a phrase resolved, and `--all` shows what it hid.
+ * 1. EXTRACTION — the story language's noun extractor (ADR-407 D2, D3). The
+ *    lens reads the compiled IR's `phrases.defaultLocale` and finds that
+ *    language's extractor through if-domain's lookup, as devkit's
+ *    `nounExtractorLookup` applies it: the same lookup `sharpee world-index`
+ *    uses, so the IDE's Incomplete view and this lens read the same nouns.
+ *    For English that is `@sharpee/lang-en-us/nouns`, ADR-321's article
+ *    heuristic and the `compromise` tagger, unioned. The lens holds no
+ *    English. The tagger was added because the heuristic alone covered 66% of
+ *    secret-letter's head-noun mentions (measured 2026-09-23), most misses
+ *    having no article before them. `readsAsThing` from `@sharpee/world-index`
+ *    is used ONLY to hide non-resolutions whose head noun is not a thing an
+ *    author could implement (`the dark`, `the cold`); it never decides
+ *    whether a phrase resolved, and `--all` shows what it hid. It stays in
+ *    world-index until a later record moves it (ADR-407's follow-on).
  *
- *    Recall, measured on secret-letter 2026-09-23 against the story's own
- *    entity names in the prose the lens saw: 520 head-noun mentions, 66%
- *    covered by an extracted phrase, 34% missed. Of the misses, 146 have no
- *    article before them — `your cloak`, `with shoppers`, `woolen cap`,
- *    `wooden crates` — and 33 sit after an article the extractor did anchor
- *    on but ran past (`the wires anchor the support posts` yields `wires
- *    anchor`). Decision: ACCEPT the gap here rather than grow a second
- *    anchor list in this tool. The extractor is `@sharpee/world-index`'s,
- *    pinned by its corpus test and shared with the IDE's static check; the
- *    one extension the numbers argue for — possessive determiners (`your`,
- *    `their`, `its`) as anchors — belongs there, for both consumers, and is
- *    raised as a discussion item, not built.
+ *    LANGUAGE GUARD (ADR-407 D2, D6). Before any prose is read, the lens
+ *    refuses, in one line and with a non-zero exit, a story whose language
+ *    has no extractor (checked before the engine loads, so no room is
+ *    walked), and then an engine whose `languageCode` is not the story's
+ *    (checked on the opening room, before the walk takes a step). It never
+ *    falls back to English rules, which would read as a clean story.
+ *
+ *    NUMBER FORMS (ADR-407 D5, Amendment 4). For each candidate, the
+ *    extractor's `numberForms` says whether its head noun is singular or
+ *    plural and gives the other form, and the lens types both. A form that no
+ *    entity answers while the other resolves is a `number-form` finding,
+ *    naming the form typed, the form that resolved, its sources and the
+ *    engine's reason. A noun the language calls the same in both numbers has
+ *    no other form to try.
  *
  * 2. DEFAULT-RESPONSE DETECTION — by `messageId`. `examining-data.ts`'s
  *    `buildExaminingMessageParams` forces `default_description` whenever
@@ -73,6 +83,8 @@
  *
  * The story must be compiled first (`<dir>/dist/<stem>.ir.json` beside the
  * `.story` file, as `./sharpee compose <story> -o <that path>` writes it).
+ * The IR names the story's language; the engine compiles the `.story` itself.
+ * A refusal is one line on stderr, nothing on stdout, and exit 1.
  * `--all` also prints described resolutions and the rows `readsAsThing`
  * hid. `--json` prints the report below instead of the console form. The
  * walk budgets default to the walker's (seed 1209, 5000 states, 120s,
@@ -91,6 +103,12 @@
  *   not-in-scope        no entity answered to the phrase here: the validator's
  *                       `ENTITY_NOT_FOUND` (as `command.failed`), or a
  *                       blocked `if.event.examined` (in scope, not visible)
+ *   number-form         no entity answered this form (the validator's
+ *                       `ENTITY_NOT_FOUND`) while the noun's other number
+ *                       resolved; `resolvedForm` names the form that did,
+ *                       `target` the thing it reached, `detail` the reason
+ *                       this form failed. A form written in the prose and
+ *                       its other number tried by the lens are both rows.
  *   ambiguous           a `client.query` — several entities answer to the
  *                       phrase; a naming collision, reported apart
  *   unclassified        none of the above — a lens defect, never dropped
@@ -98,20 +116,25 @@
  * Every class but resolved-described is a finding. A not-in-scope finding
  * whose head noun `readsAsThing` rejects is kept in the data with
  * `thing: false` and hidden from the console unless `--all`.
+ * `phrasesExecuted` counts every form typed, both numbers included.
  *
- * REPORT (`--json`, format 1) — the shape a future consumer builds against:
+ * REPORT (`--json`, format 2; format 1 had no number-form class) — the shape
+ * a future consumer builds against:
  *
  *   {
- *     lens: 'examinable', format: 1,
+ *     lens: 'examinable', format: 2,
  *     story, seed,
  *     walk: { stopReason, roomsReached, roomsDeclared, statesDiscovered, walkMs },
  *     phrasesExecuted,
  *     counts: { <class>: n, ... },
- *     findings: [ { phrase, kind, detail, target?, thing, sources: [..],
+ *     findings: [ { phrase, kind, detail, target?, resolvedForm?, thing, sources: [..],
  *                   rooms: [ { roomId, room }, .. ] }, .. ],
  *     rooms:    [ { roomId, room, path: [..commands], ended?, prose: [..],
- *                   rows: [ { phrase, kind, detail, target?, sources, thing }, .. ] }, .. ]
+ *                   rows: [ { phrase, kind, detail, target?, resolvedForm?, sources, thing }, .. ] }, .. ]
  *   }
+ *
+ * A refused run is `{ lens: 'examinable', format: 2, story, refused: <the line> }`
+ * and nothing else: no walk was made.
  *
  * `rooms` is the full record in discovery order, every row included.
  * `findings` folds the finding rows across rooms by (phrase, kind, detail),
@@ -122,12 +145,15 @@
  * is deterministic at a seed and a state budget.
  *
  * REGRESSION PIN — `node --test 'tools/explorer-probe/tests/*.test.js'` pins the
- * classifier, the fixture story under `fixtures/lens-fixture/`, and
- * fernhill's findings at seed 1209 / 600 states, so a prose or extractor
- * change that moves a finding shows up as a diff, not silently.
+ * classifier, the language guard, the fixture story under
+ * `fixtures/lens-fixture/`, and the test stories orchard and scullery, so a
+ * prose or extractor change that moves a finding shows up as a diff, not
+ * silently.
  *
  * Public interface: CLI as above; module — `runLens(storyPath, opts)`,
- * `classify(events, result, error)`, `foldFindings(rooms)`, `isFinding(row)`.
+ * `classify(events, result, error)`, `classifyCandidates(folded, runForm, extractor)`,
+ * `phrasesIn(prose, extractor)`, `guardLanguage(storyCode, engineCode, lookup)`,
+ * `foldFindings(rooms)`, `isFinding(row)`, `printReport(report, opts, out)`.
  * Owner context: tools/ — the testing-explorer, outside the published packages.
  */
 
@@ -135,14 +161,15 @@ const path = require('node:path');
 
 const REPO = path.resolve(__dirname, '..', '..');
 const { explore } = require('./explore.js');
+const { loadStoryIR } = require('./dimensions.js');
 const { readsAsThing } = require(path.join(REPO, 'packages/world-index/dist/index.js'));
-// BRIDGE until the description-noun-lens plan's Phase 4: ADR-321's article heuristic
-// moved, unchanged, from world-index to lang-en-us (ADR-407 D8), so the lens reads it
-// there and its pins do not move. Phase 4 replaces this with the story language's
-// whole extractor, found through if-domain's lookup.
-const { extractHeuristicPhrases } = require(path.join(REPO, 'packages/lang-en-us/dist/nouns/heuristic.js'));
-const extractNounPhrases = (text) =>
-  extractHeuristicPhrases(text).map((found) => ({ phrase: found.words.join(' '), words: found.words }));
+const { languageMismatchRefusal } = require(path.join(REPO, 'packages/if-domain/dist/nouns.js'));
+// The lookup `sharpee world-index` applies: if-domain's `resolveNounExtractor`
+// loading `@sharpee/lang-<code>/nouns` through devkit's own `require`.
+const { nounExtractorLookup } = require(path.join(REPO, 'packages/devkit/dist/commands/world-index.js'));
+
+/** A refusal by ADR-407 D6, thrown from inside the walk's first hook and caught by `runLens`. */
+class LensRefusal extends Error {}
 
 /** Examine message ids that mean "resolved, but the author wrote nothing." */
 const DEFAULT_RESPONSE_SUFFIXES = ['.default_description', '.default_description_self', '.nothing_special'];
@@ -270,30 +297,124 @@ function visibleProse(world, room, language) {
 }
 
 /**
- * Fold the phrases across a room's prose: one row per distinct phrase, with
+ * Fold the candidates across a room's prose: one row per distinct phrase, with
  * every source it came from.
  *
- * @returns Map<phrase, { noun, sources: string[] }>
+ * @param prose the room's passages, from `visibleProse`
+ * @param extractor the story language's `NounExtractor`
+ * @returns Map<phrase, { noun: { phrase, words }, sources: string[] }>; the
+ *   phrase is the candidate's lowercased words, joined, as a player would type it
  */
-function phrasesIn(prose) {
+function phrasesIn(prose, extractor) {
   const folded = new Map();
   for (const { source, text } of prose) {
-    for (const noun of extractNounPhrases(text)) {
-      const row = folded.get(noun.phrase) || { noun, sources: [] };
+    for (const candidate of extractor.extract(text)) {
+      const phrase = candidate.words.join(' ');
+      const row = folded.get(phrase) || { noun: { phrase, words: candidate.words }, sources: [] };
       if (!row.sources.includes(source)) row.sources.push(source);
-      folded.set(noun.phrase, row);
+      folded.set(phrase, row);
     }
   }
   return folded;
 }
 
 /**
- * Examine every phrase mentioned in `room`, restoring the room's save before
- * each so no examine sees another's side effects.
+ * A phrase with its head noun in the other grammatical number (ADR-407 D5).
  *
+ * @param words the candidate's words; the last is its head
+ * @param extractor the story language's `NounExtractor`, whose `numberForms` decides
+ * @returns the phrase in the other number, or null when the language gives the
+ *   head no other form (the same word in both numbers)
+ */
+function otherNumber(words, extractor) {
+  const head = words[words.length - 1];
+  const forms = extractor.numberForms(head);
+  if (forms.singular === forms.plural) return null;
+  const other = head === forms.plural ? forms.singular : head === forms.singular ? forms.plural : null;
+  return other === null ? null : [...words.slice(0, -1), other].join(' ');
+}
+
+/** The engine answered with an entity: examining described it or gave its default. */
+const resolves = (verdict) => verdict.kind === 'resolved-described' || verdict.kind === 'resolved-default';
+
+/** No entity answered at all (the validator's failure); a blocked examine named one, so it does not count. */
+const nothingAnswered = (verdict) => verdict.kind === 'not-in-scope' && verdict.target === undefined;
+
+/** A number-form row: `phrase` found nothing while `resolvedForm` reached a thing. */
+function numberFormRow(phrase, failed, resolvedForm, resolved, sources) {
+  return {
+    phrase,
+    kind: 'number-form',
+    detail: failed.detail,
+    target: resolved.target,
+    resolvedForm,
+    sources: [...sources],
+    thing: true,
+  };
+}
+
+/**
+ * Classify a room's candidates, each in both grammatical numbers (ADR-407 D5, D7).
+ *
+ * Every class is read off the engine's verdicts, which `runForm` supplies; the
+ * candidate list only decides which forms are typed. A written phrase is a
+ * number-form finding when nothing answers it and its other number resolves;
+ * otherwise it keeps its own verdict. The other number of a phrase that
+ * resolves is added as a number-form row when nothing answers it, unless the
+ * prose wrote that form too (its own row covers it). Each distinct form is
+ * typed once.
+ *
+ * @param folded the room's candidates, from `phrasesIn`
+ * @param runForm async (form) => verdict, as `classify` returns it, from typing `examine <form>`
+ * @param extractor the story language's `NounExtractor`
+ * @returns the room's rows, each written phrase in prose order followed by any
+ *   number-form row for its other number
+ */
+async function classifyCandidates(folded, runForm, extractor) {
+  const verdicts = new Map();
+  const verdictOf = async (form) => {
+    if (!verdicts.has(form)) verdicts.set(form, await runForm(form));
+    return verdicts.get(form);
+  };
+  const rows = [];
+  const rowed = new Set();
+  for (const [phrase, { noun, sources }] of folded) {
+    const written = await verdictOf(phrase);
+    const otherPhrase = otherNumber(noun.words, extractor);
+    const other = otherPhrase === null ? null : await verdictOf(otherPhrase);
+    if (other && nothingAnswered(written) && resolves(other)) {
+      rows.push(numberFormRow(phrase, written, otherPhrase, other, sources));
+    } else {
+      rows.push({
+        phrase,
+        kind: written.kind,
+        detail: written.detail,
+        target: written.target,
+        sources: [...sources],
+        // Only a non-resolution is asked "is this even a thing" (readsAsThing's
+        // own contract); a phrase that resolved is a thing by demonstration.
+        thing: written.kind === 'not-in-scope' ? readsAsThing(noun) : true,
+      });
+    }
+    rowed.add(phrase);
+    if (other && !folded.has(otherPhrase) && !rowed.has(otherPhrase) && nothingAnswered(other) && resolves(written)) {
+      rows.push(numberFormRow(otherPhrase, other, phrase, written, sources));
+      rowed.add(otherPhrase);
+    }
+  }
+  return rows;
+}
+
+/**
+ * Examine every candidate mentioned in `room`, in both numbers, restoring the
+ * room's save before each command so no examine sees another's side effects.
+ *
+ * @param ctx the walker's hook context
+ * @param tally counts every form typed
+ * @param extractor the story language's `NounExtractor`
  * @returns the room's report row
  */
-async function examineRoom(ctx, tally) {
+async function examineRoom(ctx, tally, extractor) {
   const { game, world, room, restore } = ctx;
 
   // A room first seen in the move that ENDS the game is not a room the
@@ -309,29 +430,19 @@ async function examineRoom(ctx, tally) {
   }
 
   const prose = visibleProse(world, room, game.engine.getLanguageProvider());
-  const folded = phrasesIn(prose);
+  const folded = phrasesIn(prose, extractor);
 
-  const rows = [];
-  for (const [phrase, { noun, sources }] of folded) {
+  const runForm = async (form) => {
     await restore();
     try {
-      await game.executeCommand('examine ' + phrase);
+      await game.executeCommand('examine ' + form);
     } catch (err) {
       // The harness catches engine errors itself; this is belt and braces.
     }
     tally.executed++;
-    const verdict = classify(game.lastEvents || [], game.lastTurnResult, game.lastError);
-    rows.push({
-      phrase,
-      kind: verdict.kind,
-      detail: verdict.detail,
-      target: verdict.target,
-      sources,
-      // Only a non-resolution is asked "is this even a thing" (readsAsThing's
-      // own contract); a phrase that resolved is a thing by demonstration.
-      thing: verdict.kind === 'not-in-scope' ? readsAsThing(noun) : true,
-    });
-  }
+    return classify(game.lastEvents || [], game.lastTurnResult, game.lastError);
+  };
+  const rows = await classifyCandidates(folded, runForm, extractor);
   await restore();
 
   return {
@@ -371,6 +482,7 @@ function foldFindings(rooms) {
       if (!f) {
         f = { phrase: row.phrase, kind: row.kind, detail: row.detail, thing: row.thing, sources: [], rooms: [] };
         if (row.target !== undefined) f.target = row.target;
+        if (row.resolvedForm !== undefined) f.resolvedForm = row.resolvedForm;
         byKey.set(key, f);
       }
       for (const s of row.sources) if (!f.sources.includes(s)) f.sources.push(s);
@@ -385,33 +497,83 @@ function foldFindings(rooms) {
 // ---------------------------------------------------------------------------
 
 /**
+ * The language guard (ADR-407 D2, D6): the story language's extractor, or the
+ * one line the lens prints instead of walking.
+ *
+ * A language with no extractor is refused first, then an engine whose language
+ * is not the story's, so both refusals are reachable.
+ *
+ * @param storyLanguageCode the IR's `phrases.defaultLocale`
+ * @param engineLanguageCode the running engine's `LanguageProvider.languageCode`
+ * @param lookup a `NounExtractorLookup` (language code to extractor or refusal)
+ * @returns `{ found: true, extractor }`, or `{ found: false, refusal }` naming
+ *   the code (no extractor) or both codes (mismatch)
+ */
+function guardLanguage(storyLanguageCode, engineLanguageCode, lookup) {
+  const resolution = lookup(storyLanguageCode);
+  if (!resolution.found) return resolution;
+  if (engineLanguageCode !== storyLanguageCode) {
+    return { found: false, refusal: languageMismatchRefusal(engineLanguageCode, storyLanguageCode) };
+  }
+  return resolution;
+}
+
+/**
  * Run the lens over every reachable room of a story.
  *
  * @param storyPath absolute path to the `.story` file
  * @param opts.seed / maxSeconds / maxStates / maxDepth — walk budgets
- * @returns the lens report (format 1 — see the header): the walk's
- *   soundness facts, the folded findings, and every room's rows
+ * @returns the lens report (format 2 — see the header): the walk's
+ *   soundness facts, the folded findings, and every room's rows; or a
+ *   refused report, with no walk, when the language guard refuses
  */
 async function runLens(storyPath, opts) {
+  const story = path.basename(storyPath);
+  const refused = (line) => ({ lens: 'examinable', format: 2, story, refused: line });
+
+  // The story's language, from its compiled IR (D2). Refused before the engine
+  // loads when the language has no extractor (D6).
+  const ir = loadStoryIR(storyPath);
+  const storyLanguageCode = String((ir.phrases && ir.phrases.defaultLocale) || '');
+  const early = nounExtractorLookup(storyLanguageCode);
+  if (!early.found) return refused(early.refusal);
+
   const rooms = [];
   const tally = { executed: 0 };
-  const walk = await explore(storyPath, {
-    seed: opts.seed,
-    hash: 'declared',
-    breadth: 'basic',
-    maxStates: opts.maxStates,
-    maxSeconds: opts.maxSeconds,
-    maxDepth: opts.maxDepth,
-    stopWhenAllRoomsSeen: true,
-    onRoomFirstSeen: async (ctx) => { rooms.push(await examineRoom(ctx, tally)); },
-  });
+  let extractor = null;
+  let walk;
+  try {
+    walk = await explore(storyPath, {
+      seed: opts.seed,
+      hash: 'declared',
+      breadth: 'basic',
+      maxStates: opts.maxStates,
+      maxSeconds: opts.maxSeconds,
+      maxDepth: opts.maxDepth,
+      stopWhenAllRoomsSeen: true,
+      onRoomFirstSeen: async (ctx) => {
+        // The first call is the opening room, before the walk's first step:
+        // the engine's language is known here and nowhere earlier.
+        if (extractor === null) {
+          const engineLanguageCode = ctx.game.engine.getLanguageProvider().languageCode;
+          const guard = guardLanguage(storyLanguageCode, engineLanguageCode, nounExtractorLookup);
+          if (!guard.found) throw new LensRefusal(guard.refusal);
+          extractor = guard.extractor;
+        }
+        rooms.push(await examineRoom(ctx, tally, extractor));
+      },
+    });
+  } catch (err) {
+    if (err instanceof LensRefusal) return refused(err.message);
+    throw err;
+  }
 
   const counts = {};
   for (const r of rooms) for (const row of r.rows) counts[row.kind] = (counts[row.kind] || 0) + 1;
 
   return {
     lens: 'examinable',
-    format: 1,
+    format: 2,
     story: path.basename(storyPath),
     seed: walk.seed,
     walk: {
@@ -450,8 +612,9 @@ function parseArgs(argv) {
 /** The two console lines for one row or folded finding. */
 function printRow(row, out) {
   const tgt = row.target ? '  -> ' + row.target : '';
+  const resolved = row.resolvedForm ? '  (' + JSON.stringify(row.resolvedForm) + ' resolves)' : '';
   const flag = row.thing ? '' : '  (not-a-thing)';
-  out('   ' + row.kind.padEnd(19) + ' ' + JSON.stringify(row.phrase) + tgt + flag);
+  out('   ' + row.kind.padEnd(19) + ' ' + JSON.stringify(row.phrase) + resolved + tgt + flag);
   out('   ' + ''.padEnd(19) + '   from: ' + row.sources.join(', ') + '   [' + row.detail + ']');
 }
 
@@ -513,11 +676,19 @@ async function main() {
     process.exit(2);
   }
   const report = await runLens(path.resolve(opts.story), opts);
+  if (report.refused) {
+    // ADR-407 D6: one line naming the language, no walk, a non-zero exit.
+    console.error(report.refused);
+    process.exitCode = 1;
+    return;
+  }
   if (opts.json) { console.log(JSON.stringify(report, null, 2)); return; }
   printReport(report, opts);
 }
 
-module.exports = { runLens, classify, foldFindings, isFinding, printReport };
+module.exports = {
+  runLens, classify, classifyCandidates, phrasesIn, guardLanguage, foldFindings, isFinding, printReport,
+};
 
 if (require.main === module) {
   main().catch((e) => { console.error(e && e.stack || e); process.exit(1); });

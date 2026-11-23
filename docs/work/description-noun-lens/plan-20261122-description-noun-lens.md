@@ -110,8 +110,26 @@ Approving the plan as written takes each recommendation that remains open. Each 
 - **Files**: `tools/explorer-probe/lens-examinable.js`, `tools/explorer-probe/tests/lens-examinable.test.js`, `test-stories/scullery/` (new), `test-stories/README.md`, `docs/work/description-noun-lens/census-lens.md` (new)
 - **Exit state**: `node --test tools/explorer-probe/tests/lens-examinable.test.js` reports no failures (AC-5). The scullery suite pins the number-form findings through the real engine. The orchard pin is re-recorded after David's census review. AC-6 passes. AC-2, lens half: the lens CLI on a temporary scullery IR copy with an unsupported locale prints one line naming the code, exits non-zero and prints no walk. The mismatch case is unit-tested on the guard (D-4). AC-1, shown and not gating: on the chapter-40 Relighting, the lens reports candle and pricket failing while candles and prickets resolve, each sourced to the Refectory or the candles' description, with the reason "Validation failed: ENTITY_NOT_FOUND".
 - **Demonstration**: `node --test tools/explorer-probe/tests/lens-examinable.test.js` prints fail 0, with the scullery number-form tests among the passes. Shown once, not gating: `node tools/explorer-probe/lens-examinable.js tutorials/relighting/chord-v4.1.0/chapter-40/relighting.story --max-states 600` lists candle and pricket as failing number forms.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-22)
+- **Demonstrated**: 2026-11-22, session 21bbd6, after `./repokit build` (CLI bundle 5,401,919 bytes, unchanged). `node --test tools/explorer-probe/tests/lens-examinable.test.js` → tests 39, pass 39, fail 0, including:
+  - **scullery's real-engine number forms:** `jar` against `jars` and `crock` against `crocks`, from the article-less "Jars and crocks"; `whetstones` and `cheeses`; the undescribed whetstone resolved-default; the carried chore list folded across both rooms;
+  - **the re-recorded fixture** (12 forms) **and orchard** (92 forms, all 26 earlier findings kept), census `census-lens.md`, David "a";
+  - **AC-6** on fixed events with two candidate lists;
+  - **the guard** on all three outcomes;
+  - **AC-2, lens half:** the real CLI on a temporary scullery IR at `xx-YY` → exit 1, stdout empty, one stderr line naming the code.
+
+  `node --test tools/explorer-probe/tests/*.test.js` → 57 tests, 56 pass, 1 fail, the declared-state lens's Secret Letter count (GH #805), as at baseline. `pnpm --filter '@sharpee/if-domain' test:ci` → 122 passed; `pnpm --filter '@sharpee/lang-en-us' test:ci` → 530 passed, including `tests/singularize.test.ts`; `pnpm --filter '@sharpee/world-index' test:ci` → 240 passed, 1 skipped; if-domain, lang-en-us and world-index `typecheck` clean. AC-3, early: The Relighting republished, `game.js` 1,971,319 bytes, the baseline.
+
+  AC-1, shown and not gating, quoted on GH #835: The Relighting at 600 states (8 of 13 rooms, 456 forms, 35 number-form findings) reports `candle` failing while `candles` resolves, from the Refectory, `Validation failed: ENTITY_NOT_FOUND`. `pricket` is answered on the extractor's phrase `iron prickets` (not in scope; the candles have no word `iron`), per the ADR-407 AC-1 note (David: "isn't the engine a boundary here?", then "yes, record it"): the lens never trims the prose's words.
+
+  Found at entry and ruled:
+  - **`lemmatize` is a stemmer** (`candles` gives `candl`). David ruled "A′": ADR-407 Amendment 4, `NounExtractor.numberForms` in if-domain, `packages/lang-en-us/src/singularize.ts` beside `pluralize.ts`, with the story runtime unchanged. GH #839 filed for `lemmatize`.
+
+  Out of the Files list:
+  - `packages/if-domain` (`nouns.ts`, `index.ts`, its test) and `packages/lang-en-us` (`singularize.ts`, `nouns/index.ts`, `tests/singularize.test.ts`), for Amendment 4;
+  - `packages/world-index/tests/incomplete.test.ts` (its fake extractor gains `numberForms`);
+  - the regenerated `packages/sharpee/docs/genai-api/`;
+  - ADR-407 (Amendment 4 and the AC-1 note). [verified: work-summary-writer's own runs, after the last lens edit (22:41:40 CST), the last lens-test edit (22:50:59 CST) and the last package source edit (22:39:52 CST) — `node --test tools/explorer-probe/tests/lens-examinable.test.js` → tests 39, pass 39, fail 0 at 2026-11-23T04:52:59Z; `node --test tools/explorer-probe/tests/*.test.js` → tests 57, pass 56, fail 1 (secret-letter corpus pin, "41 dimensions and no findings") at 04:53:16Z; `pnpm --filter '@sharpee/if-domain' test:ci` → 8 files, 122 passed; `pnpm --filter '@sharpee/lang-en-us' test:ci` → 36 files, 531 passed (the line above says 530); `pnpm --filter '@sharpee/world-index' test:ci` → 20 files, 240 passed, 1 skipped, at 04:53:09Z; if-domain, lang-en-us and world-index `typecheck` clean at 04:53:26Z; `ls -l` gives `game.js` 1,971,319 bytes (22:37 CST) and `dist/cli/sharpee.js` 5,401,919 bytes (22:42 CST); the hooks logged no test row. The AC-1 Relighting run is reported by session and not rerun; its quote is on GH #835 (comment 2026-11-23T04:51:38Z)]
+- **Status**: DONE
 
 ### Phase 5: The story runtime has not grown, the gates pass, and the records point at what landed
 - **Tier**: Small
@@ -123,7 +141,7 @@ Approving the plan as written takes each recommendation that remains open. Each 
 - **Exit state**: The rebuilt game.js is the baseline's size to the byte (AC-3). Every gate has a recorded result, with every failure named and attributed. ADR-407 reads IMPLEMENTED in a rebuilt index.
 - **Demonstration**: `ls -l tutorials/relighting/chord-v4.1.0/chapter-40/dist/web/relighting/game.js` after the rebuild shows the Phase 2 baseline's byte count, and `pnpm exec turbo run test:ci` completes with its result recorded.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-22)
 
 ### Phase 6: Verbs beyond examine (issue 835; outside ADR-407; David chooses the verbs)
 - **Tier**: Medium
