@@ -120,11 +120,21 @@ David approved the plan with option (b) from the plan review:
   - A re-timing on the packaged walk. Orchard and scullery reach only 5 and 2 states, so the largest test story in Phase 1's timings is run again on the packaged walk. Its states, walkMs and rooms reached go beside the spike's row in `timings.md`. With no necessary set, the packaged walk counts states as different on the whole snapshot, less `IDENTITY_IGNORES` (ADR-365 D2, D12). A growth that moves the Phase 1 trigger goes to David. From the same re-timing, Phase 2 sets the `sharpee test` tier's fixed budget (ADR-408 D8) and records the figure in `timings.md` and the tier's code, with David's agreement.
   - Tests derived from Behavior Statements, including real-path runs of the command on orchard and scullery (rule 13a: the real engine, the real walk, the real extractor).
   - The spike's disposition per D-3, with any deletion list posted and confirmed first.
+  - **As built (2026-11-23, ADR-408 Amendment 1):**
+    - The walk refactor landed. `walk/story-walk.ts` is shared, and the claims runner is its client, with all claims suites unchanged and green.
+    - The lens itself reaches rooms by route (`lens/room-routes.ts`), not by the walk. The walk's room hook and null set stay, unused by any client (David's ruling "b").
+    - devkit's command takes `--seed`, `--max-seconds`, `--all` and `--json`.
+    - The tier's budget is 30 s.
+    - The spike lens and its suite are deleted. Its fixture moved to `packages/branch-tester/tests/fixtures/lens-fixture/`, and its fixture, classifier and ADR-407 AC-6 cases moved to branch-tester's tests.
 - **Files**: `packages/branch-tester/src/claims/`, `packages/branch-tester/src/lens/` (new), `packages/branch-tester/src/index.ts`, `packages/branch-tester/tests/`, `packages/devkit/src/commands/lens.ts` (new), `packages/devkit/src/cli.ts`, `packages/devkit/tests/`, `tools/explorer-probe/`
 - **Exit state**: The packaged command reproduces the spike's orchard and scullery pins. The branch-tester and devkit suites pass. The explorer-probe suite is at baseline (56 of 57), or the lens's half of it has been retired under D-3(i).
-- **Demonstration**: `node packages/devkit/dist/cli.js lens examinable test-stories/orchard/orchard.story --seed 42 --max-states 600` prints "rooms reached     5 of 5 declared" and "phrases examined  92". The branch-tester and devkit suites (pnpm --filter '@sharpee/branch-tester' test, then the same for '@sharpee/devkit') report no failures.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-23)
+- **Demonstration**: `node packages/devkit/dist/cli.js lens examinable test-stories/orchard/orchard.story --seed 42` prints "rooms reached     5 of 5 declared" and "phrases examined  92". (The walk's `--max-states` flag went with the walk, ADR-408 Amendment 1.) The branch-tester and devkit suites (pnpm --filter '@sharpee/branch-tester' test, then the same for '@sharpee/devkit') report no failures.
+- **Demonstrated**: 2026-11-23, session c68c7b. [reported by session, unverified]
+  - `node packages/devkit/dist/cli.js lens examinable test-stories/orchard/orchard.story --seed 42` printed "rooms reached     5 of 5 declared  (0.1s of 120s, 8 moves typed)" and "phrases examined  92".
+  - `pnpm --filter '@sharpee/branch-tester' test`: 43 files, 515 passed. The orchard, scullery and fixture pins pass by route.
+  - `pnpm --filter '@sharpee/devkit' test`: 246 passed, 1 skipped (skipped before this work).
+  - `node --test tools/explorer-probe/tests/lens-declared-state.test.js`: 18 tests, 17 pass, 1 fail. The failure is the #805 Secret Letter pin (91 against 41), as at baseline. The spike lens's half of the suite is retired under D-3(i).
+- **Status**: DONE
 
 ### Phase 3: A finding names its source: passage keys, owner and target ids, and the lens contract
 - **Tier**: Medium
@@ -144,7 +154,7 @@ David approved the plan with option (b) from the plan review:
 - **Exit state**: On scullery, `--json` yields findings whose keys join world-index's prose list and whose target ids join its declarations. The generated protocol targets are unchanged and fresh.
 - **Demonstration**: `./repokit protocol --check` exits 0. The devkit lens tests (pnpm --filter '@sharpee/devkit' test lens) pass, including the scullery join test asserting the whetstone's key and id.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-23)
 
 ### Phase 4: The lens rides `sharpee test` as a tier, and the Testing tab folds it
 - **Tier**: Medium

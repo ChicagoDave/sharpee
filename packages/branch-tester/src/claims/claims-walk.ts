@@ -31,45 +31,27 @@
  * computed once before the walk. It is report data for the author who
  * trims the set; the walk, the identity, and the candidates never read it.
  *
+ * The breadth-first walk itself — forking, budgets, the refused save or
+ * restore that stops it — is `walk/story-walk.ts`, which this module and
+ * the lenses share (ADR-408 D3). This module is its claims client.
+ *
  * Public interface: `walkClaims`, `ClaimsWalkOptions`.
  *   The walk reports in `claim-results`' shapes (`ClaimsWalkReport`,
  *   `ClaimVerdict`).
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
-import { captureSave, restoreSave } from '@sharpee/transcript-tester';
 import { claimCone, type IRClaim, type StoryIR } from '@sharpee/chord';
-import type { Claim, ClaimGroup, NecessarySet } from './claim-set.js';
+import type { Claim, ClaimGroup } from './claim-set.js';
 import { claimHolds, clauseKeysByFiredOf, entityIdByIrOf } from './claim-predicates.js';
-import { candidateCommands, deriveCommandVocabulary } from './claim-candidates.js';
-import type { CandidateBreadth, ClaimVerdict, ClaimsWalkReport, WalkStopReason } from './claim-results.js';
+import type { ClaimVerdict, ClaimsWalkReport, WalkStopReason } from './claim-results.js';
 import type { ClaimsGame, ClaimsTurnEvent, WorldSnapshot } from './claims-game.js';
-import { irIdOf, readWorldSnapshot } from './claims-game.js';
-import { necessaryIdentity } from './claim-identity.js';
+import { STORY_WALK_DEFAULTS, walkStory, type StoryWalkOptions, type StoryWalkTurn } from '../walk/story-walk.js';
 
-/** The budgets and breadth of one walk. */
-export interface ClaimsWalkOptions {
-  readonly breadth?: CandidateBreadth;
-  readonly maxStates?: number;
-  readonly maxSeconds?: number;
-  readonly maxDepth?: number;
-}
+/** The budgets and breadth of one walk: the shared walk's options. */
+export type ClaimsWalkOptions = StoryWalkOptions;
 
-const DEFAULT_OPTIONS = { breadth: 'basic' as CandidateBreadth, maxStates: 5000, maxSeconds: 120, maxDepth: 40 };
-
-/** The engine's save of one walked state, held in memory for the length of the walk. */
-type WalkSave = NonNullable<Awaited<ReturnType<typeof captureSave>>>;
-
-/** One state on the frontier: its save, the path that reached it, and the claim bits that path earned. */
-interface WalkNode {
-  readonly save: WalkSave;
-  readonly path: readonly string[];
-  readonly depth: number;
-  readonly bits: string;
-}
-
-/** Commands between two yields to the event loop. */
-const YIELD_EVERY = 200;
+const DEFAULT_OPTIONS = STORY_WALK_DEFAULTS;
 
 /** The runner's discriminated predicate as the compiler's flat `IRClaim`, which the cone takes. */
 function irClaimOf(claim: Claim): IRClaim {
@@ -118,7 +100,7 @@ function irClaimOf(claim: Claim): IRClaim {
  */
 export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGroup, options: ClaimsWalkOptions = {}): Promise<ClaimsWalkReport> {
   const { breadth, maxStates, maxSeconds, maxDepth } = { ...DEFAULT_OPTIONS, ...options };
-  const { world, engine } = game;
+  const { world } = game;
   const set = group.set;
   const claims = group.claims;
 
@@ -126,26 +108,11 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   // once here, before the walk, and read by nothing but the verdict.
   const inertByIndex = new Map(claims.map((claim) => [claim.index, claimCone(ir, irClaimOf(claim), set).inert.length]));
 
-  // The story's opening, so the walk starts from the state a player first
-  // sees. It is the game's routine and costs no turn; a game some caller
-  // already opened is left as it is.
+  // The opening runs before the claim lookups below read the world, as it
+  // did before the walk was shared; `walkStory` leaves an opened game alone.
   if (game.openingPending) await game.runOpening();
-
-  const vocabulary = deriveCommandVocabulary(ir, engine);
-  const nameByIrId = new Map<string, string>();
-  for (const entity of world.getAllEntities()) {
-    const irId = irIdOf(entity);
-    if (irId !== undefined) nameByIrId.set(irId, entity.name);
-  }
   const entityIdByIr = entityIdByIrOf(world);
   const clauseKeysByFired = clauseKeysByFiredOf(ir);
-
-  const roomsSeen = new Set<string>();
-  const noteRoom = () => {
-    const player = world.playerCharacter;
-    const room = player && world.getContainingRoom(player.id);
-    if (room) roomsSeen.add(irIdOf(room) ?? room.id);
-  };
 
   /** Claim index to the first path that satisfied it. */
   const witnesses = new Map<number, readonly string[]>();
@@ -167,101 +134,22 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
     return [...bits].sort((a, b) => a - b).join(',');
   };
   const allClaimsSettled = () => claims.length > 0 && claims.every((claim) => witnesses.has(claim.index));
-  // The state's identity is built from the snapshot its claims were just
-  // read from: one world read per state reached, never a second.
-  const identityOf = (bits: string, snapshot: WorldSnapshot): string =>
-    `${necessaryIdentity(snapshot, set)}${claims.length ? `|${bits}` : ''}`;
 
-  let commandsExecuted = 0;
-  let restores = 0;
+  // The shared walk (`walkStory`) forks, budgets and stops; this client tags
+  // each state with its path's claim bits (D5), read from the snapshot the
+  // walk took once for that state, and stops when every claim is settled
+  // (D4). With no claims the tag is unused, as it always was.
+  const walked = await walkStory(game, ir, set, {
+    label: 'claims walk',
+    ...(claims.length ? { tagState: (turn: StoryWalkTurn) => noteClaims(turn.path, turn.events, turn.inheritedTag, turn.snapshot) } : {}),
+    stopWhen: { reason: 'all-claims-settled', done: allClaimsSettled },
+  }, { breadth, maxStates, maxSeconds, maxDepth });
 
-  // A walk cannot go on past a save or a restore the engine refuses. After a
-  // refused restore the next command would run on the previous node's world
-  // and its result would be credited to the wrong path; a state that could
-  // not be saved is a state never walked from, so the frontier would run out
-  // early and report a set exhausted that was not (ADR-365 D3). Both stop
-  // the walk with an error naming the node.
-  const nodeLabel = (path: readonly string[]): string => (path.length === 0 ? 'the walk\'s start' : `"${path.join(' / ')}"`);
-  const saveNode = async (path: readonly string[]): Promise<WalkSave> => {
-    const save = await captureSave(engine);
-    if (save === null) {
-      throw new Error(`claims walk: the engine refused to save the state at ${nodeLabel(path)}, so the walk could not continue from it`);
-    }
-    return save;
-  };
-  const restoreNode = async (node: WalkNode, about: string): Promise<void> => {
-    if (!(await restoreSave(engine, node.save))) {
-      throw new Error(`claims walk: the engine refused to restore the state at ${nodeLabel(node.path)}, so the walk stopped before ${about}`);
-    }
-    restores++;
-  };
-
-  noteRoom();
-  const rootSnapshot = readWorldSnapshot(world);
-  const rootBits = noteClaims([], [], '', rootSnapshot);
-  const rootSave = await saveNode([]);
-  const seen = new Set<string>([identityOf(rootBits, rootSnapshot)]);
-  let queue: WalkNode[] = [{ save: rootSave, path: [], depth: 0, bits: rootBits }];
-
-  let saves = 1;
-  let deadEnds = 0;
-  const frontierByDepth: Record<number, number> = { 0: 1 };
-  const walkStart = Date.now();
-  let stopReason: WalkStopReason = 'frontier-exhausted';
-  if (allClaimsSettled()) { stopReason = 'all-claims-settled'; queue = []; }
-
-  const elapsedSeconds = () => (Date.now() - walkStart) / 1000;
-
-  walk: while (queue.length > 0) {
-    if (seen.size >= maxStates) { stopReason = 'max-states'; break; }
-    if (elapsedSeconds() >= maxSeconds) { stopReason = 'max-seconds'; break; }
-    const node = queue.shift()!;
-    if (node.depth >= maxDepth) { stopReason = 'max-depth-reached'; continue; }
-
-    await restoreNode(node, 'reading its commands');
-    const commands = candidateCommands(world, vocabulary, set, nameByIrId, breadth);
-    if (commands.length === 0) deadEnds++;
-
-    for (const command of commands) {
-      if (seen.size >= maxStates) { stopReason = 'max-states'; break walk; }
-      if (elapsedSeconds() >= maxSeconds) { stopReason = 'max-seconds'; break walk; }
-
-      await restoreNode(node, `trying "${command}"`);
-      let turnEvents: readonly ClaimsTurnEvent[] = [];
-      try {
-        const result = await engine.executeTurn(command);
-        turnEvents = result.events ?? [];
-      } catch {
-        // A refused turn is information about the state, not a failure of the walk.
-      }
-      commandsExecuted++;
-      // The engine's turn resolves through microtasks alone, so a long walk
-      // never reaches the macrotask queue on its own and starves whatever
-      // hosts it — a test runner's worker channel timed out at a minute.
-      // Yield to the event loop now and then.
-      if (commandsExecuted % YIELD_EVERY === 0) await new Promise<void>((resolve) => setImmediate(resolve));
-      const path = [...node.path, command];
-      noteRoom();
-      const snapshot = readWorldSnapshot(world);
-      const bits = noteClaims(path, turnEvents, node.bits, snapshot);
-      const identity = identityOf(bits, snapshot);
-      if (!seen.has(identity)) {
-        seen.add(identity);
-        const save = await saveNode(path);
-        saves++;
-        const depth = node.depth + 1;
-        frontierByDepth[depth] = (frontierByDepth[depth] ?? 0) + 1;
-        queue.push({ save, path, depth, bits });
-      }
-      if (allClaimsSettled()) { stopReason = 'all-claims-settled'; queue = []; break walk; }
-    }
-  }
-
-  const walkMs = Date.now() - walkStart;
   // A frontier that ran out with the player never in a room of the set is
   // not an exhausted set: nothing under the set was tried.
   const setRooms = new Set(set.rooms);
-  const enteredSet = [...roomsSeen].some((room) => setRooms.has(room));
+  const enteredSet = walked.roomsReached.some((room) => setRooms.has(room));
+  let stopReason: WalkStopReason = walked.stopReason;
   if (stopReason === 'frontier-exhausted' && !enteredSet) stopReason = 'start-outside-set';
   const exhausted = stopReason === 'frontier-exhausted' || stopReason === 'all-claims-settled';
   const verdicts: ClaimVerdict[] = claims.map((claim) => {
@@ -276,18 +164,18 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   return {
     set: group.label,
     necessary: { rooms: set.rooms.length, things: set.things.length, verbs: set.verbs.length },
-    budgets: { maxStates, maxSeconds, maxDepth },
-    breadth,
+    budgets: walked.budgets,
+    breadth: walked.breadth,
     stopReason,
-    walkMs,
-    statesDiscovered: seen.size,
-    commandsExecuted,
-    restores,
-    saves,
-    deadEnds,
-    queueRemaining: queue.length,
-    roomsReached: [...roomsSeen].sort(),
-    frontierByDepth,
+    walkMs: walked.walkMs,
+    statesDiscovered: walked.statesDiscovered,
+    commandsExecuted: walked.commandsExecuted,
+    restores: walked.restores,
+    saves: walked.saves,
+    deadEnds: walked.deadEnds,
+    queueRemaining: walked.queueRemaining,
+    roomsReached: walked.roomsReached,
+    frontierByDepth: walked.frontierByDepth,
     claims: verdicts,
   };
 }

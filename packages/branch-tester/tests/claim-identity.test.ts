@@ -171,3 +171,19 @@ describe('REAL-PATH — a walk whose only moving part is a Chord counter', () =>
     expect(run.walks[0].roomsReached).toEqual(['belfry', 'crypt']);
   }, 30_000);
 });
+
+describe('with no necessary set, every entity counts (ADR-408 D3)', () => {
+  /** The identity of the small world after one edit, under no set. */
+  const unsetAfter = (edit: (snapshot: TestWorld) => void): string => {
+    const snapshot = world();
+    edit(snapshot);
+    return necessaryIdentity(JSON.parse(JSON.stringify(snapshot)) as WorldSnapshot, null);
+  };
+  const UNSET_BASE = unsetAfter(() => {});
+
+  it('a thing outside the set changing state is invisible under the set and tells worlds apart under none', () => {
+    const openVase = (snapshot: TestWorld) => { snapshot.entities[3].entity.traits[0].isOpen = true; };
+    expect(identityAfter(openVase)).toBe(BASE);
+    expect(unsetAfter(openVase)).not.toBe(UNSET_BASE);
+  });
+});

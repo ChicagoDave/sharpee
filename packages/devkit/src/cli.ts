@@ -32,6 +32,7 @@ import { runTestCommand } from './commands/test.js';
 import { runPlayCommand } from './commands/play.js';
 import { runClaimCommand } from './commands/claim.js';
 import { runWorldIndex } from './commands/world-index.js';
+import { runLensCommand } from './commands/lens.js';
 import { projectDirectoryFor } from './build-target.js';
 
 // The usage text is read by authors, so it names no decision record. The
@@ -52,6 +53,10 @@ Usage:
   sharpee introspect [dir]               Emit the IDE project manifest as JSON
   sharpee messages                       Emit the overridable platform messages (alias + template) as JSON
   sharpee world-index <file>.ir.json     Derive the story's map, reach, and vocabulary gaps as JSON
+  sharpee lens examinable [name|path] [--seed N] [--max-seconds N] [--all] [--json]
+                                         Report the nouns in the prose a player
+                                         reads that the story cannot use, or
+                                         that name a thing with no text
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
   sharpee list                           List registered stories
@@ -196,6 +201,8 @@ async function main(argv: string[]): Promise<number> {
       return runClaimCommand(rest);
     case 'world-index':
       return runWorldIndex(rest);
+    case 'lens':
+      return runLensCommand(rest);
     default:
       console.error(`unknown command: ${command}\n`);
       console.log(USAGE);

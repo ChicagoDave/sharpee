@@ -112,16 +112,19 @@ function canonical(value: SnapshotValue | undefined): string {
  * player, the set's things and the set's rooms); world state, the ending,
  * the score and every capability's data are hashed whole.
  *
+ * With no set, every entity is kept: the identity is the whole snapshot
+ * minus `IDENTITY_IGNORES` (a lens's walk, ADR-408 D3).
+ *
  * @param snapshot the parsed world snapshot
- * @param set the necessary set
+ * @param set the necessary set, or null for none
  * @returns a hex digest
  */
-export function necessaryIdentity(snapshot: WorldSnapshot, set: NecessarySet): string {
-  const inSet = new Set([...set.things, ...set.rooms]);
+export function necessaryIdentity(snapshot: WorldSnapshot, set: NecessarySet | null): string {
+  const inSet = set === null ? null : new Set([...set.things, ...set.rooms]);
   const keptIds = new Set<string>();
   const entities = (snapshot.entities ?? []).filter((row) => {
     const irId = row.entity?.attributes?.[CHORD_IR_ID_ATTRIBUTE];
-    const kept = row.id === snapshot.playerId || (typeof irId === 'string' && inSet.has(irId));
+    const kept = inSet === null || row.id === snapshot.playerId || (typeof irId === 'string' && inSet.has(irId));
     if (kept) keptIds.add(row.id);
     return kept;
   });

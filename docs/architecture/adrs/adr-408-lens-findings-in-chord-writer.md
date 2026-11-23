@@ -6,6 +6,14 @@
 
 **Status**: **ACCEPTED** (David, 2026-11-23, session c68c7b: "yes", to "mark ADR-408 ACCEPTED?", after the open-questions interview and a clean re-run of `adr-review`, 20 of 20). D1 is David's ruling of 2026-11-23 (option "b" after the plan review of the lens-findings-in-ide plan). D2 to D6 are the plan's leans, which that same ruling took. D8 to D10 are David's answers in the open-questions interview, the same day ("a", "a", "a"). No questions remain. Acceptance does not authorize the `packages/` work. Phases 2 and 3 of the plan each need David's explicit go.
 
+**Amended**: Amendment 1 (2026-11-23, session c68c7b, David's ruling "a", during Phase 2). D3's walk with no necessary set was the blind state search ADR-294 D23 retired. Measured on the packaged walk at the default budgets: fernhill hit 5,000 states after 80 s with 9 of 13 rooms reached, where the spike had reached 12 in 3,049. So the lens no longer walks states. It reaches each room by a route:
+- It plans the shortest route from the opening over the exits open at the start. Exits are read off the IR, and the ones a lock or a gate shuts at the start come from world-index's `deriveReach` (its `blocked` and `lifted` edges).
+- It types the route in a fork of the real engine, opening a door the route passes through. It checks that the player really arrived, examines, and restores.
+- A room no open route reaches is reported unreached with reach's own reason. A room a typed route did not arrive in is reported with where the player ended up.
+- The report's soundness line becomes rooms reached of declared plus each unreached room and why. A walk's states and stop reason no longer appear.
+- D8's budget is a time budget only.
+- The shared walk (`walk/story-walk.ts`) stays, because the claims runner is its client. This amendment does not decide whether its lens-only parts (the room hook, the null set) stay.
+
 **Date**: 2026-11-23
 
 **Kind**: technical
@@ -33,8 +41,9 @@ Four things in the code shaped this record.
 - Activating a finding's card opens the editor on the passage its key names and selects the phrase inside that passage's span.
 - Persistent in-editor marks on each such phrase are a separable later step. If built, they must be distinct from compose underlines and name themselves on hover (ADR-324 D1, D3, D7), in both heads.
 
-**D3 — The lens earns a package on branch-tester's walk.**
-- branch-tester's breadth-first walk gains an observer called on each room's first sighting and a mode with no necessary set. It reuses the engine fork, identity and candidate machinery. With no set, the identity is the whole snapshot less `IDENTITY_IGNORES` (ADR-365 D2, D12).
+**D3 — The lens earns a package in branch-tester, reaching rooms by route** (as amended by Amendment 1).
+- Each room is reached by the shortest route over the exits open at the start (the IR's exits, less reach's `blocked` and `lifted` edges). The route is typed in a fork of the real engine, and arrival is checked. Rooms no open route reaches are reported with reach's reason. There is no state search.
+- *(Superseded by Amendment 1: branch-tester's breadth-first walk gains an observer called on each room's first sighting and a mode with no necessary set.)*
 - The lens module lives under `packages/branch-tester/src/lens/`, typed throughout, and takes its extractor lookup from its caller (ADR-407 D8).
 - devkit adds `sharpee lens examinable`, which reads the IR the build wrote, as `sharpee world-index` does.
 - Once the packaged lens reproduces the spike's orchard and scullery pins, the spike's lens and its suite are removed. The deletion list is posted and David confirms it first.
@@ -67,7 +76,7 @@ Four things in the code shaped this record.
   - `packages/branch-tester/src/lens/`: the module, and the report wording the CLI and the tab share, as `claim-report` is for claims.
   - `tools/ide/web/testing-surface/src/run.ts` (the fold) and a new section module beside `claims.ts`.
 - devkit's test command is the consumer that resolves each source key to its span from the IR's phrase spans (ADR-333 D2). The rows the page receives carry the span with the key.
-- The tier's budget is its own, well under the standalone default, because three of the measured real stories spend the full 120 s (`docs/work/lens-findings-in-ide/timings.md`). Phase 2 sets the figure from the packaged walk's re-timing. The tier's soundness line states that budget and its stop reason.
+- The tier's budget is its own, well under the standalone default, because three of the measured real stories spent the full 120 s on a walk (`docs/work/lens-findings-in-ide/timings.md`). **The figure is 30 s** (David, 2026-11-23, Phase 2, option "b"). By route (Amendment 1) the slowest measured story, Secret Letter, took 12.6 s in one run and 12.8 s in another, and every other story took under a second. The tier's soundness line states the budget, and lists any room the budget left unreached.
 - `sharpee lens examinable` remains the standalone command at the full defaults. The tier and the command run the same module.
 - Rejected:
   - (b) Each head spawns the lens in the background after a build. That is a second runner in Swift and in C#.
@@ -88,7 +97,7 @@ Four things in the code shaped this record.
 
 ## Acceptance Criteria
 
-- **AC-1** — `sharpee lens examinable test-stories/orchard/orchard.story --seed 42 --max-states 600` reproduces the spike's orchard pin (5 of 5 rooms, 92 forms, 40 not-in-scope, 6 described, 6 number-form). Scullery reproduces OB-54 to OB-60.
+- **AC-1** — `sharpee lens examinable test-stories/orchard/orchard.story --seed 42` reproduces the spike's orchard pin (5 of 5 rooms, 92 forms, 40 not-in-scope, 6 described, 6 number-form). Scullery reproduces OB-54 to OB-60.
 - **AC-2** — On scullery, the whetstone's `resolved-default` row carries the Scullery's description key and the whetstone's IR id. That key equals a `prose[].key` in `sharpee world-index`'s document for the same IR.
 - **AC-3** — In both heads, the Testing tab shows scullery's whetstone as a No-text finding. Activating it selects the text "whetstone" on `test-stories/scullery/scullery.story:19`. This is checked by an automated real-path test in SharpeeIDETests and by PaneHost.Tests, with no click-through.
 - **AC-4** — Two cases render in the page, each with its own message:

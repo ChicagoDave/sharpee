@@ -148,6 +148,44 @@ export { claimHolds, claimNamesOf, describeClaimMiss, type ClaimContext, type Cl
 export { writtenName, participleOf, FLAG_SENTENCES, type FlagSentence } from './claims/claim-vocabulary.js';
 export { candidateCommands, deriveCommandVocabulary, type CommandVocabulary } from './claims/claim-candidates.js';
 export { walkClaims, type ClaimsWalkOptions } from './claims/claims-walk.js';
+// The breadth-first walk the claims runner and the lenses share (ADR-408 D3).
+export {
+  walkStory,
+  STORY_WALK_DEFAULTS,
+  type StoryWalkClient,
+  type StoryWalkOptions,
+  type StoryWalkReport,
+  type StoryWalkRoomSighting,
+  type StoryWalkTurn,
+} from './walk/story-walk.js';
+// The examinable lens (ADR-294 D23, ADR-407, ADR-408): description nouns the
+// player cannot use, or that name a thing with no text, through the real engine.
+export {
+  runExaminableLens,
+  countDeclaredRooms,
+  type ExaminableLensOptions,
+  type ExaminableLensReport,
+  type ExaminableLensRefusal,
+  type ExaminableLensResult,
+  type ExaminableRoom,
+  type LensEngine,
+  type LensGame,
+  type ProsePassage,
+  type UnreachedRoom,
+} from './lens/examinable-lens.js';
+export { planRoomRoutes, type RoomRoute, type RoomRoutes, type RouteStep, type UnroutedRoom } from './lens/room-routes.js';
+export {
+  classifyExamine,
+  classifyCandidates,
+  foldFindings,
+  isFinding,
+  type ExaminableFinding,
+  type ExaminableKind,
+  type ExaminableRow,
+  type ExamineTurn,
+  type ExamineVerdict,
+} from './lens/examinable-classify.js';
+export { formatExaminableReport } from './lens/examinable-report.js';
 export { necessaryIdentity, IDENTITY_IGNORES, type IdentityIgnore } from './claims/claim-identity.js';
 export { runClaims, formatClaimsRun, type ClaimsRunOptions } from './claims/claims-runner.js';
 // The claims tier's result data, declared once and browser-safe: the walk,

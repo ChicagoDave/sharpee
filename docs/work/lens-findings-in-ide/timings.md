@@ -31,6 +31,38 @@ Every test story finishes in under a second of wall time. Orchard's row matches 
 | fernhill | 120,000 | max-seconds | 12 of 13 | 3,049 | 551 | 274 | not-in-scope 225, described 52, number-form 49 |
 | secret-letter | 120,747 | max-seconds | 16 of 92 | 36 | 1,951 | 771 | not-in-scope 519, described 454, number-form 240, ambiguous 12 |
 
+## Phase 2: the packaged lens (2026-11-23, session c68c7b)
+
+Run as `node packages/devkit/dist/cli.js lens examinable <story> --json` at the defaults (seed 1209, 120 s).
+
+**First, on the shared walk with no necessary set** (ADR-408 D3 as accepted), on the three stories that spent the spike's whole budget:
+
+| Story | walkMs | Stop reason | Rooms | States | Phrases typed |
+|---|---|---|---|---|---|
+| fernhill | 80,466 | max-states | 9 of 13 | 5,000 | 427 |
+| friendly-zoo | 101,201 | max-states | 7 of 8 | 5,000 | 346 |
+| secret-letter | 120,006 | max-seconds | 12 of 92 | 130 | 1,389 |
+
+Fernhill filled the state budget on combinations near the start, as the plan review warned (ADR-365 D2, D12). That was the blind search ADR-294 D23 retired, so David ruled routes instead (ADR-408 Amendment 1).
+
+**Then by route** (Amendment 1): the shortest route to each room over the exits open at the start, typed in a fork of the real engine.
+
+| Story | ms | Rooms | Moves typed | Phrases typed | Finding rows | Not reached, and why |
+|---|---|---|---|---|---|---|
+| lodge | 72 | 3 of 5 | 3 | 44 | 22 | Study, Vault: guarded until the player deals with the warden, the valve |
+| bazaar | 56 | 2 of 3 | 1 | 28 | 14 | Back Lane: nothing reachable lifts the exit's condition |
+| ferry | 58 | 2 of 4 | 1 | 28 | 13 | Deck: guarded; Far Bank: beyond it |
+| orchard | 130 | 5 of 5 | 8 | 92 | 46 | none; findings match the pin exactly |
+| quay | 52 | 2 of 2 | 1 | 24 | 12 | none |
+| scullery | 64 | 2 of 2 | 1 | 42 | 23 | none; findings match the pin exactly |
+| fernhill | 554 | 9 of 13 | 26 | 427 | 212 | four rooms behind guarded or locked ways |
+| friendly-zoo | 342 | 5 of 8 | 8 | 272 | 131 | Supply Room guarded; two beyond it |
+| secret-letter | 12,643 | 18 of 92 | 42 | 2,119 | 843 | 74: most lie beyond Commerce Street (guarded); Behind Fruit Stall's route did not arrive |
+
+**The `sharpee test` tier's budget is 30 s** (ADR-408 D8, David's ruling "b", 2026-11-23): more than twice Secret Letter's time by route. That was 12,643 ms in the JSON run tabled above, and 12.8 s in a later console run of the same story after the unreached reasons were reworded.
+
+By route, the largest story finishes in under 13 s and reaches more rooms than either walk did (18 of 92, against the spike's 16 and the packaged walk's 12). The price is puzzles. A room behind a lock or a guard is reported unreached, naming what opening it takes, where the walk sometimes got through by trying actions (lodge 5 of 5 on the spike; ferry 3 of 4).
+
 ## What the numbers say
 
 1. **The lens is cheap where the walk stops on all rooms or an exhausted frontier.** That covers all six test stories and four of the seven real ones, every one under a second.

@@ -3,31 +3,36 @@
 ## Goals
 - Decide what Phase 6 ("Verbs beyond examine") of the description-noun-lens plan should cover, and close that plan accordingly.
 - Plan GH #835's last bullet (lens findings in Chord Writer, highlighting source where a noun has no text), rule its decisions, measure the lens, and record the rulings as ADR-408.
+- Phase 2 of that plan: package the examinable lens in `packages/branch-tester` behind devkit's `sharpee lens examinable`.
 
 ## Phase Context
-- **Plan**: lens-findings-in-ide — `docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md` (Plan Status ACTIVE; `.current-plan` points at it). Earlier this session: description-noun-lens Phase 6 ABANDONED and that plan archived (commit 8ff5950f9).
-- **Phase executed**: Phase 1 — "Rule the lens's place in Chord Writer, measure it, and record it as ADR-408" (Medium); the session flipped it DONE and advanced Phase 2 CURRENT (since 2026-11-23).
-- **Tool calls used**: 268 (state file) — budget 250 for Phase 1, 400 now that Phase 2 is CURRENT; the event log's budget banners show Phase 1's 250 was crossed at about tool call 258.
-- **Phase outcome**: Ran over budget (planning, plan-review, ADR interview and two adr-review passes all landed in Phase 1).
+- **Plan**: lens-findings-in-ide — `docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md` (Plan Status ACTIVE; `.current-plan` points at it). Earlier this session: description-noun-lens Phase 6 ABANDONED and that plan archived (8ff5950f9).
+- **Phase executed**: Phase 1 — "Rule the lens's place in Chord Writer, measure it, and record it as ADR-408" (Medium, DONE, 7f2860d03); then Phase 2 — "The examinable lens earns a package: `sharpee lens examinable`" (Large), flipped DONE and Phase 3 advanced CURRENT (since 2026-11-23) by the session.
+- **Tool calls used**: 534 (state file) — Phase 1 budget 250 crossed at about call 258; Phase 2 ran from about 280 to 505 against its 400; the rest went to the checkpoint, a wording fix and this write. Phase 3 (Medium, 250) is CURRENT and was not started.
+- **Phase outcome**: Phase 2 completed within its 400 budget counted from its start; the session as a whole ran over (Phase 1 carried planning, plan-review, the ADR interview and two adr-review passes).
+- **Out-of-scope changes**: from Phase 2's flip, all intended — `docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md`, `docs/work/lens-findings-in-ide/timings.md`, `packages/branch-tester/package.json`, `packages/branch-tester/src/walk/story-walk.ts`, `packages/devkit/src/commands/lens.test.ts`, `pnpm-lock.yaml`.
 
 ## Completed
 
-### description-noun-lens Phase 6 abandoned (first write, committed in 8ff5950f9)
-- Every rule in `packages/parser-en-us/src/grammar.ts` (571 counted) declares entity slots by seat or type only, so no standard verb narrows its noun slot; per-verb differences are scope levels (e.g. `pushing.ts:102`, `reading.ts:77`), which is the world answering, not a vocabulary gap.
-- David ruled option (a): Phase 6 ABANDONED, Plan Status DONE, plan archived by hand to `docs/work/archive/description-noun-lens/` (`plan-archive.sh` cannot take `plan-YYYYMMDD-*` names, #669); #835 commented: https://github.com/ChicagoDave/sharpee/issues/835#issuecomment-7092427062.
+### description-noun-lens Phase 6 abandoned (committed in 8ff5950f9)
+- Every rule in `packages/parser-en-us/src/grammar.ts` (571 counted) declares entity slots by seat or type only, so no standard verb narrows its noun slot; per-verb differences are scope levels (e.g. `pushing.ts:102`, `reading.ts:77`).
+- David ruled (a): Phase 6 ABANDONED, Plan Status DONE, plan archived by hand to `docs/work/archive/description-noun-lens/` (#669 blocks `plan-archive.sh` on `plan-YYYYMMDD-*` names); #835 commented.
 
-### lens-findings-in-ide plan written and reviewed
-- `session-planner` wrote the plan (six phases) and set `docs/context/.current-plan`.
-- plan-review: 1 STALE ADR (ADR-187 repokit-first staging vs devkit-only commands), 4 MISSING (ADR-365, ADR-185, ADR-351, the declared ADR-reading deviation), 4 TENSION.
-- David ruled option (b): D-1(c) the Testing tab (the web pane both heads host, since ADR-351 D2 carries Chord Writer forward on Avalonia); D-2 to D-6 take their leans; review fixes folded in. Plan revised; plan-check exit 0 [reported by session, unverified].
+### lens-findings-in-ide planned, reviewed, Phase 1 done (committed in 7f2860d03)
+- `session-planner` wrote a six-phase plan; plan-review found 1 STALE ADR, 4 MISSING, 4 TENSION; David ruled (b): D-1(c) the Testing tab, D-2 to D-6 their leans.
+- `timings.md` (new) measured the spike lens; ADR-408 written through the open-questions interview and two adr-review passes (10/20 then 20/20), ACCEPTED by David; dated notes on ADR-187 (D6) and ADR-322 D12 (D5); `INDEX.md` rebuilt.
 
-### Phase 1 — timings and ADR-408
-- `docs/work/lens-findings-in-ide/timings.md` (new): the spike lens (`--json`, seed 1209, 5000 states, 120 s, depth 40) on the six test stories, every one under 1 s wall (walkMs 6 to 118); on demand on seven real Chord stories, friendly-zoo and fernhill stop at max-seconds on state space (3,454 / 3,049 states), and secret-letter stops at max-seconds on typing (16 of 92 rooms, 1,951 forms). The writer read the file: 6 test-story rows and 7 real-story rows, each with walkMs and stop reason.
-- Finding recorded there: no test story exhausts the lens's budget, so Phase 2's re-timing on the packaged walk lacks an ADR-395 floor story that ends at max-seconds.
-- `docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md` (new): open-questions interview (Q-1 a, Q-2 a, Q-3 a), adr-review 10/20, fixes, re-review 20/20, ACCEPTED by David; the writer confirmed `**Status**: **ACCEPTED**` at line 7 and `**Planning**: OPEN`, `**Kind**: technical`.
-- Dated notes added to ADR-187 (line 190, devkit-only analysis commands, ADR-408 D6) and ADR-322 (line 311, D12/AC-8 does not gate the lens, ADR-408 D5); `INDEX.md` rebuilt with ADR-408's row at line 420 (both confirmed by this writer's grep).
-- Plan Phases 3 to 5 rewritten for D8: no host runners; Phase 4 is the `sharpee test` tier plus run-event variants `lens-finding` / `lens-summary`, the page fold, and #837.
-- Phase 1's `**Demonstrated**` line marked `[reported by session, unverified]` by this write: its demonstrations (adr-index.sh, greps, a file read) are not a hook-logged class; the writer re-ran the greps and found them as stated.
+### Phase 2 — the lens packaged, reaching rooms by route (David's go for branch-tester and devkit)
+- `packages/branch-tester/src/walk/story-walk.ts` (new): the breadth-first walk extracted from `walkClaims`, which is now its client (label `claims walk`, claim bits as tag); budget guard maxStates/maxSeconds > 0, maxDepth >= 0 (a first version refused depth 0 and broke claim-floor's AC-3a; fixed). Null-set support in `candidateCommands` and `necessaryIdentity` plus a room-first-seen hook were added and kept, now unused by any client (David ruled "b": keep for a future lens).
+- The first lens version walked with no set; re-timing showed fernhill 9/13 rooms at the 5,000-state cap (spike 12/13), the blind search ADR-294 D23 retired. David ruled (a): routes. ADR-408 Amendment 1 (line 9) rewrites D3: shortest route per room over exits open at start (world-index `wiredEdges` minus `deriveReach` blocked/lifted/conditional), typed in a fork, arrival checked, unreached rooms reported with reasons.
+- `packages/branch-tester/src/lens/` (new): `room-routes.ts` (`planRoomRoutes`), `examinable-classify.ts`, `examinable-lens.ts` (`runExaminableLens`, report field `reach` {roomsReached, roomsDeclared, unreached[{roomId, room, reason}], commandsTyped, ms, maxSeconds}), `examinable-report.ts` (`formatExaminableReport`); exported from `src/index.ts`; branch-tester gained `@sharpee/if-domain` (pnpm-lock updated).
+- `packages/devkit/src/commands/lens.ts` (new) + `cli.ts`: `sharpee lens examinable [story] [--seed N] [--max-seconds N] [--all] [--json]`, compiling the story itself; exit 0 report, 1 refusal, 2 usage or no story (a missing directory crashed with ENOENT until a test found it).
+- Tests: `story-walk.test.ts`, `examinable-lens-real-path.test.ts` (orchard and scullery spike pins reproduced by route, fixture story, ended room via new `tests/fixtures/lens-ended/`, language refusals incl. zero turns), `examinable-classify.test.ts` (classifier + ADR-407 AC-6), `room-routes.test.ts`, a null-set case in `claim-identity.test.ts`, devkit `src/commands/lens.test.ts`.
+- `mutation-verification` ran: no silent mutations; its gaps were closed (restore-after-hook asserted, ended room, mismatch exact text with 0 turns, hook error propagation, null-set identity, classifier units, missing-story exit) — corroborated by the tests present and passing at 03:14, e.g. `story-walk.test.ts:53` "a hook that moves the player and takes things changes nothing the walk counts", `:96` hook error propagates, `examinable-lens-real-path.test.ts:167` language mismatch refused before any turn, `:189` ended room, devkit `lens.test.ts:65` no `.story` file is exit 2.
+- Timings by route in `timings.md`: all test stories under 0.2 s; fernhill 0.6 s 9/13; zoo 0.3 s 5/8; secret-letter 18/92 (more rooms than either walk) in 12,643 ms (JSON run) and 12.8 s (a later console run); rooms behind puzzles reported unreached with what opening takes. Tier budget 30 s (ADR-408 D8 line 79, David "b").
+- Wording fix after the checkpoint (no code): ADR-408 D8 (line 79) and `timings.md` (line 62) now name both Secret Letter timings, 12.6 s/12,643 ms and 12.8 s, instead of 12.8 s alone — verified by grep at 03:13.
+- Spike disposition (David confirmed the delete list): `tools/explorer-probe/lens-examinable.js` and `tests/lens-examinable.test.js` deleted; `lens-fixture.story` git-mv'd to `packages/branch-tester/tests/fixtures/lens-fixture/`.
+- Phases 1 and 2's `**Demonstrated**` lines stay marked `[reported by session, unverified]` in the plan (no hook row for those runs); this writer re-ran the demonstrations at 2026-11-23 03:11 and again at 03:14 CST with matching results (Test Coverage Delta): `grep -c adr-408 INDEX.md` 1, ADR-408 `**Status**: **ACCEPTED**`, orchard lens 5 of 5 rooms, 92 phrases.
 
 ## Key Decisions
 
@@ -35,12 +40,18 @@
 No standard verb narrows which nouns it accepts, so a per-verb lens would find nothing the examinable lens does not.
 
 ### 2. ADR-408 — the examinable lens's findings reach Chord Writer's Testing tab
-`docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md`: D1 Testing tab (both heads); D2 highlight is a card selecting the phrase; D3 the lens moves to `packages/branch-tester` on its walk with no necessary set, behind devkit's `sharpee lens examinable`; D4 an `@sharpee/ide-protocol` contract carrying passage keys and owner/target IR ids; D5 ADR-322 D12/AC-8 does not gate it; D6 devkit-only exception to ADR-187; D7 the lens never gates; D8 it rides `sharpee test --json` as a tier at the document's seed on its own fixed budget; D9 `openSource` carries a 1-based column and UTF-16 length; D10 "Write the description" opens the target's declaration.
+D1 Testing tab (both heads); D2 a card selecting the phrase; D3 the lens in `packages/branch-tester` behind `sharpee lens examinable`; D4 an `@sharpee/ide-protocol` contract with passage keys and owner/target IR ids; D5 ADR-322 D12/AC-8 does not gate it; D6 devkit-only exception to ADR-187; D7 never gates; D8 a `sharpee test --json` tier on a fixed budget, now 30 s; D9 1-based column and UTF-16 length; D10 "Write the description" opens the target's declaration.
+
+### 3. ADR-408 Amendment 1 — routes, not a state walk (David, option a)
+A walk with no necessary set is the blind search ADR-294 D23 retired, and measured worse than the spike on fernhill; routes over open exits reach more rooms faster and name why the rest are out of reach, at the price of rooms behind puzzles.
+
+### 4. The walk's room hook and null set stay unused (David, option b)
+The shared walk keeps them for a future lens rather than deleting them.
 
 ## Next Phase
-- **Phase 2**: "The examinable lens earns a package: `sharpee lens examinable`" — branch-tester walk with a room-first-seen observer and no necessary set, lens module under `packages/branch-tester/src/lens/`, devkit `lens.ts` command, parity census against the spike's orchard/scullery pins, re-timing that sets the tier's fixed budget.
-- **Tier**: Large (400 tool-call budget)
-- **Entry state**: David's explicit go for the `packages/branch-tester` and `packages/devkit` changes (platform changes are discussed first; ADR-408's acceptance does not authorize them).
+- **Phase 3**: "A finding names its source: passage keys, owner and target ids, and the lens contract" — prose sources become `{ key, kind, ownerId, ownerName }`, rows carry `targetId`, report format 3, document type in `packages/ide-protocol/src/lens-output.ts` (new, one shape with an `ok` flag per ADR-352 D5), console form prints file and line, and a scullery join test against `sharpee world-index`.
+- **Tier**: Medium (250 tool-call budget)
+- **Entry state**: Phase 2's exit holds (it does), and David's explicit go for the `packages/ide-protocol` change — not yet given; the session ends with Phase 3 CURRENT (since 2026-11-23) and untouched.
 
 ## Open Items
 
@@ -49,63 +60,79 @@ No standard verb narrows which nouns it accepts, so a per-verb lens would find n
 - 669: plan-archive.sh requires docs/work/<slug>/plan.md; this repository names plans plan-YYYYMMDD-<name>.md, so a DONE plan cannot be archived by the script
 
 ### Long Term
-- 835: IDE testing: report nouns in room and object descriptions that the player cannot use (the examinable lens is broken and only tries examine) — now planned; commented this write with the plan and ADR-408
-- 837: Chord Writer: decode the World Index failure cause no-noun-extractor — folded into Phase 4 of the lens-findings-in-ide plan
+- 835: IDE testing: report nouns in room and object descriptions that the player cannot use (the examinable lens is broken and only tries examine) — Phases 1 and 2 of the lens-findings-in-ide plan landed
+- 837: Chord Writer: decode the World Index failure cause no-noun-extractor — folded into Phase 4
+- 805: explorer-probe tests fail 9 of 43: the walk executes no phrase and the dimension count is 91, not 41 — the declared-state suite's one failure (91 against 41) is this baseline
 
 ## Files Modified
 
 **Decision records** (4 files):
-- `docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md` - new, ACCEPTED
-- `docs/architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md` - dated note (ADR-408 D6)
-- `docs/architecture/adrs/adr-322-state-space-analysis-umbrella.md` - dated note on D12 (ADR-408 D5)
-- `docs/architecture/adrs/INDEX.md` - rebuilt by `adr-index.sh`
+- `docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md` - new (7f2860d03); Amendment 1, AC-1 command, D8 30 s this phase
+- `docs/architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md`, `adr-322-state-space-analysis-umbrella.md` - dated notes (7f2860d03)
+- `docs/architecture/adrs/INDEX.md` - rebuilt
 
 **Plan records** (3 paths):
-- `docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md` - new plan; rulings, Phase 1 DONE, Phase 2 CURRENT, Phases 3 to 5 rewritten for D8
-- `docs/work/lens-findings-in-ide/timings.md` - new, Phase 1 timings
-- `docs/context/.current-plan` - points at the new plan
+- `docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md` - Phase 2 as-built, DONE, Phase 3 CURRENT
+- `docs/work/lens-findings-in-ide/timings.md` - packaged-walk and by-route rows, tier budget
+- `docs/context/.current-plan` - points at the plan (7f2860d03)
 
-**Committed earlier in 8ff5950f9**: `docs/work/archive/description-noun-lens/` (plan and two censuses moved, Phase 6 ABANDONED) and this summary's first write.
+**branch-tester** (source 9, tests 8 paths):
+- `src/walk/story-walk.ts` (new), `src/claims/{claims-walk,claim-candidates,claim-identity,claim-results}.ts` - walk extracted, null set
+- `src/lens/{room-routes,examinable-classify,examinable-lens,examinable-report}.ts` (new), `src/index.ts`, `package.json`
+- `tests/{story-walk,examinable-lens-real-path,examinable-classify,room-routes}.test.ts` (new), `tests/claim-identity.test.ts`, `tests/fixtures/lens-ended/` (new), `tests/fixtures/lens-fixture/` (moved)
+
+**devkit** (3 files): `src/commands/lens.ts` (new), `src/commands/lens.test.ts` (new), `src/cli.ts`
+
+**explorer-probe** (2 deletions): `lens-examinable.js`, `tests/lens-examinable.test.js`; plus `pnpm-lock.yaml`
 
 ## Notes
 
-**Session duration**: ~3 hours 15 minutes (23:14 to 02:29 CST)
+**Session duration**: ~4 hours (23:14 to 03:14 CST)
 
-**Approach**: Recap, pre-session audit, core-concepts read; Phase 6 closed by a grammar and scope-level code read; then planner, plan-review, David's ruling, timings, ADR-408 through interview and two reviews.
+**Approach**: Recap, audit, core-concepts read; Phase 6 closed by a grammar read; planner, plan-review, ADR-408; Phase 2 built walk-first, re-timed, pivoted to routes on David's ruling, then tests, mutation-verification, spike disposition; the checkpoint's 12.8 s / 12,643 ms discrepancy was then fixed in the records.
 
-No source code changed this session. The timings were run by a scratchpad script (`lens-timings.sh`) outside the repository, as was the #835 comment draft (`gh-835-phase6.md`); `.commit-files` and `.commit-msg` in the state file are the commit tooling's scratch, not work.
+`explorer-probe`'s whole suite, run by the checkpoint writer at 03:10 CST, logged "34 passed 9 failed" — the 9 of 43 that #805 records, unchanged by this session.
+
+The state file's `.tmp-browser-verify-*`, `.tmp-chord-adopt-*` and `.tmp-chord-verify-*` paths are devkit test scratch directories, absent from `git status`; `.commit-files`/`.commit-msg` are commit tooling; the two scratchpad files are outside the repository.
 
 ---
 
 ## Session Metadata
 
 - **Session**: c68c7b
-- **Status**: IN-FLIGHT
+- **Status**: COMPLETE
 - **Blocker**: N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
 - **Rollback Safety**: safe to revert
-- **Commits**: 8ff5950f9 — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261122-2314-description-noun-lens.md`
+- **Commits**: 8ff5950f9, 7f2860d03 — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261122-2314-description-noun-lens.md`
 
 ## Dependency/Prerequisite Check
 
-- **Prerequisites met**: description-noun-lens Phases 1 to 5 DONE (10d1c4a0d) with the lens reading through the story language; David's rulings on D-1 to D-6 and on Q-1 to Q-3.
-- **Prerequisites discovered**: David's go for `packages/branch-tester` and `packages/devkit` (Phase 2) and later `packages/ide-protocol` (Phase 3); an ADR-395 test story that exhausts the lens's budget, for Phase 2's re-timing.
+- **Prerequisites met**: description-noun-lens Phases 1 to 5 DONE (10d1c4a0d); ADR-408 ACCEPTED; David's go for `packages/branch-tester` and `packages/devkit`; world-index's `wiredEdges` and `deriveReach` for routes.
+- **Prerequisites discovered**: David's go for `packages/ide-protocol` (Phase 3).
 
 ## Architectural Decisions
 
-- ADR-408: the examinable lens's findings reach Chord Writer's Testing tab as a non-gating `sharpee test` tier, from a branch-tester package behind devkit — ruled through plan approval and the open-questions interview.
-- ADR-187 and ADR-322 D12 carry dated notes pointing at ADR-408 (no decision amended).
+- ADR-408 (new, ACCEPTED) and its Amendment 1: findings reach the Testing tab as a non-gating `sharpee test` tier (30 s), from branch-tester behind devkit, reaching rooms by route rather than by a state walk.
+- ADR-187 and ADR-322 D12 carry dated notes pointing at ADR-408.
+- Pattern applied: one breadth-first walk (`story-walk.ts`) with the claims runner as its client, per ADR-365's identity machinery.
 
 ## Mutation Audit
 
-- N/A (planning, decision records and measurement only)
+- Files with state-changing logic modified: `walk/story-walk.ts` (engine save/restore around hooks), `lens/examinable-lens.ts` (types routes in a forked engine), `claims/claims-walk.ts`.
+- Tests verify actual state mutations (not just events): YES (evidence: `pnpm --filter '@sharpee/branch-tester' test`, 43 files, 515 passed, run by this writer 2026-11-23 03:14 CST, after the last source edit at 03:00 and last test edit at 03:08 — including "a hook that moves the player and takes things changes nothing the walk counts").
+- One path untested: a refused restore inside a room hook (the walk's hook, now unused by any client).
 
 ## Test Coverage Delta
 
-- No test changes this session (the lens timings are measurements, not tests).
+- Tests added: 4 new branch-tester suites, a null-set case in `claim-identity.test.ts`, and devkit `lens.test.ts` (4 tests); the spike's `lens-examinable.test.js` retired.
+- Tests passing after (writer's own runs, 2026-11-23 03:14 CST, fresh relative to the last source edit at 03:00 and test edit at 03:08; same counts at 03:11): branch-tester 43 files, 515 passed; devkit 36 files, 246 passed, 1 skipped (pre-existing); at 03:11, `node --test tools/explorer-probe/tests/lens-declared-state.test.js` 18 tests, 17 pass, 1 fail (actual 91, expected 41 — #805 baseline). Demonstration `node packages/devkit/dist/cli.js lens examinable test-stories/orchard/orchard.story --seed 42` printed "rooms reached     5 of 5 declared  (0.1s of 120s, 8 moves typed)" and "phrases examined  92" (re-run at 03:14, identical).
+- Known untested areas: a refused restore inside a room hook.
 
 ---
 
 **Progressive update**: session completed 2026-11-22 23:29 — first write: Phase 6 abandoned, plan DONE and archived, #835 commented
 **Progressive update**: checkpoint 2026-11-23 02:29 — lens-findings-in-ide planned and reviewed, Phase 1 DONE (timings, ADR-408 ACCEPTED, ADR-187/322 notes, index rebuilt), Phase 2 CURRENT awaiting David's go; Status back to IN-FLIGHT
+**Progressive update**: checkpoint 2026-11-23 03:10 — Phase 2 DONE: shared walk, lens by route (ADR-408 Amendment 1), `sharpee lens examinable`, tests and timings, spike retired; Phase 3 CURRENT awaiting David's go for ide-protocol; suites re-run by the writer
+**Progressive update**: session completed 2026-11-23 03:14 — Status COMPLETE; Secret Letter timing wording fixed in ADR-408 D8 and timings.md; suites and demonstrations re-run at 03:14; mutation-gap closure corroborated by test names; Phase 3 CURRENT, not started, awaiting David's go for ide-protocol

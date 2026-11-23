@@ -50,7 +50,7 @@ export interface ClaimVerdict {
  * room the set names: the walk tried nothing under its set, so it settles
  * no claim.
  */
-export type WalkStopReason = 'frontier-exhausted' | 'all-claims-settled' | 'max-states' | 'max-seconds' | 'max-depth-reached' | 'start-outside-set';
+export type WalkStopReason = 'frontier-exhausted' | 'all-claims-settled' | 'all-rooms-reached' | 'max-states' | 'max-seconds' | 'max-depth-reached' | 'start-outside-set';
 
 /** `basic` — one verb per affordance; `full` — adds put-in / put-on over the carried set. */
 export type CandidateBreadth = 'basic' | 'full';

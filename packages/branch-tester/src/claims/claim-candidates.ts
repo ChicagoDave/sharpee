@@ -119,7 +119,8 @@ function isPortable(entity: ClaimsEntity): boolean {
  *
  * @param world the live world
  * @param vocabulary the story's declared vocabulary
- * @param set the necessary set the walk runs under
+ * @param set the necessary set the walk runs under, or null for none: no
+ *   cut, every command generated is kept (a lens's walk, ADR-408 D3)
  * @param nameByIrId runtime names by IR id, for topic references
  * @param breadth `basic` or `full`
  * @returns command strings, deduplicated, in a stable order
@@ -127,7 +128,7 @@ function isPortable(entity: ClaimsEntity): boolean {
 export function candidateCommands(
   world: ClaimsWorld,
   vocabulary: CommandVocabulary,
-  set: NecessarySet,
+  set: NecessarySet | null,
   nameByIrId: ReadonlyMap<string, string>,
   breadth: CandidateBreadth,
 ): string[] {
@@ -216,6 +217,7 @@ export function candidateCommands(
     }
   }
 
+  if (set === null) return [...new Set(out)];
   const rooms = new Set(set.rooms);
   const things = new Set(set.things);
   const exitDirections = new Set(Object.keys(exits).map((direction) => direction.toLowerCase()));
