@@ -7,13 +7,21 @@
  * 2026-11-23 from a real `sharpee test scullery.story --tree --json` by a
  * devkit that had no lens tier yet.
  *
+ * The section's view functions are pinned here too (ADR-408 D2, D9, D10):
+ * the strips and their order, the not-a-thing count, the range request a
+ * card builds from `at`, the line-only request for a source with none, and
+ * the No-text card's description offer.
+ *
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { RUN_EVENT_SCHEMA_VERSION, type LensFindingEvent, type LensSummaryEvent } from '@sharpee/ide-protocol/run-events';
-import { lensAbsenceAt, lensAbsenceText, lensStatusOf } from '../src/lens';
+import {
+  LENS_STRIP_ORDER, lensAbsenceAt, lensAbsenceText, lensCardLines, lensCardRequest, lensDescriptionRequest, lensHeaderText,
+  lensSoundnessLines, lensSourceLabel, lensSourceRequest, lensStatusOf, lensStripsOf, openSourcePost, type LensFindingRow,
+} from '../src/lens';
 import { beginRun, createRunState, foldRunLine, resetRun } from '../src/run';
 
 const envelope = { schemaVersion: RUN_EVENT_SCHEMA_VERSION, elapsedMs: 0 } as const;
@@ -132,5 +140,81 @@ describe('a run with no lens events names why (ADR-408 AC-4)', () => {
     foldRunLine(state, line(runEnd(2, 0)));
     expect(lensStatusOf(state)).toEqual({ kind: 'absent', absence: 'run-stopped-early' });
     expect(lensAbsenceText('run-stopped-early')).not.toBe(lensAbsenceText('toolchain-without-lens'));
+  });
+});
+
+describe('the lens section\'s cards (ADR-408 D2, D9, D10)', () => {
+  const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...whetstoneRow } = whetstone;
+  const at = { line: 19, column: 3, endLine: 19, endColumn: 12 };
+  const located: LensFindingRow = { ...whetstoneRow, sources: [{ ...whetstoneRow.sources[0], at, length: 9 }] };
+  const finding = (extra: Partial<LensFindingRow>): LensFindingRow => ({ ...whetstoneRow, target: undefined, targetId: undefined, targetSpan: undefined, ...extra });
+
+  it('orders the strips No text first, lists each class\'s things, counts its not-a-thing findings, and puts a described row in none', () => {
+    expect(LENS_STRIP_ORDER[0]).toBe('resolved-default');
+    const rows: LensFindingRow[] = [
+      finding({ phrase: 'corks', kind: 'not-in-scope' }),
+      finding({ phrase: 'silence', kind: 'not-in-scope', thing: false }),
+      finding({ phrase: 'crock', kind: 'number-form', resolvedForm: 'crocks' }),
+      located,
+      finding({ phrase: 'jars', kind: 'resolved-described' }),
+    ];
+    const strips = lensStripsOf(rows);
+    expect(strips.map((strip) => [strip.title, strip.listed.map((row) => row.phrase), strip.notAThing])).toEqual([
+      ['No text', ['whetstone'], 0],
+      ['Not answered', ['corks'], 1],
+      ['Number form', ['crock'], 0],
+    ]);
+    expect(lensHeaderText(rows)).toBe('examinable lens · 4 findings');
+  });
+
+  it('a card with a located source asks for the phrase\'s range, and the page posts its column and length', () => {
+    const request = lensCardRequest(located);
+    expect(request).toEqual({ file: null, line: 19, range: { column: 3, length: 9 } });
+    expect(openSourcePost(request!.file, request!.line, request!.range)).toEqual({ file: null, line: 19, column: 3, length: 9 });
+    expect(lensSourceLabel(located.sources[0])).toBe('Scullery description · line 19');
+  });
+
+  it('a source with no `at` asks for its passage\'s first line only, and the post carries no range (AC-6)', () => {
+    expect(lensSourceRequest(whetstoneRow.sources[0])).toEqual({ file: null, line: 18 });
+    const request = lensCardRequest(whetstoneRow);
+    expect(request).toEqual({ file: null, line: 18 });
+    expect(openSourcePost(request!.file, request!.line, request!.range)).toEqual({ file: null, line: 18 });
+  });
+
+  it('the card picks the first located source over an earlier one with no `at`, keeps a source\'s file, and has nothing to open with no span at all', () => {
+    const unlocated = { key: 'larder.description', kind: 'description' as const, ownerId: 'larder', ownerName: 'Larder', span: { file: 'rooms.story', line: 4, column: 3, endLine: 5, endColumn: 10 } };
+    const elsewhere = { ...located.sources[0], at: { ...at, file: 'rooms.story' } };
+    expect(lensCardRequest(finding({ sources: [unlocated, elsewhere] }))).toEqual({ file: 'rooms.story', line: 19, range: { column: 3, length: 9 } });
+    expect(lensCardRequest(finding({ sources: [unlocated] }))).toEqual({ file: 'rooms.story', line: 4 });
+    const spanless = { key: null, kind: 'state' as const, ownerId: null, ownerName: 'stranger', span: null };
+    expect(lensSourceRequest(spanless)).toBeNull();
+    expect(lensSourceLabel(spanless)).toBe('stranger state text');
+    expect(lensCardRequest(finding({ sources: [spanless] }))).toBeNull();
+  });
+
+  it('a No-text card offers its target\'s declaration line; no other card does, nor one whose declaration has no span (D10)', () => {
+    expect(lensDescriptionRequest(located)).toEqual({ file: null, line: 35 });
+    expect(lensDescriptionRequest(finding({ kind: 'not-in-scope' }))).toBeNull();
+    expect(lensDescriptionRequest({ ...located, targetSpan: null })).toBeNull();
+  });
+
+  it('a card reads its phrase, its class title, its target and its rooms', () => {
+    expect(lensCardLines(located)).toEqual({ phrase: '"whetstone"  → whetstone', badge: 'No text', rooms: 'in Scullery' });
+    expect(lensCardLines(finding({ phrase: 'crock', kind: 'number-form', resolvedForm: 'crocks' })).phrase).toBe('"crock"  ("crocks" resolves)');
+  });
+
+  it('the soundness lines name the seed, budget, stop reason, reach and each room not reached, then the lens\'s footer', () => {
+    const { schemaVersion: _sv, seq: _sq, elapsedMs: _el, type: _ty, ...reported } = summary;
+    expect(lensSoundnessLines(reported)).toEqual([
+      'seed 42 · budget 30 s · every route typed',
+      'rooms reached 2 of 2 declared',
+      expect.stringContaining('Absence is not proof'),
+    ]);
+    const short = { ...reported, reach: { ...reported.reach!, roomsReached: 1, stoppedBy: 'budget' as const, unreached: [{ roomId: 'larder', room: 'Larder', reason: 'the time budget ran out' }] } };
+    expect(lensSoundnessLines(short).slice(0, 3)).toEqual([
+      'seed 42 · budget 30 s · the time budget ran out',
+      'rooms reached 1 of 2 declared',
+      'not reached: Larder — the time budget ran out',
+    ]);
   });
 });

@@ -133,8 +133,8 @@ Phase 1 records D-2 and D-3 as ruled in ADR-408 Amendment 2.
 - **Files**: `tools/ide/web/testing-surface/src/lens.ts`, `tools/ide/web/testing-surface/src/cards.ts`, `tools/ide/web/testing-surface/src/main.ts`, `tools/ide/web/testing-surface/src/surface.css`, `tools/ide/web/testing-surface/tsconfig.json`, `tools/ide/web/testing-surface/vitest.config.ts`, `tools/ide/web/testing-surface/build.mjs`, `tools/ide/web/testing-surface/tests/lens.test.ts`, `tools/ide/web/testing-surface/tests/lens-real-path.test.ts`, `tools/ide/SharpeeIDE/Resources/testing-surface/surface.js`
 - **Exit state**: The page renders the lens section. From a real scullery run, the whetstone card's request carries the phrase's range. The bundle is rebuilt from source and committed.
 - **Demonstration**: `tools/ide/build-testing-surface.sh` exits 0. From `tools/ide/web/testing-surface`, `npx vitest run` reports no failures, and among the passes is the scullery real-path case, which asserts the whetstone card's range request and the line-35 description offer.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-24)
+- **Demonstrated**: 2026-11-24, session 806326. `tools/ide/build-testing-surface.sh` exited 0 ("testing-surface bundled → tools/ide/SharpeeIDE/Resources/testing-surface"); the bundle's module banners name `packages/branch-tester/src/lens/lens-words.ts` (from source) and no world-index file. From `tools/ide/web/testing-surface`, `npx vitest run`: 28 files, 280 tests passed (no pre-phase count was taken). Among them, `tests/lens-real-path.test.ts` (ran, not skipped, over the real `packages/devkit/dist/cli.js` on scullery) asserts the whetstone card's request `{ file: null, line: 19, range: { column: 3, length: 9 } }`, its post `{ file: null, line: 19, column: 3, length: 9 }`, and the description offer `{ file: null, line: 35 }`; `tests/lens.test.ts` gained 7 cases (strips and order, not-a-thing count, range and line-only requests, the first located source, the D10 offer, card text, soundness lines). D-2(a) shape: the page posts `{openSource:{file,line,column,length}}`. Note on the plan's deliverable: `bundle-inputs.mjs` refuses `dist/` and `node_modules/` inputs, as written; it does not by itself refuse a world-index source file. What keeps world-index out is `lens-words.ts`'s type-only imports, pinned by `packages/branch-tester/tests/lens-words.test.ts` (Phase 1). [verified: session event log test row 2026-11-24T06:26:11Z "Tests passed", detail "28 passed 280 passed", after the last Phase 2 source and test edits (tests 06:26:02Z, `src/surface.css` 06:25:16Z); the build script's exit 0 has no event row and stays as reported]
+- **Status**: DONE
 
 ### Phase 3: SharpeeIDE selects the phrase
 - **Tier**: Medium
@@ -151,8 +151,8 @@ Phase 1 records D-2 and D-3 as ruled in ADR-408 Amendment 2.
 - **Files**: `tools/ide/SharpeeIDE/TestingSurface/TestingSurfaceViewController.swift`, `tools/ide/SharpeeIDE/MainWindow.swift`, `tools/ide/SharpeeIDE/Editor/EditorViewController.swift`, `tools/ide/SharpeeIDETests/TestingSurfaceRealPathTests.swift`
 - **Exit state**: In SharpeeIDE, activating scullery's whetstone card selects "whetstone" on line 19, and a line-only request behaves as before.
 - **Demonstration**: The pinned xcodebuild invocation (project memory ide-xcodebuild-practice), limited to `-only-testing:SharpeeIDETests/TestingSurfaceRealPathTests`, reports "with 0 failures". Among the passes is the lens test that asserts the selected text reads "whetstone".
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-24, session 806326. Chord pin checked first: `ChordVersionCheck.supportedLanguageVersion` and `CHORD_LANGUAGE_VERSION` both 4.1.0, no bump. The pinned xcodebuild invocation from `tools/ide/` with `-only-testing:SharpeeIDETests/TestingSurfaceRealPathTests` printed "Executed 29 tests, with 0 failures (0 unexpected)" and "** TEST SUCCEEDED **". Among the passes: `testRealSculleryRunsWhetstoneCardSelectsThePhraseInTheEditor` (0.515 s, not skipped): the real devkit CLI on a scratch copy of `test-stories/scullery`, the committed bundle, the whetstone card activated in the page, and the hook received the story, line 19, `SourcePhrase(column: 3, length: 9)`; a real `EditorViewController` applying it selected text reading "whetstone" (AC-3); the "Write the description" offer opened line 35 with no range (D10). And `testALineOnlyRequestSelectsTheLineAndNothingWider` (AC-6): a line-only or malformed body reads as no range, a line-only open selects `  whetstone lies on the drainboard.` and nothing wider, a stale range falls back to the line, and `phraseRange` counts a wrapped phrase's break. The two existing `openSource` closures in that file took the hook's new third parameter (`{ url, line, _ in … }`); their assertions are unchanged. The navigation mark (`navigationLines`, not `errorLines`) is set in code (`EditorViewController.openDocument(at:selectingPhraseAt:column:length:)`); the ruler is private, so no test reads it. [reported by session, unverified: the session event log holds no xcodebuild row; the hooks did not record the run]
+- **Status**: DONE
 
 ### Phase 4: PaneHost selects the phrase
 - **Tier**: Small
@@ -172,7 +172,7 @@ Phase 1 records D-2 and D-3 as ruled in ADR-408 Amendment 2.
 - **Exit state**: PaneHost reads the range request and selects the phrase. Its tests pin the reading and the selection on scullery's real source.
 - **Demonstration**: `dotnet test tools/ide/PaneHost.Tests` reports no failures, and among the passes is the case whose selection on `test-stories/scullery/scullery.story` reads "whetstone".
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-24)
 
 ### Phase 5: The gates pass, the records point at what landed, and #835 and #837 close
 - **Tier**: Small

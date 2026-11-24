@@ -414,6 +414,54 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         }
     }
 
+    /// Opens (or focuses) `url`, then selects the phrase that starts at `column` on
+    /// the 1-based `line` and runs `length` UTF-16 code units — a lens card's source
+    /// request (ADR-408 D9). The gutter takes the neutral navigation mark, never the
+    /// error dot: a lens finding is not an error (ADR-324 D1). A range that no longer
+    /// fits the buffer (the author edited since the run) falls back to selecting the
+    /// line. No-op if the file couldn't be opened or the line is out of range.
+    func openDocument(at url: URL, selectingPhraseAt line: Int, column: Int, length: Int) {
+        openDocument(at: url)
+        guard activeDocument?.url == url else { return }
+        let range = Self.phraseRange(line: line, column: column, length: length, in: textView.string)
+            ?? characterRange(ofLine: line)
+        guard let range else { return }
+        textView.setSelectedRange(range)
+        textView.scrollRangeToVisible(range)
+        view.window?.makeFirstResponder(textView)
+        lineNumberRuler?.errorLines = []
+        lineNumberRuler?.navigationLines = [line]
+    }
+
+    /// The character range of a phrase given as a 1-based line, a 1-based column and
+    /// a UTF-16 length — the source request's shape (ADR-408 D9).
+    ///
+    /// - Parameters:
+    ///   - line: the line the phrase starts on
+    ///   - column: the column it starts at, 1-based, in UTF-16 code units
+    ///   - length: its length in UTF-16 code units, any line break inside it counted
+    ///   - text: the buffer
+    /// - Returns: the range; nil when the line is beyond the buffer, the column lies
+    ///   past the line's end, the length is under 1, or the phrase runs past the
+    ///   buffer's end
+    static func phraseRange(line: Int, column: Int, length: Int, in text: String) -> NSRange? {
+        guard line >= 1, column >= 1, length >= 1 else { return nil }
+        let buffer = text as NSString
+        var start = 0
+        var current = 1
+        while current < line {
+            let newline = buffer.range(of: "\n", range: NSRange(location: start, length: buffer.length - start))
+            if newline.location == NSNotFound { return nil }
+            start = newline.location + 1
+            current += 1
+        }
+        var contentsEnd = 0
+        buffer.getLineStart(nil, end: nil, contentsEnd: &contentsEnd, for: NSRange(location: start, length: 0))
+        let location = start + column - 1
+        guard location < contentsEnd, location + length <= buffer.length else { return nil }
+        return NSRange(location: location, length: length)
+    }
+
     /// Index navigation (David's ruling): highlight the object's FIRST line and
     /// mark the gutter with the neutral accent dot — the red dot is reserved for
     /// errors. (The IR entity span can under-cover trailing blocks; first-line

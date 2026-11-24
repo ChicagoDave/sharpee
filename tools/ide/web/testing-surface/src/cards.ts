@@ -31,6 +31,11 @@ import {
   type SourceSpan,
 } from './derived';
 import { claimBadgeText, claimLockText, claimLockVisit, claimNameText, claimWhyText, claimsCountsOf, claimsHeaderText, type ClaimRow, type ClaimsSummary } from './claims';
+import {
+  lensAbsenceText, lensCardLines, lensCardRequest, lensDescriptionRequest, lensHeaderText, lensSoundnessLines,
+  lensSourceLabel, lensSourceRequest, lensStatusOf, lensStripsOf, type LensFindingRow, type LensStatus, type SourceRange,
+  type SourceRequest,
+} from './lens';
 import type { BranchPoint, TreeSessionModel } from './model';
 import {
   commandRowText, commandVisitTarget, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf, type RunVisitTarget,
@@ -79,8 +84,10 @@ export interface CardsDelegate {
   /** What the failure header shows — main.ts owns the walk's state. */
   failureNav(): FailureNavState;
   /** A span in the run column was clicked: open the editor there. `file`
-   *  is relative to the story file's directory, null for the story file. */
-  onOpenSource(file: string | null, line: number): void;
+   *  is relative to the story file's directory, null for the story file.
+   *  `range`, when present, is the phrase to select on that line (ADR-408
+   *  D9); without it the host opens the line, as before. */
+  onOpenSource(file: string | null, line: number, range?: SourceRange): void;
   /** The card's assertion lines (authored claims or live defaults). */
   assertionLines(ordinal: number): SourceLine[];
   /** The turn's explain groups — per-NPC character rows (ADR-318 D11)
@@ -1158,6 +1165,10 @@ export class CardsView {
     // The claims tier (ADR-365 D6, ADR-367 D6): after the rules, as the CLI
     // report prints it, and only when the manifest named a fragment.
     if (run.claims.length > 0 || run.claimsSummary !== undefined) this.renderClaimsRows(results, run.claims, run.claimsSummary);
+    // The examinable lens (ADR-408 D1, D8): after the claims, as the CLI
+    // prints it. It never touches the tally below — a lens never gates (D7).
+    const lens = lensStatusOf(run);
+    if (lens.kind === 'refused' || lens.kind === 'reported' || lens.kind === 'absent') this.renderLensSection(results, lens, run.lensFindings);
 
     if (run.tally) {
       const tally = document.createElement('div');
@@ -1222,6 +1233,124 @@ export class CardsView {
       this.delegate.onOpenSource(file, line);
     });
     return link;
+  }
+
+  /** A source request as a link: the line, or the phrase's range on it (ADR-408 D9). */
+  private requestLink(request: SourceRequest, label: string): HTMLElement {
+    const link = document.createElement('a');
+    link.className = 'ts-src';
+    link.href = '#';
+    link.textContent = label;
+    link.title = request.range ? 'select the phrase in the editor' : 'open in the editor';
+    link.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.delegate.onOpenSource(request.file, request.line, request.range);
+    });
+    return link;
+  }
+
+  /**
+   * The examinable lens's section (ADR-408 D1, D2, D8, D10): the soundness
+   * lines, or the refusal or absence sentence; then a strip per class, No
+   * text first, each listing its findings as cards and counting its
+   * not-a-thing ones. A card's activation selects the phrase where devkit
+   * located it; each source is its own link; a No-text card offers to
+   * open the target's declaration to write its description.
+   */
+  private renderLensSection(results: HTMLElement, status: Extract<LensStatus, { kind: 'refused' | 'reported' | 'absent' }>, rows: LensFindingRow[]): void {
+    const strips = lensStripsOf(rows);
+    const counts = strips.map((strip): [string, string] => [`${strip.listed.length + strip.notAThing} ${strip.title}`, 'ts-count-skip']);
+    results.appendChild(this.sectionHeader(lensHeaderText(rows), counts));
+
+    const note = (text: string, className = 'ts-lens-note'): void => {
+      const el = document.createElement('div');
+      el.className = className;
+      el.textContent = text;
+      results.appendChild(el);
+    };
+    if (status.kind === 'refused') { note(status.message); return; }
+    if (status.kind === 'absent') { note(lensAbsenceText(status.absence)); return; }
+    for (const line of lensSoundnessLines(status.summary)) note(line, 'ts-lens-soundness');
+
+    for (const strip of strips) {
+      const stripEl = document.createElement('div');
+      stripEl.className = 'ts-lens-strip';
+      stripEl.dataset.tsLensKind = strip.kind;
+      const title = document.createElement('div');
+      title.className = 'ts-lens-strip-title';
+      title.textContent = `${strip.title} · ${strip.listed.length + strip.notAThing}`;
+      stripEl.appendChild(title);
+      for (const row of strip.listed) stripEl.appendChild(this.lensCard(row, rows.indexOf(row)));
+      if (strip.notAThing > 0) {
+        const hidden = document.createElement('div');
+        hidden.className = 'ts-lens-note';
+        hidden.textContent = `${strip.notAThing} more not a thing an author could implement; not listed`;
+        stripEl.appendChild(hidden);
+      }
+      results.appendChild(stripEl);
+    }
+  }
+
+  /** One lens finding's card. */
+  private lensCard(row: LensFindingRow, index: number): HTMLElement {
+    const text = lensCardLines(row);
+    const card = document.createElement('div');
+    card.className = 'ts-lens-card';
+    card.dataset.tsLensIndex = String(index);
+    const head = document.createElement('div');
+    head.className = 'ts-head';
+    const name = document.createElement('span');
+    name.className = 'ts-name';
+    name.textContent = text.phrase;
+    const badge = document.createElement('span');
+    badge.className = 'ts-badge';
+    badge.textContent = text.badge;
+    head.append(name, badge);
+    card.appendChild(head);
+    const rooms = document.createElement('div');
+    rooms.className = 'ts-why';
+    rooms.textContent = text.rooms;
+    card.appendChild(rooms);
+
+    const request = lensCardRequest(row);
+    if (request !== null) {
+      card.classList.add('ts-run-row-visit');
+      card.setAttribute('role', 'button');
+      card.tabIndex = 0;
+      card.title = request.range ? 'Select the phrase in the editor' : 'Open the passage in the editor';
+      const go = (): void => this.delegate.onOpenSource(request.file, request.line, request.range);
+      card.addEventListener('click', go);
+      card.addEventListener('keydown', (event) => {
+        if (event.target !== card) return;
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); }
+      });
+    }
+
+    const sites = document.createElement('div');
+    sites.className = 'ts-site';
+    for (const source of row.sources) {
+      const sourceRequest = lensSourceRequest(source);
+      const label = lensSourceLabel(source);
+      if (sites.childElementCount > 0) sites.append(' · ');
+      if (sourceRequest === null) {
+        const plain = document.createElement('span');
+        plain.textContent = label;
+        sites.appendChild(plain);
+      } else {
+        sites.appendChild(this.requestLink(sourceRequest, label));
+      }
+    }
+    card.appendChild(sites);
+
+    const describe = lensDescriptionRequest(row);
+    if (describe !== null) {
+      const offer = document.createElement('div');
+      offer.className = 'ts-lens-offer';
+      offer.appendChild(this.requestLink(describe, 'Write the description'));
+      card.appendChild(offer);
+    }
+    return card;
   }
 
   private spanLink(span: SourceSpan | null): HTMLElement | null {

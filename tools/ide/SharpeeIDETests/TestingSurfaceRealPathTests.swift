@@ -1115,7 +1115,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         surface.storyFile = storyURL
 
         var opened: [(URL, Int)] = []
-        surface.openSource = { url, line in opened.append((url, line)) }
+        surface.openSource = { url, line, _ in opened.append((url, line)) }
 
         // A run's worth of wire lines, the derived tier after the tree's.
         let lines: [String] = [
@@ -1182,6 +1182,129 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertEqual(opened.last?.1, 636)
     }
 
+    // MARK: - The examinable lens's cards select the phrase (ADR-408 D2, D9, AC-3, AC-6)
+
+    /// Scullery's REAL lens tier, from the REAL process: the Run button spawns
+    /// the real devkit CLI on a scratch copy of `test-stories/scullery` (its
+    /// story and tree — the repo's copy is never written), the committed
+    /// bundle renders the lens section from what the process said, and
+    /// activating the whetstone's No-text card travels the real bridge to the
+    /// `openSource` hook with the phrase's range. Applying that range in a real
+    /// `EditorViewController` selects the text "whetstone" on line 19 (AC-3).
+    /// The card's "Write the description" offer opens the whetstone's
+    /// declaration line with no range (D10).
+    func testRealSculleryRunsWhetstoneCardSelectsThePhraseInTheEditor() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        let source = TestToolchain.repoRoot.appendingPathComponent("test-stories/scullery", isDirectory: true)
+        let project = tmp.appendingPathComponent("scullery", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        for name in ["scullery.story", "scullery.tests"] {
+            try FileManager.default.copyItem(at: source.appendingPathComponent(name),
+                                             to: project.appendingPathComponent(name))
+        }
+        let storyURL = project.appendingPathComponent("scullery.story")
+
+        try await boot()
+        surface.storyFile = storyURL
+        surface.sharpeeExecutableOverride = TestToolchain.devkitCLI
+        var opened: [(URL, Int, SourcePhrase?)] = []
+        surface.openSource = { url, line, phrase in opened.append((url, line, phrase)) }
+
+        _ = try await surface.evaluateInSurface("document.getElementById('ts-run-btn').click();")
+        for _ in 0..<1800 {
+            if let done = try? await surface.evaluateInSurface(
+                "!!document.querySelector('.ts-run-tally')"), done as? Bool == true { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        // The section rendered, No text first, and the whetstone is its card.
+        let firstStrip = try await surface.evaluateInSurface(
+            "(function () { var s = document.querySelector('.ts-lens-strip'); return s ? s.dataset.tsLensKind : null; })()") as? String
+        XCTAssertEqual(firstStrip, "resolved-default", "the No-text strip comes first")
+        let badge = try await surface.evaluateInSurface("""
+        (function () {
+          var card = Array.from(document.querySelectorAll('.ts-lens-card')).find(function (c) {
+            return c.querySelector('.ts-name').textContent.indexOf('"whetstone"') === 0;
+          });
+          if (!card) return null;
+          card.click();
+          return card.querySelector('.ts-badge').textContent;
+        })()
+        """) as? String
+        XCTAssertEqual(badge, "No text", "the whetstone's card is a No-text finding")
+        for _ in 0..<160 {
+            if !opened.isEmpty { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(opened.count, 1, "one activation, one open")
+        XCTAssertEqual(opened.first?.0.standardizedFileURL, storyURL.standardizedFileURL)
+        XCTAssertEqual(opened.first?.1, 19)
+        XCTAssertEqual(opened.first?.2, SourcePhrase(column: 3, length: 9), "the card carries the phrase's range")
+
+        // The range, applied in a real editor, selects the phrase as the author wrote it.
+        let editor = EditorViewController()
+        _ = editor.view
+        let phrase = try XCTUnwrap(opened.first?.2)
+        editor.openDocument(at: storyURL, selectingPhraseAt: 19, column: phrase.column, length: phrase.length)
+        let selection = try XCTUnwrap(editor.activeSelection)
+        let text = try XCTUnwrap(editor.currentText(at: storyURL)) as NSString
+        XCTAssertEqual(text.substring(with: selection), "whetstone", "AC-3: the card selects the phrase")
+
+        // The description offer opens the whetstone's declaration, line only (D10).
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var card = Array.from(document.querySelectorAll('.ts-lens-card')).find(function (c) {
+            return c.querySelector('.ts-name').textContent.indexOf('"whetstone"') === 0;
+          });
+          card.querySelector('.ts-lens-offer .ts-src').click();
+        })()
+        """)
+        for _ in 0..<160 {
+            if opened.count >= 2 { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(opened.count, 2, "the offer is its own open, not the card's")
+        XCTAssertEqual(opened.last?.1, 35)
+        XCTAssertNil(opened.last?.2, "the offer opens a line, never a range")
+    }
+
+    /// AC-6 and the reader's edges: a request with only a line — or a malformed
+    /// range — reads as line-only; applied in a real editor, a line-only open selects
+    /// that line and nothing wider; a range that no longer fits the buffer falls
+    /// back to the line.
+    func testALineOnlyRequestSelectsTheLineAndNothingWider() throws {
+        XCTAssertNil(SourcePhrase.read(from: ["file": NSNull(), "line": 19]))
+        XCTAssertNil(SourcePhrase.read(from: ["line": 19, "column": 3]))
+        XCTAssertNil(SourcePhrase.read(from: ["line": 19, "column": 0, "length": 9]))
+        XCTAssertNil(SourcePhrase.read(from: ["line": 19, "column": 3, "length": "9"]))
+        XCTAssertEqual(SourcePhrase.read(from: ["line": 19, "column": 3, "length": 9]), SourcePhrase(column: 3, length: 9))
+
+        let storyURL = tmp.appendingPathComponent("scullery.story")
+        try FileManager.default.copyItem(
+            at: TestToolchain.repoRoot.appendingPathComponent("test-stories/scullery/scullery.story"), to: storyURL)
+        let editor = EditorViewController()
+        _ = editor.view
+        let line19 = "  whetstone lies on the drainboard."
+
+        editor.openDocument(at: storyURL, line: 19, column: 1)
+        var text = try XCTUnwrap(editor.currentText(at: storyURL)) as NSString
+        XCTAssertEqual(text.substring(with: try XCTUnwrap(editor.activeSelection)), line19,
+                       "AC-6: the line, its break excluded, nothing wider")
+
+        // A range past the line's end (the author shortened the line since the run).
+        editor.openDocument(at: storyURL, selectingPhraseAt: 19, column: 80, length: 9)
+        text = try XCTUnwrap(editor.currentText(at: storyURL)) as NSString
+        XCTAssertEqual(text.substring(with: try XCTUnwrap(editor.activeSelection)), line19, "a stale range falls back to the line")
+
+        // The pure range: a wrapped phrase counts its break; past the buffer is nil.
+        let wrapped = "the brass\nlamp is here"
+        let range = try XCTUnwrap(EditorViewController.phraseRange(line: 1, column: 5, length: 10, in: wrapped))
+        XCTAssertEqual((wrapped as NSString).substring(with: range), "brass\nlamp")
+        XCTAssertNil(EditorViewController.phraseRange(line: 2, column: 1, length: 40, in: wrapped))
+        XCTAssertNil(EditorViewController.phraseRange(line: 3, column: 1, length: 1, in: wrapped))
+    }
+
     /// The resolver alone: nil without a story, the story for nil or empty,
     /// beside the story for a relative file, as given for an absolute one.
     func testSourceURLResolvesAgainstTheStoryFile() {
@@ -1231,7 +1354,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         surface.storyFile = project.appendingPathComponent("fernhill.story")
         surface.sharpeeExecutableOverride = TestToolchain.devkitCLI
         var opened: [(URL, Int)] = []
-        surface.openSource = { url, line in opened.append((url, line)) }
+        surface.openSource = { url, line, _ in opened.append((url, line)) }
 
         _ = try await surface.evaluateInSurface(
             "document.getElementById('ts-run-btn').click();")

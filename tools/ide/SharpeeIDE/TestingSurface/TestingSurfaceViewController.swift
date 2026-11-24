@@ -126,10 +126,12 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     var saveDocuments: (() -> Bool)?
 
     /// The run column clicked a span (GH #524 Phase 2): open the editor at
-    /// this file and 1-based line. Set by the opener, which owns the editor;
-    /// nil = the click is ignored. The surface is the one place that knows
-    /// where the story lives, so the file is already resolved (below).
-    var openSource: ((URL, Int) -> Void)?
+    /// this file and 1-based line, selecting the phrase when the request
+    /// carries one (a lens card, ADR-408 D9) and the line otherwise. Set by
+    /// the opener, which owns the editor; nil = the click is ignored. The
+    /// surface is the one place that knows where the story lives, so the
+    /// file is already resolved (below).
+    var openSource: ((URL, Int, SourcePhrase?) -> Void)?
 
     /// Resolves a span's `file` — relative to the story file's directory, or
     /// nil for the story file itself, exactly as the compiler's spans and
@@ -647,11 +649,12 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
                 startLock(arguments: args)
             }
             // A span clicked in the run column (GH #524 Phase 2): resolve the
-            // file against the story and hand the opener the place to open.
+            // file against the story and hand the opener the place to open,
+            // with the phrase's range when the page sent one (ADR-408 D9).
             if let open = object["openSource"] as? [String: Any],
                let line = open["line"] as? Int,
                let url = sourceURL(file: open["file"] as? String) {
-                openSource?(url, line)
+                openSource?(url, line, SourcePhrase.read(from: open))
             }
             // `forkBoot` pre-announcements ride this handler too; with no
             // command log left there is nothing to mark — ignored by design.
@@ -694,5 +697,26 @@ private final class WeakSurfaceMessageHandler: NSObject, WKScriptMessageHandler 
     init(_ delegate: WKScriptMessageHandler) { self.delegate = delegate }
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         delegate?.userContentController(controller, didReceive: message)
+    }
+}
+
+/// A phrase's range on a source request (ADR-408 D9): the 1-based column on
+/// the request's line where the phrase starts, and its length in UTF-16 code
+/// units, any line break inside it counted. The page sends it for a lens
+/// card whose phrase devkit located; any other request carries only a line.
+struct SourcePhrase: Equatable {
+    let column: Int
+    let length: Int
+
+    /// Reads the range off an `openSource` body.
+    ///
+    /// - Parameter open: the body's `{file, line, column?, length?}` object
+    /// - Returns: the range when `column` and `length` are both whole numbers
+    ///   of at least 1; nil otherwise, so a line-only or malformed request
+    ///   opens the line as before (AC-6)
+    static func read(from open: [String: Any]) -> SourcePhrase? {
+        guard let column = open["column"] as? Int, let length = open["length"] as? Int,
+              column >= 1, length >= 1 else { return nil }
+        return SourcePhrase(column: column, length: length)
     }
 }

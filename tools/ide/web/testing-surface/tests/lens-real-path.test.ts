@@ -12,11 +12,11 @@
  *
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { lensStatusOf } from '../src/lens';
+import { lensCardRequest, lensDescriptionRequest, lensStatusOf, openSourcePost } from '../src/lens';
 import { beginRun, createRunState, finishRun, foldRunLine } from '../src/run';
 import { spawnCli } from './spawn-cli';
 
@@ -56,6 +56,14 @@ describe.skipIf(!available)('the lens tier from a real run of the scullery test 
     const whetstone = state.lensFindings.find((row) => row.phrase === 'whetstone' && row.kind === 'resolved-default');
     expect(whetstone).toMatchObject({ targetId: 'whetstone', targetSpan: { line: 35 } });
     expect(whetstone?.sources[0]).toMatchObject({ key: 'scullery.description', span: { line: 18, endLine: 19 } });
+
+    // The card's activation asks for the phrase's range devkit located (ADR-408 D9), and its
+    // "Write the description" offer for the whetstone's declaration line (D10).
+    const request = lensCardRequest(whetstone!);
+    expect(request).toEqual({ file: null, line: 19, range: { column: 3, length: 9 } });
+    expect(openSourcePost(request!.file, request!.line, request!.range)).toEqual({ file: null, line: 19, column: 3, length: 9 });
+    expect(readFileSync(storyFile, 'utf8').split('\n')[18].slice(3 - 1, 3 - 1 + 9)).toBe('whetstone');
+    expect(lensDescriptionRequest(whetstone!)).toEqual({ file: null, line: 35 });
 
     // A lens never gates (ADR-408 D7): findings are present and the exit is the tree's.
     expect(run.status).toBe(0);

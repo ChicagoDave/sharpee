@@ -833,3 +833,16 @@ body.ts-busy .ts-outline-here::after {
 }
 .ts-lock-actions .ts-lock-keep { color: var(--ts-accent); border-color: var(--ts-accent); }
 .ts-picker-notice { font-size: 11px; color: var(--ts-fail); padding: 2px 8px 6px; white-space: pre-wrap; }
+/* The examinable lens's section (ADR-408 D1): never gating, so no pass/fail colour. */
+.ts-lens-soundness { font-size: 10.5px; color: var(--ts-fg-dim); padding: 2px 0 0; white-space: pre-wrap; }
+.ts-lens-note { font-size: 10.5px; color: var(--ts-fg-faint); padding: 2px 0 2px 12px; white-space: pre-wrap; }
+.ts-lens-strip { padding: 5px 0 2px; border-bottom: 1px solid var(--ts-border); }
+.ts-lens-strip:last-child { border-bottom: none; }
+.ts-lens-strip-title { font-size: 11px; font-weight: 700; color: var(--ts-fg-dim); padding-bottom: 2px; }
+.ts-lens-card { padding: 4px 0 3px 12px; }
+.ts-lens-card .ts-head { display: flex; justify-content: space-between; gap: 8px; }
+.ts-lens-card .ts-name { font-size: 11.5px; font-weight: 700; }
+.ts-lens-card .ts-badge { font-size: 10.5px; font-weight: 700; flex: none; color: var(--ts-fg-faint); }
+.ts-lens-card .ts-why { font-size: 10.5px; color: var(--ts-fg-dim); margin-top: 2px; }
+.ts-lens-card .ts-site { font-size: 10px; padding-top: 1px; }
+.ts-lens-card .ts-lens-offer { font-size: 10px; padding-top: 1px; }

@@ -1155,6 +1155,122 @@
     return { lineId: lock.lineId, ...lock.cardId !== void 0 ? { cardId: lock.cardId } : {} };
   }
 
+  // packages/branch-tester/src/lens/lens-words.ts
+  var EXAMINABLE_CLASS_TITLES = {
+    "resolved-default": "No text",
+    "not-in-scope": "Not answered",
+    "number-form": "Number form",
+    ambiguous: "Ambiguous",
+    unclassified: "Unclassified",
+    "resolved-described": "Described"
+  };
+  function examinableClassTitle(kind) {
+    return EXAMINABLE_CLASS_TITLES[kind] ?? kind;
+  }
+  var LENS_SOURCE_KIND_WORDS = {
+    description: "description",
+    "first-visit": "first-visit text",
+    state: "state text"
+  };
+  function lensSourceWords(source) {
+    return `${source.ownerName} ${LENS_SOURCE_KIND_WORDS[source.kind]}`;
+  }
+  var LENS_SOUNDNESS_FOOTER = [
+    "Findings are real: each phrase was executed through the engine in the state",
+    "a route first reached its room in. Absence is not proof: rooms no route",
+    "reached, and prose only shown in other states, were not examined."
+  ];
+
+  // tools/ide/web/testing-surface/src/lens.ts
+  function lensFindingRowOf(event) {
+    const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...row } = event;
+    return row;
+  }
+  function lensSummaryOf(event) {
+    const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...summary } = event;
+    return summary;
+  }
+  function lensAbsenceAt(exitCode) {
+    return exitCode >= 2 ? "run-stopped-early" : "toolchain-without-lens";
+  }
+  function lensStatusOf(state) {
+    if (state.lensSummary !== void 0) {
+      return state.lensSummary.refusal !== void 0 ? { kind: "refused", message: state.lensSummary.refusal } : { kind: "reported", summary: state.lensSummary };
+    }
+    if (state.lensAbsence !== void 0) return { kind: "absent", absence: state.lensAbsence };
+    return state.inFlight ? { kind: "running" } : { kind: "not-run" };
+  }
+  function lensAbsenceText(absence) {
+    return absence === "toolchain-without-lens" ? "This project's sharpee does not run the examinable lens. Update the toolchain to see nouns the player reads but cannot use." : "The run stopped before the examinable lens; it runs once the tree runs.";
+  }
+  function openSourcePost(file, line, range) {
+    return range === void 0 ? { file, line } : { file, line, column: range.column, length: range.length };
+  }
+  var LENS_STRIP_ORDER = ["resolved-default", "not-in-scope", "number-form", "ambiguous", "unclassified"];
+  function lensStripsOf(rows) {
+    const strips = [];
+    for (const kind of LENS_STRIP_ORDER) {
+      const inClass = rows.filter((row) => row.kind === kind);
+      if (inClass.length === 0) continue;
+      strips.push({
+        kind,
+        title: examinableClassTitle(kind),
+        listed: inClass.filter((row) => row.thing),
+        notAThing: inClass.filter((row) => !row.thing).length
+      });
+    }
+    return strips;
+  }
+  function lensSourceRequest(source) {
+    if (source.at !== void 0 && source.length !== void 0) {
+      return { file: source.at.file ?? null, line: source.at.line, range: { column: source.at.column, length: source.length } };
+    }
+    if (source.span === null) return null;
+    return { file: source.span.file ?? null, line: source.span.line };
+  }
+  function lensSourceLabel(source) {
+    const request = lensSourceRequest(source);
+    return request === null ? lensSourceWords(source) : `${lensSourceWords(source)} \xB7 line ${request.line}`;
+  }
+  function lensCardRequest(row) {
+    const located = row.sources.find((source) => source.at !== void 0 && source.length !== void 0);
+    if (located !== void 0) return lensSourceRequest(located);
+    for (const source of row.sources) {
+      const request = lensSourceRequest(source);
+      if (request !== null) return request;
+    }
+    return null;
+  }
+  function lensDescriptionRequest(row) {
+    if (row.kind !== "resolved-default" || row.targetSpan === void 0 || row.targetSpan === null) return null;
+    return { file: row.targetSpan.file ?? null, line: row.targetSpan.line };
+  }
+  function lensSoundnessLines(summary) {
+    const lines = [`seed ${summary.seed} \xB7 budget ${summary.maxSeconds} s`];
+    const reach = summary.reach;
+    if (reach !== void 0) {
+      const stopped = reach.stoppedBy === "budget" ? "the time budget ran out" : "every route typed";
+      lines[0] += ` \xB7 ${stopped}`;
+      lines.push(`rooms reached ${reach.roomsReached} of ${reach.roomsDeclared} declared`);
+      for (const room of reach.unreached) lines.push(`not reached: ${room.room} \u2014 ${room.reason}`);
+    }
+    lines.push(LENS_SOUNDNESS_FOOTER.join(" "));
+    return lines;
+  }
+  function lensHeaderText(rows) {
+    const findings = rows.filter((row) => row.kind !== "resolved-described").length;
+    return `examinable lens \xB7 ${findings} finding${findings === 1 ? "" : "s"}`;
+  }
+  function lensCardLines(row) {
+    const resolved = row.resolvedForm !== void 0 ? `  (${JSON.stringify(row.resolvedForm)} resolves)` : "";
+    const target = row.target !== void 0 ? `  \u2192 ${row.target}` : "";
+    return {
+      phrase: `${JSON.stringify(row.phrase)}${resolved}${target}`,
+      badge: examinableClassTitle(row.kind),
+      rooms: `in ${row.rooms.map((room) => room.room).join(", ")}`
+    };
+  }
+
   // packages/ide-protocol/src/run-events.ts
   var RUN_EVENT_SCHEMA_VERSION = 2;
   function isObject(v) {
@@ -1268,7 +1384,11 @@
   }
   function isLensFindingSource(value) {
     if (!isObject(value)) return false;
-    return (value.key === null || typeof value.key === "string") && (value.kind === "description" || value.kind === "first-visit" || value.kind === "state") && (value.ownerId === null || typeof value.ownerId === "string") && typeof value.ownerName === "string" && "span" in value && isSpanOrNull(value.span);
+    return (value.key === null || typeof value.key === "string") && (value.kind === "description" || value.kind === "first-visit" || value.kind === "state") && (value.ownerId === null || typeof value.ownerId === "string") && typeof value.ownerName === "string" && "span" in value && isSpanOrNull(value.span) && isPhrasePlace(value.at, value.length);
+  }
+  function isPhrasePlace(at, length) {
+    if (at === void 0 && length === void 0) return true;
+    return isSpan(at) && typeof length === "number" && Number.isInteger(length) && length > 0;
   }
   function isLensRoomRef(value) {
     return isObject(value) && typeof value.roomId === "string" && typeof value.room === "string";
@@ -1300,19 +1420,6 @@
   }
   function isRunEvent(value) {
     return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isDerivedBranchEvent(value) || isDerivedRunSummaryEvent(value) || isClaimResultEvent(value) || isClaimsSummaryEvent(value) || isLensFindingEvent(value) || isLensSummaryEvent(value) || isRunEndEvent(value);
-  }
-
-  // tools/ide/web/testing-surface/src/lens.ts
-  function lensFindingRowOf(event) {
-    const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...row } = event;
-    return row;
-  }
-  function lensSummaryOf(event) {
-    const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...summary } = event;
-    return summary;
-  }
-  function lensAbsenceAt(exitCode) {
-    return exitCode >= 2 ? "run-stopped-early" : "toolchain-without-lens";
   }
 
   // tools/ide/web/testing-surface/src/run.ts
@@ -2390,6 +2497,8 @@
       }
       if (run.derived.length > 0) this.renderDerivedRows(results, run.derived, run.derivedStale === true);
       if (run.claims.length > 0 || run.claimsSummary !== void 0) this.renderClaimsRows(results, run.claims, run.claimsSummary);
+      const lens = lensStatusOf(run);
+      if (lens.kind === "refused" || lens.kind === "reported" || lens.kind === "absent") this.renderLensSection(results, lens, run.lensFindings);
       if (run.tally) {
         const tally = document.createElement("div");
         tally.className = "ts-run-tally";
@@ -2443,6 +2552,125 @@
         this.delegate.onOpenSource(file, line);
       });
       return link;
+    }
+    /** A source request as a link: the line, or the phrase's range on it (ADR-408 D9). */
+    requestLink(request, label) {
+      const link = document.createElement("a");
+      link.className = "ts-src";
+      link.href = "#";
+      link.textContent = label;
+      link.title = request.range ? "select the phrase in the editor" : "open in the editor";
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.delegate.onOpenSource(request.file, request.line, request.range);
+      });
+      return link;
+    }
+    /**
+     * The examinable lens's section (ADR-408 D1, D2, D8, D10): the soundness
+     * lines, or the refusal or absence sentence; then a strip per class, No
+     * text first, each listing its findings as cards and counting its
+     * not-a-thing ones. A card's activation selects the phrase where devkit
+     * located it; each source is its own link; a No-text card offers to
+     * open the target's declaration to write its description.
+     */
+    renderLensSection(results, status, rows) {
+      const strips = lensStripsOf(rows);
+      const counts = strips.map((strip) => [`${strip.listed.length + strip.notAThing} ${strip.title}`, "ts-count-skip"]);
+      results.appendChild(this.sectionHeader(lensHeaderText(rows), counts));
+      const note = (text3, className = "ts-lens-note") => {
+        const el = document.createElement("div");
+        el.className = className;
+        el.textContent = text3;
+        results.appendChild(el);
+      };
+      if (status.kind === "refused") {
+        note(status.message);
+        return;
+      }
+      if (status.kind === "absent") {
+        note(lensAbsenceText(status.absence));
+        return;
+      }
+      for (const line of lensSoundnessLines(status.summary)) note(line, "ts-lens-soundness");
+      for (const strip of strips) {
+        const stripEl = document.createElement("div");
+        stripEl.className = "ts-lens-strip";
+        stripEl.dataset.tsLensKind = strip.kind;
+        const title = document.createElement("div");
+        title.className = "ts-lens-strip-title";
+        title.textContent = `${strip.title} \xB7 ${strip.listed.length + strip.notAThing}`;
+        stripEl.appendChild(title);
+        for (const row of strip.listed) stripEl.appendChild(this.lensCard(row, rows.indexOf(row)));
+        if (strip.notAThing > 0) {
+          const hidden = document.createElement("div");
+          hidden.className = "ts-lens-note";
+          hidden.textContent = `${strip.notAThing} more not a thing an author could implement; not listed`;
+          stripEl.appendChild(hidden);
+        }
+        results.appendChild(stripEl);
+      }
+    }
+    /** One lens finding's card. */
+    lensCard(row, index) {
+      const text3 = lensCardLines(row);
+      const card = document.createElement("div");
+      card.className = "ts-lens-card";
+      card.dataset.tsLensIndex = String(index);
+      const head = document.createElement("div");
+      head.className = "ts-head";
+      const name = document.createElement("span");
+      name.className = "ts-name";
+      name.textContent = text3.phrase;
+      const badge = document.createElement("span");
+      badge.className = "ts-badge";
+      badge.textContent = text3.badge;
+      head.append(name, badge);
+      card.appendChild(head);
+      const rooms = document.createElement("div");
+      rooms.className = "ts-why";
+      rooms.textContent = text3.rooms;
+      card.appendChild(rooms);
+      const request = lensCardRequest(row);
+      if (request !== null) {
+        card.classList.add("ts-run-row-visit");
+        card.setAttribute("role", "button");
+        card.tabIndex = 0;
+        card.title = request.range ? "Select the phrase in the editor" : "Open the passage in the editor";
+        const go = () => this.delegate.onOpenSource(request.file, request.line, request.range);
+        card.addEventListener("click", go);
+        card.addEventListener("keydown", (event) => {
+          if (event.target !== card) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            go();
+          }
+        });
+      }
+      const sites = document.createElement("div");
+      sites.className = "ts-site";
+      for (const source of row.sources) {
+        const sourceRequest = lensSourceRequest(source);
+        const label = lensSourceLabel(source);
+        if (sites.childElementCount > 0) sites.append(" \xB7 ");
+        if (sourceRequest === null) {
+          const plain = document.createElement("span");
+          plain.textContent = label;
+          sites.appendChild(plain);
+        } else {
+          sites.appendChild(this.requestLink(sourceRequest, label));
+        }
+      }
+      card.appendChild(sites);
+      const describe = lensDescriptionRequest(row);
+      if (describe !== null) {
+        const offer = document.createElement("div");
+        offer.className = "ts-lens-offer";
+        offer.appendChild(this.requestLink(describe, "Write the description"));
+        card.appendChild(offer);
+      }
+      return card;
     }
     spanLink(span2) {
       const label = siteLabel(span2);
@@ -4634,8 +4862,8 @@
       postToBridge({ run: true });
     },
     runColumn: () => runState,
-    onOpenSource(file, line) {
-      postToBridge({ openSource: { file, line } });
+    onOpenSource(file, line, range) {
+      postToBridge({ openSource: openSourcePost(file, line, range) });
     },
     assertionLines: assertionLinesFor,
     characterExplain: characterExplainFor,

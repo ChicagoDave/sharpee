@@ -31,6 +31,10 @@ export default defineConfig({
         __dirname,
         '../../../../packages/branch-tester/src/claims/claim-report.ts',
       ),
+      '@sharpee/branch-tester/lens-words': resolve(
+        __dirname,
+        '../../../../packages/branch-tester/src/lens/lens-words.ts',
+      ),
       '@sharpee/ide-protocol/claim-output': resolve(
         __dirname,
         '../../../../packages/ide-protocol/src/claim-output.ts',

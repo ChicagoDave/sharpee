@@ -57,6 +57,7 @@ import { showListPicker, showNotice, showStatePicker, type StateFact } from './p
 import { applyLockWritten, decodeLockResult, lockArgumentsOf, type LockStep } from './lock';
 import { showLockSheet } from './lock-sheet';
 import { beginRun, createRunState, finishRun, foldRunLine, type RunVisitTarget } from './run';
+import { openSourcePost } from './lens';
 import { captureBaseline, evaluateStaleness as judgeStaleness, restoreRun, storedRunOf, type StoredRun } from './staleness';
 import { busyLabel } from './busy';
 
@@ -490,12 +491,14 @@ const cards = new CardsView(model, {
     postToBridge({ run: true });
   },
   runColumn: () => runState,
-  onOpenSource(file, line) {
+  onOpenSource(file, line, range) {
     // A span in the run column is a place in the author's source: the host
     // opens the editor there (GH #524 Phase 2). `file` is relative to the
     // story file's directory, or null for the story file itself — the host
-    // resolves it, since only the host knows where the story lives.
-    postToBridge({ openSource: { file, line } });
+    // resolves it, since only the host knows where the story lives. A lens
+    // card adds the phrase's range (ADR-408 D9): the column and the length
+    // in UTF-16 code units; a request without one opens the line (AC-6).
+    postToBridge({ openSource: openSourcePost(file, line, range) });
   },
   assertionLines: assertionLinesFor,
   characterExplain: characterExplainFor,

@@ -1125,6 +1125,12 @@ private final class MainSplitViewController: NSSplitViewController {
         editorViewController.openDocument(at: url, line: line, column: column)
     }
 
+    /// Opens `url` selecting a phrase that starts at `column` on `line` and runs
+    /// `length` UTF-16 code units (the Testing tab's lens cards, ADR-408 D9).
+    func openDocument(at url: URL, selectingPhraseAt line: Int, column: Int, length: Int) {
+        editorViewController.openDocument(at: url, selectingPhraseAt: line, column: column, length: length)
+    }
+
     /// Opens `url` selecting the exact diagnostic span (Problems click-through, D5).
     func openDocument(at url: URL, span: DiagnosticSpan) {
         editorViewController.openDocument(at: url, span: span)
@@ -1384,8 +1390,15 @@ private final class MainSplitViewController: NSSplitViewController {
         // A coverage gap or a failed derived rule is a place in the source
         // (GH #524 Phase 2): the run column's span links open the editor
         // there, the same click-through a build diagnostic has.
-        surface.openSource = { [weak self] url, line in
-            self?.openDocument(at: url, line: line, column: 1)
+        // A lens card's request carries the phrase (ADR-408 D9): the editor
+        // selects it with the navigation mark, never the error dot (ADR-324
+        // D1 — a lens finding is not an error). Every other link opens the line.
+        surface.openSource = { [weak self] url, line, phrase in
+            if let phrase {
+                self?.openDocument(at: url, selectingPhraseAt: line, column: phrase.column, length: phrase.length)
+            } else {
+                self?.openDocument(at: url, line: line, column: 1)
+            }
         }
         let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
         // Declared policy only. No header line → the page applies the
