@@ -1,7 +1,7 @@
 # Session Plan: The Testing tab shows the examinable lens's findings, and a card selects the phrase in the author's source (GH #835, its last bullet)
 
 **Created**: 2026-11-23 (session a9e731)
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: The lens tier of `sharpee test --json` places each finding's phrase at its own span, using world-index's existing locator. The Testing tab, which both Chord Writer heads host, renders the lens section it already folds. Activating a card selects the phrase in the editor, in whichever head(s) David rules. GH #837's code already landed, so this plan closes it. Persistent in-editor marks (ADR-408 D2's separable later step), verbs beyond examine, and GH #836 are out of scope.
 **Bounded contexts touched**: N/A (testing infrastructure: the author CLI's lens tier, the shared Testing-tab page, and the two IDE heads; no story-domain behavior changes)
 **Key domain language**: N/A. Working vocabulary: lens, finding, passage (a keyed prose site), `span` (the passage's region), `at` (the phrase's own span), source request, No-text finding (`resolved-default`).
@@ -199,5 +199,18 @@ Phase 1 records D-2 and D-3 as ruled in ADR-408 Amendment 2.
 - **Files**: `docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md`, `docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md`, `docs/architecture/adrs/adr-277-ide-integrated-testing.md`, `docs/architecture/adrs/INDEX.md`, `docs/work/lens-findings-select-phrase/`
 - **Exit state**: Every gate is green or at its recorded baseline. The ADR notes and the issue comments name the commits that landed.
 - **Demonstration**: Each gate above reports no failures (the scheme prints "with 0 failures"). `gh issue view 837 --json state` prints CLOSED, and under D-1(a) `gh issue view 835 --json state` prints CLOSED.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-24)
+- **Demonstrated**: 2026-11-24, session 31d9a6. Chord pin checked again: 4.1.0 on both sides. Gates, each run once after the last source edit:
+  - `pnpm --filter '@sharpee/devkit' test`: "Tests 261 passed | 1 skipped (262)"
+  - `pnpm --filter '@sharpee/branch-tester' test`: "Tests 532 passed (532)"
+  - `pnpm --filter '@sharpee/ide-protocol' test:ci`: "Tests 69 passed (69)"
+  - `npx vitest run` in `tools/ide/web/testing-surface`: "Test Files 28 passed (28)", "Tests 280 passed (280)"
+  - `dotnet test tools/ide/PaneHost.Tests` (real-path variables set): "Passed! - Failed: 0, Passed: 158"
+  - the full SharpeeIDE scheme (pinned xcodebuild from `tools/ide/`): "Executed 629 tests, with 0 failures (0 unexpected)", "** TEST SUCCEEDED **". `WorldIndexTests.testLanguageWithNoNounExtractorRendersItsOwnState` and both Phase 3 cases passed.
+
+  Records:
+  - ADR-408 `**Planning**` set to IMPLEMENTED, with an evidence paragraph naming e2153da68, 9f455499a and 5ba1f111d.
+  - Dated notes under ADR-294 D23 and ADR-277 D2.
+  - Index rebuilt with `adr-index.sh`; ADR-408's row reads IMPLEMENTED.
+
+  Issues: #837 and #835 were commented on with the evidence inline and closed. `gh issue view 837 --json state` printed `{"state":"CLOSED"}`, and `gh issue view 835 --json state` printed `{"state":"CLOSED"}`. [verified: event-log test row 2026-11-24T06:48:40Z "Tests passed", "28 passed 280 passed" (vitest), after the last source edit at 06:47:35Z; work-summary-writer re-ran devkit ("Tests 261 passed | 1 skipped (262)"), branch-tester ("Tests 532 passed (532)"), ide-protocol ("Tests 69 passed (69)") and `dotnet test tools/ide/PaneHost.Tests --no-build` ("Passed! - Failed: 0, Passed: 158") at 2026-11-24 00:53 CST and read the xcodebuild log written 00:49 CST ("Executed 629 tests, with 0 failures (0 unexpected)"), no source edit after 00:47; work-summary-writer ran `gh issue view` at 2026-11-24 00:58 CST: 837 `{"closedAt":"2026-11-24T06:57:05Z","state":"CLOSED"}`, 835 `{"closedAt":"2026-11-24T06:57:08Z","state":"CLOSED"}`]
+- **Status**: DONE
