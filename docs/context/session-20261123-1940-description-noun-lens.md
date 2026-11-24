@@ -106,3 +106,21 @@ No active plan; the next work is #835's IDE half (below).
 ---
 
 **Progressive update**: session completed 2026-11-23 19:57 — first write: Relighting world-index check, GH #840 filed and fixed with a test, all counts corroborated by my own runs.
+
+## Activity Log (auto-captured)
+```
+[01:49:54] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/a3e6ffb9-069d-4fc3-8758-119201adf6a4/scratchpad/issue-timer-span.md
+[01:51:33] EDIT: File edited — packages/chord/src/analyzer.ts
+[01:51:33] EDIT: File changed via Bash — packages/chord/src/analyzer.ts
+[01:51:47] EDIT: File edited — packages/chord/tests/timers.test.ts
+[01:51:49] EDIT: File changed via Bash — packages/chord/tests/timers.test.ts
+[01:53:07] EDIT: File changed via Bash — stories/dungeo/src/version.ts
+[01:56:12] BUILD: Build passed — cd /Users/david/repos/sharpee/packages/chord; date '+%H:%M:%S'; npx tsc --noEmit
+[01:57:16] EDIT: File written — docs/context/session-20261123-1940-description-noun-lens.md
+[01:57:26] EDIT: File edited — docs/context/session-20261123-1940-description-noun-lens.md
+[01:57:28] EDIT: File changed via Bash — docs/context/session-20261123-1940-description-noun-lens.md
+[01:59:41] TEST: Tests passed — 14 passed 143 passed
+[01:59:44] EDIT: File written — .commit-files
+[01:59:44] EDIT: File written — .commit-msg
+[01:59:50] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```

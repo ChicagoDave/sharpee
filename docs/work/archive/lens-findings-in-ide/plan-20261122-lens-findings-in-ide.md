@@ -1,7 +1,7 @@
 # Session Plan: Chord Writer shows the examinable lens's findings and highlights the source where a noun has no text (GH #835, its last bullet)
 
 **Created**: 2026-11-22 (session c68c7b)
-**Plan Status**: ACTIVE
+**Plan Status**: ABANDONED (David, 2026-11-23: Phases 5 and 6 abandoned; superseded by world-index-noun-spans)
 **Superseded by**: docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
 **Overall scope**: Move the examinable lens from a repo-only script into the author CLI as a command Chord Writer can spawn. Give each finding its source: the key of the passage that named it, and the ids of its owner and its target. Carry the lens's JSON across the language boundary as a contract. Then show the findings in Chord Writer's Testing tab, the web pane both heads host (`tools/ide/web/testing-surface/`), highlighting the phrase in the author's prose that names a thing that has no text. Both heads, SharpeeIDE (macOS) and PaneHost (Avalonia), run the lens and answer the pane's source requests (D-1(c), ruled 2026-11-23). Other verbs and GH #836 (the matcher's number forms) are out of scope.
 **Bounded contexts touched**: N/A (testing infrastructure, the author CLI and the macOS IDE; no story-domain behavior changes)
@@ -244,7 +244,7 @@ David approved the plan with option (b) from the plan review:
   - The pinned xcodebuild invocation, limited to the lens real-path test, reports "with 0 failures", and that test asserts the selected range's text reads "whetstone".
   - `dotnet test tools/ide/PaneHost.Tests` reports no failures for the range-request tests.
 - **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-23)
+- **Status**: ABANDONED (David, 2026-11-23)
 
 ### Phase 6: The gates pass and the records point at what landed
 - **Tier**: Small
@@ -259,4 +259,4 @@ David approved the plan with option (b) from the plan review:
 - **Exit state**: Every gate is green, or at its recorded baseline. The ADR notes and issue closures name the commits that landed.
 - **Demonstration**: `./repokit verify` exits 0. The full SharpeeIDE scheme run reports "with 0 failures", and `dotnet test tools/ide/PaneHost.Tests` reports no failures. `gh issue view 835 --json state` prints "CLOSED".
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED (David, 2026-11-23)
