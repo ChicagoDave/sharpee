@@ -127,3 +127,78 @@ A phrase not found inside its passage's span gets no `at` rather than the passag
 **Progressive update**: checkpoint 2026-11-23 19:13 — first write: both plan phases DONE, test counts and real-path CLI run re-corroborated by this write, Demonstrated lines marked, issue 835 commented.
 
 **Progressive update**: session completed 2026-11-23 19:16 — promoted to COMPLETE: plan archived by hand (GH #669) and pointer removed; no source or test change since the 19:12 runs, so their evidence stays fresh.
+
+## Activity Log (auto-captured)
+```
+[01:00:35] EDIT: File edited — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[01:00:35] EDIT: File edited — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[01:00:35] EDIT: File changed via Bash — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[01:01:31] EDIT: File written — packages/world-index/src/locate.ts
+[01:01:40] EDIT: File changed via Bash — packages/world-index/src/locate.ts
+[01:01:50] EDIT: File changed via Bash — packages/world-index/src/incomplete.ts
+[01:02:03] EDIT: File edited — packages/world-index/src/incomplete.ts
+[01:02:03] EDIT: File edited — packages/world-index/src/incomplete.ts
+[01:02:03] EDIT: File edited — packages/world-index/src/incomplete.ts
+[01:02:03] EDIT: File edited — packages/world-index/src/incomplete.ts
+[01:02:09] EDIT: File edited — packages/world-index/src/roles.ts
+[01:02:09] EDIT: File edited — packages/world-index/src/roles.ts
+[01:02:24] EDIT: File edited — packages/world-index/src/document.ts
+[01:02:24] EDIT: File edited — packages/world-index/src/document.ts
+[01:02:24] EDIT: File edited — packages/world-index/src/document.ts
+[01:02:24] EDIT: File edited — packages/world-index/src/document.ts
+[01:02:25] EDIT: File edited — packages/world-index/src/document.ts
+[01:02:25] EDIT: File edited — packages/world-index/src/document.ts
+[01:02:33] EDIT: File changed via Bash — packages/world-index/src/document.ts
+[01:02:33] EDIT: File changed via Bash — packages/world-index/src/roles.ts
+[01:03:03] EDIT: File edited — packages/world-index/src/analyze.ts
+[01:03:04] EDIT: File edited — packages/world-index/src/analyze.ts
+[01:03:04] EDIT: File edited — packages/world-index/src/analyze.ts
+[01:03:04] EDIT: File edited — packages/world-index/src/index.ts
+[01:03:04] EDIT: File edited — packages/world-index/src/cli.ts
+[01:03:10] EDIT: File edited — packages/world-index/turbo.json
+[01:03:11] BUILD: Build passed — npx tsc -p tsconfig.json --noEmit; echo "exit $?"
+[01:03:11] EDIT: File changed via Bash — packages/world-index/src/analyze.ts
+[01:03:11] EDIT: File changed via Bash — packages/world-index/src/cli.ts
+[01:03:11] EDIT: File changed via Bash — packages/world-index/src/index.ts
+[01:03:11] EDIT: File changed via Bash — packages/world-index/turbo.json
+[01:04:31] EDIT: File written — packages/world-index/tests/locate.test.ts
+[01:04:44] EDIT: File changed via Bash — packages/world-index/tests/locate.test.ts
+[01:04:51] EDIT: File edited — packages/world-index/tests/locate.test.ts
+[01:04:51] EDIT: File edited — packages/world-index/tests/locate.test.ts
+[01:05:10] EDIT: File edited — packages/world-index/tests/locate.test.ts
+[01:05:11] EDIT: File edited — packages/world-index/tests/locate.test.ts
+[01:05:11] EDIT: File edited — packages/world-index/tests/locate.test.ts
+[01:05:47] TEST: Tests passed — 1 passed 1 passed
+[01:06:07] EDIT: File edited — packages/world-index/tests/locate.test.ts
+[01:06:36] EDIT: File edited — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[01:07:13] EDIT: File edited — packages/devkit/src/commands/world-index.ts
+[01:07:14] EDIT: File edited — packages/devkit/src/commands/world-index.ts
+[01:07:14] EDIT: File edited — packages/devkit/src/commands/world-index.ts
+[01:07:14] EDIT: File edited — packages/devkit/src/commands/world-index.ts
+[01:07:14] EDIT: File edited — packages/devkit/src/cli.ts
+[01:07:15] EDIT: File edited — packages/devkit/turbo.json
+[01:07:35] EDIT: File edited — packages/devkit/src/commands/world-index.test.ts
+[01:07:35] EDIT: File edited — packages/devkit/src/commands/world-index.test.ts
+[01:07:37] EDIT: File changed via Bash — packages/devkit/src/cli.ts
+[01:07:37] EDIT: File changed via Bash — packages/devkit/src/commands/world-index.test.ts
+[01:07:37] EDIT: File changed via Bash — packages/devkit/src/commands/world-index.ts
+[01:07:37] EDIT: File changed via Bash — packages/devkit/turbo.json
+[01:10:06] EDIT: File changed via Bash — packages/sharpee/docs/genai-api/index.md
+[01:10:06] EDIT: File changed via Bash — packages/sharpee/docs/genai-api/tooling.md
+[01:10:06] EDIT: File changed via Bash — stories/dungeo/src/version.ts
+[01:11:04] EDIT: File edited — docs/architecture/adrs/adr-321-world-index.md
+[01:11:04] EDIT: File edited — docs/architecture/adrs/adr-321-world-index.md
+[01:11:05] EDIT: File edited — docs/architecture/adrs/adr-321-world-index.md
+[01:11:08] EDIT: File changed via Bash — docs/architecture/adrs/adr-321-world-index.md
+[01:11:24] EDIT: File edited — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[01:13:23] EDIT: File edited — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[01:13:23] EDIT: File edited — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[01:14:05] EDIT: File written — docs/context/session-20261123-1858-description-noun-lens.md
+[01:14:11] EDIT: File changed via Bash — docs/context/session-20261123-1858-description-noun-lens.md
+[01:14:32] EDIT: File changed via Bash — docs/context/.current-plan
+[01:14:32] EDIT: File changed via Bash — docs/work/archive/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[01:19:18] TEST: Tests passed — 14 passed 143 passed
+[01:19:25] EDIT: File written — .commit-files
+[01:19:26] EDIT: File written — .commit-msg
+[01:19:30] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```

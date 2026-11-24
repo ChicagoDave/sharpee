@@ -7856,7 +7856,10 @@ export class Analyzer {
         }
         for (const st of turns) {
           if (st.text) {
-            this.registerPhrase(DEFAULT_LOCALE, `${qualified}.${st.name}`, { strategy: null, variants: [this.variantOf(st.text)], span: st.span });
+            // The phrase's span is its prose (GH #840), as every other prose
+            // registration's is; `st.span` is the turn's name line, which the
+            // duplicate-turn diagnostic above points at.
+            this.registerPhrase(DEFAULT_LOCALE, `${qualified}.${st.name}`, { strategy: null, variants: [this.variantOf(st.text)], span: st.text.span });
           }
         }
         this.timers.set(qualified, { name: decl.name, owner, states, decl });

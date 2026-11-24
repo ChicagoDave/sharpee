@@ -88,6 +88,22 @@ describe('define timer (D3a)', () => {
     expect(ir.phrases.locales[ir.phrases.defaultLocale]['guards.search.arriving']).toBeUndefined();
   });
 
+  it("spans a turn's prose, not its name line (GH #840)", () => {
+    const src = story(
+      'define timer waking\n  creak\n    Somewhere above you, old timber\n    takes a weight.\n  sway\nend timer',
+      '',
+      '',
+    );
+    const ir = ok(src);
+    const lines = src.split('\n');
+    const nameLine = lines.indexOf('  creak') + 1;
+    const span = ir.phrases.locales[ir.phrases.defaultLocale]['waking.creak'].span;
+    expect(span).toEqual({ line: nameLine + 1, column: 5, endLine: nameLine + 2, endColumn: '    takes a weight.'.length + 1 });
+    // The duplicate-turn diagnostic still points at the turn's name line.
+    const dup = compile(story('define timer t\n  a\n  a\nend timer', '', '')).diagnostics.find((d) => d.code === 'analysis.duplicate-timer-state');
+    expect(dup?.span.line).toBe(story('define timer t\n  a\n  a\nend timer', '', '').split('\n').lastIndexOf('  a') + 1);
+  });
+
   it('rejects `expired` written as a turn', () => {
     expect(errs(story('define timer t for the guards\n  expired\nend timer', '', ''))).toContain('parse.timer-expired');
   });
