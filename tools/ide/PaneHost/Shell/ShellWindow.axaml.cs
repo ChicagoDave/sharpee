@@ -647,7 +647,11 @@ public partial class ShellWindow : Window
     /// story folder, so it is resolved against that rather than the process's directory.
     /// </summary>
     /// <param name="span">Where the selected declaration was written.</param>
-    private async Task RevealAsync(IndexSpan span)
+    /// <param name="phrase">
+    /// A phrase on that line to select (a lens card's source request, ADR-408 D9), or null to
+    /// place the caret only. A phrase that no longer fits the document reveals the line instead.
+    /// </param>
+    private async Task RevealAsync(IndexSpan span, SourcePhrase? phrase = null)
     {
         if (_project is not { } project) return;
 
@@ -673,6 +677,12 @@ public partial class ShellWindow : Window
         var offset = Editor.Document.GetLineByNumber(line).Offset
                      + Math.Max(0, Math.Min(span.Column - 1, Editor.Document.GetLineByNumber(line).Length));
         Editor.CaretOffset = offset;
+        if (phrase is { } wanted
+            && TestingSurfacePosts.PhraseSelection(Editor.Document.Text, span.Line, wanted) is { } selection)
+        {
+            Editor.Select(selection.Offset, selection.Length);
+            _log.Line($"index: selected {Path.GetFileName(path)}:{span.Line}:{wanted.Column} +{wanted.Length}");
+        }
         Editor.ScrollToLine(line);
         Editor.Focus();
         _log.Line($"index: revealed {Path.GetFileName(path)}:{line}:{span.Column}");
@@ -1129,11 +1139,12 @@ public partial class ShellWindow : Window
             }
             // A span clicked in the run column (GH #524 Phase 2): the same reveal the Index
             // tab's rows use — the file is relative to the story folder, null for the story.
+            // A lens card's request also names its phrase, which the reveal selects (ADR-408 D9).
             else if (message.Handler == "testingSurface"
                 && ReferenceEquals(message.View, TestingWeb)
                 && TestingSurfacePosts.ReadOpenSource(message.Body) is { } open)
             {
-                _ = RevealAsync(new IndexSpan(open.File, open.Line, 1));
+                _ = RevealAsync(new IndexSpan(open.File, open.Line, 1), open.Phrase);
             }
             // One step of the lock gesture (ADR-367 D7): the page's `sharpee claim` arguments,
             // spawned as Run spawns `sharpee test`; the one object on stdout goes back whole.

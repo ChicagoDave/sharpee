@@ -138,3 +138,68 @@ Census (keyed sources located of keyed, seed 42): bazaar 15/15, ferry 15/15, lod
 **Progressive update**: checkpoint 2026-11-24 00:12 — first write: Phase 1 DONE (place + length on lens sources, lens-words vocabulary, ADR-408 Amendment 2), suites re-run green, Phase 2 CURRENT.
 **Progressive update**: checkpoint 2026-11-24 00:30 — Phases 2 and 3 DONE (Testing-tab lens section with range requests; SharpeeIDE selects the phrase), Phase 2 Demonstrated verified from the event log, Phase 3 marked reported; stopping before Phase 4 (PaneHost) on the tool-call budget.
 **Progressive update**: session completed 2026-11-24 00:36 — terminal write: goals (Phases 1–3) met, Status promoted to COMPLETE (unverified) on the reported Phase 3 xcodebuild run; Phase 4 next session.
+
+## Activity Log (auto-captured)
+```
+[06:04:25] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20 | grep -c "error TS"; grep -n -i "outcome\|Stat
+[06:05:50] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[06:05:50] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[06:05:58] EDIT: File edited — packages/ide-protocol/tests/run-events-lens.test.ts
+[06:05:59] EDIT: File changed via Bash — packages/ide-protocol/src/run-events.ts
+[06:05:59] EDIT: File changed via Bash — packages/ide-protocol/tests/run-events-lens.test.ts
+[06:06:02] EDIT: File edited — packages/ide-protocol/tests/run-events-lens.test.ts
+[06:06:25] EDIT: File changed via Bash — packages/devkit/src/commands/lens-sources.ts
+[06:06:36] EDIT: File changed via Bash — packages/devkit/src/commands/test-lens.ts
+[06:06:48] EDIT: File written — packages/branch-tester/src/lens/lens-words.ts
+[06:06:59] EDIT: File changed via Bash — packages/branch-tester/src/index.ts
+[06:06:59] EDIT: File changed via Bash — packages/branch-tester/src/lens/examinable-report.ts
+[06:06:59] EDIT: File changed via Bash — packages/branch-tester/src/lens/lens-words.ts
+[06:07:21] EDIT: File changed via Bash — packages/devkit/src/commands/lens.test.ts
+[06:07:21] EDIT: File changed via Bash — packages/devkit/tests/test-lens.test.ts
+[06:07:50] EDIT: File written — packages/devkit/tests/lens-phrase-place.test.ts
+[06:08:01] EDIT: File changed via Bash — packages/devkit/tests/lens-phrase-place.test.ts
+[06:08:17] EDIT: File written — packages/branch-tester/tests/lens-words.test.ts
+[06:08:27] EDIT: File changed via Bash — packages/branch-tester/tests/lens-words.test.ts
+[06:09:23] EDIT: File changed via Bash — stories/dungeo/src/version.ts
+[06:09:36] EDIT: File edited — packages/devkit/tests/lens-phrase-place.test.ts
+[06:10:34] EDIT: File edited — docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md
+[06:10:37] EDIT: File changed via Bash — docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md
+[06:10:49] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:10:50] EDIT: File changed via Bash — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:12:31] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:13:04] EDIT: File written — docs/context/session-20261123-2129-description-noun-lens.md
+[06:13:10] EDIT: File changed via Bash — docs/context/session-20261123-2129-description-noun-lens.md
+[06:23:07] TEST: Tests passed — 14 passed 143 passed
+[06:23:12] EDIT: File written — .commit-files
+[06:23:12] EDIT: File written — .commit-msg
+[06:23:14] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh
+[06:24:00] EDIT: File changed via Bash — tools/ide/web/testing-surface/build.mjs
+[06:24:00] EDIT: File changed via Bash — tools/ide/web/testing-surface/tsconfig.json
+[06:24:00] EDIT: File changed via Bash — tools/ide/web/testing-surface/vitest.config.ts
+[06:24:28] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/lens.ts
+[06:25:04] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/cards.ts
+[06:25:04] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/main.ts
+[06:25:16] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/surface.css
+[06:25:25] BUILD: Build passed — npx tsc --noEmit -p . 2>&1 | head -20; echo tsc-exit=$?
+[06:26:02] TEST: Tests passed — 2 passed 15 passed
+[06:26:02] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/lens-real-path.test.ts
+[06:26:02] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/lens.test.ts
+[06:26:11] TEST: Tests passed — 28 passed 280 passed
+[06:26:11] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/testing-surface/surface.css
+[06:26:11] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/testing-surface/surface.js
+[06:26:56] EDIT: File changed via Bash — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:28:14] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Editor/EditorViewController.swift
+[06:28:14] EDIT: File changed via Bash — tools/ide/SharpeeIDE/MainWindow.swift
+[06:28:14] EDIT: File changed via Bash — tools/ide/SharpeeIDE/TestingSurface/TestingSurfaceViewController.swift
+[06:28:49] EDIT: File changed via Bash — tools/ide/SharpeeIDETests/TestingSurfaceRealPathTests.swift
+[06:31:10] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:31:11] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:31:59] EDIT: File written — docs/context/session-20261123-2129-description-noun-lens.md
+[06:32:04] EDIT: File edited — docs/context/session-20261123-2129-description-noun-lens.md
+[06:32:05] EDIT: File changed via Bash — docs/context/session-20261123-2129-description-noun-lens.md
+[06:36:59] TEST: Tests passed — 69 passed 532 passed 261 passed 28 passed 280 passed
+[06:38:05] TEST: Tests passed — 14 passed 143 passed
+[06:38:10] EDIT: File written — .commit-files
+[06:38:11] EDIT: File written — .commit-msg
+[06:38:15] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```

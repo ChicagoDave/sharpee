@@ -11,9 +11,16 @@
 // reader → RevealAsync, and logs the editor's caret line against the line the link named
 // (`span click: … (revealed)` in shell-log.txt).
 //
+// A lens card's phrase (ADR-408 D9, AC-3, AC-6): the range is read off the page's exact post,
+// and PhraseSelection is run against the real test-stories/scullery/scullery.story text, where
+// it selects "whetstone". The two-line Editor.Select call in ShellWindow.RevealAsync that
+// applies that selection is NOT under test: PaneHost.Tests has no headless Avalonia, and the
+// `--app-exit-state` run clicks a claims span link, not a lens card.
+//
 // Public interface: xunit test class, no production surface.
 // Owner context: tools/ide — the Avalonia desktop head's shell.
 
+using PaneHost.Hosting;
 using PaneHost.Shell;
 
 namespace PaneHost.Tests;
@@ -77,6 +84,77 @@ public sealed class TestingSurfacePostsTests
     public void ALockPostMustCarryAClaimArgumentListOfStrings(string body)
     {
         Assert.Null(TestingSurfacePosts.ReadLock(body));
+    }
+
+    // ── a lens card's phrase (ADR-408 D9): the range read, and placed in real source ──
+
+    /// <summary>The whetstone card's post, exactly as the page's real-path case asserts it
+    /// (tools/ide/web/testing-surface/tests/lens-real-path.test.ts).</summary>
+    private const string WhetstonePost = "{\"openSource\":{\"file\":null,\"line\":19,\"column\":3,\"length\":9}}";
+
+    private static string SculleryText() => File.ReadAllText(
+        Path.Combine(RepoPaths.RepoRoot, "test-stories", "scullery", "scullery.story"));
+
+    [Fact]
+    public void TheWhetstoneCardsPostReadsToItsRange()
+    {
+        var request = TestingSurfacePosts.ReadOpenSource(WhetstonePost);
+
+        Assert.NotNull(request);
+        Assert.Null(request!.Value.File);
+        Assert.Equal(19, request.Value.Line);
+        Assert.Equal(new SourcePhrase(3, 9), request.Value.Phrase);
+    }
+
+    [Fact]
+    public void OnScullerysRealSourceTheRangeSelectsWhetstone()
+    {
+        var text = SculleryText();
+        var request = TestingSurfacePosts.ReadOpenSource(WhetstonePost)!.Value;
+
+        var selection = TestingSurfacePosts.PhraseSelection(text, request.Line, request.Phrase!.Value);
+
+        Assert.NotNull(selection);
+        Assert.Equal("whetstone", text.Substring(selection!.Value.Offset, selection.Value.Length));
+    }
+
+    [Theory]
+    [InlineData("{\"openSource\":{\"file\":null,\"line\":19}}")]
+    [InlineData("{\"openSource\":{\"file\":null,\"line\":19,\"column\":3}}")]
+    [InlineData("{\"openSource\":{\"file\":null,\"line\":19,\"length\":9}}")]
+    [InlineData("{\"openSource\":{\"file\":null,\"line\":19,\"column\":0,\"length\":9}}")]
+    [InlineData("{\"openSource\":{\"file\":null,\"line\":19,\"column\":3,\"length\":0}}")]
+    [InlineData("{\"openSource\":{\"file\":null,\"line\":19,\"column\":\"3\",\"length\":9}}")]
+    [InlineData("{\"openSource\":{\"file\":null,\"line\":19,\"column\":3,\"length\":null}}")]
+    public void ALineOnlyOrMalformedRangeReadsAsTheLineAlone(string body)
+    {
+        var request = TestingSurfacePosts.ReadOpenSource(body);
+
+        Assert.NotNull(request);
+        Assert.Null(request!.Value.File);
+        Assert.Equal(19, request.Value.Line);
+        Assert.Null(request.Value.Phrase);
+    }
+
+    [Theory]
+    [InlineData(9999, 3, 9)]   // the line is past the text
+    [InlineData(19, 200, 1)]   // the column is past the line's end
+    [InlineData(1, 1, 999999)] // the phrase runs past the text's end
+    public void ARangeThatNoLongerFitsPlacesNothing(int line, int column, int length)
+    {
+        Assert.Null(TestingSurfacePosts.PhraseSelection(SculleryText(), line, new SourcePhrase(column, length)));
+    }
+
+    [Fact]
+    public void AWrappedPhraseCountsItsLineBreak()
+    {
+        // The phrase starts on line 1 and ends on line 2; its length counts the break between them.
+        const string text = "  a whet\nstone lies here\n";
+
+        var selection = TestingSurfacePosts.PhraseSelection(text, 1, new SourcePhrase(5, 10));
+
+        Assert.NotNull(selection);
+        Assert.Equal("whet\nstone", text.Substring(selection!.Value.Offset, selection.Value.Length));
     }
 
     // ── the tree write (ADR-355): only the files a change touched ──

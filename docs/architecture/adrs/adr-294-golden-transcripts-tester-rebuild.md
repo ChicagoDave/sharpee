@@ -295,6 +295,17 @@ heuristic and the `compromise` tagger, unioned. It types both number forms of ea
 candidate and refuses a language with no extractor. #514 closed on the tagger's
 coverage.
 
+*Note (2026-11-24, session 31d9a6, ADR-408):* the first lens has earned a package.
+The examinable lens lives in `packages/branch-tester/src/lens/`, runs as a tier of
+`sharpee test` and on its own as `sharpee lens examinable`, and reports through
+`@sharpee/ide-protocol`'s `lens-finding` and `lens-summary` run events. It borrows
+branch-tester's story walk (`packages/branch-tester/src/walk/story-walk.ts`), the
+walk the claims runner also uses. Since ADR-408 Amendment 1 it reaches each room by a
+route planned over the IR's open exits and typed in a fork of the real engine, rather
+than by walking states. Its findings show in both Chord Writer heads' Testing tab, and
+a card selects the phrase in the author's source. The declared-state lens stays in
+`tools/explorer-probe/` until it earns a package of its own.
+
 **Where this lens sits among the existing designs** — named, not merged:
 
 - `docs/proposals/state-space-analysis.md` §4C's "undeclared referent, forward

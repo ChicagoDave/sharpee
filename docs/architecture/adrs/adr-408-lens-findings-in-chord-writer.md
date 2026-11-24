@@ -1,6 +1,6 @@
 # ADR-408: The examinable lens's findings reach Chord Writer's Testing tab
 
-**Planning**: OPEN
+**Planning**: IMPLEMENTED
 
 **Summary**: The examinable lens leaves `tools/explorer-probe` for `packages/branch-tester`, on branch-tester's walk with no necessary set, behind devkit's `sharpee lens examinable`. Each finding names its passage key and its owner and target IR ids. The report is a contract in `@sharpee/ide-protocol`. Findings appear in the Testing tab, the web pane both Chord Writer heads host, and a card selects the phrase in the author's source. The lens never gates.
 
@@ -18,6 +18,20 @@ Amendment 2 (2026-11-24, session 806326). It records David's rulings D-2 and D-3
 - **D9 stands as written.** The request is `{file, line, column, length}`. The end-point form `{file, line, column, endLine, endColumn}` was rejected.
 - **The length rule.** devkit's test command computes `length` as the consumer, in UTF-16 code units, from the start of the phrase to its end as the author wrote it. Any line break inside the phrase counts as the source writes it, so `\r\n` is two. The phrase is found by world-index's `locatePhrase`, inside the keyed passage's span, trying the finding's `phrase` and then its `resolvedForm`, with no fallback. A source with no key is never searched. Each `lens-finding` source carries the result as `at` (the phrase's own span) and `length`, both present or both absent (`LensFindingSource`, `packages/ide-protocol/src/run-events.ts`). The change is additive, so `RUN_EVENT_SCHEMA_VERSION` stays 2.
 - **One vocabulary.** The console form of `sharpee lens examinable` and the test tier, and the Testing tab, print every class title, source word and the soundness footer from `packages/branch-tester/src/lens/lens-words.ts`. That module is browser-safe and imports types only. The titles are No text, Not answered, Number form, Ambiguous, Unclassified, and Described for the one class that is not a finding. The console's class column and its `by class` line changed from the kind ids to the titles.
+
+**Implemented** (2026-11-24, session 31d9a6), in both heads (D1). The work was `docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md`. Phase 1, wire field, locator and vocabulary: e2153da68. Phases 2 and 3, the Testing tab's lens section and SharpeeIDE's selection: 9f455499a. Phase 4, PaneHost's selection (`TestingSurfacePosts.PhraseSelection`, `ShellWindow.RevealAsync`): the commit that carries this note. Gates, each run once on 2026-11-24 after the last source edit:
+- `pnpm --filter '@sharpee/devkit' test`: 261 passed, 1 skipped.
+- `pnpm --filter '@sharpee/branch-tester' test`: 532 passed.
+- `pnpm --filter '@sharpee/ide-protocol' test:ci`: 69 passed.
+- `npx vitest run` in `tools/ide/web/testing-surface`: 28 files, 280 passed.
+- `dotnet test tools/ide/PaneHost.Tests`, with the README's real-path variables set: 158 passed, 0 failed.
+- The full SharpeeIDE scheme (the pinned xcodebuild invocation, from `tools/ide/`): "Executed 629 tests, with 0 failures", "** TEST SUCCEEDED **".
+
+What pins each acceptance criterion:
+- AC-3: `TestingSurfaceRealPathTests.testRealSculleryRunsWhetstoneCardSelectsThePhraseInTheEditor` (SharpeeIDE) and `TestingSurfacePostsTests.OnScullerysRealSourceTheRangeSelectsWhetstone` (PaneHost).
+- AC-6: `testALineOnlyRequestSelectsTheLineAndNothingWider` and `ALineOnlyOrMalformedRangeReadsAsTheLineAlone`.
+
+The one step no test reaches is PaneHost's two-line `Editor.Select`, because PaneHost.Tests has no headless Avalonia. Persistent in-editor marks remain D2's separable later step.
 - Evidence (2026-11-24): `node packages/devkit/dist/cli.js test test-stories/scullery/scullery.story --tree --json` printed the whetstone's `lens-finding` with source `"at":{"line":19,"column":3,"endLine":19,"endColumn":12},"length":9`. Over the six test stories, 135 of 135 keyed sources were located (bazaar 15, ferry 15, lodge 24, orchard 48, quay 12, scullery 21), with no misses.
 
 **Date**: 2026-11-23

@@ -186,6 +186,17 @@ full-height sibling of Build/Play/Index/Diagnosis holding the transcript tree
 and the live results list in one pane, following the Build-pane precedent.
 Nothing is added to the bottom dock.
 
+> **Note (2026-11-24, session 31d9a6, ADR-408):** the Testing tab's run column
+> gains a lens section after the claims rows. It opens with the lens's soundness
+> line, then shows class strips with No text first, and a card for each finding.
+> It never counts toward the tally. Its click-through goes beyond file:line: a
+> card's source request carries the phrase's `column` and `length`
+> (`{openSource:{file,line,column,length}}`, ADR-408 D9), and both heads select
+> that phrase in the editor. SharpeeIDE does it through
+> `EditorViewController.openDocument(at:selectingPhraseAt:column:length:)`, and
+> PaneHost through `TestingSurfacePosts.PhraseSelection` and `Editor.Select`. A
+> request with only a line opens the line as before.
+
 ### D3 — Walkthrough chains are first-class runs
 
 A chain run maps to `sharpee test --chain --stop-on-failure <ordered files>`.

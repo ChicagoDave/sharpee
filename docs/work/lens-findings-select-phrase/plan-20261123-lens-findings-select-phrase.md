@@ -171,8 +171,8 @@ Phase 1 records D-2 and D-3 as ruled in ADR-408 Amendment 2.
 - **Files**: `tools/ide/PaneHost/Shell/TestingSurfacePosts.cs`, `tools/ide/PaneHost/Shell/ShellWindow.axaml.cs`, `tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs`
 - **Exit state**: PaneHost reads the range request and selects the phrase. Its tests pin the reading and the selection on scullery's real source.
 - **Demonstration**: `dotnet test tools/ide/PaneHost.Tests` reports no failures, and among the passes is the case whose selection on `test-stories/scullery/scullery.story` reads "whetstone".
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-24)
+- **Demonstrated**: 2026-11-24, session 31d9a6. Chord pin checked first: `ChordVersionCheck.supportedLanguageVersion` and `CHORD_LANGUAGE_VERSION` both 4.1.0, no bump. Baseline before the first edit: `dotnet test tools/ide/PaneHost.Tests` with the README's real-path variables set (`SHARPEE_IDE_TOOLCHAIN=~/Library/Caches/net.sharpee.panehost/stage/toolchain`, `SHARPEE_IDE_CAPABILITY_FIXTURE=~/Documents/Sharpee Capability Fixture` (the folder), `SHARPEE_IDE_CAPABILITY_STORY=~/Documents/Sharpee Capability Fixture/capability-fixture.story` (the file)) printed "Passed! - Failed: 0, Passed: 145"; without them 8 capability tests fail on the unset variable by design. After the change, the same command printed "Passed! - Failed: 0, Passed: 158, Skipped: 0, Total: 158". The 13 new cases in `tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs`: `TheWhetstoneCardsPostReadsToItsRange` (the page's exact post `{"openSource":{"file":null,"line":19,"column":3,"length":9}}` reads to `SourcePhrase(3, 9)`), `OnScullerysRealSourceTheRangeSelectsWhetstone` (`PhraseSelection` on the real `test-stories/scullery/scullery.story` text selects "whetstone"), `ALineOnlyOrMalformedRangeReadsAsTheLineAlone` (7 bodies, AC-6), `ARangeThatNoLongerFitsPlacesNothing` (3 cases), `AWrappedPhraseCountsItsLineBreak`. Lines are counted at `\n` as SharpeeIDE's `phraseRange` counts them. The `Editor.Select` call in `ShellWindow.RevealAsync` is not under test (no headless Avalonia, item 10), as the test file's header states. [verified: the hooks logged no dotnet pass row (both dotnet rows, 06:44Z, read "status unverified" and precede the edits); work-summary-writer re-ran 2026-11-24 00:53 CST, after the last source edit at 00:47 — `dotnet test tools/ide/PaneHost.Tests --no-build` with `SHARPEE_IDE_TOOLCHAIN` set, `SHARPEE_IDE_CAPABILITY_FIXTURE` set to the fixture folder and `SHARPEE_IDE_CAPABILITY_STORY` to its `.story` file (the README's names), printed "Passed! - Failed: 0, Passed: 158, Skipped: 0, Total: 158"]
+- **Status**: DONE
 
 ### Phase 5: The gates pass, the records point at what landed, and #835 and #837 close
 - **Tier**: Small
@@ -200,4 +200,4 @@ Phase 1 records D-2 and D-3 as ruled in ADR-408 Amendment 2.
 - **Exit state**: Every gate is green or at its recorded baseline. The ADR notes and the issue comments name the commits that landed.
 - **Demonstration**: Each gate above reports no failures (the scheme prints "with 0 failures"). `gh issue view 837 --json state` prints CLOSED, and under D-1(a) `gh issue view 835 --json state` prints CLOSED.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-24)
