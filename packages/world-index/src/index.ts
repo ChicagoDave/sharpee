@@ -67,6 +67,10 @@ export type {
 } from './reach.js';
 
 export { analyzeStoryIR, analyzerVersionFromScript } from './analyze.js';
+export type { StoryCompiler } from './analyze.js';
+
+export { locatePhrase } from './locate.js';
+export type { SourceReader } from './locate.js';
 
 export { buildDocument, buildFailure, WORLD_INDEX_SCHEMA } from './document.js';
 export type {

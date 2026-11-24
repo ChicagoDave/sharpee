@@ -8,6 +8,8 @@
         "$TURBO_ROOT$/branch-stories/fernhill/**",
         "$TURBO_ROOT$/branch-stories/ides-of-march/**",
         "$TURBO_ROOT$/stories/thealderman/chord/**",
+        "$TURBO_ROOT$/test-stories/**",
+        "!$TURBO_ROOT$/test-stories/**/dist/**",
         "!$TURBO_ROOT$/branch-stories/**/dist/**",
         "!$TURBO_ROOT$/branch-stories/**/node_modules/**",
         "!$TURBO_ROOT$/stories/thealderman/chord/dist/**",

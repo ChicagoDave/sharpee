@@ -801,6 +801,16 @@ render, not a crash: a missing or malformed IR, an absent `node`, or a non-zero 
 World tab in an explanatory empty state naming the cause, the same way the Testing tab shows
 its build-first placeholder.
 
+> **Note (2026-11-23, session dfa928; plan `world-index-noun-spans`).** The analyzer also reads
+> a `.story`. `sharpee world-index <story>.story` compiles in memory through devkit's
+> `compileChordStory` (the caller supplies the compile function to `analyzeStoryIR`, as it
+> supplies the noun-extractor lookup under ADR-407 D8), reads the source files, and publishes
+> `at`, the phrase's own span, on every finding and edge it can locate. `at` is an optional key,
+> absent rather than null, and present only for a `.story` input, so the wire stays
+> `world-index/4`. A `.story` the load-time gates refuse is a new failure cause,
+> `uncompilable-story`. The IDE still spawns the analyzer on a `.ir.json` and is unchanged.
+> `packages/world-index`'s own `cli.js` stays IR-only.
+
 **Sequencing.** Package first with the corpus test (D6b) and the acceptance suite below;
 tab second; extension deletion last. The Chord suppression ADR is independent and can land at
 any point after.
@@ -930,6 +940,13 @@ the passage, falling back to its first line. Findings also carry `matched`, the 
 reached the target, because *"house's first play" → play-book* is an assertion the reader
 cannot check until the row says the head word `play` is what did it.
 
+> **Note (2026-11-23, session dfa928).** When the analyzer reads a `.story` (see the note at
+> the IDE↔analyzer boundary), it resolves the phrase itself, by the same rule — words matched
+> case-insensitively across line breaks, never inside a longer word, first match — clipped to
+> the passage's own columns, and publishes the result as `at`. It has no fallback: a phrase it
+> cannot find carries no `at`. For a `.ir.json` input nothing changes, and the IDE's locator
+> (`WorldPhraseLocator.swift`) remains the one that resolves the phrase.
+
 **D18 — Every entity publishes its name, its declaration span and its room.** A finding
 named `oil-lamp`, which is neither what the author wrote nor anywhere they can go. The new
 `declarations` table carries all three, which is what lets a row say *the oil lamp*, take
@@ -990,6 +1007,10 @@ Measured: Ides of March no-object 207 → 181, Fernhill 127 → 115, suppression
   to the passage's first line when the phrase cannot be found. The real case is asserted
   against `ides-of-march.story` itself, not a fixture. Every finding carries `matched`, and
   the row says which word reached the target. *(SELF-VERIFYING.)*
+  *Note (2026-11-23, session dfa928):* for a `.story` input the analyzer publishes the
+  phrase's span as `at` by the same match, with no fallback; asserted on `scullery.story`'s
+  whetstone (line 19, columns 3 to 12) in `packages/world-index/tests/locate.test.ts` and
+  `packages/devkit/src/commands/world-index.test.ts`.
 - **AC-19 — every finding's entity is in the declarations table.** Not merely most of them:
   the test asserts the property over the whole missing-word list, because a row that cannot
   say the author's name for a thing or take the reader to its `create` is the defect this

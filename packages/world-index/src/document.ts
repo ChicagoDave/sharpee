@@ -11,6 +11,13 @@
  * crosses into a language that cannot import it (DEVARCH 8b's codegen exception:
  * the language boundary is why the schema is written down rather than shared).
  *
+ * **One key is absent rather than null: `at`.** A finding or edge carries the
+ * phrase's own span only when the analyzer read the story's source (a `.story`
+ * input); a built IR has no source, and its records carry no `at` key at all.
+ * Absent and not null, so an IR-input document is byte-for-byte what it was
+ * before the field existed, and a reader that never asked for it decodes one
+ * shape either way (Swift's `Decodable` ignores the key it does not name).
+ *
  * Failure is a first-class document, not an exception: a missing or malformed IR
  * still produces a document naming the cause, so the World tab renders an
  * explanatory empty state rather than a blank panel (AC-9).
@@ -28,6 +35,7 @@
 import type { Span, StoryIR } from '@sharpee/chord';
 import type { NounExtractor } from '@sharpee/if-domain';
 import { deriveIncomplete, publishFilters, type ExtractorFilters, type IncompleteResult } from './incomplete.js';
+import type { SourceReader } from './locate.js';
 import { collectProse, type ProseSite } from './prose.js';
 import { layoutMap, type Cell, type DirectionSkew, type ResolvedCollision } from './map.js';
 import { deriveReach, type ReachResult } from './reach.js';
@@ -64,6 +72,13 @@ import { buildVocabularyIndex, publishVocabulary, type VocabularySurface } from 
  * is required, and a v3 analyzer paired with a v4 reader would answer a question
  * about unwinnability with silence. Silence and *nothing is wrong* are the same
  * bytes, which is the one place this wire cannot afford to guess.
+ *
+ * Still `world-index/4` with `at` (2026-11-23): the phrase's own span rides
+ * every finding and edge as an OPTIONAL key, present only for a `.story` input.
+ * Nothing is replaced and nothing a v4 reader requires is missing, so a reader
+ * that ignores `at` reads the same answer it always did — no bump. The
+ * `uncompilable-story` failure cause arrives with it, and only a `.story` input
+ * can produce it.
  */
 export const WORLD_INDEX_SCHEMA = 'world-index/4';
 
@@ -99,6 +114,11 @@ export type FailureCause =
   | 'unreadable-ir'
   /** The file is not JSON, or is not a Story IR. */
   | 'malformed-ir'
+  /**
+   * A `.story` the Chord load-time gates refuse. The message is the gates'
+   * diagnostics. Only a `.story` input reaches it.
+   */
+  | 'uncompilable-story'
   /** The analysis itself threw — a defect in this package. */
   | 'internal'
   /**
@@ -263,9 +283,16 @@ function declared(value: string | undefined): string | null {
  * @param analyzerVersion this package's version
  * @param extractor the noun extractor for the story's language (ADR-407 D8);
  *   every prose reading below goes through it
+ * @param source the story's source files, when the caller read them; given, each
+ *   finding and edge it can locate carries `at`, and absent, none carries the key
  * @returns the document the IDE renders
  */
-export function buildDocument(ir: StoryIR, analyzerVersion: string, extractor: NounExtractor): WorldIndexDocument {
+export function buildDocument(
+  ir: StoryIR,
+  analyzerVersion: string,
+  extractor: NounExtractor,
+  source?: SourceReader,
+): WorldIndexDocument {
   const map = layoutMap(ir);
   const reach = deriveReach(ir);
   // Collected once: the passages are the Incomplete view's input, the prose surface
@@ -291,7 +318,7 @@ export function buildDocument(ir: StoryIR, analyzerVersion: string, extractor: N
       connections: map.connections,
     },
     reach,
-    incomplete: deriveIncomplete(ir, extractor, reach),
+    incomplete: deriveIncomplete(ir, extractor, reach, source),
     roles: Object.fromEntries(roles),
     vocabulary: publishVocabulary(buildVocabularyIndex(ir)),
     prose,

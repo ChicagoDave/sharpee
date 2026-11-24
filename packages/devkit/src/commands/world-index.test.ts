@@ -16,6 +16,22 @@ import { runCompose } from './compose.js';
 import { nounExtractorLookup, runWorldIndex } from './world-index.js';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', '..', 'chord', 'tests', 'fixtures');
+/** The scullery test story, whose whetstone opens line 19 at column 3. */
+const SCULLERY = join(__dirname, '..', '..', '..', '..', 'test-stories', 'scullery', 'scullery.story');
+
+/** A phrase record as the document carries it, with its optional span. */
+interface PhraseRecord {
+  phrase: string;
+  entity?: string;
+  site: { key: string };
+  at?: { line: number; column: number; endLine: number; endColumn: number };
+}
+
+/** Every finding and edge in an analysis document's Incomplete view. */
+function phraseRecords(document: Record<string, unknown>): PhraseRecord[] {
+  const incomplete = document.incomplete as Record<'missingWord' | 'ambiguous' | 'noObject' | 'edges', PhraseRecord[]>;
+  return [...incomplete.missingWord, ...incomplete.ambiguous, ...incomplete.noObject, ...incomplete.edges];
+}
 const OUT_DIR = mkdtempSync(join(tmpdir(), 'world-index-test-'));
 
 afterAll(() => rmSync(OUT_DIR, { recursive: true, force: true }));
@@ -98,6 +114,56 @@ describe('sharpee world-index', () => {
       message: noNounExtractorRefusal('xx-YY'),
       path: foreign,
     });
+  });
+
+  // The real path (DEVARCH 13a): the real compiler, analyzer and English extractor,
+  // on a real .story, with nothing injected.
+  it("reads a .story from source and places scullery's whetstone at line 19, columns 3 to 12", () => {
+    const { code, document, lines } = runCapturing([SCULLERY]);
+    expect(code).toBe(0);
+    expect(lines).toBe(1);
+    expect(document.schema).toBe('world-index/4');
+    expect(document.ok).toBe(true);
+
+    const whetstone = phraseRecords(document).find(
+      (record) => record.entity === 'whetstone' && record.site.key === 'scullery.description',
+    );
+    expect(whetstone?.at).toEqual({ line: 19, column: 3, endLine: 19, endColumn: 12 });
+    expect(readFileSync(SCULLERY, 'utf8').split('\n')[18].slice(2, 11)).toBe('whetstone');
+  });
+
+  it('publishes no `at` for the same story compiled to .ir.json', async () => {
+    const ir = join(OUT_DIR, 'scullery.ir.json');
+    expect(await runCompose([SCULLERY, '-o', ir])).toBe(0);
+
+    const { code, document } = runCapturing([ir]);
+    expect(code).toBe(0);
+    const records = phraseRecords(document);
+    expect(records.length).toBeGreaterThan(0);
+    expect(records.filter((record) => 'at' in record)).toEqual([]);
+  });
+
+  it('answers a .story path that names no file with an unreadable-ir failure at exit 1', () => {
+    const missing = join(OUT_DIR, 'never-written.story');
+    const { code, document } = runCapturing([missing]);
+    expect(code).toBe(1);
+    expect(document.failure).toEqual({
+      cause: 'unreadable-ir',
+      message: `No story could be read at ${missing}.`,
+      path: missing,
+    });
+  });
+
+  it('answers a .story the gates refuse with an uncompilable-story failure at exit 1', () => {
+    const broken = join(OUT_DIR, 'broken.story');
+    writeFileSync(broken, 'story\n  title: Broken\n\nimport "nowhere"\n');
+
+    const { code, document } = runCapturing([broken]);
+    expect(code).toBe(1);
+    const failure = document.failure as { cause: string; message: string; path: string };
+    expect(failure.cause).toBe('uncompilable-story');
+    expect(failure.path).toBe(broken);
+    expect(failure.message).toContain('Chord load-time gate failed');
   });
 
   it('finds the English extractor for en-US through a real require', () => {

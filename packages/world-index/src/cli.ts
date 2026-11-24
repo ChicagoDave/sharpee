@@ -14,6 +14,11 @@
  * noun-extractor lookup, and nothing else, so the two entry points cannot
  * disagree about what a failure is.
  *
+ * **It reads a built IR only.** It has no compiler of its own, so it passes
+ * `analyzeStoryIR` no compile function, and a `.story` path is answered with a
+ * `usage` failure naming `sharpee world-index`, the entry that reads source and
+ * publishes each phrase's own span.
+ *
  * **It never writes anything but one JSON document to stdout, and it never
  * throws its way out.** Exit status is 0 for an analysis and 1 for a failure
  * document; anything else means the process died before it could speak, which is

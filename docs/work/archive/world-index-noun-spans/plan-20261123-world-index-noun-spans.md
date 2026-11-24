@@ -1,7 +1,7 @@
 # Session Plan: `sharpee world-index` locates every noun phrase it reads to its own source span, reading the story from source
 
 **Created**: 2026-11-23 (session 788f1b)
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: `sharpee world-index` accepts a `.story` as well as a `.ir.json`. Given a `.story`, it compiles in memory and reads the source files, and every record that carries a phrase (the three Incomplete finding classes and the resolved edges) gains an optional `at`, the phrase's own span. A built IR publishes no `at`, so the wire stays `world-index/4`. No IDE work.
 **Bounded contexts touched**: N/A (static analysis tooling: `packages/world-index` and devkit's `world-index` command)
 **Key domain language**: N/A. Working vocabulary: passage (a `ProseSite`), phrase, finding, edge, `at` (a phrase's own span), source reader.
@@ -24,6 +24,8 @@ Read 2026-11-23 while planning. Each item shapes a phase below.
 ## Decisions for David (ruled at plan approval)
 
 Approving the plan as written takes each lean below.
+
+**Ruled (David, 2026-11-23, PROCEED):** the plan is approved as written, D-1(a) and D-2 as leaned.
 
 - **D-1. What a `.story` that cannot be analyzed is called.**
   - (a) A missing or unreadable `.story` stays `unreadable-ir`, whose comment already reads "the path names no file, or the file cannot be read", with a message naming the story. A story the load-time gates refuse gets a new cause, `uncompilable-story`, whose message is the gate's diagnostics. Only a `.story` input reaches it, and the IDE never passes one, so `WorldFailureCause` in the Swift mirror is left alone. If the IDE ever spawns world-index on a `.story`, that IDE plan adds the case.
@@ -49,7 +51,7 @@ Approving the plan as written takes each lean below.
 - **Tier**: Medium
 - **Budget**: 250
 - **Domain focus**: `packages/world-index`: the locator, the `at` field on every phrase record, and the read layer for a `.story`.
-- **Entry state**: The plan is approved with D-1 and D-2 ruled, and David's go for `packages/world-index` holds (2026-11-23). `pnpm --filter '@sharpee/world-index' test:ci` is run once before the first edit and its count recorded here as the baseline.
+- **Entry state**: The plan is approved with D-1 and D-2 ruled, and David's go for `packages/world-index` holds (2026-11-23). `pnpm --filter '@sharpee/world-index' test:ci` is run once before the first edit and its count recorded here as the baseline. **Baseline (2026-11-23 19:00, session dfa928):** 20 files, 240 passed, 1 skipped (241).
 - **Deliverable**:
   - `packages/world-index/src/locate.ts` (new). A source reader type: a function from a span's `file` (absent means the main file) to that file's text, or null. A pure `locatePhrase` that takes the source text, the passage's span and the phrase's words, and returns the phrase's span or null. The match is the one in item 1: case-insensitive, `\s+` between words, never inside a longer word, first match, and only inside the span (from its column on the first line to its endColumn on the last). Lines split and columns count the way Chord's lexer counts them (`packages/chord/src/lexer.ts:163`, `column = pos + 1`), and endColumn is just past the last character.
   - `at?: Span` on `MissingWordFinding`, `AmbiguousFinding`, `NoObjectFinding` and `ResolvedMention` (item 5). `deriveIncomplete` and `buildDocument` take an optional source reader. When it is given and the passage has a span, each record gets `at` if the words are found, and nothing if they are not. When it is absent, no record carries the key.
@@ -66,8 +68,9 @@ Approving the plan as written takes each lean below.
 - **Files**: `packages/world-index/src/locate.ts` (new), `packages/world-index/src/incomplete.ts`, `packages/world-index/src/document.ts`, `packages/world-index/src/analyze.ts`, `packages/world-index/src/index.ts`, `packages/world-index/src/cli.ts`, `packages/world-index/turbo.json`, `packages/world-index/tests/locate.test.ts` (new), `packages/world-index/tests/`
 - **Exit state**: Given a .story file and a compile function, the analyzer publishes `at` on each phrase record it can locate, and the scullery whetstone edge sits at line 19, columns 3 to 12. An .ir.json input publishes no `at`, and the schema is still world-index/4. The census is recorded and David has seen any miss.
 - **Demonstration**: The world-index suite (pnpm --filter '@sharpee/world-index' test:ci) reports no failures, and its count is the baseline plus the new `packages/world-index/tests/locate.test.ts` cases. Among them, the scullery case asserts the whetstone edge's `at` and the text "whetstone" at it, and the .ir.json case asserts that no record carries `at`. The package typecheck (pnpm --filter '@sharpee/world-index' typecheck) reports no errors.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-23)
+- **Census** (2026-11-23, session dfa928; every story read through `analyzeStoryIR` with a real compile, phrases located of phrase records): test stories bazaar 20/20, ferry 31/31, lodge 55/55, orchard 82/82, quay 12/12, scullery 19/19 — 219 of 219, pinned in `tests/locate.test.ts`. Corpus, measured and not pinned: Fernhill 513/514, The Alderman 377/379, Ides of March 644/648. All seven misses are phrases the extractor read out of a hyphenated or quoted word, which the longer-word rule (`'` and `-` are word characters, as in the IDE's locator) refuses: `ceiling curtains` (Floor-to-ceiling), `floor landing` (third-floor), `thirties` (mid-thirties), `house` (tiring-house), `second` (half-second), `book` (play-book, book-holder's), `peace` (`'Peace,` opening a single-quoted line). Shown to David 2026-11-23.
+- **Demonstrated**: 2026-11-23 (session dfa928) — `pnpm --filter '@sharpee/world-index' test:ci`: 21 files, 260 passed, 1 skipped (baseline 240 + 20 new in `tests/locate.test.ts`), including the scullery case asserting the whetstone edge at line 19, columns 3 to 12, with "whetstone" read back at that span, and the `.ir.json` case asserting no record carries `at`. `pnpm --filter '@sharpee/world-index' typecheck`: no errors. [reported by session, unverified]
+- **Status**: DONE
 
 ### Phase 2: `sharpee world-index` reads a `.story`
 - **Tier**: Small
@@ -89,5 +92,5 @@ Approving the plan as written takes each lean below.
 - **Files**: `packages/devkit/src/commands/world-index.ts`, `packages/devkit/src/commands/world-index.test.ts`, `packages/devkit/src/cli.ts`, `packages/devkit/turbo.json`, `docs/architecture/adrs/adr-321-world-index.md`, `docs/architecture/adrs/INDEX.md`, `docs/work/world-index-noun-spans/`
 - **Exit state**: sharpee world-index on `test-stories/scullery/scullery.story` writes a world-index/4 document whose whetstone edge carries `at` at line 19, columns 3 to 12. The same command on an .ir.json publishes no `at`. Both suites pass, and ADR-321 carries the dated note.
 - **Demonstration**: After a platform build (`./repokit build dungeo`), `node packages/devkit/dist/cli.js world-index test-stories/scullery/scullery.story` exits 0, and its whetstone edge's `at` is line 19, column 3, endLine 19, endColumn 12. The devkit suite (pnpm --filter '@sharpee/devkit' test) reports no failures beyond the one existing skip, with the scullery real-path case among the passes.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-23 (session dfa928) — after `./repokit build dungeo`, `node packages/devkit/dist/cli.js world-index test-stories/scullery/scullery.story` exited 0 with schema `world-index/4`, and its whetstone edge's `at` is `{"line":19,"column":3,"endLine":19,"endColumn":12}`. `pnpm --filter '@sharpee/devkit' test`: 37 files passed and 1 skipped, 256 passed and 1 skipped (252 recorded + 4 new; the skip predates this work), with the scullery real-path case among the passes. `pnpm --filter '@sharpee/world-index' test:ci`: 260 passed, 1 skipped. ADR-321 carries the dated notes at the IDE↔analyzer boundary, D17 and AC-18; the index rebuilt with no change. [reported by session, unverified]
+- **Status**: DONE

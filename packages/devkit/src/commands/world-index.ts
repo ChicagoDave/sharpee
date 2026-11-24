@@ -1,9 +1,16 @@
 /**
- * world-index.ts — `sharpee world-index <story>.ir.json` (ADR-321 D8).
+ * world-index.ts — `sharpee world-index <story>.ir.json | <story>.story` (ADR-321 D8).
  *
  * Owner context: @sharpee/devkit. The author-CLI face of `@sharpee/world-index`:
- * a compiled story in, one JSON document on stdout, an exit code saying which
- * kind of document it is.
+ * a story in, one JSON document on stdout, an exit code saying which kind of
+ * document it is.
+ *
+ * TWO INPUTS. A compiled `<story>.ir.json` is read as built; that is what Chord
+ * Writer's World tab passes. A `<story>.story` is compiled in memory through
+ * `compileChordStory`, the one compile path for an author project, and its
+ * source is read, so every finding and edge carries `at`: the phrase's own line
+ * and columns. A `.story` the load-time gates refuse is an `uncompilable-story`
+ * failure carrying their diagnostics.
  *
  * WHY THE CLI OWNS THIS. Chord Writer's World tab is the caller, and every other
  * subprocess it spawns — build, compose, test, play — is resolved through the
@@ -26,6 +33,7 @@
  */
 import { resolveNounExtractor, type NounExtractorLookup, type NounsModule } from '@sharpee/if-domain/nouns';
 import { analyzeStoryIR } from '@sharpee/world-index';
+import { compileChordStory } from '../standalone/author-game.js';
 import { platformVersion } from '../standalone/init.js';
 
 /** Exit status when the document on stdout is a failure, not an analysis. */
@@ -41,12 +49,12 @@ export const nounExtractorLookup: NounExtractorLookup = (languageCode) =>
   resolveNounExtractor(languageCode, (moduleName) => require(moduleName) as NounsModule);
 
 /**
- * Analyze a compiled story and write one JSON document to stdout.
+ * Analyze a story, compiled or source, and write one JSON document to stdout.
  *
  * Failure is a document, never a throw (ADR-321 AC-9): a missing path, an
- * unreadable file, JSON that is not a Story IR, and a defect in the analysis
- * itself each answer with a failure naming the cause, so the caller always has
- * something to render.
+ * unreadable file, JSON that is not a Story IR, a `.story` the gates refuse, and
+ * a defect in the analysis itself each answer with a failure naming the cause,
+ * so the caller always has something to render.
  *
  * The version stamped on the document is the toolchain's. It is diagnostics
  * only — the field callers branch on is `schema` — and devkit ships in lockstep
@@ -56,8 +64,8 @@ export const nounExtractorLookup: NounExtractorLookup = (languageCode) =>
  * @returns 0 when the document is an analysis, 1 when it is a failure
  */
 export function runWorldIndex(args: string[]): number {
-  const irPath = args.find((arg) => !arg.startsWith('-'));
-  const response = analyzeStoryIR(irPath, platformVersion(), nounExtractorLookup);
+  const storyPath = args.find((arg) => !arg.startsWith('-'));
+  const response = analyzeStoryIR(storyPath, platformVersion(), nounExtractorLookup, compileChordStory);
   process.stdout.write(`${JSON.stringify(response)}\n`);
   return response.ok ? 0 : EXIT_FAILURE;
 }

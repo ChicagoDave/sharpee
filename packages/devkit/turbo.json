@@ -7,6 +7,7 @@
         "$TURBO_EXTENDS$",
         "$TURBO_ROOT$/branch-stories/fernhill/**",
         "$TURBO_ROOT$/test-stories/ferry/**",
+        "$TURBO_ROOT$/test-stories/scullery/**",
         "!$TURBO_ROOT$/test-stories/**/dist/**",
         "!$TURBO_ROOT$/branch-stories/**/dist/**",
         "!$TURBO_ROOT$/branch-stories/**/node_modules/**",

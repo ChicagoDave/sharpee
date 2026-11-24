@@ -34,7 +34,7 @@
  * @see ADR-321 D11a: MentionRole, MentionEdge, and deriveRoles' signature
  */
 
-import type { IREntity, IROnClause, StoryIR } from '@sharpee/chord';
+import type { IREntity, IROnClause, Span, StoryIR } from '@sharpee/chord';
 import { isPortableByDefault } from './loader-semantics.js';
 import type { ProseSite } from './prose.js';
 import type { ReachResult } from './reach.js';
@@ -57,6 +57,8 @@ export interface ResolvedMention {
   entity: string;
   /** Where the phrase sits, and what fired it (D10). */
   site: ProseSite;
+  /** The phrase's own span, when the source was read and its words found there. */
+  at?: Span;
 }
 
 /** A resolved mention with its role — the edge the World tab ranks by. */

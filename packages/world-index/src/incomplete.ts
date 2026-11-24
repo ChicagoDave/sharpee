@@ -33,8 +33,9 @@
  * @see ADR-321 D5, D6, D6b; ADR-407 D8, Amendment 3
  */
 
-import type { StoryIR } from '@sharpee/chord';
+import type { Span, StoryIR } from '@sharpee/chord';
 import type { NounCandidate, NounExtractor } from '@sharpee/if-domain';
+import { locatePhrase, type SourceReader } from './locate.js';
 import { collectProse, type ProseSite } from './prose.js';
 import { deriveRoles, type MentionEdge, type ResolvedMention } from './roles.js';
 import { deriveReach, type ReachResult } from './reach.js';
@@ -166,6 +167,8 @@ export interface MissingWordFinding {
   site: ProseSite;
   /** The phrase as written. */
   phrase: string;
+  /** The phrase's own span, when the source was read and its words found there. */
+  at?: Span;
   /** The one thing the head noun resolves to. */
   entity: string;
   /** The words that thing does not answer to. */
@@ -188,6 +191,8 @@ export interface AmbiguousFinding {
   site: ProseSite;
   /** The phrase as written. */
   phrase: string;
+  /** The phrase's own span, when the source was read and its words found there. */
+  at?: Span;
   /** Everything it reaches. */
   candidates: string[];
   /** The word or phrase that reached them all — why these candidates. */
@@ -200,6 +205,8 @@ export interface NoObjectFinding {
   site: ProseSite;
   /** The phrase as written. */
   phrase: string;
+  /** The phrase's own span, when the source was read and its words found there. */
+  at?: Span;
 }
 
 /** The Incomplete view for one story — a candidate list, never an error list. */
@@ -319,12 +326,16 @@ function classify(
  *   edges (D12). Defaults to deriving it, so a caller wanting only the candidate
  *   lists need not know that roles exist; `document.ts` passes the one it has
  *   already computed rather than paying for a second walk.
+ * @param source the story's source files, when the caller has them. Given, every
+ *   finding and edge whose passage has a span and whose words are found inside it
+ *   carries `at`, the phrase's own span; absent, no record carries the key.
  * @returns the three candidate lists, their counts, and the roled edges
  */
 export function deriveIncomplete(
   ir: StoryIR,
   extractor: NounExtractor,
   reach: ReachResult = deriveReach(ir),
+  source?: SourceReader,
 ): IncompleteResult {
   const index = buildVocabularyIndex(ir);
   const headStopwords: ReadonlySet<string> = new Set(extractor.filters.headStopwords);
@@ -334,6 +345,7 @@ export function deriveIncomplete(
   const noObject: NoObjectFinding[] = [];
   let notThings = 0;
   const resolved: ResolvedMention[] = [];
+  const locate = source === undefined ? undefined : phraseLocator(source);
 
   // One pass per PASSAGE, not per entity (D10). Deduplication is per passage too: the
   // same phrase in a room's description and in its first-visit text is two places the
@@ -342,7 +354,8 @@ export function deriveIncomplete(
     for (const noun of extractor.extract(site.text).map(asNounPhrase)) {
       const finding = classify(noun, index, headStopwords);
 
-      const at = { site, phrase: noun.phrase };
+      const span = locate?.(site, noun.words) ?? null;
+      const at = span === null ? { site, phrase: noun.phrase } : { site, phrase: noun.phrase, at: span };
       if (finding.kind === 'resolved') {
         resolved.push({ ...at, entity: finding.entity });
       } else if (finding.kind === 'missing-word') {
@@ -380,6 +393,25 @@ export function deriveIncomplete(
     ambiguous,
     noObject,
     edges: deriveRoles(ir, reach, resolved),
+  };
+}
+
+/**
+ * A phrase locator over one story's source, reading each file once.
+ *
+ * @param source the caller's reader
+ * @returns a function from a passage and a phrase's words to the phrase's span,
+ *   or null when the passage has no span, its file cannot be read, or the words
+ *   are not inside it
+ */
+function phraseLocator(source: SourceReader): (site: ProseSite, words: readonly string[]) => Span | null {
+  const files = new Map<string | undefined, string | null>();
+  return (site, words) => {
+    if (site.span === null) return null;
+    const file = site.span.file;
+    if (!files.has(file)) files.set(file, source(file));
+    const text = files.get(file) ?? null;
+    return text === null ? null : locatePhrase(text, site.span, words);
   };
 }
 

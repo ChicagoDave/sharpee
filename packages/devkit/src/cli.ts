@@ -52,7 +52,8 @@ Usage:
   sharpee compose <file.story> [opts]    Compile a Chord story to Story IR
   sharpee introspect [dir]               Emit the IDE project manifest as JSON
   sharpee messages                       Emit the overridable platform messages (alias + template) as JSON
-  sharpee world-index <file>.ir.json     Derive the story's map, reach, and vocabulary gaps as JSON
+  sharpee world-index <file>.ir.json | <file>.story
+                                         Derive the story's map, reach, and vocabulary gaps as JSON
   sharpee lens examinable [name|path] [--seed N] [--max-seconds N] [--all] [--json]
                                          Report the nouns in the prose a player
                                          reads that the story cannot use, or

@@ -100,3 +100,20 @@ The plan leans D-1(a), a new failure cause `uncompilable-story` for a `.story` t
 ---
 
 **Progressive update**: session completed 2026-11-23 18:50 — first write: planning-only session; world-index-noun-spans plan written and awaiting approval, lens plan stamped Superseded by and left live.
+
+## Activity Log (auto-captured)
+```
+[19:29:24] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20 | grep -c "error TS"; grep -l "BUILD:" docs/con
+[00:42:28] EDIT: File edited — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[00:42:41] EDIT: File changed via Bash — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[00:43:39] EDIT: File written — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[00:43:48] EDIT: File changed via Bash — docs/context/.current-plan
+[00:43:48] EDIT: File changed via Bash — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[00:44:11] EDIT: File edited — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[00:44:11] EDIT: File edited — docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
+[00:51:20] EDIT: File written — docs/context/session-20261123-1323-description-noun-lens.md
+[00:51:25] EDIT: File changed via Bash — docs/context/session-20261123-1323-description-noun-lens.md
+[00:52:04] EDIT: File written — .commit-files
+[00:52:04] EDIT: File written — .commit-msg
+[00:52:09] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```
