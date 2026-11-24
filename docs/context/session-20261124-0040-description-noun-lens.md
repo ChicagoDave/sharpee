@@ -39,16 +39,16 @@
 ### 1. Close #835 and #837 after the Phase 4 commit, citing its hash
 David chose option (a): commit 5ba1f111d landed the work, the issues closed citing it, then the plan is archived by hand and a terminal summary and second commit+push follow.
 
-### 2. D-3(a)'s changed assertion was surfaced to David
-Carried from the previous session: the one existing assertion changed under D-3(a), `packages/devkit/src/commands/lens.test.ts:53`, was to be shown to David; this session's recap surfaced it.
+### 2. D-3(a) accepted as invented: the lens class titles and the changed assertion (resolved)
+After the session explained D-3(a), David said "oh just go with what you invented - I'm good": the lens class titles in `lens-words.ts` (No text, Not answered, Number form, Ambiguous, Unclassified, Described) stand as written, and the one existing assertion changed under D-3(a), `packages/devkit/src/commands/lens.test.ts:53`, is accepted. Nothing is pending David's review.
 
 ## Next Phase
-Plan complete — all phases done. The plan reads `**Plan Status**: DONE` (set by the session's `advance`); the archive is the session's, after this write: `git mv docs/work/lens-findings-select-phrase docs/work/archive/lens-findings-select-phrase` and `rm docs/context/.current-plan`, by hand because `plan-archive.sh` requires `plan.md` (539). That archive and the final commit+push are pending at this write. The next session starts with no active plan; candidates are 836 and 841 below.
+Plan complete — all phases done. The plan reads `**Plan Status**: DONE` (set by the session's `advance`) and was archived by hand in b4a9e9336 to `docs/work/archive/lens-findings-select-phrase/`, with `docs/context/.current-plan` removed — by hand because `plan-archive.sh` requires `plan.md` (539). The next session starts with no active plan; the recommended next goal is 836.
 
 ## Open Items
 
 ### Short Term
-- 836: A thing answers only to the grammatical number its name and aka words are written in (candles but not candle) — out of scope for this plan.
+- 836: A thing answers only to the grammatical number its name and aka words are written in (candles but not candle) — out of scope for this plan; the recommended next goal.
 
 ### Long Term
 - 841: Chord Writer: persistent in-editor marks for lens findings (ADR-408 D2's later step) — filed this write.
@@ -64,23 +64,24 @@ Plan complete — all phases done. The plan reads `**Plan Status**: DONE` (set b
 **PaneHost tests** (1 file, in 5ba1f111d):
 - `tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs` - 13 cases.
 
-**Records** (6 files):
+**Records** (6 files in 5ba1f111d; the plan's Phase 5 edits, its archive move and the pointer removal in b4a9e9336):
 - `docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md` - IMPLEMENTED plus evidence.
 - `docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md` - dated note under D23.
 - `docs/architecture/adrs/adr-277-ide-integrated-testing.md` - dated note under D2.
 - `docs/architecture/adrs/INDEX.md` - rebuilt.
-- `docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md` - Phases 4 and 5 DONE with Demonstrated lines marked verified, Plan Status DONE (to be moved under `docs/work/archive/`).
+- `docs/work/archive/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md` - Phases 4 and 5 DONE with Demonstrated lines marked verified, Plan Status DONE; moved from `docs/work/lens-findings-select-phrase/`.
 - `docs/context/project-profile.md` - regenerated.
+- `docs/context/.current-plan` - removed (b4a9e9336).
 
 ## Notes
 
-**Session duration**: ~20 minutes (00:40 to 00:58 CST).
+**Session duration**: ~20 minutes of work (00:40 to 01:00 CST); the D-3(a) ruling and this revision came after a gap, at 09:43 CST.
 
 **Approach**: Mirrored SharpeeIDE's `phraseRange` line counting in a pure C# function so the selection is testable on scullery's real text, leaving only the two-line `Editor.Select` call untested.
 
 `git-commit.sh` archived `docs/context/session-20261123-1323-description-noun-lens.md` into `docs/context/archive/` during commit 5ba1f111d.
 
-`.commit-files`, `.commit-msg` and two scratchpad files (`close-835.md`, `close-837.md`) in the state file's `files` array are commit and issue-closure scaffolding, not work.
+`.commit-files`, `.commit-msg` and two scratchpad files (`close-835.md`, `close-837.md`) in the state file's `files` array are commit and issue-closure scaffolding, not work. The two `~/.claude/projects/.../memory/` entries (`MEMORY.md`, `reference_panehost_test_env.md`, the PaneHost.Tests env-var paths) are a machine-local memory note outside the repo, with nothing to stage.
 
 The xcodebuild log lives in the session scratchpad and will not survive; its result is quoted inline above and in ADR-408.
 
@@ -96,7 +97,7 @@ Rule 15 not fired: no changed function carries a side-effect name.
 - **Blocker Category**: N/A
 - **Estimated Remaining** (if incomplete): N/A
 - **Rollback Safety**: safe to revert
-- **Commits**: 5ba1f111d (pushed, 9f455499a..5ba1f111d) — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261124-0040-description-noun-lens.md`
+- **Commits**: 5ba1f111d (pushed, 9f455499a..5ba1f111d), b4a9e9336 (pushed, 5ba1f111d..b4a9e9336) — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261124-0040-description-noun-lens.md`
 
 ## Dependency/Prerequisite Check
 
@@ -126,3 +127,5 @@ Rule 15 not fired: no changed function carries a side-effect name.
 **Progressive update**: checkpoint 2026-11-24 00:54 — first write: Phase 4 DONE (PaneHost selects the phrase) with its Demonstrated line marked verified; Phase 5 gates verified (writer re-ran devkit, branch-tester, ide-protocol, PaneHost; vitest from the event log; xcodebuild 629 from its log) and ADR records done; issue closures and plan archive pending this commit.
 
 **Progressive update**: session completed 2026-11-24 00:58 — commit 5ba1f111d pushed; 835 and 837 verified CLOSED; Phase 5 DONE with Demonstrated marked verified, Plan Status DONE; 841 filed for D2's persistent marks, 662 commented; hand archive of the plan and final commit+push pending.
+
+**Progressive update**: session completed 2026-11-24 09:43 — b4a9e9336 landed and pushed (plan archived, pointer removed); David accepted D-3(a)'s class titles and the `lens.test.ts:53` assertion as invented; machine-local memory note recorded; next goal 836.
