@@ -94,3 +94,32 @@ D-1 (a) both heads (SharpeeIDE and PaneHost); D-2 (a) ADR-408 D9 as written, `{f
 
 **Progressive update**: checkpoint 2026-11-23 20:08 — first write: plan abandoned and archived, #835 plan started.
 **Progressive update**: session completed 2026-11-23 20:38 — terminal: plan-review folded, rulings D-1..D-3 recorded, Phase 1 awaits David's go; comment added on 837.
+
+## Activity Log (auto-captured)
+```
+[02:08:27] EDIT: File changed via Bash — docs/work/archive/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[02:08:27] EDIT: File changed via Bash — docs/work/archive/lens-findings-in-ide/timings.md
+[02:08:27] EDIT: File changed via Bash — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[02:08:27] EDIT: File changed via Bash — docs/work/lens-findings-in-ide/timings.md
+[02:08:47] EDIT: File written — docs/context/session-20261123-2008-description-noun-lens.md
+[02:09:10] EDIT: File changed via Bash — docs/context/session-20261123-2008-description-noun-lens.md
+[02:19:58] EDIT: File written — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:20:05] EDIT: File changed via Bash — docs/context/.current-plan
+[02:20:05] EDIT: File changed via Bash — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:20:16] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:20:51] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:20:52] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:20:52] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:35:34] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:35:34] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:35:34] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:35:34] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:35:35] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:35:43] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[02:35:43] EDIT: File edited — docs/context/session-20261123-2008-description-noun-lens.md
+[02:37:26] EDIT: File changed via Bash — docs/context/session-20261123-2004-description-noun-lens.md
+[02:38:33] EDIT: File written — docs/context/session-20261123-2004-description-noun-lens.md
+[02:39:24] EDIT: File written — .commit-files
+[02:39:24] EDIT: File written — .commit-msg
+[02:39:28] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```

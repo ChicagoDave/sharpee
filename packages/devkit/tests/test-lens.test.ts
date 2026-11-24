@@ -11,6 +11,7 @@
  *
  * Owner context: devkit test suite.
  */
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import * as path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -56,9 +57,16 @@ describe('sharpee test — the examinable lens tier on scullery (ADR-408 D8, OB-
 
     const whetstone = findings.find((finding) => finding.phrase === 'whetstone' && finding.kind === 'resolved-default') as LensFindingEvent;
     expect(whetstone).toMatchObject({ target: 'whetstone', targetId: 'whetstone', targetSpan: { line: 35 } });
+    // The passage's region, and the phrase's own span inside it with its UTF-16 length (ADR-408 D9).
     expect(whetstone.sources).toEqual([
-      { key: 'scullery.description', kind: 'description', ownerId: 'scullery', ownerName: 'Scullery', span: expect.objectContaining({ line: 18, endLine: 19 }) },
+      {
+        key: 'scullery.description', kind: 'description', ownerId: 'scullery', ownerName: 'Scullery',
+        span: expect.objectContaining({ line: 18, endLine: 19 }),
+        at: { line: 19, column: 3, endLine: 19, endColumn: 12 },
+        length: 9,
+      },
     ]);
+    expect(readFileSync(SCULLERY_STORY, 'utf8').split('\n')[18].slice(2, 2 + 9)).toBe('whetstone');
 
     // The tree document's seed and the tier's own budget, every room reached.
     const summary = summaries[0] as LensSummaryEvent;

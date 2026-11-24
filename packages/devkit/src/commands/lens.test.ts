@@ -49,7 +49,8 @@ describe('sharpee lens examinable — the real path', () => {
     expect(code).toBe(0);
     expect(stdout).toContain('rooms reached     5 of 5 declared');
     expect(stdout).toContain('phrases examined  92');
-    expect(stdout).toContain('by class          not-in-scope 40, resolved-described 6, number-form 6');
+    // The class titles are lens-words.ts's, the one vocabulary the Testing tab prints too.
+    expect(stdout).toContain('by class          Not answered 40, Described 6, Number form 6');
     expect(stdout).toContain('Absence is not proof');
   }, 120_000);
 

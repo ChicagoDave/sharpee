@@ -182,6 +182,15 @@ export {
   type IrIdOf,
 } from './lens/examinable-classify.js';
 export { formatExaminableReport, type LensSourceLocator, type LensSourcePlace } from './lens/examinable-report.js';
+// The lens's words, browser-safe: the console form above and the Testing tab
+// both print them (ADR-408 Consequences).
+export {
+  EXAMINABLE_CLASS_TITLES,
+  examinableClassTitle,
+  LENS_SOURCE_KIND_WORDS,
+  lensSourceWords,
+  LENS_SOUNDNESS_FOOTER,
+} from './lens/lens-words.js';
 export { necessaryIdentity, IDENTITY_IGNORES, type IdentityIgnore } from './claims/claim-identity.js';
 export { runClaims, formatClaimsRun, type ClaimsRunOptions } from './claims/claims-runner.js';
 // The claims tier's result data, declared once and browser-safe: the walk,

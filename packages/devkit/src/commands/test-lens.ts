@@ -8,7 +8,8 @@
  *   - under `--json`, emits one `lens-finding` per folded finding and one
  *     `lens-summary`, before `run-end`, with every source key and the
  *     target's declaration resolved to spans here, as the consumer
- *     (ADR-333 D2, ADR-408 D8, D10);
+ *     (ADR-333 D2, ADR-408 D8, D10), and each phrase found inside its
+ *     keyed passage (`at` and `length`, ADR-408 D9);
  *   - prints the lens's own report (to stderr under `--json`, like the
  *     derived and claims reports; to stdout otherwise), each source with its
  *     file and line.
@@ -27,7 +28,8 @@ import type { StoryIR } from '@sharpee/chord';
 import type { NounExtractorLookup } from '@sharpee/if-domain/nouns';
 import type { ExaminableFinding, LensFindingEvent, LensSummaryEvent, RunEventEnvelope } from '@sharpee/ide-protocol';
 import { loadAuthorGame } from '../standalone/author-game.js';
-import { lensSourceLocator, resolveSourceSpan } from './lens-sources.js';
+import type { SourceReader } from '@sharpee/world-index';
+import { lensSourceLocator, lensSourceReader, locateSourcePhrase, resolveSourceSpan } from './lens-sources.js';
 import { nounExtractorLookup } from './world-index.js';
 
 /**
@@ -67,14 +69,17 @@ export interface LensTierOptions {
 }
 
 /**
- * One folded finding as its `lens-finding` row: each source with its span,
+ * One folded finding as its `lens-finding` row: each source with its
+ * passage span, and with the phrase's own span and length when the phrase
+ * was found inside a keyed passage (its `phrase`, then its `resolvedForm`);
  * and the target's declaration span when a thing answered.
  *
  * @param finding the lens document's finding
  * @param ir the IR the lens ran on, which the spans are resolved from
+ * @param read the story's source reader, which the phrases are found in
  * @returns the row the stream emits
  */
-export function lensFindingEventOf(finding: ExaminableFinding, ir: StoryIR): LensFindingRow {
+export function lensFindingEventOf(finding: ExaminableFinding, ir: StoryIR, read: SourceReader): LensFindingRow {
   const declaration = finding.targetId === undefined
     ? undefined
     : ir.entities.find((entity) => entity.id === finding.targetId)?.span ?? null;
@@ -87,7 +92,11 @@ export function lensFindingEventOf(finding: ExaminableFinding, ir: StoryIR): Len
     ...(finding.target !== undefined ? { target: finding.target } : {}),
     ...(finding.targetId !== undefined ? { targetId: finding.targetId, targetSpan: declaration ?? null } : {}),
     ...(finding.resolvedForm !== undefined ? { resolvedForm: finding.resolvedForm } : {}),
-    sources: finding.sources.map((source) => ({ ...source, span: resolveSourceSpan(ir, source) })),
+    sources: finding.sources.map((source) => {
+      const span = resolveSourceSpan(ir, source);
+      const place = locateSourcePhrase(source, span, [finding.phrase, finding.resolvedForm], read);
+      return { ...source, span, ...(place ?? {}) };
+    }),
     rooms: finding.rooms,
   };
 }
@@ -131,7 +140,8 @@ export async function runLensTier(options: LensTierOptions): Promise<void> {
 
   const report = output.report;
   if (stream) {
-    for (const finding of report.findings) stream.lensFinding(lensFindingEventOf(finding, ir));
+    const read = lensSourceReader(storyFile);
+    for (const finding of report.findings) stream.lensFinding(lensFindingEventOf(finding, ir, read));
     stream.lensSummary({
       lens: 'examinable',
       seed,

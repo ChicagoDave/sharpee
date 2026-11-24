@@ -108,8 +108,8 @@ Phase 1 records D-2 and D-3 as ruled in ADR-408 Amendment 2.
 - **Files**: `packages/ide-protocol/src/run-events.ts`, `packages/ide-protocol/tests/run-events-lens.test.ts`, `packages/devkit/src/commands/lens-sources.ts`, `packages/devkit/src/commands/test-lens.ts`, `packages/devkit/tests/test-lens.test.ts`, `packages/branch-tester/src/lens/lens-words.ts` (new), `packages/branch-tester/src/lens/examinable-report.ts`, `packages/branch-tester/src/index.ts`, `packages/branch-tester/tests/`, `docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md`, `docs/architecture/adrs/INDEX.md`
 - **Exit state**: On scullery, `sharpee test --json` emits the whetstone's `lens-finding`, and its source carries `at` at line 19, columns 3 to 12. The three suites pass. The census is recorded, and David has seen any miss.
 - **Demonstration**: After `./repokit build dungeo`, `node packages/devkit/dist/cli.js test test-stories/scullery/scullery.story --tree --json` prints a lens-finding line for whetstone whose source carries at line 19, column 3, endLine 19, endColumn 12, and length 9 (D-2(a)). The devkit lens tests (pnpm --filter '@sharpee/devkit' test lens), the branch-tester suite (pnpm --filter '@sharpee/branch-tester' test) and the ide-protocol suite (pnpm --filter '@sharpee/ide-protocol' test:ci) each report no failures.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-23)
+- **Demonstrated**: 2026-11-24, session 806326. After `./repokit build dungeo` (exit 0), `node packages/devkit/dist/cli.js test test-stories/scullery/scullery.story --tree --json` printed the whetstone's lens-finding with source `"span":{"line":18,"column":3,"endLine":19,"endColumn":36},"at":{"line":19,"column":3,"endLine":19,"endColumn":12},"length":9`. `pnpm --filter '@sharpee/devkit' test lens`: 15 passed. Full suites: devkit 261 passed, 1 skipped (baseline 256 + 1); branch-tester 532 passed (baseline 525); ide-protocol 69 passed (baseline 67). Census, keyed sources located of keyed, at seed 42: bazaar 15/15, ferry 15/15, lodge 24/24, orchard 48/48, quay 12/12, scullery 21/21, no misses; no test story has a keyless source, so the keyless rule is pinned by the unit case in `packages/devkit/tests/lens-phrase-place.test.ts`. One existing assertion changed under D-3(a): `packages/devkit/src/commands/lens.test.ts:53` now reads `by class          Not answered 40, Described 6, Number form 6` (was `not-in-scope 40, resolved-described 6, number-form 6`). [verified: no hook test row in the session event log; work-summary-writer re-ran 2026-11-24 00:11 CST, after the last source edit at 00:09 — `pnpm --filter '@sharpee/ide-protocol' test:ci` 69 passed, `pnpm --filter '@sharpee/branch-tester' test` 532 passed, `pnpm --filter '@sharpee/devkit' test` 261 passed 1 skipped, and the scullery `--tree --json` command printed the whetstone source `"at":{"line":19,"column":3,"endLine":19,"endColumn":12},"length":9`; the census figures were not re-run and stay as reported]
+- **Status**: DONE
 
 ### Phase 2: The Testing tab's lens section, and a card that asks for the phrase's range
 - **Tier**: Medium
@@ -134,7 +134,7 @@ Phase 1 records D-2 and D-3 as ruled in ADR-408 Amendment 2.
 - **Exit state**: The page renders the lens section. From a real scullery run, the whetstone card's request carries the phrase's range. The bundle is rebuilt from source and committed.
 - **Demonstration**: `tools/ide/build-testing-surface.sh` exits 0. From `tools/ide/web/testing-surface`, `npx vitest run` reports no failures, and among the passes is the scullery real-path case, which asserts the whetstone card's range request and the line-35 description offer.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-24)
 
 ### Phase 3: SharpeeIDE selects the phrase
 - **Tier**: Medium

@@ -585,6 +585,20 @@ export interface LensFindingSource extends LensSource {
    * carries neither.
    */
   span: Span | null;
+  /**
+   * The phrase's own span inside `span`, as the author wrote it (ADR-408 D2,
+   * D9): found by world-index's words rule, clipped to the passage, with no
+   * fallback. Absent, never null, when the phrase was not located — a source
+   * with no key, a span whose file could not be read, or words not in the
+   * passage. Present exactly when `length` is.
+   */
+  at?: Span;
+  /**
+   * The phrase's extent from `at`'s start to its end, in UTF-16 code units,
+   * any line break inside it counted as the source writes it (ADR-408 D9,
+   * Amendment 2). Present exactly when `at` is.
+   */
+  length?: number;
 }
 
 /**
@@ -1032,8 +1046,18 @@ function isLensFindingSource(value: unknown): value is LensFindingSource {
     (value.ownerId === null || typeof value.ownerId === 'string') &&
     typeof value.ownerName === 'string' &&
     'span' in value &&
-    isSpanOrNull(value.span)
+    isSpanOrNull(value.span) &&
+    isPhrasePlace(value.at, value.length)
   );
+}
+
+/**
+ * A source's phrase place: `at` and `length` both absent, or both present —
+ * a valid span and a positive whole number of UTF-16 code units.
+ */
+function isPhrasePlace(at: unknown, length: unknown): boolean {
+  if (at === undefined && length === undefined) return true;
+  return isSpan(at) && typeof length === 'number' && Number.isInteger(length) && length > 0;
 }
 
 function isLensRoomRef(value: unknown): value is LensRoomRef {

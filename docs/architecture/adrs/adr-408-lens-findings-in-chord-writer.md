@@ -14,6 +14,12 @@
 - D8's budget is a time budget only.
 - The shared walk (`walk/story-walk.ts`) stays, because the claims runner is its client. This amendment does not decide whether its lens-only parts (the room hook, the null set) stay.
 
+Amendment 2 (2026-11-24, session 806326). It records David's rulings D-2 and D-3 of 2026-11-23 (session a9e731: "D-1 a, D-2 a, D-3 a"), from `docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md`, as built in that plan's Phase 1:
+- **D9 stands as written.** The request is `{file, line, column, length}`. The end-point form `{file, line, column, endLine, endColumn}` was rejected.
+- **The length rule.** devkit's test command computes `length` as the consumer, in UTF-16 code units, from the start of the phrase to its end as the author wrote it. Any line break inside the phrase counts as the source writes it, so `\r\n` is two. The phrase is found by world-index's `locatePhrase`, inside the keyed passage's span, trying the finding's `phrase` and then its `resolvedForm`, with no fallback. A source with no key is never searched. Each `lens-finding` source carries the result as `at` (the phrase's own span) and `length`, both present or both absent (`LensFindingSource`, `packages/ide-protocol/src/run-events.ts`). The change is additive, so `RUN_EVENT_SCHEMA_VERSION` stays 2.
+- **One vocabulary.** The console form of `sharpee lens examinable` and the test tier, and the Testing tab, print every class title, source word and the soundness footer from `packages/branch-tester/src/lens/lens-words.ts`. That module is browser-safe and imports types only. The titles are No text, Not answered, Number form, Ambiguous, Unclassified, and Described for the one class that is not a finding. The console's class column and its `by class` line changed from the kind ids to the titles.
+- Evidence (2026-11-24): `node packages/devkit/dist/cli.js test test-stories/scullery/scullery.story --tree --json` printed the whetstone's `lens-finding` with source `"at":{"line":19,"column":3,"endLine":19,"endColumn":12},"length":9`. Over the six test stories, 135 of 135 keyed sources were located (bazaar 15, ferry 15, lodge 24, orchard 48, quay 12, scullery 21), with no misses.
+
 **Date**: 2026-11-23
 
 **Kind**: technical

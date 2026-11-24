@@ -10,9 +10,10 @@
  * unique to it, then the soundness footer: findings are real, absence is
  * not proof (ADR-322 D7).
  *
- * Sources: each passage a phrase was read from prints as its owner and kind
- * (`Scullery description`), followed by its file and line when the caller
- * supplies a locator. The lens never resolves spans; the caller is the
+ * Every word it prints — each class's title, a source's owner and kind
+ * (`Scullery description`), the footer — comes from `lens-words.ts`, the
+ * browser-safe module the Testing tab reads too. A source is followed by its
+ * file and line when the caller supplies a locator. The lens never resolves spans; the caller is the
  * consumer that does (ADR-333 D2, ADR-408 D4).
  *
  * Public interface: `formatExaminableReport`, `LensSourceLocator`,
@@ -20,8 +21,9 @@
  * Owner context: @sharpee/branch-tester — the lenses (ADR-408 D3).
  */
 
-import type { ExaminableFinding, ExaminableLensReport, ExaminableRow, LensSource, LensSourceKind } from '@sharpee/ide-protocol';
+import type { ExaminableFinding, ExaminableLensReport, ExaminableRow, LensSource } from '@sharpee/ide-protocol';
 import { isFinding } from './examinable-classify.js';
+import { examinableClassTitle, lensSourceWords, LENS_SOUNDNESS_FOOTER } from './lens-words.js';
 
 /** Where a source's passage sits: a file as the author names it, and a 1-based line. */
 export interface LensSourcePlace {
@@ -32,16 +34,10 @@ export interface LensSourcePlace {
 /** The caller's span resolution for a source; undefined when it has none. */
 export type LensSourceLocator = (source: LensSource) => LensSourcePlace | undefined;
 
-const KIND_WORDS: Readonly<Record<LensSourceKind, string>> = {
-  description: 'description',
-  'first-visit': 'first-visit text',
-  state: 'state text',
-};
-
 /** One source as the console names it: owner, kind, and its place when known. */
 function sourceWords(source: LensSource, locate: LensSourceLocator | undefined): string {
   const place = locate?.(source);
-  return `${source.ownerName} ${KIND_WORDS[source.kind]}${place ? ` at ${place.file}:${place.line}` : ''}`;
+  return `${lensSourceWords(source)}${place ? ` at ${place.file}:${place.line}` : ''}`;
 }
 
 /** The two lines for one row or folded finding. */
@@ -50,7 +46,7 @@ function rowLines(row: ExaminableRow | ExaminableFinding, locate: LensSourceLoca
   const resolved = row.resolvedForm ? `  (${JSON.stringify(row.resolvedForm)} resolves)` : '';
   const flag = row.thing ? '' : '  (not-a-thing)';
   return [
-    `   ${row.kind.padEnd(19)} ${JSON.stringify(row.phrase)}${resolved}${target}${flag}`,
+    `   ${examinableClassTitle(row.kind).padEnd(19)} ${JSON.stringify(row.phrase)}${resolved}${target}${flag}`,
     `   ${''.padEnd(19)}   from: ${row.sources.map((source) => sourceWords(source, locate)).join(', ')}   [${row.detail}]`,
   ];
 }
@@ -81,7 +77,7 @@ export function formatExaminableReport(
     `rooms reached     ${reach.roomsReached} of ${reach.roomsDeclared} declared  (${(reach.ms / 1000).toFixed(1)}s of ${reach.maxSeconds}s, ${reach.commandsTyped} moves typed)`,
     ...reach.unreached.map((room) => `  not reached     ${room.room}: ${room.reason}`),
     `phrases examined  ${report.phrasesExecuted}`,
-    `by class          ${Object.entries(report.counts).map(([kind, count]) => `${kind} ${count}`).join(', ')}`,
+    `by class          ${Object.entries(report.counts).map(([kind, count]) => `${examinableClassTitle(kind)} ${count}`).join(', ')}`,
     '',
   ];
 
@@ -111,11 +107,6 @@ export function formatExaminableReport(
     out.push('');
   }
 
-  out.push(
-    'Findings are real: each phrase was executed through the engine in the state',
-    'a route first reached its room in. Absence is not proof: rooms no route',
-    'reached, and prose only shown in other states, were not examined.',
-    '',
-  );
+  out.push(...LENS_SOUNDNESS_FOOTER, '');
   return out;
 }

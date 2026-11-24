@@ -4,7 +4,8 @@
  *
  * The properties these hold: a finding's class is one of the lens's six
  * words, each source names its key (or null), its kind and owner, and a
- * span (or null); a summary carries either the refusal or the measurements,
+ * span (or null), and the phrase's own span with its length or neither;
+ * a summary carries either the refusal or the measurements,
  * never both and never neither, so a consumer cannot read a refused run as
  * one that reached no rooms.
  */
@@ -54,6 +55,26 @@ describe('lens-finding', () => {
     const { span: _span, ...spanless } = whetstone.sources[0];
     expect(isLensFindingEvent({ ...whetstone, sources: [spanless] })).toBe(false);
     expect(isLensFindingEvent({ ...whetstone, sources: [{ ...whetstone.sources[0], kind: 'response' }] })).toBe(false);
+  });
+
+  it('accepts a source carrying the phrase\'s own span and its length, and one carrying neither (ADR-408 D9)', () => {
+    const located = { ...whetstone.sources[0], at: { line: 19, column: 3, endLine: 19, endColumn: 12 }, length: 9 };
+    expect(isLensFindingEvent({ ...whetstone, sources: [located] })).toBe(true);
+    expect('at' in whetstone.sources[0]).toBe(false);
+    expect(isLensFindingEvent(whetstone)).toBe(true);
+  });
+
+  it('refuses a malformed phrase span, a length that is not a positive whole number, and either one without the other', () => {
+    const at = { line: 19, column: 3, endLine: 19, endColumn: 12 };
+    const source = whetstone.sources[0];
+    const finding = (extra: Record<string, unknown>) => ({ ...whetstone, sources: [{ ...source, ...extra }] });
+    expect(isLensFindingEvent(finding({ at: { line: 19, column: 3 }, length: 9 }))).toBe(false);
+    expect(isLensFindingEvent(finding({ at: null, length: 9 }))).toBe(false);
+    expect(isLensFindingEvent(finding({ at, length: 0 }))).toBe(false);
+    expect(isLensFindingEvent(finding({ at, length: 2.5 }))).toBe(false);
+    expect(isLensFindingEvent(finding({ at, length: '9' }))).toBe(false);
+    expect(isLensFindingEvent(finding({ at }))).toBe(false);
+    expect(isLensFindingEvent(finding({ length: 9 }))).toBe(false);
   });
 
   it('refuses a room without its IR id', () => {
