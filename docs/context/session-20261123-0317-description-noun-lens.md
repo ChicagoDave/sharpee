@@ -171,3 +171,166 @@ None is on a line this session changed. None has an issue filed. [reported by se
 **Progressive update**: checkpoint 2026-11-23 13:00 — first write: Phases 3 and 4 DONE (lens contract and attribution; lens tier, run events, Testing-tab fold, #837), Phase 5 CURRENT and not started; suites re-run by the writer; Phase 3 and 4 Demonstrated lines marked in the plan; #837 commented
 
 **Progressive update**: session completed 2026-11-23 13:09 — terminal write: Status COMPLETE (unverified: xcodebuild WorldIndexTests run, branch-tester typecheck baseline); re-checked no source edit since the 12:59–13:00 runs, Phases 3–4 DONE and Phase 5 CURRENT in the plan, issues 835/836/837/669 still open; no issue closed
+
+## Activity Log (auto-captured)
+```
+[09:19:19] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20 | grep -c "error TS"
+[09:21:55] EDIT: File written — packages/ide-protocol/src/lens-output.ts
+[09:21:55] EDIT: File edited — packages/ide-protocol/src/index.ts
+[09:22:06] EDIT: File changed via Bash — packages/branch-tester/src/lens/examinable-classify.ts
+[09:22:06] EDIT: File changed via Bash — packages/ide-protocol/src/index.ts
+[09:22:06] EDIT: File changed via Bash — packages/ide-protocol/src/lens-output.ts
+[09:22:36] EDIT: File edited — packages/branch-tester/src/lens/examinable-classify.ts
+[09:22:37] EDIT: File edited — packages/branch-tester/src/lens/examinable-classify.ts
+[09:22:37] EDIT: File edited — packages/branch-tester/src/lens/examinable-classify.ts
+[09:22:37] EDIT: File edited — packages/branch-tester/src/lens/examinable-classify.ts
+[09:22:37] EDIT: File edited — packages/branch-tester/src/lens/examinable-classify.ts
+[09:22:38] EDIT: File edited — packages/branch-tester/src/lens/examinable-classify.ts
+[09:23:08] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:08] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:09] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:09] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:26] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:27] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:27] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:27] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:32] EDIT: File changed via Bash — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:44] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:23:44] EDIT: File edited — packages/branch-tester/src/index.ts
+[09:24:05] EDIT: File written — packages/branch-tester/src/lens/examinable-report.ts
+[09:24:26] EDIT: File written — packages/devkit/src/commands/lens-sources.ts
+[09:24:26] EDIT: File edited — packages/devkit/src/commands/lens.ts
+[09:24:26] EDIT: File edited — packages/devkit/src/commands/lens.ts
+[09:24:26] EDIT: File edited — packages/devkit/src/commands/lens.ts
+[09:24:33] BUILD: Build passed — grep -n '"@sharpee/chord"' packages/devkit/package.json; cd packages/ide-protoco
+[09:24:33] EDIT: File changed via Bash — packages/branch-tester/src/index.ts
+[09:24:34] EDIT: File changed via Bash — packages/branch-tester/src/lens/examinable-report.ts
+[09:24:34] EDIT: File changed via Bash — packages/devkit/src/commands/lens-sources.ts
+[09:24:34] EDIT: File changed via Bash — packages/devkit/src/commands/lens.ts
+[09:24:42] BUILD: Build passed — pnpm run build > /dev/null; echo "branch-tester build $?"; cd ../devkit && npx t
+[09:24:50] BUILD: Build passed — pnpm run build > /dev/null; echo "build $?"; cd /Users/david/repos/sharpee && no
+[09:25:39] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:25:39] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:25:39] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:25:39] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:26:12] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:26:12] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:26:12] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:26:13] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:26:13] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:26:13] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:26:20] EDIT: File changed via Bash — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:26:56] EDIT: File written — packages/branch-tester/tests/examinable-classify.test.ts
+[09:27:20] EDIT: File edited — packages/devkit/src/commands/lens.test.ts
+[09:27:20] EDIT: File edited — packages/devkit/src/commands/lens.test.ts
+[09:27:20] EDIT: File edited — packages/devkit/src/commands/lens.test.ts
+[09:27:21] EDIT: File edited — packages/devkit/src/commands/lens.test.ts
+[09:27:33] EDIT: File changed via Bash — packages/branch-tester/tests/examinable-classify.test.ts
+[09:27:33] EDIT: File changed via Bash — packages/devkit/src/commands/lens.test.ts
+[09:28:25] EDIT: File edited — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[09:28:26] EDIT: File changed via Bash — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[09:31:52] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[09:31:52] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[09:31:53] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[09:31:53] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[09:31:53] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[09:31:53] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[09:31:53] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[09:32:07] EDIT: File edited — packages/ide-protocol/src/lens-output.ts
+[09:32:08] EDIT: File edited — packages/ide-protocol/src/index.ts
+[09:32:08] EDIT: File edited — packages/ide-protocol/src/index.ts
+[09:32:08] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:32:08] EDIT: File edited — packages/branch-tester/src/lens/examinable-lens.ts
+[09:32:09] EDIT: File edited — packages/branch-tester/tests/examinable-lens-real-path.test.ts
+[09:32:13] EDIT: File changed via Bash — packages/ide-protocol/src/run-events.ts
+[09:32:36] EDIT: File written — packages/ide-protocol/tests/run-events-lens.test.ts
+[09:32:38] EDIT: File changed via Bash — packages/ide-protocol/tests/run-events-lens.test.ts
+[09:33:31] EDIT: File written — tools/ide/web/testing-surface/src/lens.ts
+[09:33:31] EDIT: File edited — tools/ide/web/testing-surface/src/run.ts
+[09:33:31] EDIT: File edited — tools/ide/web/testing-surface/src/run.ts
+[09:33:31] EDIT: File edited — tools/ide/web/testing-surface/src/run.ts
+[09:33:32] EDIT: File edited — tools/ide/web/testing-surface/src/run.ts
+[09:33:32] EDIT: File edited — tools/ide/web/testing-surface/src/run.ts
+[09:33:32] EDIT: File edited — tools/ide/web/testing-surface/src/run.ts
+[09:33:32] EDIT: File edited — tools/ide/web/testing-surface/src/run.ts
+[09:33:32] EDIT: File edited — tools/ide/web/testing-surface/src/run.ts
+[09:33:41] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/lens.ts
+[09:33:41] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/run.ts
+[09:34:15] EDIT: File written — test-stories/scullery/scullery.tests/manifest.json
+[09:34:15] EDIT: File written — test-stories/scullery/scullery.tests/sclmain1.json
+[09:34:16] EDIT: File changed via Bash — test-stories/scullery/scullery.tests/manifest.json
+[09:34:16] EDIT: File changed via Bash — test-stories/scullery/scullery.tests/sclmain1.json
+[09:34:21] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/fixtures/scullery-run-without-lens.ndjson
+[09:34:30] EDIT: File edited — test-stories/scullery/scullery.test-set.md
+[09:34:30] EDIT: File edited — test-stories/scullery/scullery.test-set.md
+[09:34:58] EDIT: File written — tools/ide/web/testing-surface/tests/lens.test.ts
+[09:34:58] TEST: Tests passed — 2 passed 41 passed
+[09:34:58] EDIT: File changed via Bash — test-stories/scullery/scullery.test-set.md
+[09:34:59] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/lens.test.ts
+[09:35:04] BUILD: Build passed — ../../../../node_modules/.bin/tsc -p tsconfig.json --noEmit; echo "tsc exit $?"
+[09:35:36] EDIT: File edited — tools/ide/SharpeeIDE/World/WorldIndexDocument.swift
+[09:35:36] EDIT: File edited — tools/ide/SharpeeIDE/World/WorldView.swift
+[09:35:36] EDIT: File edited — tools/ide/SharpeeIDETests/WorldIndexTests.swift
+[09:35:41] EDIT: File changed via Bash — tools/ide/SharpeeIDE/World/WorldIndexDocument.swift
+[09:35:41] EDIT: File changed via Bash — tools/ide/SharpeeIDE/World/WorldView.swift
+[09:35:41] EDIT: File changed via Bash — tools/ide/SharpeeIDETests/WorldIndexTests.swift
+[09:36:32] EDIT: File written — packages/devkit/src/commands/test-lens.ts
+[09:36:32] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[09:36:40] EDIT: File changed via Bash — packages/devkit/src/commands/test-lens.ts
+[09:36:40] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/docs-tab/docs-index.json
+[09:36:40] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/docs-tab/pages/chord__guide__behavior__the-statements.html
+[09:36:40] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/docs-tab/pages/chord__guide__world__kinds-traits-and-settings.html
+[09:36:40] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/docs-tab/pages/chord__stdlib__manipulation.html
+[09:36:40] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/testing-surface/surface.js
+[09:36:49] BUILD: Build passed — cd /Users/david/repos/sharpee/packages/ide-protocol && pnpm run build > /dev/nul
+[18:49:29] EDIT: File edited — packages/transcript-tester/src/run-event-stream.ts
+[18:49:29] EDIT: File edited — packages/transcript-tester/src/run-event-stream.ts
+[18:49:29] EDIT: File edited — packages/transcript-tester/src/run-event-stream.ts
+[18:49:29] EDIT: File edited — packages/transcript-tester/src/run-event-stream.ts
+[18:49:30] EDIT: File changed via Bash — packages/transcript-tester/src/run-event-stream.ts
+[18:49:40] EDIT: File edited — packages/transcript-tester/src/index.ts
+[18:49:40] EDIT: File edited — packages/devkit/src/commands/test-tree-document.ts
+[18:49:40] EDIT: File edited — packages/devkit/src/commands/test-tree-document.ts
+[18:49:41] EDIT: File edited — packages/devkit/src/commands/test-tree-document.ts
+[18:49:57] EDIT: File edited — packages/devkit/src/commands/test-tree-document.ts
+[18:49:57] EDIT: File edited — packages/devkit/src/commands/test-tree-document.ts
+[18:50:01] BUILD: Build passed — cd /Users/david/repos/sharpee/packages/transcript-tester && pnpm run build > /de
+[18:50:01] EDIT: File changed via Bash — packages/devkit/src/commands/test-tree-document.ts
+[18:50:02] EDIT: File changed via Bash — packages/transcript-tester/src/index.ts
+[18:50:29] EDIT: File changed via Bash — packages/transcript-tester/tests/run-event-stream.test.ts
+[18:50:54] EDIT: File edited — packages/transcript-tester/tests/run-event-stream.test.ts
+[18:50:54] EDIT: File written — packages/devkit/tests/test-lens.test.ts
+[18:51:07] EDIT: File edited — packages/devkit/tests/test-lens.test.ts
+[18:51:07] EDIT: File edited — packages/devkit/tests/test-lens.test.ts
+[18:51:13] EDIT: File changed via Bash — packages/devkit/tests/test-lens.test.ts
+[18:51:28] EDIT: File written — tools/ide/web/testing-surface/tests/lens-real-path.test.ts
+[18:51:31] TEST: Tests passed — 2 passed 8 passed
+[18:51:31] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/lens-real-path.test.ts
+[18:51:40] TEST: Tests ran (status unverified) — cd /Users/david/repos/sharpee && S=/private/tmp/claude-501/-Users-david-repos-sh
+[18:57:35] EDIT: File edited — packages/devkit/src/commands/test-lens.ts
+[18:57:35] EDIT: File edited — packages/devkit/tests/test-lens.test.ts
+[18:57:45] EDIT: File edited — packages/devkit/tests/test-claims.test.ts
+[18:57:45] EDIT: File edited — packages/devkit/tests/test-claims.test.ts
+[18:57:57] EDIT: File edited — tools/ide/web/testing-surface/tests/derived-real-path.test.ts
+[18:58:07] BUILD: Build passed — cd /Users/david/repos/sharpee/packages/devkit && pnpm run build > /dev/null; ech
+[18:58:07] EDIT: File changed via Bash — packages/devkit/tests/test-claims.test.ts
+[18:58:07] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/derived-real-path.test.ts
+[18:58:37] EDIT: File edited — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[18:58:37] EDIT: File edited — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[18:59:52] TEST: Tests passed — 28 passed 273 passed
+[19:00:21] EDIT: File edited — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[19:00:21] EDIT: File edited — docs/work/lens-findings-in-ide/plan-20261122-lens-findings-in-ide.md
+[19:01:47] EDIT: File written — docs/context/session-20261123-0317-description-noun-lens.md
+[19:01:55] EDIT: File edited — docs/context/session-20261123-0317-description-noun-lens.md
+[19:01:57] EDIT: File changed via Bash — docs/context/session-20261123-0317-description-noun-lens.md
+[19:10:02] EDIT: File edited — docs/context/session-20261123-0317-description-noun-lens.md
+[19:10:02] EDIT: File edited — docs/context/session-20261123-0317-description-noun-lens.md
+[19:10:03] EDIT: File edited — docs/context/session-20261123-0317-description-noun-lens.md
+[19:10:03] EDIT: File edited — docs/context/session-20261123-0317-description-noun-lens.md
+[19:10:03] EDIT: File edited — docs/context/session-20261123-0317-description-noun-lens.md
+[19:10:09] EDIT: File edited — docs/context/session-20261123-0317-description-noun-lens.md
+[19:11:52] TEST: Tests passed — 14 passed 143 passed
+[19:12:01] EDIT: File written — .commit-files
+[19:12:02] EDIT: File written — .commit-msg
+[19:12:06] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```

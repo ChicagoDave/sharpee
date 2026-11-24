@@ -2,6 +2,7 @@
 
 **Created**: 2026-11-22 (session c68c7b)
 **Plan Status**: ACTIVE
+**Superseded by**: docs/work/world-index-noun-spans/plan-20261123-world-index-noun-spans.md
 **Overall scope**: Move the examinable lens from a repo-only script into the author CLI as a command Chord Writer can spawn. Give each finding its source: the key of the passage that named it, and the ids of its owner and its target. Carry the lens's JSON across the language boundary as a contract. Then show the findings in Chord Writer's Testing tab, the web pane both heads host (`tools/ide/web/testing-surface/`), highlighting the phrase in the author's prose that names a thing that has no text. Both heads, SharpeeIDE (macOS) and PaneHost (Avalonia), run the lens and answer the pane's source requests (D-1(c), ruled 2026-11-23). Other verbs and GH #836 (the matcher's number forms) are out of scope.
 **Bounded contexts touched**: N/A (testing infrastructure, the author CLI and the macOS IDE; no story-domain behavior changes)
 **Key domain language**: N/A. Working vocabulary: lens, finding, passage (a world-index prose site), passage key, no-text finding (the lens's `resolved-default` class), soundness line, World tab.
