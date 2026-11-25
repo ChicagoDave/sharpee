@@ -6,7 +6,7 @@
 ## Phase Context
 - **Plan**: A thing answers to both grammatical numbers (GH #836) — `docs/work/thing-answers-both-numbers/plan-20261124-thing-answers-both-numbers.md`.
 - **Phase executed**: Phase 1 — "Measure the number gap and decide where the other number comes from (ADR-409)" (Medium); flipped DONE by `plan-phase.sh` in-session, and Phase 2 advanced to CURRENT (since 2026-11-24).
-- **Tool calls used**: 309 (state file) / 250.
+- **Tool calls used**: 341 (state file) / 250.
 - **Phase outcome**: Ran over budget — the ADR-409 interview went through three designs plus Amendment 1.
 - **Demonstrated line**: marked `[reported by session, unverified]` in the plan this write; the event log carries no row for the scullery probe, `adr-index.sh` or `git status` (classes the hooks do not log).
 
@@ -77,8 +77,9 @@ David: "this is an effort to make the IDE v1.0.0 worthy", "a". The IDE pin moves
 
 **Approach**: Measure first (baseline, scratchpad census over built `numberForms`), then decide through the open-questions interview; no source edits, so rule 15 did not fire.
 
-- Docs-only: `git status --short packages stories test-stories tools tutorials` printed nothing at 18:22 CST [reported by session, unverified]; the build's `BUILD_DATE` stamp in `stories/dungeo/src/version.ts` (in the state file's `files`) was restored.
-- The previous session's file `docs/context/session-20261124-0040-description-noun-lens.md` is also modified in the working tree.
+- Docs-only: `git status --short packages stories test-stories tools tutorials` printed nothing at 18:22 CST [reported by session, unverified]; the build's `BUILD_DATE` stamp in `stories/dungeo/src/version.ts` (in the state file's `files`) was restored, and `git show --stat b39fea415` lists only docs paths.
+- b39fea415 also carried the previous session's `docs/context/session-20261124-0040-description-noun-lens.md` and a mode-only change to `session-20261123-1858-description-noun-lens.md`.
+- commit-local first made the Phase 1 commit as 6f9d6e466 with a wrong "Claude Sonnet 5.5" trailer; the main session amended the message to "Claude Opus 5.5" (same tree), giving b39fea415. 6f9d6e466 is not on the branch. b39fea415 is local only until the finalize push.
 - Filename note: the state file's `summaryPrefix` is `20261124-0953`, but this session's summary was started as `session-20261124-1034-…` and is revised in place rather than duplicated.
 - #836 and #839 got comments recording ADR-409's decision; #839 closes in Phase 4, #842 stays separate.
 
@@ -87,12 +88,12 @@ David: "this is an effort to make the IDE v1.0.0 worthy", "a". The IDE pin moves
 ## Session Metadata
 
 - **Session**: 4a60b3
-- **Status**: IN-FLIGHT
+- **Status**: COMPLETE (unverified: Phase 1 baseline counts other than testing-surface; Phase 1 Demonstrated line; docs-only git-status check)
 - **Blocker**: N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
 - **Rollback Safety**: safe to revert
-- **Commits**: none before this write — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261124-1034-description-noun-lens.md`
+- **Commits**: b39fea415 (Phase 1 complete, ADR-409) — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261124-1034-description-noun-lens.md`
 
 ## Dependency/Prerequisite Check
 
@@ -118,3 +119,4 @@ David: "this is an effort to make the IDE v1.0.0 worthy", "a". The IDE pin moves
 
 **Progressive update**: checkpoint 2026-11-24 18:21 — main session's progressive edits: Goals, Completed, Key Decisions and Files Modified (no line was written then; reconstructed from the event log).
 **Progressive update**: checkpoint 2026-11-24 18:23 — ADR-409 accepted with Amendment 1, plan restructured to 5 phases, Phase 1 DONE, Phase 2 CURRENT; full form written.
+**Progressive update**: session completed 2026-11-24 18:26 — terminal: Status stamped COMPLETE (unverified), b39fea415 recorded with its amend history, tool count refreshed; session ends with Phase 2 CURRENT for a new session.
