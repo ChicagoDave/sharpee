@@ -1173,6 +1173,21 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "thing",
           ],
         },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 78,
+            "line": 78,
+          },
+          "words": [
+            "singular",
+          ],
+        },
       ],
       "counters": [],
       "deadly": null,
@@ -3261,6 +3276,35 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
             "thing",
           ],
         },
+        {
+          "article": null,
+          "condition": null,
+          "config": [
+            {
+              "key": [
+                "of",
+              ],
+              "span": {
+                "column": 24,
+                "endColumn": 40,
+                "endLine": 116,
+                "line": 116,
+              },
+              "value": "handfuls of feed",
+              "valueKind": "word",
+            },
+          ],
+          "kind": "composition",
+          "span": {
+            "column": 12,
+            "endColumn": 40,
+            "endLine": 116,
+            "line": 116,
+          },
+          "words": [
+            "singular",
+          ],
+        },
       ],
       "counters": [],
       "deadly": null,
@@ -3412,14 +3456,29 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         {
           "article": null,
           "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 125,
+            "line": 125,
+          },
+          "words": [
+            "singular",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
           "config": [
             {
               "key": [
                 "kind",
               ],
               "span": {
-                "column": 26,
-                "endColumn": 36,
+                "column": 36,
+                "endColumn": 46,
                 "endLine": 125,
                 "line": 125,
               },
@@ -3429,8 +3488,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
           "kind": "composition",
           "span": {
-            "column": 12,
-            "endColumn": 36,
+            "column": 22,
+            "endColumn": 46,
             "endLine": 125,
             "line": 125,
           },

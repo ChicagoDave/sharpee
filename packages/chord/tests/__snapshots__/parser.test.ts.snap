@@ -1643,6 +1643,21 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
             "line": 55,
           },
           "words": [
+            "singular",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 22,
+            "endColumn": 30,
+            "endLine": 55,
+            "line": 55,
+          },
+          "words": [
             "wearable",
           ],
         },
@@ -1753,7 +1768,22 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "kind": "composition",
           "span": {
             "column": 16,
-            "endColumn": 23,
+            "endColumn": 24,
+            "endLine": 63,
+            "line": 63,
+          },
+          "words": [
+            "singular",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 26,
+            "endColumn": 33,
             "endLine": 63,
             "line": 63,
           },
@@ -1923,11 +1953,40 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         {
           "article": null,
           "condition": null,
-          "config": [],
+          "config": [
+            {
+              "key": [
+                "of",
+              ],
+              "span": {
+                "column": 24,
+                "endColumn": 47,
+                "endLine": 71,
+                "line": 71,
+              },
+              "value": "messages in the sawdust",
+              "valueKind": "word",
+            },
+          ],
           "kind": "composition",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 47,
+            "endLine": 71,
+            "line": 71,
+          },
+          "words": [
+            "singular",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 49,
+            "endColumn": 56,
             "endLine": 71,
             "line": 71,
           },

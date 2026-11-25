@@ -12,7 +12,7 @@ create the Gatehouse
   A cold stone gatehouse.
 
 create the rusty winch
-  a thing
+  a thing, singular
   aka winch
   in the Gatehouse
 

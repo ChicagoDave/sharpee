@@ -96,12 +96,12 @@ create the Barn
   end on
 
 create the bull
-  a thing, scenery
+  a thing, singular, scenery
   jumpy
   in the Barn
 
 create the owl
-  a thing, scenery
+  a thing, singular, scenery
   in the Barn
 
   on every turn

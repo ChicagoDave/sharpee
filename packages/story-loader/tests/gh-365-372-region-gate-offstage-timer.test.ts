@@ -210,7 +210,7 @@ define timer overheard for the raid
 end timer
 
 create the raid
-  a thing, proper
+  a thing, singular, proper
   states: pending, aftermath
 
   The raid.

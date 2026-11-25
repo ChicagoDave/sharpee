@@ -1540,6 +1540,34 @@ composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind no
                                                               fragile-not-breakable).
                                                               Malformed is parse.
                                                               attached-to *)
+             | ( "plural" | "singular" ) "of" WORD { WORD }
+                                                           (* ADR-409 D3: the name's
+                                                              other form, written by the
+                                                              author — the singular of a
+                                                              plural thing, the plural
+                                                              of a singular one; it
+                                                              outranks a worked-out form.
+                                                              Every thing and door
+                                                              declares `singular` or
+                                                              `plural` (a person may),
+                                                              bare or with
+                                                              `of`, exactly once and
+                                                              unconditionally (analysis.
+                                                              singular-plural-missing,
+                                                              -twice, -conditional); a
+                                                              room or region declares
+                                                              neither (analysis.
+                                                              singular-plural-on-place). A bare declaration
+                                                              takes the locale's suffix
+                                                              rule for the name's last
+                                                              word, and is refused where
+                                                              the rule cannot tell the
+                                                              other form (analysis.
+                                                              singular-plural-unsafe-
+                                                              ending, -stopword-name,
+                                                              -proper-name). Malformed
+                                                              is parse.singular-plural-
+                                                              of *)
              | "wearable" "on" ARTICLE WORD { WORD }       (* ADR-392 D2: where a placed
                                                               wearable sits — the body
                                                               part, a bare word of the

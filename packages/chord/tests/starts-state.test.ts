@@ -26,6 +26,7 @@ create the Vault
 
 create the safe
 ${safeLines}
+  singular of safes
   in the Vault
 
   A safe.
@@ -42,7 +43,7 @@ before the game starts
 end before
 
 create the brass key
-  a thing
+  a thing, singular
 
   A small brass key.
 ${extra}`;
@@ -61,7 +62,7 @@ describe('starts <state> parses through composition (ADR-231 D5a)', () => {
     )!;
     expect(safe.startsStates).toMatchObject([{ kind: 'starts-state', state: 'locked' }]);
     // The initializer clause is NOT a composition item — kinds/traits are untouched.
-    expect(safe.compositions.map((c) => c.words.join(' '))).toEqual(['container', 'openable', 'lockable']);
+    expect(safe.compositions.map((c) => c.words.join(' '))).toEqual(['container', 'openable', 'lockable', 'singular']);
   });
 
   it('lowers to IREntity.startsStates through the real compile pipeline', () => {
@@ -70,7 +71,7 @@ describe('starts <state> parses through composition (ADR-231 D5a)', () => {
     expect(result.ok).toBe(true);
     const safe = result.ir.entities.find((e) => e.id === 'safe')!;
     expect(safe.startsStates).toEqual(['locked']);
-    expect(safe.traits.map((t) => t.name)).toEqual(['openable', 'lockable']);
+    expect(safe.traits.map((t) => t.name)).toEqual(['openable', 'lockable', 'singular']);
   });
 
   it('accepts several initializers across composition lines', () => {

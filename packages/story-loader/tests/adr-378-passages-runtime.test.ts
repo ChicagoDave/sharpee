@@ -69,20 +69,20 @@ create the Sorting Room
   The sorter.
 
 create the rope
-  a thing
+  a thing, singular
   in the Sorting Room
 
   A rope.
 
 create the lantern
-  a thing
+  a thing, singular
   in the Cable Trench
   states: cold, warm
 
   A lantern.
 
 create the knob
-  a thing, pushable
+  a thing, singular, pushable
   in the Cable Trench
 
   A knob.
@@ -92,14 +92,14 @@ create the knob
   end on
 
 create the gate
-  a thing
+  a thing, singular
   in the Loading Dock
   states: barred, raised
 
   A gate.
 
 create the crank
-  a thing, pushable
+  a thing, singular, pushable
   in the Loading Dock
 
   A crank.
@@ -109,14 +109,14 @@ create the crank
   end on
 
 create the seal
-  a thing
+  a thing, singular
   in the Sorting Room
   states: sealed, broken
 
   A seal.
 
 create the lever
-  a thing, pushable
+  a thing, singular, pushable
   in the Sorting Room
 
   A lever.
@@ -126,14 +126,14 @@ create the lever
   end on
 
 create the trolley
-  a thing, pushable
+  a thing, singular, pushable
   in the Sorting Room
   aka cart
 
   A flat-bed trolley.
 
 create the crate
-  a thing, pushable
+  a thing, singular, pushable
   in the Yard
 
   A crate.
@@ -143,7 +143,7 @@ create the crate
   end pushing
 
 create the barrel
-  a thing, pushable
+  a thing, singular, pushable
   in the Yard
 
   A barrel.

@@ -16,7 +16,7 @@ create the Hall
   A hall.
 
 create the mat
-  a thing
+  a thing, singular
   in the Hall
 
   A mat.

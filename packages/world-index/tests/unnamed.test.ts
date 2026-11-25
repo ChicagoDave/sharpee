@@ -82,7 +82,7 @@ create the Hall
   A hall. A worn rug covers the boards.
 
 create the brass key
-  a thing
+  a thing, singular
 
   Small and cold.
 
@@ -203,14 +203,14 @@ describe('D13 — a thing the mechanics need that nothing announces', () => {
   it('does not let a thing announce itself', () => {
     const crate = (mention: string) => `${ROOMS}
 create the crate
-  a container
+  a container, singular
   openable
   in the Hall
 
   A nailed crate.${mention}
 
 create the brass spanner
-  a thing
+  a thing, singular
   in the crate
 
   A brass spanner.
@@ -227,7 +227,7 @@ create the brass spanner
   it('reports nothing that is scenery with nothing to do, a place, or the player', () => {
     const story = compileSource(`${ROOMS}
 create the zarquon frieze
-  a thing, scenery
+  a thing, singular, scenery
   in the Study
 
   A frieze.

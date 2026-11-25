@@ -35,7 +35,7 @@ const ALLEY = `create the Alley
 `;
 
 const LAMP = (clauses: string, states = 'dull, bright') => `create the lamp
-  a thing
+  a thing, singular
   glowing
   in the Stall
   states: ${states}

@@ -75,7 +75,7 @@ create Courier
   You.
 
 create the lever
-  a thing, scenery, pullable
+  a thing, singular, scenery, pullable
   in the Dock
 
   A lever.
@@ -101,14 +101,14 @@ create the loader robot
   end after
 
 create the deaf crate
-  a thing
+  a thing, singular
   in the Hall
   states, reversible: quiet, rattled
 
   A crate.
 
 create the far sensor
-  a thing, listener
+  a thing, singular, listener
   in the Vault
   states, reversible: waiting, tripped
 
@@ -119,25 +119,25 @@ create the far sensor
   end after
 
 create the matchbook
-  a thing
+  a thing, singular
   in the Dock
 
   A matchbook.
 
 create the lantern
-  a thing, light-source with the matchbook, starts unlit
+  a thing, singular, light-source with the matchbook, starts unlit
   in the Dock
 
   A lantern.
 
 create the battery
-  a thing
+  a thing, singular
   in the Dock
 
   A battery.
 
 create the torch
-  a container, light-source, switchable, powered by the battery
+  a container, singular, light-source, switchable, powered by the battery
   in the Dock
 
   A torch.

@@ -62,7 +62,7 @@ create the Vault
   A locked vault.
 
 create the tablet
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Lab
 
   A stone tablet.
@@ -80,7 +80,7 @@ create the tablet
   end on
 
 create the dial
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Lab
   states: left, right
 
@@ -101,7 +101,7 @@ create the dial
   end on
 
 create the trap
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Lab
   states: armed, spent
 
@@ -114,7 +114,7 @@ create the trap
   end on
 
 create the kettle
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Lab
   states: wary, softened
 
@@ -127,7 +127,7 @@ create the kettle
   end on
 
 create the ledger
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Lab
 
   A worn ledger.
@@ -144,13 +144,13 @@ create the ledger
   end on
 
 create the bin
-  a container
+  a container, singular
   in the Lab
 
   A tin bin.
 
 create the shelf
-  a thing, scenery, readable
+  a thing, singular of shelves, scenery, readable
   in the Lab
 
   A steel shelf.

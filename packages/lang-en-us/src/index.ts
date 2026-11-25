@@ -48,7 +48,9 @@ export {
   parseCardinal,
   ordinalNumbers,
   englishWords,
-  irregularPlurals
+  irregularPlurals,
+  type FormRules,
+  type FormRewrite
 } from './data/words.js';
 
 

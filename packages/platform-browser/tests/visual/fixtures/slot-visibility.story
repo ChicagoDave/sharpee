@@ -47,7 +47,7 @@ end before
 
 create the ledger
   aka book
-  a thing, readable
+  a thing, singular, readable
   in the Chart Room
 
   A ledger of soundings, ruled in red.
@@ -60,7 +60,7 @@ create the ledger
 
 create the chart
   aka map
-  a thing
+  a thing, singular
   in the Chart Room
 
   A sea chart, rolled and tied.
@@ -75,7 +75,7 @@ create the chart
 
 create the bell
   aka handbell
-  a thing
+  a thing, singular
   in the Chart Room
 
   A brass handbell with a worn grip.

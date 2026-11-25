@@ -961,7 +961,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
           A small square den.
 
         create the brass lamp
-          a thing
+          a thing, singular
           in the Den
 
           It gleams dully.
@@ -1768,7 +1768,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
           A small square den.
 
         create the brass lamp
-          a thing
+          a thing, singular
           in the Den
 
           It gleams dully.
@@ -2047,7 +2047,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         // A saved source file moves the build id: every row and the derived
         // tier are stale until the source is put back.
         let extra = project.story.deletingLastPathComponent().appendingPathComponent("extra.chord")
-        try Data("create the extra thing\n  a thing\n".utf8).write(to: extra)
+        try Data("create the extra thing\n  a thing, singular\n".utf8).write(to: extra)
         surface.noteSourceSaved()
         try await waitForStaleness("every row stale after a source save") {
             ($0["stale"] as? Int) == 2 && ($0["derivedStale"] as? Bool) == true
@@ -2091,7 +2091,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
           window.__sharpeeTestingSurface.buildChanged = function (b) { window.__lastBuildChanged = b; return entry(b); };
         })();
         """)
-        try Data("create the extra thing\n  a thing\n".utf8).write(to: extra)
+        try Data("create the extra thing\n  a thing, singular\n".utf8).write(to: extra)
         surface.noteSourceSaved()
         try await waitForStaleness("the restored run stale after a source save") {
             ($0["stale"] as? Int) == 2 && ($0["derivedStale"] as? Bool) == true

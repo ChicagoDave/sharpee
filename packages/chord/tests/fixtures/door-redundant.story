@@ -18,7 +18,7 @@ create the Hall
   A long hall.
 
 create the oak door
-  a door
+  a door, singular
 
   A heavy oak door, iron-banded.
 

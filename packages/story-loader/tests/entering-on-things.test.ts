@@ -109,7 +109,7 @@ create the gates
   end on
 
 create the sedan chair
-  a supporter, enterable
+  a supporter, singular, enterable
   in the Yard
 
   A chair.

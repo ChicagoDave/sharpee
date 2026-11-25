@@ -230,6 +230,17 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "deadlyExits": [],
       "descriptionKey": null,
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "goat",
+            "word": "goats",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "pygmy goats",
+        "singular": "pygmy goat",
+      },
       "id": "pygmy-goats",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -377,6 +388,17 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "deadlyExits": [],
       "descriptionKey": "handful-of-feed.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "feeds",
+            "word": "feed",
+          },
+        ],
+        "origin": "written",
+        "plural": "handfuls of feed",
+        "singular": "handful of feed",
+      },
       "id": "handful-of-feed",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -415,7 +437,25 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "states": [],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "of",
+              "value": "handfuls of feed",
+              "valueKind": "word",
+            },
+          ],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 40,
+            "endLine": 116,
+            "line": 116,
+          },
+        },
+      ],
       "wears": [],
     },
     {
@@ -431,6 +471,17 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "deadlyExits": [],
       "descriptionKey": "garden-snake.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "snakes",
+            "word": "snake",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "garden snakes",
+        "singular": "garden snake",
+      },
       "id": "garden-snake",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -472,6 +523,17 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "traits": [
         {
           "condition": null,
+          "config": [],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 125,
+            "line": 125,
+          },
+        },
+        {
+          "condition": null,
           "config": [
             {
               "key": "kind",
@@ -481,8 +543,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           ],
           "name": "pettable",
           "span": {
-            "column": 12,
-            "endColumn": 36,
+            "column": 22,
+            "endColumn": 46,
             "endLine": 125,
             "line": 125,
           },
@@ -550,7 +612,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
     "stamp": "87f0726831a95ea8905b25d48c455d3741799b8de177030ef46928e4c9ae415a",
     "timers": [],
   },
-  "languageVersion": "4.1.0",
+  "languageVersion": "4.2.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

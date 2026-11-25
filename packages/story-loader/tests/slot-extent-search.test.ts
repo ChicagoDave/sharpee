@@ -54,20 +54,20 @@ create the Loft
   A dusty loft.
 
 create the brass lantern
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass lantern.
 
 create the box
-  a container, openable
+  a container, singular, openable
   in the Workshop
   starts open
 
   A small box.
 
 create the rope
-  a thing
+  a thing, singular
   in the Workshop
   scenery
 

@@ -26,7 +26,7 @@ create the Shed
   A shed.
 
 create the vine
-  a thing, scenery, prunable
+  a thing, singular, scenery, prunable
   states: seedling, flowering, fruiting
   in the Greenhouse
   score fruited worth 5
@@ -42,14 +42,14 @@ create the vine
   end after
 
 create the garden shears
-  a thing
+  a thing, singular
   aka shears
   in the Shed
 
   Shears.
 
 create the silver locket
-  a thing
+  a thing, singular
   aka locket
   in the Shed
 

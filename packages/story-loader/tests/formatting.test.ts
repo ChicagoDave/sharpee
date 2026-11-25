@@ -42,7 +42,7 @@ end before
 
 create the plaque
   in the Hall
-  a thing, scenery
+  a thing, singular, scenery
 
   on the player reading
     phrase verse
@@ -50,7 +50,7 @@ create the plaque
 
 create the map
   in the Hall
-  a thing, scenery
+  a thing, singular, scenery
 
   on the player reading
     phrase chart

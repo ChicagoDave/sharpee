@@ -120,6 +120,7 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
     expect(hook.aka).toEqual(['hook', 'peg']);
     expect(hook.compositions).toMatchObject([
       { article: 'a', words: ['supporter'], config: [] },
+      { article: null, words: ['singular'] },
       { article: null, words: ['scenery'] },
     ]);
     expect(hook.holds).toMatchObject([{ kind: 'holds', count: 1 }]);

@@ -275,7 +275,7 @@ create the Maze 64
   You are in a maze of twisty little passages, all alike.
 
 create the coin
-  a thing
+  a thing, singular
   in the Maze 64
 
   A coin.
@@ -371,7 +371,7 @@ create the Maze 4
   A hall.
 
 create the pebble
-  a thing
+  a thing, singular
   in the Hall
 
 `))).toEqual([]);

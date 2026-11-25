@@ -105,7 +105,7 @@ extend action offering
 
 describe('the parser reads the seats the loader registered (ADR-383 D5)', () => {
   const PEOPLE = `create the coin
-  a thing
+  a thing, singular
   in the Study
 
   A coin.

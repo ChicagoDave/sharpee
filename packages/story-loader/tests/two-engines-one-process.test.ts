@@ -21,7 +21,7 @@ create the Room
   A room.
 
 create the ${thing}
-  a thing
+  a thing, singular
   in the Room
 
   A ${thing}.

@@ -159,7 +159,7 @@ create the Hall
   A hall.
 
 create the stopcock
-  a thing
+  a thing, singular
   in the Hall
 
   A stopcock.

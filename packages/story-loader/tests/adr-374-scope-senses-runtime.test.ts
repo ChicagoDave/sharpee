@@ -73,21 +73,21 @@ create the Crawlspace
   end after
 
 create the view of Ceres
-  a thing, scenery
+  a thing, singular of views of Ceres, scenery
   in the Landing Pad, the Tram Platform and the Crawlspace
   aka ceres, view
 
   Ceres hangs overhead.
 
 create the dust haze
-  a thing, scenery
+  a thing, singular, scenery
   in the Ceres Surface
   aka haze
 
   A fine grey haze.
 
 create the crate
-  a thing
+  a thing, singular
   in the Crawlspace
 
   A crate.
@@ -108,7 +108,7 @@ create the loader robot
   A robot.
 
 create the tally board
-  a thing, scenery
+  a thing, singular, scenery
   in the Crawlspace
   states, reversible: blank, marked
 

@@ -113,7 +113,7 @@ create the pygmy goats
   end after
 
 create the handful of feed
-  a thing
+  a thing, singular of handfuls of feed
   aka feed
   in the Petting Zoo
 
@@ -122,7 +122,7 @@ create the handful of feed
 create the garden snake
   aka snake
   in the Petting Zoo
-  a thing, pettable with kind snake
+  a thing, singular, pettable with kind snake
 
   Coiled behind glass, radiating disdain.
 

@@ -88,7 +88,7 @@ create the Alley
   end after
 
 create the monkey
-  a thing
+  a thing, singular
   in the Alley
 
   A monkey.

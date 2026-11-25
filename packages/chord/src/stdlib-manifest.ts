@@ -10,7 +10,7 @@
  * locale-owned facts (grammar shapes, direction words) go under `locales`,
  * keyed from day one (Q-2), `en-US` the sole entry.
  *
- * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts, ActSlotType.
+ * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts, FormRules, FormRewrite, ActSlotType.
  * Owner context: @sharpee/chord (generated artifact; browser-safe).
  */
 
@@ -18,6 +18,27 @@ import type { PatternElement, Seat } from '@sharpee/if-domain';
 
 /** The type a typed grammar slot carries: a seat table leaves these slots out. */
 export type ActSlotType = 'instrument' | 'topic' | 'text';
+
+/** One suffix rewrite of a word, singular to plural or plural to singular (ADR-409 D2). */
+export interface FormRewrite {
+  /** The word's ending; `""` matches any word. */
+  readonly ending: string;
+  /** Letters the ending must follow, when the rule needs them (`y` after a consonant). */
+  readonly after?: readonly string[];
+  /** How many letters of the word to drop, then what to add. */
+  readonly drop: number;
+  readonly add: string;
+}
+
+/** The suffix rules a locale works out a word's singular or plural by (ADR-409 D2). */
+export interface FormRules {
+  /** Rewrites tried in order; the first whose `ending` matches applies. */
+  readonly toPlural: readonly FormRewrite[];
+  readonly toSingular: readonly FormRewrite[];
+  /** Endings with no rule: a bare declaration on them is refused. */
+  readonly unsafeSingularEndings: readonly string[];
+  readonly unsafePluralEndings: readonly string[];
+}
 
 /** Locale-owned stdlib facts: the grammar shapes, seats and typed slots, and the language words the IDE reads without a runtime (ADR-387 D2). */
 export interface StdlibLocaleFacts {
@@ -27,6 +48,8 @@ export interface StdlibLocaleFacts {
   selfWords: readonly string[];
   /** Words dropped when a name's content words are derived (ADR-387 D2). */
   nameStopwords: readonly string[];
+  /** The locale's singular and plural rules, applied once at compile time (ADR-409 D2). */
+  formRules: FormRules;
   /**
    * Standard grammar pattern shapes per action id, as parts — the loader's
    * removable surface (ADR-270 D3), compared to a removal by shape and
@@ -175,6 +198,22 @@ export const STDLIB_MANIFEST: StdlibManifest = {
       articles: ["a", "an", "the"],
       selfWords: ["me", "myself", "self", "yourself"],
       nameStopwords: ["the", "a", "an", "of"],
+      formRules: {
+        toPlural: [
+          { ending: "s", drop: 0, add: "es" },
+          { ending: "x", drop: 0, add: "es" },
+          { ending: "z", drop: 0, add: "es" },
+          { ending: "ch", drop: 0, add: "es" },
+          { ending: "sh", drop: 0, add: "es" },
+          { ending: "y", after: ["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"], drop: 1, add: "ies" },
+          { ending: "", drop: 0, add: "s" },
+        ],
+        toSingular: [
+          { ending: "s", drop: 1, add: "" },
+        ],
+        unsafeSingularEndings: ["f", "fe", "o", "us", "is"],
+        unsafePluralEndings: ["ses", "xes", "zes", "ches", "shes", "ies", "ves", "oes", "ss", "us", "is"],
+      },
       grammarShapes: {
         "if.action.about": [
           [{"kind":"word","word":"about"}],

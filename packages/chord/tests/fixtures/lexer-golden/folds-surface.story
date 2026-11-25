@@ -33,7 +33,7 @@ create the Mine 25, a room
 
   The mine proper: timber, damp, and silence.
 
-create the brass lamp, a thing, portable
+create the brass lamp, a thing, singular, portable
   in the Mine Entrance 24
 
   A brass lamp, cold to the touch.

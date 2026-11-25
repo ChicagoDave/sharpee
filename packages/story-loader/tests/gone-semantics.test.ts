@@ -48,13 +48,13 @@ create the voices
   Voices.
 
 create the necklace
-  a thing
+  a thing, singular
   in the Tent
 
   A necklace.
 
 create the silk
-  a thing
+  a thing, singular
   in the Tent
 
   A silk.
@@ -64,7 +64,7 @@ create the silk
   end on
 
 create the drum
-  a thing
+  a thing, singular
   in the Tent
 
   A drum.
@@ -75,7 +75,7 @@ create the drum
   end after
 
 create the bell
-  a thing
+  a thing, singular
   in the Tent
 
   A bell.
@@ -85,7 +85,7 @@ create the bell
   end after
 
 create the whistle
-  a thing
+  a thing, singular
   in the Tent
 
   A whistle.
@@ -95,7 +95,7 @@ create the whistle
   end after
 
 create the cracked bell
-  a thing
+  a thing, singular
   in the Tent
 
   A cracked bell.

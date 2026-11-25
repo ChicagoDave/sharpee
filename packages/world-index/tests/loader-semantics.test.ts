@@ -81,7 +81,7 @@ describe('D3 row 1 — states[0] is the implicit initial state', () => {
   it('takes the first declared state, as the compiler orders them', () => {
     const ir = irOf(`${TWO_ROOMS}
 create the boiler
-  a thing
+  a thing, singular
   in the Hall
   states: cold, filled, running
 
@@ -162,13 +162,13 @@ before the game starts
 end before
 
 create the front door
-  a door, lockable
+  a door, singular, lockable
 
 create the side door
-  a door, lockable, starts unlocked
+  a door, singular, lockable, starts unlocked
 
 create the strongbox
-  a container, lockable
+  a container, singular, lockable
   in the Hall
 
   A strongbox.
@@ -225,7 +225,7 @@ describe('D3 row 5 — platform trait states are not author states', () => {
   it('reports the words an entity answers to because of a composed trait', () => {
     const ir = irOf(`${TWO_ROOMS}
 create the lamp
-  a thing, light-source, switchable
+  a thing, singular, light-source, switchable
   in the Hall
 
   A lamp.
@@ -286,7 +286,7 @@ describe('D3 row 2, second half — the mirror runs in the opposite direction', 
   it('wires the mirror the compiler never wrote, carrying the door with it', () => {
     const ir = irOf(`${TWO_ROOMS.replace('north to the Study', 'north to the Study through the oak door')}
 create the oak door
-  a door
+  a door, singular
 
   An oak door.
 `);
@@ -320,19 +320,19 @@ create the Cellar
   A cellar.
 
 create the cellar door
-  a door
+  a door, singular
   lockable with the brass key
 
   A cellar door.
 
 create the strongbox
   in the Hall
-  a thing, lockable with the brass key
+  a thing, singular, lockable with the brass key
 
   A strongbox.
 
 create the brass key
-  a thing
+  a thing, singular
   in the Hall
 
   A small brass key.
@@ -348,7 +348,7 @@ create the brass key
   it('returns undefined when no composed trait owns the word', () => {
     const ir = irOf(`${TWO_ROOMS}
 create the boiler
-  a thing
+  a thing, singular
   in the Hall
   states: cold, running
 
@@ -363,13 +363,13 @@ create the boiler
     const ir = irOf(`${TWO_ROOMS}
 create the lamp
   in the Hall
-  a thing, switchable
+  a thing, singular, switchable
 
   A lamp.
 
 create the heater
   in the Hall
-  a thing, switchable, starts on
+  a thing, singular, switchable, starts on
 
   A heater.
 `);
@@ -397,13 +397,13 @@ create the Hall
   A hall.
 
 create the sherry bottle
-  a thing
+  a thing, singular
   in the Hall
 
   A dusty bottle.
 
 create the cold range
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
 
   A cold iron range.
@@ -430,7 +430,7 @@ end before
   // inert, which is backwards.
   it('reads the platform default the IR never writes down', () => {
     const ir = irOf(PORTABILITY);
-    expect(thing(ir, 'sherry-bottle').traits).toHaveLength(0);
+    expect(thing(ir, 'sherry-bottle').traits.map((t) => t.name)).toEqual(['singular']);
 
     expect(isPortableByDefault(thing(ir, 'sherry-bottle'), false)).toBe(true);
     expect(isPortableByDefault(thing(ir, 'cold-range'), false)).toBe(false);

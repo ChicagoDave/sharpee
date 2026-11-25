@@ -35,18 +35,18 @@ create the Hall
   A hall.
 
 create the coin
-  a thing
+  a thing, singular
   in the Hall
 
   A coin.
 
 create the brass key
-  a thing
+  a thing, singular
 
   A key.
 
 create the chest
-  a container, openable, lockable with the brass key, starts locked
+  a container, singular, openable, lockable with the brass key, starts locked
   in the Hall
 
   A chest.

@@ -27,30 +27,30 @@ create the Store
   A bare store room.
 
 create the brass lantern
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass lantern.
 
 create the sword
-  a thing
+  a thing, singular
   in the Workshop
 
   A sword.
 
 create the salt and pepper shaker
-  a thing
+  a thing, singular
   in the Workshop
 
   A shaker.
 
 create the oak door
-  a door, lockable with the brass key, starts locked
+  a door, singular, lockable with the brass key, starts locked
 
   A door.
 
 create the brass key
-  a thing
+  a thing, singular
 
   A key.
 

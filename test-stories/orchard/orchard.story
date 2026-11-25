@@ -97,7 +97,7 @@ create the Cellar
   A cool cellar of barrels, stacked three high.
 
 create the sign
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Gate
 
   A painted sign, the paint lifting in curls.
@@ -108,7 +108,7 @@ create the sign
 
 create the apple tree
   aka tree
-  a thing, scenery, shakeable
+  a thing, singular, scenery, shakeable
   in the Rows
   states: budding, laden, picked
 
@@ -119,28 +119,28 @@ create the apple tree
   end after
 
 create the windfall
-  a thing
+  a thing, singular
   aka apple
 
   One perfect apple, red on the side the sun reached.
 
 create the long pole
   aka pole
-  a thing
+  a thing, singular
   in the Press House
 
   A long ash pole with a hook at the end.
 
 create the bee smoker
   aka smoker
-  a thing, wearable
+  a thing, singular, wearable
   in the Press House
 
   A bee smoker on a leather strap.
 
 create the water valve
   aka valve
-  a thing, scenery
+  a thing, singular, scenery
   in the Press House
   states: shut, running
 
@@ -154,7 +154,7 @@ create the water valve
 
 create the cider press
   aka press
-  a thing, scenery, crankable
+  a thing, singular, scenery, crankable
   in the Press House
   states: idle, running, seized
 
@@ -168,14 +168,14 @@ create the keeper
 
 create the crank handle
   aka handle
-  a thing
+  a thing, singular
   in the Cellar
 
   An iron crank handle, cold from the cellar.
 
 create the old hive
   aka hive
-  a thing, scenery
+  a thing, singular, scenery
   in the Hive Yard
   states: calm, stirring, angry
 
@@ -194,7 +194,7 @@ create the old hive
   end on
 
 create the green apple
-  a thing, edible
+  a thing, singular, edible
   in the Cellar
 
   A small green apple, hard as a stone.
@@ -205,7 +205,7 @@ create the green apple
 
 create the honeycomb
   aka comb
-  a thing
+  a thing, singular
   in the Hive Yard
 
   A slab of honeycomb, left on the wall.

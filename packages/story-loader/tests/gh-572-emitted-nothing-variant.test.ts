@@ -25,7 +25,7 @@ create the Aviary
   A tall cage of netting.
 
 create the parrot
-  a thing, scenery
+  a thing, singular, scenery
   in the Aviary
 
   A scarlet macaw.

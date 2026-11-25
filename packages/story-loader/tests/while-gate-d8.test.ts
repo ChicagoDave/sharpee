@@ -143,7 +143,7 @@ create the Camp
   A camp.
 
 create the badger
-  a thing
+  a thing, singular
   in the Camp
   states, reversible: tame, feral
 
@@ -156,7 +156,7 @@ create the badger
   end on
 
 create the vole
-  a thing
+  a thing, singular
   in the Camp
 
   A vole.
@@ -166,38 +166,38 @@ create the vole
   end on
 
 create the stoat
-  a thing, skittish
+  a thing, singular, skittish
   in the Camp
 
   A stoat.
 
 create the weasel
-  a thing, shy
+  a thing, singular, shy
   in the Camp
 
   A weasel.
 
 create the ferret
-  a thing, poddable
+  a thing, singular, poddable
   in the Camp
 
   A ferret.
 
 create the marten
-  a thing, prickly
+  a thing, singular, prickly
   in the Camp
 
   A marten.
 
 create the shrew
-  a thing, poddable
+  a thing, singular, poddable
   perky
   in the Camp
 
   A shrew.
 
 create the flag
-  a thing, wavable
+  a thing, singular, wavable
   in the Camp
 
   A flag.

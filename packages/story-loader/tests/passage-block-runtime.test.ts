@@ -52,7 +52,7 @@ create the Loft
   The loft.
 
 create the lever
-  a thing, pushable
+  a thing, singular, pushable
   in the Shaft
   states: resting, pulled
 
@@ -63,7 +63,7 @@ create the lever
   end on
 
 create the gate
-  a thing, pushable
+  a thing, singular, pushable
   in the Shaft
   states: shut, open
 
@@ -104,13 +104,13 @@ create the Shaft
   The riverbank.
 
 create the Wumpus
-  a thing
+  a thing, singular of Wumpuses
   in the Shaft
 
   A wumpus.
 
 create the rock
-  a thing
+  a thing, singular
   in the Shaft
 
   A rock.
@@ -224,7 +224,7 @@ create the Porch
   north to the Yard
 
 create the bolt
-  a thing, pushable
+  a thing, singular, pushable
   in the Hall
   states: drawn, shot
 

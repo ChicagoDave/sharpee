@@ -38,7 +38,7 @@ create the Cockpit
   Teak decking, a worn tiller, and open water on every side.
 
 create the tiller
-  a thing, scenery
+  a thing, singular, scenery
   in the Cockpit
 
   Worn smooth by three generations of hands.

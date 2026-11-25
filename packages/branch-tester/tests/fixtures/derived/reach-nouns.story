@@ -53,7 +53,7 @@ create the clerk
   end on
 
 create the apron
-  a thing, wearable
+  a thing, singular, wearable
 
   An apron.
 
@@ -62,7 +62,7 @@ create the apron
   end on
 
 create the dough
-  a thing
+  a thing, singular
 
   Dough.
 
@@ -71,7 +71,7 @@ create the dough
   end on
 
 create the locket
-  a thing
+  a thing, singular
   in the Hall
 
   A locket.
@@ -81,7 +81,7 @@ create the locket
   end on
 
 create the medal
-  a thing
+  a thing, singular
   in the Attic
 
   A medal.
@@ -110,7 +110,7 @@ create the ghost
   end on
 
 create the coin
-  a thing
+  a thing, singular
 
   A coin.
 
@@ -119,18 +119,18 @@ create the coin
   end on
 
 create the button
-  a thing
+  a thing, singular
 
   A button.
 
 create the crate
-  a container, openable
+  a container, singular, openable
   in the Hall
 
   A crate.
 
 create the plank
-  a thing
+  a thing, singular
   in the Hall
 
   A plank.

@@ -66,49 +66,49 @@ create Alex
   You.
 
 create the straw hat
-  a thing, wearable on the head
+  a thing, singular, wearable on the head
   in the Hall
   aka hat
 
   A hat.
 
 create the felt cap
-  a thing, wearable on the head
+  a thing, singular, wearable on the head
   in the Hall
   aka cap
 
   A cap.
 
 create the wool scarf
-  a thing, wearable on the neck
+  a thing, singular of wool scarves, wearable on the neck
   in the Hall
   aka scarf
 
   A scarf.
 
 create the iron ring
-  a thing, wearable
+  a thing, singular, wearable
   in the Hall
   aka ring
 
   A ring.
 
 create the iron key
-  a thing
+  a thing, singular
   in the Hall
   aka key
 
   A key.
 
 create the cellar door
-  a door, lockable with the iron key
+  a door, singular, lockable with the iron key
   opens when unlocked
   aka door
 
   A door.
 
 create the display case
-  a container, openable, switchable, starts open, starts on
+  a container, singular, openable, switchable, starts open, starts on
   closes when switched off
   in the Hall
   aka case
@@ -116,28 +116,28 @@ create the display case
   A case.
 
 create the plain chest
-  a container, openable, lockable with the iron key
+  a container, singular, openable, lockable with the iron key
   in the Hall
   aka chest
 
   A chest.
 
 create the tin box
-  a container, openable
+  a container, singular, openable
   in the Hall
   aka box
 
   A box.
 
 create the ripe cheese
-  a thing, edible, smelly
+  a thing, singular, edible, smelly
   in the tin box
   aka cheese
 
   Cheese.
 
 create the brass chime
-  a thing, loud
+  a thing, singular, loud
   in the Cellar
   aka chime
 

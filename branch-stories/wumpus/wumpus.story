@@ -156,7 +156,7 @@ end phrase
 ## The coracle.
 
 create the coracle
-  a vehicle
+  a vehicle, singular
   in the Wumpus Caves at 2, 2
   movement: open
   carries: in
@@ -174,7 +174,7 @@ create the coracle
 ## The Wumpus.
 
 create the Wumpus
-  a thing, floats
+  a thing, singular of Wumpuses, floats
   in the Wumpus Caves at 9, 3
   aka beast, monster, wumpus
 

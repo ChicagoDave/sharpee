@@ -57,7 +57,7 @@ const ok = (source: string) => {
 };
 
 const onYard = (clause: string) => `create the Gate
-  a thing, scenery
+  a thing, singular, scenery
   in the Yard
 
   A gate.

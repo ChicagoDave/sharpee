@@ -80,7 +80,7 @@ describe('ADR-362 AC-4 — a blocked line beside an `exits:` line (the positive 
   const GUARDED = story(
     '  exits: north to the B, east to the C\n  north is blocked while the lamp is here: too-dark\n',
     `
-create the lamp, a thing
+create the lamp, a thing, singular
   in the Hall
 
   A lamp.

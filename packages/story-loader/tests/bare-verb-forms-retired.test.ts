@@ -53,7 +53,7 @@ create the Workshop
   A cluttered workshop.
 
 create the clock
-  a thing
+  a thing, singular
   in the Workshop
 
   A small clock.

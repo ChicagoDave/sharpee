@@ -177,7 +177,7 @@ end before
   it('an NPC declared `starts in the Kitchen` is IN the Kitchen at load, not unplaced', () => {
     const l = load(`${HEADER}${ROOMS}
 create the cook
-  a thing
+  a thing, singular
   starts in the Kitchen
 
   A cook.
@@ -201,7 +201,7 @@ end before
   it('an NPC declared `in the Kitchen` is unaffected — the relation stopped being consulted', () => {
     const l = load(`${HEADER}${ROOMS}
 create the cook
-  a thing
+  a thing, singular
   in the Kitchen
 
   A cook.

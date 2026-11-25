@@ -60,7 +60,7 @@ ${s.guards ?? ''}
   Guards.
 
 create the sword
-  a thing
+  a thing, singular
 ${s.swordPlace ?? '  in the Yard\n'}${s.sword ?? ''}
   A sword.
 

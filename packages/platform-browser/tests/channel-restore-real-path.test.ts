@@ -59,7 +59,7 @@ create the Library
   Shelves to the ceiling.
 
 create the leaf
-  a thing
+  a thing, singular of leaves
   in the Library
 
   A loose leaf.
@@ -69,7 +69,7 @@ create the leaf
   end after
 
 create the bell
-  a thing
+  a thing, singular
   in the Library
 
   A small brass bell.

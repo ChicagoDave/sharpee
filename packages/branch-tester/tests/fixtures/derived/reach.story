@@ -30,19 +30,19 @@ create the Pantry
   A pantry.
 
 create the chest
-  a container, openable, lockable with the brass key, starts locked
+  a container, singular, openable, lockable with the brass key, starts locked
   in the Hall
 
   A chest.
 
 create the brass key
-  a thing
+  a thing, singular
   in the Pantry
 
   A key.
 
 create the scroll
-  a thing, readable
+  a thing, singular, readable
   in the chest
 
   A scroll.
@@ -52,7 +52,7 @@ create the scroll
   end on
 
 create the cellar door
-  a door, lockable with the iron key
+  a door, singular, lockable with the iron key
   states: shut, swung
 
   A cellar door.
@@ -62,13 +62,13 @@ create the cellar door
   end after
 
 create the iron key
-  a thing
+  a thing, singular
   in the Pantry
 
   An iron key.
 
 create the rope
-  a thing, cuttable with the knife
+  a thing, singular, cuttable with the knife
   in the Hall
   states: whole, cut
 
@@ -79,7 +79,7 @@ create the rope
   end on
 
 create the knife
-  a thing
+  a thing, singular of knives
   in the Pantry
 
   A knife.

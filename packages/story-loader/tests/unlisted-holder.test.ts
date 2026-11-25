@@ -33,20 +33,20 @@ create the rope wares
   It's all rope, and lots of it.
 
 create the length of rope
-  a thing
+  a thing, singular of lengths of rope
   aka rope
   on the rope wares
 
   Five feet of rope.
 
 create the bench
-  a supporter, scenery
+  a supporter, singular, scenery
   in the Rope Stall
 
   A bench.
 
 create the hat
-  a thing
+  a thing, singular
   on the bench
 
   A hat.

@@ -71,18 +71,18 @@ create the grocer
   end on
 
 create the ration bar
-  a thing
+  a thing, singular
   aka bar
 
   A bar.
 
 create the apple
-  a thing
+  a thing, singular
 
   An apple.
 
 create the scarf
-  a thing, costs 1 credits
+  a thing, singular of scarves, costs 1 credits
 
   A scarf.
 
@@ -107,25 +107,25 @@ define topics for the grocer
 end topics
 
 create the map
-  a thing, costs 4 credits
+  a thing, singular, costs 4 credits
   in the Market Row
 
   A map.
 
 create the telescope
-  a thing, costs 25 credits
+  a thing, singular, costs 25 credits
   in the Market Row
 
   A telescope.
 
 create the crate
-  a thing
+  a thing, singular
   in the Market Row
 
   A crate.
 
 create the station directory
-  a thing, readable with text "KEPLER STATION"
+  a thing, singular, readable with text "KEPLER STATION"
   in the Market Row
   aka directory
   states, reversible: unread, consulted

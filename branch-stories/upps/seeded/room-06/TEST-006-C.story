@@ -32,7 +32,7 @@ create Postman
   A carrier of the United Planetary Postal Service, in regulation grey.
 
 create the sorting machine
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka machine, sorter
 
@@ -40,7 +40,7 @@ create the sorting machine
   itself as it reads addresses. Its out tray is empty for now.
 
 create the mail satchel
-  a container, wearable
+  a container, singular, wearable
   in the Sorting Room
   aka satchel, bag
 
@@ -52,7 +52,7 @@ create the mail satchel
   end on
 
 create the route card
-  a thing, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
+  a thing, singular, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
   in the Sorting Room
   aka card, route
 
@@ -68,7 +68,7 @@ create the route card
   end after
 
 create the dock door
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka door, loading door, dock
   states: sealed, cleared
@@ -79,7 +79,7 @@ create the dock door
 ## Room 2 — the bundle in the tray, and the dock beyond the door.
 
 create the mail bundle
-  a thing
+  a thing, singular
   in the Sorting Room
   aka bundle, mail, parcels, route mail
 
@@ -110,7 +110,7 @@ create the Loading Dock
   end after
 
 create the courier ship
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka ship, courier, sparrow, ramp, skids
   states: buttoned, boarding, underway, landed
@@ -136,7 +136,7 @@ create the loader robot
   end after
 
 create the mail crates
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka crates, crate, stack
 
@@ -164,7 +164,7 @@ create the Hold
   end after
 
 create the cargo netting
-  a thing, scenery
+  a thing, singular, scenery
   in the Hold
   aka netting, net, nets, webbing
 
@@ -173,7 +173,7 @@ create the cargo netting
   fold.
 
 create the suit locker
-  a container, openable
+  a container, singular, openable
   in the Hold
   aka locker
 
@@ -181,7 +181,7 @@ create the suit locker
   Sparrow carries one suit, and this is where it lives.
 
 create the space suit
-  a thing, wearable
+  a thing, singular, wearable
   in the suit locker
   aka suit, eva suit, pressure suit
 
@@ -194,7 +194,7 @@ create the space suit
   end after
 
 create the cockpit hatch
-  a thing, scenery
+  a thing, singular, scenery
   in the Hold
   aka hatch, ladder
   states: dogged, free
@@ -219,7 +219,7 @@ create the Cockpit
   end after
 
 create the flight couch
-  a thing, enterable, scenery
+  a thing, singular, enterable, scenery
   in the Cockpit
   aka couch, seat, pilot seat, chair, harness
 
@@ -227,7 +227,7 @@ create the flight couch
   along one arm where a hundred shifts have rested the same elbow.
 
 create the console
-  a thing, scenery
+  a thing, singular, scenery
   in the Cockpit
   aka controls, switches, panel, instruments
 
@@ -235,7 +235,7 @@ create the console
   handwriting. One sits apart under a red cover, labelled FOLD.
 
 create the fold drive
-  a thing, switchable, scenery
+  a thing, singular, switchable, scenery
   in the Cockpit
   aka drive, fold, fold switch, red switch, switch
 
@@ -256,7 +256,7 @@ create the fold drive
   end on
 
 create the viewport
-  a thing, scenery
+  a thing, singular, scenery
   in the Cockpit
   aka port, window, glass
 
@@ -283,7 +283,7 @@ create the Airlock
     dragged across them. Your boots fit the grooves.
 
 create the outer hatch
-  a thing, openable, scenery
+  a thing, singular, openable, scenery
   in the Airlock
   aka hatch, outer door, wheel, slab, window
 
@@ -302,7 +302,7 @@ create the outer hatch
   end after
 
 create the pressure gauge
-  a thing, scenery
+  a thing, singular, scenery
   in the Airlock
   aka gauge, dial
 
@@ -353,7 +353,7 @@ define topics for the pad master
 end topics
 
 create the tram line
-  a thing, scenery
+  a thing, singular, scenery
   in the Landing Pad
   aka tram, line, rails, track, rail
 

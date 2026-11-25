@@ -32,7 +32,7 @@ create Postman
   A carrier of the United Planetary Postal Service, in regulation grey.
 
 create the sorting machine
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka machine, sorter
 
@@ -40,7 +40,7 @@ create the sorting machine
   itself as it reads addresses. Its out tray is empty for now.
 
 create the mail satchel
-  a container, wearable
+  a container, singular, wearable
   in the Sorting Room
   aka satchel, bag
 
@@ -48,14 +48,14 @@ create the mail satchel
   flap, worn soft at the strap.
 
 create the route card
-  a thing, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
+  a thing, singular, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
   in the Sorting Room
   aka card, route
 
   A laminated card printed with today's route.
 
 create the dock door
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka door, loading door, dock
   states: cleared, sealed
@@ -66,7 +66,7 @@ create the dock door
 ## Room 2 — the bundle in the tray, and the dock beyond the door.
 
 create the mail bundle
-  a thing
+  a thing, singular
   in the Sorting Room
   aka bundle, mail, parcels, route mail
 
@@ -96,7 +96,7 @@ create the Loading Dock
   end after
 
 create the courier ship
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka ship, courier, sparrow, ramp, skids
 
@@ -105,7 +105,7 @@ create the courier ship
   the hull plating is cold to the touch.
 
 create the loader robot
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka robot, loader, unit
 
@@ -114,7 +114,7 @@ create the loader robot
   is waiting for something.
 
 create the mail crates
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka crates, crate, stack
 

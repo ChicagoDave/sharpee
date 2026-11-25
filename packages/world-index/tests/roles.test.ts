@@ -88,7 +88,7 @@ create the Hall
   A hall.
 
 create the humming pipe
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
 
   A pipe runs up the wall.
@@ -139,7 +139,7 @@ end before
     // clause. It is a tool because world-model grants portability by default,
     // which is a fact about the loader and not a row anything can read.
     const bottle = entity(fernhill, 'sherry-bottle');
-    expect(bottle.traits).toHaveLength(0);
+    expect(bottle.traits.map((t) => t.name)).toEqual(['singular']);
     expect(bottle.kinds.map((k) => k.name)).toEqual(['thing']);
     expect(bottle.onClauses).toHaveLength(0);
     expect(rolesOf(fernhill).get('sherry-bottle')).toBe('tool');
@@ -147,7 +147,7 @@ end before
 
   it('calls scenery with nothing to do atmosphere', () => {
     const range = entity(fernhill, 'cold-range');
-    expect(range.traits.map((t) => t.name)).toEqual(['scenery']);
+    expect(range.traits.map((t) => t.name)).toEqual(['singular', 'scenery']);
     expect(range.onClauses).toHaveLength(0);
     expect(rolesOf(fernhill).get('cold-range')).toBe('atmosphere-info');
   });

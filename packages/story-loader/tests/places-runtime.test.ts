@@ -75,7 +75,7 @@ create the Alley
   An alley.
 
 create the crate
-  a container
+  a container, singular
   in the Alley
 
   A crate.
@@ -87,7 +87,7 @@ create Teisha
   Teisha.
 
 create the monkey
-  a thing
+  a thing, singular
   in the Stall
 
   A monkey.

@@ -28,3 +28,7 @@
 - The green apple: an ending no tree line reaches.
 - The bee smoker: the thing the seeded copies break.
 - `seeded/`: whole copies of the story, each differing by one line. Regenerate them from `orchard.story` whenever it changes.
+
+## Language migrations
+
+- 2026-11-24, Chord 4.2.0 (ADR-409, session ce3248): every thing and door in the story and its seeded copies is declared `singular` or `plural`, as the language now requires. Each block keeps the number it read as before: an undeclared one is now `singular`, and one already `plural` stays `plural`. No obligation moves.

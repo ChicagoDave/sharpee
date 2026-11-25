@@ -34,7 +34,7 @@ create the Bell Stair
 
 create the tower bell
   aka bell
-  a thing, scenery, hushable
+  a thing, singular, scenery, hushable
   in the Bell Stair
   states, reversible: silent, tolling
 

@@ -25,6 +25,7 @@ English language provider, message resolution, formatters.
 import { type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageWords, type DeterminerVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PronounSetForms } from './assembler/index.js';
+import type { FormRules } from './data/words.js';
 import { NarrativeContext } from './perspective/index.js';
 /**
  * English language data and rules
@@ -223,6 +224,14 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      * @returns the language words the engine assigns to the world at install
      */
     getLanguageWords(): LanguageWords;
+    /**
+     * English's plain singular and plural rules (ADR-409 D2), from the one word table. The
+     * stdlib manifest carries them to the compiler, which applies them once to
+     * a name's last word and each aka word; nothing reads them at runtime.
+     *
+     * @returns the suffix rules and the unsafe endings
+     */
+    getFormRules(): FormRules;
     getListSeparators(): string[];
     getMannerAdverbs(): string[];
     parseCardinal(words: readonly string[]): number | null;
@@ -2809,7 +2818,9 @@ export declare function ordinalString(value: number): string;
  * @file English Word Lists
  * @description The one word table of English (ADR-387 D1): articles,
  *   determiners, pronouns, self words, all and except words, list separators,
- *   manner adverbs, name stopwords, the direction table and the number words.
+ *   manner adverbs, name stopwords, the direction table, the number words,
+ *   and the suffix rules the compiler works out a name's singular or plural
+ *   by (`englishFormRules`, ADR-409 D2).
  *   Every reader asks the language provider, which reads it here.
  */
 import type { DirectionVocabulary } from '@sharpee/if-domain';
@@ -2899,6 +2910,38 @@ export declare const englishWords: {
      */
     ignoreWords: string[];
 };
+/**
+ * One suffix rewrite of a word, singular to plural or plural to singular (ADR-409 D2).
+ */
+export interface FormRewrite {
+    /** The word's ending; `""` matches any word. */
+    readonly ending: string;
+    /** Letters the ending must follow, when the rule needs them (`y` after a consonant). */
+    readonly after?: readonly string[];
+    /** How many letters of the word to drop, then what to add. */
+    readonly drop: number;
+    readonly add: string;
+}
+/**
+ * The suffix rules a language works out a word's singular or plural by (ADR-409
+ * D2). The compiler applies them once, to a name's last word and to each
+ * aka word, and refuses a bare declaration on an unsafe ending.
+ */
+export interface FormRules {
+    /** Rewrites tried in order; the first whose `ending` matches applies. */
+    readonly toPlural: readonly FormRewrite[];
+    readonly toSingular: readonly FormRewrite[];
+    /** Endings with no rule: a bare declaration on them is refused. */
+    readonly unsafeSingularEndings: readonly string[];
+    readonly unsafePluralEndings: readonly string[];
+}
+/**
+ * English's plain singular and plural rules (ADR-409 D2): `s`/`es`/`ies` to make a
+ * plural, drop a final `s` to make a singular, and no rule for the endings
+ * where a plain rule goes wrong (`shelf`, `potato`, `cactus`, `houses`).
+ * These are not `pluralize`/`singularize`, which rendering and the lens use.
+ */
+export declare const englishFormRules: FormRules;
 /**
  * Irregular plural mappings
  */

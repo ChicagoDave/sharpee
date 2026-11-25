@@ -36,21 +36,21 @@ create the Hall
   A hall.
 
 create the hush page
-  a thing
+  a thing, singular
   in the Hall
   states: legible, learned
 
   A page.
 
 create the wind
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
   states, reversible: calm, howling
 
   The wind.
 
 create the bell
-  a thing, scenery, hushable
+  a thing, singular, scenery, hushable
   in the Hall
   states: unrung, tolling, still
 

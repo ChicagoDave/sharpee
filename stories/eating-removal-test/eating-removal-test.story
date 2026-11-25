@@ -19,33 +19,33 @@ create the Cellar
   A cool cellar under the pantry.
 
 create the cordial
-  a thing, drinkable
+  a thing, singular, drinkable
   in the Cellar
 
   A small glass of cordial.
 
 create the cider
-  a thing, drinkable
+  a thing, singular, drinkable
   servings 2
   in the Cellar
 
   A mug of cider.
 
 create the loaf
-  a thing, edible
+  a thing, singular of loaves, edible
   servings 3
   in the Pantry
 
   A round loaf of bread.
 
 create the ration
-  a thing, edible
+  a thing, singular, edible
   in the Pantry
 
   A dry ration bar.
 
 create the plum
-  a thing, edible
+  a thing, singular, edible
   in the Pantry
 
   A ripe plum.

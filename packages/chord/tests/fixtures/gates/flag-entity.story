@@ -6,22 +6,22 @@ story
   story-version: 0.0.1
 
 create the alarm flag
-  a thing
+  a thing, singular
   states: armed, tripped
 
 create the brass bell
-  a thing
+  a thing, singular
   in the Foyer
   states: silent, rung
 
 create the rumour
-  a thing
+  a thing, singular
   states: quiet, spread
 
   Talk of a ghost in the cellar.
 
 create the ward
-  a thing
+  a thing, singular
   states: lowered, raised
 
   after the player examining
@@ -29,11 +29,11 @@ create the ward
   end after
 
 create the token
-  a thing
+  a thing, singular
   states: whole, spent
 
 create the pocket watch
-  a thing
+  a thing, singular
   states: running, stopped
 
 create the Foyer

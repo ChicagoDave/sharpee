@@ -88,27 +88,27 @@ create Alex
   You.
 
 create the gold coin
-  a thing
+  a thing, singular
   treasure
   in the hall
 
   A gold coin.
 
 create the clay pot
-  a thing
+  a thing, singular
   in the hall
 
   A clay pot.
 
 create the jewel box
-  a container
+  a container, singular
   treasure
   in the hall
 
   A jewel box.
 
 create the idol
-  a thing
+  a thing, singular
   treasure
   cursed while the idol is in the vault
   in the hall

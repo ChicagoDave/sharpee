@@ -39,6 +39,7 @@ public sealed class ChordColorizer : DocumentColorizingTransformer
         "beat", "conclusion",
         "timer", "chapters",
         "claims", "landmarks", "passage", "position", "pushing", "sailing",
+        "singular", "plural",
     };
 
     /// <summary>

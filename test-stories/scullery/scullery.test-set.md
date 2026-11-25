@@ -23,3 +23,7 @@
 - The cheese: the singular thing whose plural is tried (OB-58).
 - The shelf, the sink, the window, the drainboard, the wheel, the slate, the beams and the rind: nouns with nothing behind them (OB-59). The chore list's "Scour" is the extractor noise.
 - Two rooms, so a carried thing's phrases recur and fold.
+
+## Language migrations
+
+- 2026-11-24, Chord 4.2.0 (ADR-409, session ce3248): every thing and door in the story is declared `singular` or `plural`, as the language now requires. Each block keeps the number it read as before: an undeclared one is now `singular`, and one already `plural` stays `plural`. No obligation moves.

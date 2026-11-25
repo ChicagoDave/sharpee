@@ -53,7 +53,7 @@ create Postman
   A carrier of the United Planetary Postal Service, in regulation grey.
 
 create the sorting machine
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka machine, sorter
 
@@ -61,7 +61,7 @@ create the sorting machine
   itself as it reads addresses. Its out tray is empty for now.
 
 create the route placard
-  a thing, attached to the sorting machine, detachable
+  a thing, singular, attached to the sorting machine, detachable
   in the Sorting Room
   aka placard, tin placard
 
@@ -69,7 +69,7 @@ create the route placard
   has been bent and rebent by every carrier who ever wanted it.
 
 create the inspection plate
-  a thing, attached to the sorting machine
+  a thing, singular, attached to the sorting machine
   in the Sorting Room
   aka plate, brass plate
 
@@ -77,7 +77,7 @@ create the inspection plate
   AUTHORITY. The weld is older than the depot.
 
 create the sample jar
-  a container, transparent, breakable, fragile
+  a container, singular, transparent, breakable, fragile
   in the Sorting Room
   aka jar, customs jar
   states, reversible: sealed, spilled
@@ -91,7 +91,7 @@ create the sample jar
   end after
 
 create the parcel twine
-  a thing
+  a thing, singular
   in the Sorting Room
   aka twine, string
 
@@ -102,7 +102,7 @@ create the parcel twine
   end on
 
 create the mail satchel
-  a container, wearable
+  a container, singular, wearable
   in the Sorting Room
   aka satchel, bag
 
@@ -114,7 +114,7 @@ create the mail satchel
   end on
 
 create the route card
-  a thing, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
+  a thing, singular, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
   in the Sorting Room
   aka card, route
 
@@ -134,7 +134,7 @@ create the route card
   end after
 
 create the returns bin
-  a container, scenery
+  a container, singular, scenery
   in the Sorting Room
   aka bin, returns, return bin
 
@@ -151,7 +151,7 @@ create the returns bin
   end on
 
 create the canteen kiosk
-  a container, scenery, unlisted
+  a container, singular, scenery, unlisted
   in the Sorting Room
   aka kiosk, canteen, vending kiosk
 
@@ -161,7 +161,7 @@ create the canteen kiosk
   depot coffee.
 
 create the ration bar
-  a thing, costs 3 credits
+  a thing, singular, costs 3 credits
   in the canteen kiosk
   aka bar, ration
 
@@ -172,14 +172,14 @@ create the ration bar
   end after
 
 create the flask of coffee
-  a thing, costs 4 credits
+  a thing, singular of flasks of coffee, costs 4 credits
   in the canteen kiosk
   aka flask, coffee, depot coffee
 
   A dented steel flask of depot coffee, still warm through the glass.
 
 create the dead letter
-  a thing, flammable with the disposal torch
+  a thing, singular, flammable with the disposal torch
   in the returns bin
   aka letter, envelope
 
@@ -196,7 +196,7 @@ create the dead letter
   end on
 
 create the disposal torch
-  a thing
+  a thing, singular
   in the Sorting Room
   aka torch, burner, disposal
 
@@ -204,7 +204,7 @@ create the disposal torch
   metal. Depot rules say every dead letter ends in it.
 
 create the mail trolley
-  a thing, pushable
+  a thing, singular, pushable
   in the Sorting Room
   aka trolley, cart
 
@@ -216,7 +216,7 @@ create the mail trolley
   end pushing
 
 create the dock door
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka door, loading door, dock
   states: sealed, cleared
@@ -227,7 +227,7 @@ create the dock door
 ## Room 2 — the bundle in the tray, and the dock beyond the door.
 
 create the mail bundle
-  a thing
+  a thing, singular
   in the Sorting Room
   aka bundle, mail, parcels, route mail
 
@@ -261,7 +261,7 @@ create the Loading Dock
 ## it where the guidance selector points. Boarding is the ramp into the Hold.
 
 create the courier ship
-  a vehicle, scenery
+  a vehicle, singular, scenery
   in the Loading Dock
   aka ship, courier, sparrow, ramp, skids
   movement: flight
@@ -312,7 +312,7 @@ create the loader robot
   end after
 
 create the sodium lights
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room and the Loading Dock
   aka lights, lamps, sodium lamps, girders
 
@@ -320,7 +320,7 @@ create the sodium lights
   turn everything under them the colour of weak tea.
 
 create the call button
-  a thing, scenery, pushable
+  a thing, singular, scenery, pushable
   in the Loading Dock
   aka button, call, red button
 
@@ -331,7 +331,7 @@ create the call button
   end after
 
 create the floor grating
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka grating, grate, trench
 
@@ -355,7 +355,7 @@ create the Cable Trench
   floor toward the sorting machine.
 
 create the mail sack
-  a thing
+  a thing, singular
   in the Cable Trench
   aka sack, dropped sack
 
@@ -363,35 +363,35 @@ create the mail sack
   never missed.
 
 create the blackout lantern
-  a thing, light-source with the flint striker, starts unlit
+  a thing, singular, light-source with the flint striker, starts unlit
   in the Loading Dock
   aka lantern, blackout lamp
 
   A paraffin lantern kept for power cuts, the glass sooted at the top.
 
 create the flint striker
-  a thing
+  a thing, singular
   in the Loading Dock
   aka striker, flint
 
   A steel striker on a loop of string.
 
 create the work lamp
-  a container, light-source, switchable, powered by the power cell
+  a container, singular, light-source, switchable, powered by the power cell
   in the Loading Dock
   aka lamp, work light
 
   A heavy yellow work lamp with a battery bay in its handle.
 
 create the power cell
-  a thing
+  a thing, singular
   in the Loading Dock
   aka cell, battery
 
   A fat UPPS power cell, charge light green.
 
 create the mail crates
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka crates, crate, stack
 
@@ -422,7 +422,7 @@ create the Hold
   end after
 
 create the cargo netting
-  a thing, scenery
+  a thing, singular, scenery
   in the Hold
   aka netting, net, nets, webbing
 
@@ -431,7 +431,7 @@ create the cargo netting
   fold.
 
 create the suit locker
-  a container, openable
+  a container, singular, openable
   in the Hold
   aka locker
 
@@ -439,7 +439,7 @@ create the suit locker
   Sparrow carries one suit, and this is where it lives.
 
 create the space suit
-  a thing, wearable
+  a thing, singular, wearable
   in the suit locker
   aka suit, eva suit, pressure suit
 
@@ -452,7 +452,7 @@ create the space suit
   end after
 
 create the specimen jar
-  a container, openable, transparent
+  a container, singular, openable, transparent
   holds 2
   in the Hold
   aka jar, sample jar, glass jar
@@ -462,7 +462,7 @@ create the specimen jar
   is on or off.
 
 create the beetle
-  a thing
+  a thing, singular
   in the specimen jar
   aka bug, insect, specimen
 
@@ -470,14 +470,14 @@ create the beetle
   addressed to a laboratory on Titan.
 
 create the coil of strapping
-  a thing, unlisted
+  a thing, singular of coils of strapping, unlisted
   in the Hold
   aka strap, straps, strapping, coil
 
   A coil of cargo strapping, the kind the robot cuts to length.
 
 create the cockpit hatch
-  a thing, scenery
+  a thing, singular, scenery
   in the Hold
   aka hatch, ladder
   states: dogged, free
@@ -502,7 +502,7 @@ create the Cockpit
   end after
 
 create the flight couch
-  a thing, enterable, scenery
+  a thing, singular, enterable, scenery
   in the Cockpit
   aka couch, seat, pilot seat, chair, harness
 
@@ -510,7 +510,7 @@ create the flight couch
   along one arm where a hundred shifts have rested the same elbow.
 
 create the guidance selector
-  a thing, scenery, settable
+  a thing, singular, scenery, settable
   in the Cockpit
   aka selector, guidance, destination selector, dial
   states, reversible: ceres, titan, kepler
@@ -538,7 +538,7 @@ create the guidance selector
   end after
 
 create the card slot
-  a container, scenery
+  a container, singular, scenery
   holds 1
   in the Cockpit
   aka slot, reader, card reader
@@ -547,7 +547,7 @@ create the card slot
   Sparrow reads one route at a time.
 
 create the console
-  a thing, scenery
+  a thing, singular, scenery
   in the Cockpit
   aka controls, switches, panel, instruments
 
@@ -555,7 +555,7 @@ create the console
   handwriting. One sits apart under a red cover, labelled FOLD.
 
 create the fold drive
-  a thing, switchable, scenery
+  a thing, singular, switchable, scenery
   in the Cockpit
   aka drive, fold, fold switch, red switch, switch
 
@@ -578,7 +578,7 @@ create the fold drive
   end on
 
 create the flight manual
-  a thing, readable with text "UPPS COURIER, SPARROW CLASS: PILOT'S HANDBOOK. Consult the index for the system you need."
+  a thing, singular, readable with text "UPPS COURIER, SPARROW CLASS: PILOT'S HANDBOOK. Consult the index for the system you need."
   in the Cockpit
   aka manual, handbook, pilot's handbook
 
@@ -586,7 +586,7 @@ create the flight manual
   The index runs to six pages.
 
 create the viewport
-  a thing, scenery
+  a thing, singular, scenery
   in the Cockpit
   aka port, window, glass
 
@@ -613,7 +613,7 @@ create the Airlock
     dragged across them. Your boots fit the grooves.
 
 create the outer hatch
-  a thing, openable, scenery
+  a thing, singular, openable, scenery
   in the Airlock
   aka hatch, outer door, wheel, slab, window
 
@@ -632,7 +632,7 @@ create the outer hatch
   end after
 
 create the pressure gauge
-  a thing, scenery
+  a thing, singular, scenery
   in the Airlock
   aka gauge, dial
 
@@ -695,7 +695,7 @@ create the pad master
   end on
 
 create the tram token
-  a thing
+  a thing, singular
   aka token, brass token, fare token
 
   A brass disc stamped PIAZZI TRANSIT, ONE FARE, worn smooth on the
@@ -708,7 +708,7 @@ define topics for the pad master
 end topics
 
 create the tram line
-  a thing, scenery
+  a thing, singular, scenery
   in the Landing Pad
   aka tram, line, rails, track, rail
 
@@ -720,7 +720,7 @@ create the tram line
 ## keeps the carrier out of it until the route card has been shown.
 
 create the tram car
-  a vehicle
+  a vehicle, singular
   in the Landing Pad
   aka car, open car, tram's car
   movement: line
@@ -738,7 +738,7 @@ create the tram car
   end on
 
 create the brake lever
-  a thing, pushable
+  a thing, singular, pushable
   in the tram car
   aka brake, lever
 
@@ -790,7 +790,7 @@ create the Shuttle Gate
   KRAKEN SHORE, and under it the shuttle's bay.
 
 create the drop shuttle
-  a vehicle, scenery
+  a vehicle, singular, scenery
   in the Shuttle Gate
   aka shuttle, drop shuttle, capsule
   movement: line
@@ -809,7 +809,7 @@ create the drop shuttle
   end after
 
 create the drop lever
-  a thing, pushable, scenery
+  a thing, singular, pushable, scenery
   in the drop shuttle
   aka lever, drop, handle
 

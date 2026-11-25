@@ -25,13 +25,13 @@ create the Hall
   A hall.
 
 create the coat
-  a thing
+  a thing, singular
   in the Hall
 
   A coat.
 
 create the peg
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
 
   A peg.
@@ -43,7 +43,7 @@ create Bob
   Bob.
 
 create the coin
-  a thing, coin-like
+  a thing, singular, coin-like
   in the Hall
 
   A coin.
@@ -162,14 +162,14 @@ describe('every entity slot binds by its name at dispatch', () => {
   it.each(['offer coin to Bob', 'present Bob with coin'])(
     '`%s` names each noun by its slot, whichever seat it filled',
     async (command) => {
-      const b = await bootTurns(STORY.replace('a thing, coin-like', 'a thing').replace('a person, proper, bob-like', 'a person, proper'));
+      const b = await bootTurns(STORY.replace('a thing, singular, coin-like', 'a thing, singular').replace('a person, proper, bob-like', 'a person, proper'));
       const turn = await b.turnText(command);
       expect(turn.text).toContain('You give the coin to Bob.');
     },
   );
 
   it('an extension line`s new name binds under the names its seat holds: `hand Bob coin`', async () => {
-    const b = await bootTurns(STORY.replace('a thing, coin-like', 'a thing').replace('a person, proper, bob-like', 'a person, proper'));
+    const b = await bootTurns(STORY.replace('a thing, singular, coin-like', 'a thing, singular').replace('a person, proper, bob-like', 'a person, proper'));
     const turn = await b.turnText('hand Bob coin');
     expect(turn.text).toContain('You give the coin to Bob.');
   });

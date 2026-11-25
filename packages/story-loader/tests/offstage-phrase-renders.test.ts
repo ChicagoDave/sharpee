@@ -25,7 +25,7 @@ create the Roof
   A roof.
 
 create the group of mercenaries
-  a thing, scenery, plural
+  a thing, scenery, plural of group of mercenaries
   in the Roof
 
   Mercenaries.

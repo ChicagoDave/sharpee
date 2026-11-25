@@ -22,32 +22,32 @@ create the Workshop
   A cluttered workshop.
 
 create the sword
-  a thing
+  a thing, singular
   in the Workshop
 
   A sword.
 
 create the brass lantern
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass lantern.
 
 create the gold coin
-  a thing
+  a thing, singular
   in the Workshop
   aka coin
 
   A gold coin.
 ${salt ? `
 create the salt
-  a thing
+  a thing, singular
   in the Workshop
 
   A pinch of salt.
 ` : ''}
 create the salt and pepper shaker
-  a thing
+  a thing, singular
   in the Workshop
   aka shaker
 

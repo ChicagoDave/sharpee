@@ -65,7 +65,7 @@ create the Hall
   end after
 
 create the lamp
-  a thing, glowing
+  a thing, singular, glowing
   in the Hall
   states: dim, lit
 

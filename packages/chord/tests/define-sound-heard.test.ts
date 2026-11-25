@@ -107,7 +107,7 @@ describe('emit: an event name is one word (GH #713)', () => {
   const rope = (emitLine: string) =>
     [
       'create the rope',
-      '  a thing, scenery, pullable',
+      '  a thing, singular, scenery, pullable',
       '  in the Belfry',
       '',
       '  A rope.',

@@ -115,7 +115,7 @@ final class ProjectArtifactsTests: XCTestCase {
     /// (ADR-280 D1: groups are typed lenses, not folder mirrors).
     func testChordFragmentsJoinTheStoryGroupWhereverTheySit() throws {
         try file("the-lost-key.story", "story \"The Lost Key\"")
-        try file("peering.chord", "create the lens\n  a thing\n")
+        try file("peering.chord", "create the lens\n  a thing, singular\n")
         try file("regions/harbor.chord", "create the pier\n  a room\n")
         XCTAssertEqual(memberNames(.story), ["harbor.chord", "peering.chord", "the-lost-key.story"])
         XCTAssertNil(group(.other), "a fragments-only folder is already covered by the Story lens")

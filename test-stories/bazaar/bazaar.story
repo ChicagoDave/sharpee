@@ -30,56 +30,56 @@ create the Back Lane
   A lane behind the stalls, where the carts unload.
 
 create the gate
-  a thing, scenery
+  a thing, singular, scenery
   in the Arcade
   states: chained, open
 
   An iron gate, chained shut for the day.
 
 create the fig
-  a thing
+  a thing, singular
   in the Arcade
 
   A ripe fig.
 
 create the plum
-  a thing
+  a thing, singular
   in the Arcade
 
   A dark plum.
 
 create the ribbon
-  a thing
+  a thing, singular
   in the Arcade
 
   A red ribbon.
 
 create the thimble
-  a thing
+  a thing, singular
   in the Arcade
 
   A tin thimble.
 
 create the comb
-  a thing
+  a thing, singular
   in the Arcade
 
   A horn comb.
 
 create the wick
-  a thing
+  a thing, singular
   in the Lamp Stall
 
   A length of lamp wick.
 
 create the flint
-  a thing
+  a thing, singular
   in the Lamp Stall
 
   A flint.
 
 create the snuffer
-  a thing
+  a thing, singular
   in the Lamp Stall
 
   A brass candle snuffer.

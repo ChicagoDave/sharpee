@@ -115,33 +115,33 @@ create the Yard
   A yard.
 
 create the vine
-  a thing, prunable
+  a thing, singular, prunable
   scenery
   in the Yard
 
   A vine.
 
 create the rose
-  a thing, prunable
+  a thing, singular, prunable
   scenery
   in the Yard
 
   A rose.
 
 create the locket
-  a thing
+  a thing, singular
   in the Yard
 
   A locket.
 
 create the shears
-  a thing
+  a thing, singular
   in the Yard
 
   Shears.
 
 create the lever
-  a thing, scenery
+  a thing, singular, scenery
   in the Yard
 
   A lever.

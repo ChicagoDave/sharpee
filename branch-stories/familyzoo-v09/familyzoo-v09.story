@@ -90,7 +90,7 @@ create Alex
   Just an ordinary visitor to the zoo.
 
 create the staff keycard
-  a thing
+  a thing, singular
   aka keycard, key card, card, key
   in the Zoo Entrance
 
@@ -98,7 +98,7 @@ create the staff keycard
   blue.
 
 create the staff gate
-  a thing
+  a thing, singular
   aka gate, metal gate, staff door
   scenery, openable, lockable with the staff keycard
   in the Main Path
@@ -115,7 +115,7 @@ create the staff gate
   end on
 
 create the welcome sign
-  a thing
+  a thing, singular
   aka sign
   scenery
   in the Zoo Entrance
@@ -124,7 +124,7 @@ create the welcome sign
   ZOO."
 
 create the ticket booth
-  a thing
+  a thing, singular
   aka booth
   scenery
   in the Zoo Entrance
@@ -132,7 +132,7 @@ create the ticket booth
   A small wooden booth with a "Self-Guided Tours" sign.
 
 create the iron fence
-  a thing
+  a thing, singular
   aka fence, railing
   scenery
   in the Zoo Entrance
@@ -156,7 +156,7 @@ create the flower beds
   Tidy beds of marigolds and petunias.
 
 create the hay bale
-  a thing
+  a thing, singular
   aka hay, bale
   scenery
   in the Petting Zoo
@@ -164,7 +164,7 @@ create the hay bale
   A large round bale of golden hay.
 
 create the toucan
-  a thing
+  a thing, singular
   aka toco toucan
   scenery
   in the Aviary
@@ -172,7 +172,7 @@ create the toucan
   A Toco toucan with an enormous orange-and-black bill.
 
 create the waterfall
-  a thing
+  a thing, singular
   aka water, basin
   scenery
   in the Aviary
@@ -182,7 +182,7 @@ create the waterfall
 create the rope perches
   a thing
   aka perches, ropes
-  scenery, plural
+  scenery, plural of rope perch
   in the Aviary
 
   Thick sisal ropes strung between wooden posts.
@@ -190,7 +190,7 @@ create the rope perches
 create the metal shelves
   a thing
   aka shelves, shelf
-  scenery, plural
+  scenery, plural of metal shelf
   in the Supply Room
 
   Industrial metal shelving units stacked with supplies.
@@ -206,13 +206,13 @@ create the sugar gliders
 create the bush babies
   a thing
   aka galagos
-  scenery, plural
+  scenery, plural of bush baby
   in the Nocturnal Animals Exhibit
 
   Two bush babies with impossibly large round eyes.
 
 create the barn owl
-  a thing
+  a thing, singular
   aka owl
   scenery
   in the Nocturnal Animals Exhibit
@@ -220,7 +220,7 @@ create the barn owl
   An enormous barn owl with a heart-shaped white face.
 
 create the cork board
-  a thing
+  a thing, singular
   aka board, notices
   scenery
   in the Supply Room
@@ -229,7 +229,7 @@ create the cork board
   FORGET: nocturnal exhibit lights need new batteries!"
 
 create the aviary plaque
-  a thing
+  a thing, singular
   aka information board
   scenery, readable
   in the Aviary
@@ -247,7 +247,7 @@ create the aviary plaque
   end on
 
 create the warning sign
-  a thing
+  a thing, singular
   aka warning, yellow sign
   scenery, readable
   in the Supply Room
@@ -262,7 +262,7 @@ create the warning sign
   end on
 
 create the zoo brochure
-  a thing
+  a thing, singular
   aka brochure, pamphlet, leaflet
   readable
   in the Zoo Entrance
@@ -274,28 +274,28 @@ create the zoo brochure
   end on
 
 create the zoo map
-  a thing
+  a thing, singular
   aka map, folding map
   in the Zoo Entrance
 
   A colorful folding map of the Willowbrook Family Zoo.
 
 create the backpack
-  a container
+  a container, singular
   aka rucksack, pack
   in the Zoo Entrance
 
   A small red canvas backpack.
 
 create the souvenir penny
-  a thing
+  a thing, singular
   aka penny, coin
   in the Main Path
 
   A shiny copper penny.
 
 create the park bench
-  a supporter
+  a supporter, singular
   aka bench, benches, seat
   scenery
   holds 3
@@ -304,7 +304,7 @@ create the park bench
   A sturdy park bench painted forest green.
 
 create the lunchbox
-  a container
+  a container, singular
   aka lunch box, box
   openable
   in the Main Path
@@ -312,14 +312,14 @@ create the lunchbox
   A dented metal lunchbox decorated with cartoon zoo animals.
 
 create the juice box
-  a thing
+  a thing, singular
   aka juice, drink
   in the lunchbox
 
   A small juice box with a picture of a happy elephant.
 
 create the flashlight
-  a thing
+  a thing, singular
   aka torch, light, lamp
   light-source, switchable
   in the Supply Room

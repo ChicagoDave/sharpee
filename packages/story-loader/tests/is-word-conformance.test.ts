@@ -74,13 +74,13 @@ create Alex
   You.
 
 create the statue
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
 
   A statue.
 
 create the vase
-  a thing
+  a thing, singular
   in the Hall
 
   A vase.

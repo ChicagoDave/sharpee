@@ -40,7 +40,7 @@ create the Reef
   Coral under a foot of water, and the wreck it made.
 
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Sargasso at 20, 20
   movement: open
   carries: in
@@ -64,7 +64,7 @@ create the Marigold
   end sailing
 
 create the weather glass
-  a thing, pushable
+  a thing, singular, pushable
   in the Marigold
   aka glass
 
@@ -80,7 +80,7 @@ define phrase glass-tapped
 end phrase
 
 create the capstan
-  a thing, pushable
+  a thing, singular, pushable
   in the Marigold
 
   The capstan. Turning it sets every stitch of canvas at once.

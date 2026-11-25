@@ -47,7 +47,7 @@ const errors = (source: string) => compile(source).diagnostics.filter((d) => d.s
 const errorCodes = (source: string) => errors(source).map((d) => d.code);
 
 const bell = (statesLine: string, extra = '') => `create the tower bell
-  a thing, scenery${extra}
+  a thing, singular, scenery${extra}
   in the Bell Stair
   ${statesLine}
 
@@ -114,7 +114,7 @@ describe('`change the match to` names a state something declares (GH #709)', () 
   const sweep = (state: string) => story(`define condition hungry-neighbor: it is hungry
 
 create the pygmy goat
-  a thing
+  a thing, singular
   in the Bell Stair
   states: hungry, content
 
@@ -169,7 +169,7 @@ ${bell('states: silent, tolling', ', hushable')}`);
 ${bell('states: silent, tolling', ', hushable')}
 
 create the hand bell
-  a thing, hushable
+  a thing, singular, hushable
   in the Bell Stair
   states: silent, tolling
 
@@ -182,7 +182,7 @@ create the hand bell
 ${bell('states, reversible: silent, tolling', ', hushable')}
 
 create the gong
-  a thing, hushable
+  a thing, singular, hushable
   in the Bell Stair
   states, reversible: quiet, ringing
 

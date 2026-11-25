@@ -27,13 +27,13 @@ create the Study
   A quiet study.
 
 create the lamp
-  a thing
+  a thing, singular
   in the Study
 
   A brass lamp.
 
 create the coin
-  a thing
+  a thing, singular
   in the Study
 
   A coin.

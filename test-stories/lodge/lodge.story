@@ -50,7 +50,7 @@ create the Vault
   A cold stone vault, its floor still wet.
 
 create the notice
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Porch
 
   A notice of sale, gone soft in the rain.
@@ -72,7 +72,7 @@ create the warden
   end on
 
 create the valve
-  a thing, scenery
+  a thing, singular, scenery
   in the Pantry
   states: shut, running
 
@@ -85,20 +85,20 @@ create the valve
 
 create the brandy
   aka bottle
-  a thing
+  a thing, singular
   in the Pantry
 
   A bottle of brandy, nearly full.
 
 create the hand bell
   aka bell
-  a thing
+  a thing, singular
   in the Pantry
 
   A brass hand bell with a cracked lip.
 
 create the ledger
-  a thing, readable
+  a thing, singular, readable
   in the Study
   states: closed, studied
 
@@ -111,13 +111,13 @@ create the ledger
 
 create the strongbox
   aka box
-  a container, openable
+  a container, singular, openable
   in the Vault
 
   A strongbox bound in iron, light enough to lift.
 
 create the deed
-  a thing
+  a thing, singular
   in the strongbox
 
   The deed to the lodge.

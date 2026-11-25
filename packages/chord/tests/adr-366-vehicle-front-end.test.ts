@@ -52,7 +52,7 @@ create the Alley
   Too narrow.
 
 create the water
-  a thing
+  a thing, singular
   in the Well Bottom
 
   Water.
@@ -60,7 +60,7 @@ create the water
 
 const BUCKET = `
 create the bucket
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -78,7 +78,7 @@ create the bucket
 
 const TRAM = `
 create the tram car
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -92,7 +92,7 @@ create the tram car
 
 const BICYCLE = `
 create the bicycle
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: streets
   carries: on
@@ -104,7 +104,7 @@ create the bicycle
 
 const MARIGOLD = `
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: compass
   carries: in
@@ -117,7 +117,7 @@ create the Marigold
 
 const SPARROW = `
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: flight
   drive: control
@@ -189,7 +189,7 @@ describe('the vehicle kind (ADR-366 D1)', () => {
   it('a vehicle line off a vehicle is refused, `carries:` by its own code', () => {
     const codes = errorCodes(story(`
 create the crate
-  a container
+  a container, singular
   in the Well Bottom
   carries: in
   movement: none
@@ -221,7 +221,7 @@ describe('the required lines (ADR-366 D2, D5)', () => {
   it('`drive:` on `movement: none` is analysis.vehicle-drive-not-moving', () => {
     const codes = errorCodes(story(`
 create the bathtub
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: none
   carries: in
@@ -240,7 +240,7 @@ create the bathtub
   it('`movement: none` with `carries:` compiles to the bare model', () => {
     const ir = compiled(story(`
 create the bathtub
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: none
   carries: in
@@ -415,7 +415,7 @@ describe('rooms aboard and the outside exit (ADR-366 D7)', () => {
   it('`to outside` takes a door and an `exits:` line as any exit does', () => {
     const ir = compiled(story(SPARROW.replace('  west to outside\n', '  exits: west to outside through the outer hatch\n') + `
 create the outer hatch
-  a door, openable
+  a door, singular, openable
 
   A hatch.
 `));
@@ -473,7 +473,7 @@ create the Square
 describe('the driving statements (ADR-366 D5f)', () => {
   const clause = (body: string, owner = 'the water') => `
 create the lever
-  a thing
+  a thing, singular
   in the Well Bottom
 
   A lever.
@@ -551,7 +551,7 @@ end timer
 describe('the vehicle reads and the anchor (ADR-366 D5, D5c, D5e)', () => {
   const guarded = (condition: string) => `
 create the lever
-  a thing
+  a thing, singular
   in the Well Bottom
 
   A lever.
@@ -643,7 +643,7 @@ describe('the parser (ADR-366)', () => {
   it('`carries <thing>` without a colon is still start inventory', () => {
     const ir = compiled(story(`
 create the sack
-  a thing
+  a thing, singular
   in the Well Bottom
 
   A sack.

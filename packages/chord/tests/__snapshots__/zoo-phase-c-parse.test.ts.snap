@@ -1174,6 +1174,29 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "staff-keycard.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "keycards",
+            "word": "keycard",
+          },
+          {
+            "form": "key cards",
+            "word": "key card",
+          },
+          {
+            "form": "cards",
+            "word": "card",
+          },
+          {
+            "form": "keys",
+            "word": "key",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "staff keycards",
+        "singular": "staff keycard",
+      },
       "id": "staff-keycard",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1212,7 +1235,19 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "states": [],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 130,
+            "line": 130,
+          },
+        },
+      ],
       "wears": [],
     },
     {
@@ -1230,6 +1265,25 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "staff-gate.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "gates",
+            "word": "gate",
+          },
+          {
+            "form": "metal gates",
+            "word": "metal gate",
+          },
+          {
+            "form": "staff doors",
+            "word": "staff door",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "staff gates",
+        "singular": "staff gate",
+      },
       "id": "staff-gate",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1362,10 +1416,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 139,
+            "line": 139,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 139,
             "line": 139,
           },
@@ -1375,8 +1440,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "config": [],
           "name": "openable",
           "span": {
-            "column": 21,
-            "endColumn": 29,
+            "column": 31,
+            "endColumn": 39,
             "endLine": 139,
             "line": 139,
           },
@@ -1392,8 +1457,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           ],
           "name": "lockable",
           "span": {
-            "column": 31,
-            "endColumn": 62,
+            "column": 41,
+            "endColumn": 72,
             "endLine": 139,
             "line": 139,
           },
@@ -1414,6 +1479,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "welcome-sign.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "signs",
+            "word": "sign",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "welcome signs",
+        "singular": "welcome sign",
+      },
       "id": "welcome-sign",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1456,10 +1532,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 155,
+            "line": 155,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 155,
             "line": 155,
           },
@@ -1480,6 +1567,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "ticket-booth.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "booths",
+            "word": "booth",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "ticket booths",
+        "singular": "ticket booth",
+      },
       "id": "ticket-booth",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1522,10 +1620,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 162,
+            "line": 162,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 162,
             "line": 162,
           },
@@ -1547,6 +1656,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "iron-fence.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "fences",
+            "word": "fence",
+          },
+          {
+            "form": "railings",
+            "word": "railing",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "iron fences",
+        "singular": "iron fence",
+      },
       "id": "iron-fence",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1589,10 +1713,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 169,
+            "line": 169,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 169,
             "line": 169,
           },
@@ -1614,6 +1749,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "direction-signs.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "sign",
+            "word": "signs",
+          },
+          {
+            "form": "arrow sign",
+            "word": "arrow signs",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "direction signs",
+        "singular": "direction sign",
+      },
       "id": "direction-signs",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1691,6 +1841,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "flower-beds.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "flower",
+            "word": "flowers",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "flower beds",
+        "singular": "flower bed",
+      },
       "id": "flower-beds",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1769,6 +1930,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "hay-bale.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "hays",
+            "word": "hay",
+          },
+          {
+            "form": "bales",
+            "word": "bale",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "hay bales",
+        "singular": "hay bale",
+      },
       "id": "hay-bale",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1811,10 +1987,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 190,
+            "line": 190,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 190,
             "line": 190,
           },
@@ -1835,6 +2022,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "toucan.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "toco toucans",
+            "word": "toco toucan",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "toucans",
+        "singular": "toucan",
+      },
       "id": "toucan",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1877,10 +2075,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 197,
+            "line": 197,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 197,
             "line": 197,
           },
@@ -1902,6 +2111,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "waterfall.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "waters",
+            "word": "water",
+          },
+          {
+            "form": "basins",
+            "word": "basin",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "waterfalls",
+        "singular": "waterfall",
+      },
       "id": "waterfall",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -1944,10 +2168,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 204,
+            "line": 204,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 204,
             "line": 204,
           },
@@ -1969,6 +2204,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "rope-perches.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "rope",
+            "word": "ropes",
+          },
+        ],
+        "origin": "written",
+        "plural": "rope perches",
+        "singular": "rope perch",
+      },
       "id": "rope-perches",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2021,11 +2267,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
         {
           "condition": null,
-          "config": [],
+          "config": [
+            {
+              "key": "of",
+              "value": "rope perch",
+              "valueKind": "word",
+            },
+          ],
           "name": "plural",
           "span": {
             "column": 21,
-            "endColumn": 27,
+            "endColumn": 41,
             "endLine": 211,
             "line": 211,
           },
@@ -2047,6 +2299,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "metal-shelves.description",
       "exits": [],
+      "forms": {
+        "aka": [],
+        "origin": "written",
+        "plural": "metal shelves",
+        "singular": "metal shelf",
+      },
       "id": "metal-shelves",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2099,11 +2357,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
         {
           "condition": null,
-          "config": [],
+          "config": [
+            {
+              "key": "of",
+              "value": "metal shelf",
+              "valueKind": "word",
+            },
+          ],
           "name": "plural",
           "span": {
             "column": 21,
-            "endColumn": 27,
+            "endColumn": 42,
             "endLine": 218,
             "line": 218,
           },
@@ -2124,6 +2388,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "sugar-gliders.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "glider",
+            "word": "gliders",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "sugar gliders",
+        "singular": "sugar glider",
+      },
       "id": "sugar-gliders",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2201,6 +2476,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "bush-babies.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "galago",
+            "word": "galagos",
+          },
+        ],
+        "origin": "written",
+        "plural": "bush babies",
+        "singular": "bush baby",
+      },
       "id": "bush-babies",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2253,11 +2539,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
         {
           "condition": null,
-          "config": [],
+          "config": [
+            {
+              "key": "of",
+              "value": "bush baby",
+              "valueKind": "word",
+            },
+          ],
           "name": "plural",
           "span": {
             "column": 21,
-            "endColumn": 27,
+            "endColumn": 40,
             "endLine": 232,
             "line": 232,
           },
@@ -2278,6 +2570,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "barn-owl.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "owls",
+            "word": "owl",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "barn owls",
+        "singular": "barn owl",
+      },
       "id": "barn-owl",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2320,10 +2623,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 239,
+            "line": 239,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 239,
             "line": 239,
           },
@@ -2345,6 +2659,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "snake.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "pythons",
+            "word": "python",
+          },
+          {
+            "form": "snake enclosures",
+            "word": "snake enclosure",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "snakes",
+        "singular": "snake",
+      },
       "id": "snake",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2444,10 +2773,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 246,
+            "line": 246,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 246,
             "line": 246,
           },
@@ -2469,6 +2809,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "stuffed-animals.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "toy",
+            "word": "toys",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "stuffed animals",
+        "singular": "stuffed animal",
+      },
       "id": "stuffed-animals",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2547,6 +2898,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "postcards.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "card",
+            "word": "cards",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "postcards",
+        "singular": "postcard",
+      },
       "id": "postcards",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2627,6 +2989,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "enamel-pins.description",
       "exits": [],
+      "forms": {
+        "aka": [],
+        "origin": "worked-out",
+        "plural": "enamel pins",
+        "singular": "enamel pin",
+      },
       "id": "enamel-pins",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2705,6 +3073,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "cork-board.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "boards",
+            "word": "board",
+          },
+          {
+            "form": "noticeses",
+            "word": "notices",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "cork boards",
+        "singular": "cork board",
+      },
       "id": "cork-board",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2747,10 +3130,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 287,
+            "line": 287,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 287,
             "line": 287,
           },
@@ -2772,6 +3166,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "info-plaque.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "plaques",
+            "word": "plaque",
+          },
+          {
+            "form": "brass plaques",
+            "word": "brass plaque",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "info plaques",
+        "singular": "info plaque",
+      },
       "id": "info-plaque",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2856,10 +3265,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 295,
+            "line": 295,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 295,
             "line": 295,
           },
@@ -2869,8 +3289,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "config": [],
           "name": "readable",
           "span": {
-            "column": 21,
-            "endColumn": 29,
+            "column": 31,
+            "endColumn": 39,
             "endLine": 295,
             "line": 295,
           },
@@ -2891,6 +3311,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "aviary-plaque.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "information boards",
+            "word": "information board",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "aviary plaques",
+        "singular": "aviary plaque",
+      },
       "id": "aviary-plaque",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -2975,10 +3406,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 311,
+            "line": 311,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 311,
             "line": 311,
           },
@@ -2988,8 +3430,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "config": [],
           "name": "readable",
           "span": {
-            "column": 21,
-            "endColumn": 29,
+            "column": 31,
+            "endColumn": 39,
             "endLine": 311,
             "line": 311,
           },
@@ -3011,6 +3453,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "warning-sign.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "warnings",
+            "word": "warning",
+          },
+          {
+            "form": "yellow signs",
+            "word": "yellow sign",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "warning signs",
+        "singular": "warning sign",
+      },
       "id": "warning-sign",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3095,10 +3552,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 19,
+            "endColumn": 20,
+            "endLine": 327,
+            "line": 327,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 22,
+            "endColumn": 29,
             "endLine": 327,
             "line": 327,
           },
@@ -3108,8 +3576,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "config": [],
           "name": "readable",
           "span": {
-            "column": 21,
-            "endColumn": 29,
+            "column": 31,
+            "endColumn": 39,
             "endLine": 327,
             "line": 327,
           },
@@ -3132,6 +3600,25 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "zoo-brochure.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "brochures",
+            "word": "brochure",
+          },
+          {
+            "form": "pamphlets",
+            "word": "pamphlet",
+          },
+          {
+            "form": "leaflets",
+            "word": "leaflet",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "zoo brochures",
+        "singular": "zoo brochure",
+      },
       "id": "zoo-brochure",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3230,10 +3717,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "readable",
+          "name": "singular",
           "span": {
             "column": 12,
             "endColumn": 20,
+            "endLine": 341,
+            "line": 341,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "readable",
+          "span": {
+            "column": 22,
+            "endColumn": 30,
             "endLine": 341,
             "line": 341,
           },
@@ -3255,6 +3753,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "zoo-map.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "maps",
+            "word": "map",
+          },
+          {
+            "form": "folding maps",
+            "word": "folding map",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "zoo maps",
+        "singular": "zoo map",
+      },
       "id": "zoo-map",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3337,7 +3850,19 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "states": [],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 353,
+            "line": 353,
+          },
+        },
+      ],
       "wears": [],
     },
     {
@@ -3354,6 +3879,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "backpack.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "rucksacks",
+            "word": "rucksack",
+          },
+          {
+            "form": "packs",
+            "word": "pack",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "backpacks",
+        "singular": "backpack",
+      },
       "id": "backpack",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3392,7 +3932,19 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "states": [],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "singular",
+          "span": {
+            "column": 16,
+            "endColumn": 24,
+            "endLine": 366,
+            "line": 366,
+          },
+        },
+      ],
       "wears": [],
     },
     {
@@ -3411,6 +3963,25 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "bag-of-animal-feed.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "feeds",
+            "word": "feed",
+          },
+          {
+            "form": "animal feeds",
+            "word": "animal feed",
+          },
+          {
+            "form": "corns",
+            "word": "corn",
+          },
+        ],
+        "origin": "written",
+        "plural": "bags of animal feed",
+        "singular": "bag of animal feed",
+      },
       "id": "bag-of-animal-feed",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3449,7 +4020,25 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "states": [],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "of",
+              "value": "bags of animal feed",
+              "valueKind": "word",
+            },
+          ],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 43,
+            "endLine": 372,
+            "line": 372,
+          },
+        },
+      ],
       "wears": [],
     },
     {
@@ -3466,6 +4055,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "souvenir-penny.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "pennies",
+            "word": "penny",
+          },
+          {
+            "form": "coins",
+            "word": "coin",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "souvenir pennies",
+        "singular": "souvenir penny",
+      },
       "id": "souvenir-penny",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3504,7 +4108,19 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "states": [],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 379,
+            "line": 379,
+          },
+        },
+      ],
       "wears": [],
     },
     {
@@ -3522,6 +4138,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "park-bench.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "bencheses",
+            "word": "benches",
+          },
+          {
+            "form": "seats",
+            "word": "seat",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "park benches",
+        "singular": "park bench",
+      },
       "holds": 3,
       "id": "park-bench",
       "initialDescriptionKey": null,
@@ -3565,10 +4196,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 16,
-            "endColumn": 23,
+            "endColumn": 24,
+            "endLine": 387,
+            "line": 387,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 26,
+            "endColumn": 33,
             "endLine": 387,
             "line": 387,
           },
@@ -3590,6 +4232,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "lunchbox.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "lunch boxes",
+            "word": "lunch box",
+          },
+          {
+            "form": "boxes",
+            "word": "box",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "lunchboxes",
+        "singular": "lunchbox",
+      },
       "id": "lunchbox",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3632,10 +4289,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "openable",
+          "name": "singular",
           "span": {
             "column": 16,
             "endColumn": 24,
+            "endLine": 395,
+            "line": 395,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "openable",
+          "span": {
+            "column": 26,
+            "endColumn": 34,
             "endLine": 395,
             "line": 395,
           },
@@ -3657,6 +4325,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "juice-box.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "juices",
+            "word": "juice",
+          },
+          {
+            "form": "drinks",
+            "word": "drink",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "juice boxes",
+        "singular": "juice box",
+      },
       "id": "juice-box",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3695,7 +4378,19 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "states": [],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 401,
+            "line": 401,
+          },
+        },
+      ],
       "wears": [],
     },
     {
@@ -3711,6 +4406,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "feed-dispenser.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "dispensers",
+            "word": "dispenser",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "feed dispensers",
+        "singular": "feed dispenser",
+      },
       "id": "feed-dispenser",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3753,7 +4459,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "openable",
+          "name": "singular",
           "span": {
             "column": 16,
             "endColumn": 24,
@@ -3764,10 +4470,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "openable",
           "span": {
             "column": 26,
-            "endColumn": 33,
+            "endColumn": 34,
+            "endLine": 409,
+            "line": 409,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 36,
+            "endColumn": 43,
             "endLine": 409,
             "line": 409,
           },
@@ -3790,6 +4507,25 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "souvenir-press.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "presses",
+            "word": "press",
+          },
+          {
+            "form": "penny presses",
+            "word": "penny press",
+          },
+          {
+            "form": "machines",
+            "word": "machine",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "souvenir presses",
+        "singular": "souvenir press",
+      },
       "id": "souvenir-press",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3832,10 +4568,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 16,
-            "endColumn": 23,
+            "endColumn": 24,
+            "endLine": 417,
+            "line": 417,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 26,
+            "endColumn": 33,
             "endLine": 417,
             "line": 417,
           },
@@ -3858,6 +4605,25 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "flashlight.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "torches",
+            "word": "torch",
+          },
+          {
+            "form": "lights",
+            "word": "light",
+          },
+          {
+            "form": "lamps",
+            "word": "lamp",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "flashlights",
+        "singular": "flashlight",
+      },
       "id": "flashlight",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3900,10 +4666,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         {
           "condition": null,
           "config": [],
-          "name": "light-source",
+          "name": "singular",
           "span": {
             "column": 12,
-            "endColumn": 24,
+            "endColumn": 20,
+            "endLine": 426,
+            "line": 426,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "light-source",
+          "span": {
+            "column": 22,
+            "endColumn": 34,
             "endLine": 426,
             "line": 426,
           },
@@ -3913,8 +4690,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "config": [],
           "name": "switchable",
           "span": {
-            "column": 26,
-            "endColumn": 36,
+            "column": 36,
+            "endColumn": 46,
             "endLine": 426,
             "line": 426,
           },
@@ -3935,6 +4712,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "radio.description",
       "exits": [],
+      "forms": {
+        "aka": [],
+        "origin": "written",
+        "plural": "radios",
+        "singular": "radio",
+      },
       "id": "radio",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -3976,11 +4759,28 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "traits": [
         {
           "condition": null,
+          "config": [
+            {
+              "key": "of",
+              "value": "radios",
+              "valueKind": "word",
+            },
+          ],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 30,
+            "endLine": 433,
+            "line": 433,
+          },
+        },
+        {
+          "condition": null,
           "config": [],
           "name": "scenery",
           "span": {
-            "column": 12,
-            "endColumn": 19,
+            "column": 32,
+            "endColumn": 39,
             "endLine": 433,
             "line": 433,
           },
@@ -3990,8 +4790,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "config": [],
           "name": "switchable",
           "span": {
-            "column": 21,
-            "endColumn": 31,
+            "column": 41,
+            "endColumn": 51,
             "endLine": 433,
             "line": 433,
           },
@@ -4012,6 +4812,17 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "disposable-camera.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "cameras",
+            "word": "camera",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "disposable cameras",
+        "singular": "disposable camera",
+      },
       "id": "disposable-camera",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -4050,7 +4861,19 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "states": [],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 441,
+            "line": 441,
+          },
+        },
+      ],
       "wears": [],
     },
     {
@@ -4417,6 +5240,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "pygmy-goats.description",
       "exits": [],
+      "forms": {
+        "aka": [],
+        "origin": "worked-out",
+        "plural": "pygmy goats",
+        "singular": "pygmy goat",
+      },
       "id": "pygmy-goats",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -4637,6 +5466,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "rabbits.description",
       "exits": [],
+      "forms": {
+        "aka": [],
+        "origin": "worked-out",
+        "plural": "rabbits",
+        "singular": "rabbit",
+      },
       "id": "rabbits",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -4846,6 +5681,21 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadlyExits": [],
       "descriptionKey": "parrots.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "macaw",
+            "word": "macaws",
+          },
+          {
+            "form": "bird",
+            "word": "birds",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "parrots",
+        "singular": "parrot",
+      },
       "id": "parrots",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -5392,7 +6242,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
     "stamp": "acaed0dff25045af13a8a26f932d3908f8b9004e4a1a2cdfedb2c998b6759988",
     "timers": [],
   },
-  "languageVersion": "4.1.0",
+  "languageVersion": "4.2.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

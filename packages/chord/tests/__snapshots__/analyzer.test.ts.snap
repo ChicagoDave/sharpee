@@ -420,6 +420,17 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "deadlyExits": [],
       "descriptionKey": "velvet-cloak.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "cloaks",
+            "word": "cloak",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "velvet cloaks",
+        "singular": "velvet cloak",
+      },
       "id": "velvet-cloak",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -453,10 +464,21 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         {
           "condition": null,
           "config": [],
-          "name": "wearable",
+          "name": "singular",
           "span": {
             "column": 12,
             "endColumn": 20,
+            "endLine": 55,
+            "line": 55,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "wearable",
+          "span": {
+            "column": 22,
+            "endColumn": 30,
             "endLine": 55,
             "line": 55,
           },
@@ -478,6 +500,21 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "deadlyExits": [],
       "descriptionKey": "brass-hook.description",
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "hooks",
+            "word": "hook",
+          },
+          {
+            "form": "pegs",
+            "word": "peg",
+          },
+        ],
+        "origin": "worked-out",
+        "plural": "brass hooks",
+        "singular": "brass hook",
+      },
       "holds": 1,
       "id": "brass-hook",
       "initialDescriptionKey": null,
@@ -521,10 +558,21 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         {
           "condition": null,
           "config": [],
-          "name": "scenery",
+          "name": "singular",
           "span": {
             "column": 16,
-            "endColumn": 23,
+            "endColumn": 24,
+            "endLine": 63,
+            "line": 63,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 26,
+            "endColumn": 33,
             "endLine": 63,
             "line": 63,
           },
@@ -548,6 +596,29 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "deadlyExits": [],
       "descriptionKey": null,
       "exits": [],
+      "forms": {
+        "aka": [
+          {
+            "form": "messages",
+            "word": "message",
+          },
+          {
+            "form": "sawdusts",
+            "word": "sawdust",
+          },
+          {
+            "form": "floors",
+            "word": "floor",
+          },
+          {
+            "form": "writings",
+            "word": "writing",
+          },
+        ],
+        "origin": "written",
+        "plural": "messages in the sawdust",
+        "singular": "message in the sawdust",
+      },
       "id": "message-in-the-sawdust",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -733,11 +804,28 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "traits": [
         {
           "condition": null,
+          "config": [
+            {
+              "key": "of",
+              "value": "messages in the sawdust",
+              "valueKind": "word",
+            },
+          ],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 47,
+            "endLine": 71,
+            "line": 71,
+          },
+        },
+        {
+          "condition": null,
           "config": [],
           "name": "scenery",
           "span": {
-            "column": 12,
-            "endColumn": 19,
+            "column": 49,
+            "endColumn": 56,
             "endLine": 71,
             "line": 71,
           },
@@ -860,7 +948,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     "stamp": "31ad1767292d8f4ca8f24325fbb0add1505d8b82ad6f087da66b4e5323f502f8",
     "timers": [],
   },
-  "languageVersion": "4.1.0",
+  "languageVersion": "4.2.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

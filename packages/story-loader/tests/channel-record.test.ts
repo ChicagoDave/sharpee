@@ -35,7 +35,7 @@ create the Hall
   A hall.
 
 create the clock
-  a thing
+  a thing, singular
   in the Hall
 
   A clock.

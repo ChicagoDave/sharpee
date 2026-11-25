@@ -6,7 +6,7 @@ story
   story-version: 0.0.1
 
 create the message
-  a thing, scenery
+  a thing, singular, scenery
   states: intact, trampled
 
   on the player reading

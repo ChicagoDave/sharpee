@@ -211,7 +211,7 @@ create the Room
   A room.
 
 create the box
-  a thing
+  a thing, singular
   in the Room
   states: shut, ajar
 

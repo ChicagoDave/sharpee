@@ -28,7 +28,7 @@ create the Alley
 
 create the apple
   in the Alley
-  a thing, edible
+  a thing, singular, edible
 
   A red apple.
 

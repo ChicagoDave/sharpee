@@ -36,7 +36,7 @@ create the Vault
   A vault.
 
 create the strongbox
-  a container
+  a container, singular
   in the Vault
   openable, lockable with the brass key
 
@@ -55,7 +55,7 @@ before the game starts
 end before
 
 create the brass key
-  a thing
+  a thing, singular
 
   A small brass key.
 `;

@@ -29,63 +29,63 @@ create the Store
   A bare store room.
 
 create the oak door
-  a door, openable, lockable with the latchkey
+  a door, singular, openable, lockable with the latchkey
   aka door
 
   A heavy oak door.
 
 create the brass lantern
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass lantern.
 
 create the sword
-  a thing
+  a thing, singular
   in the Workshop
 
   A sword.
 
 create the latchkey
-  a thing
+  a thing, singular
   in the Workshop
 
   An iron latchkey.
 
 create the brass key
-  a thing
+  a thing, singular
   in the Workshop
   aka key
 
   A brass key.
 
 create the silver key
-  a thing
+  a thing, singular
   in the Workshop
   aka key
 
   A silver key.
 
 create the crate
-  a container
+  a container, singular
   in the Workshop
 
   A wooden crate.
 
 create the rope
-  a thing
+  a thing, singular
   in the crate
 
   A coil of rope.
 
 create the chisel
-  a thing
+  a thing, singular
   in the crate
 
   A chisel.
 
 create the mallet
-  a thing
+  a thing, singular
   in the crate
 
   A mallet.

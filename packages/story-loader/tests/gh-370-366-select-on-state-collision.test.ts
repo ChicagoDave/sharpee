@@ -41,13 +41,13 @@ create the Closet
   A closet.
 
 create the winch
-  a thing, scenery, winch-crank
+  a thing, singular, scenery, winch-crank
   in the Closet
 
   A winch.
 
 create the chandelier
-  a thing, scenery
+  a thing, singular, scenery
   in the Closet
   states, reversible: raised, lowered
 
@@ -103,7 +103,7 @@ create the Street
   A street.
 
 create the coin
-  a thing
+  a thing, singular
   in the Street
   states: fresh, seen
 

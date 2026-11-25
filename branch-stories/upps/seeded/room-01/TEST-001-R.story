@@ -31,7 +31,7 @@ create player Postman
   A carrier of the United Planetary Postal Service, in regulation grey.
 
 create the sorting machine
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka machine, sorter
 
@@ -39,7 +39,7 @@ create the sorting machine
   itself as it reads addresses. Its out tray is empty for now.
 
 create the mail satchel
-  a container, wearable
+  a container, singular, wearable
   in the Sorting Room
   aka satchel, bag
 
@@ -47,7 +47,7 @@ create the mail satchel
   flap, worn soft at the strap.
 
 create the route card
-  a thing, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
+  a thing, singular, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
   in the Sorting Room
   aka card, route
 

@@ -29,7 +29,7 @@ create the Yard
   A yard.
 
 create the lamp
-  a thing, switchable
+  a thing, singular, switchable
   in the Hall
   states: cold, warm
 
@@ -43,7 +43,7 @@ create the lamp
   end on
 
 create the bell
-  a thing, ringable
+  a thing, singular, ringable
   in the Hall
   states: still, rung
 
@@ -65,7 +65,7 @@ define trait ringable
 end trait
 
 create the gong
-  a thing
+  a thing, singular
   in the Yard
 
   A gong.
@@ -76,7 +76,7 @@ create the gong
   end on
 
 create the cat
-  a thing
+  a thing, singular
   in the Hall
 
   A cat.

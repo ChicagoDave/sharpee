@@ -2,7 +2,9 @@
  * @file English Word Lists
  * @description The one word table of English (ADR-387 D1): articles,
  *   determiners, pronouns, self words, all and except words, list separators,
- *   manner adverbs, name stopwords, the direction table and the number words.
+ *   manner adverbs, name stopwords, the direction table, the number words,
+ *   and the suffix rules the compiler works out a name's singular or plural
+ *   by (`englishFormRules`, ADR-409 D2).
  *   Every reader asks the language provider, which reads it here.
  */
 
@@ -192,6 +194,59 @@ export const englishWords = {
     'really', 'very', 'quite', 'rather',
     'well', 'now', 'then', 'so'
   ]
+};
+
+/**
+ * One suffix rewrite of a word, singular to plural or plural to singular (ADR-409 D2).
+ */
+export interface FormRewrite {
+  /** The word's ending; `""` matches any word. */
+  readonly ending: string;
+  /** Letters the ending must follow, when the rule needs them (`y` after a consonant). */
+  readonly after?: readonly string[];
+  /** How many letters of the word to drop, then what to add. */
+  readonly drop: number;
+  readonly add: string;
+}
+
+/**
+ * The suffix rules a language works out a word's singular or plural by (ADR-409
+ * D2). The compiler applies them once, to a name's last word and to each
+ * aka word, and refuses a bare declaration on an unsafe ending.
+ */
+export interface FormRules {
+  /** Rewrites tried in order; the first whose `ending` matches applies. */
+  readonly toPlural: readonly FormRewrite[];
+  readonly toSingular: readonly FormRewrite[];
+  /** Endings with no rule: a bare declaration on them is refused. */
+  readonly unsafeSingularEndings: readonly string[];
+  readonly unsafePluralEndings: readonly string[];
+}
+
+/** The consonants English's `y` → `ies` rule follows (`berry` → `berries`, but `key` → `keys`). */
+const CONSONANTS = 'bcdfghjklmnpqrstvwxyz'.split('');
+
+/**
+ * English's plain singular and plural rules (ADR-409 D2): `s`/`es`/`ies` to make a
+ * plural, drop a final `s` to make a singular, and no rule for the endings
+ * where a plain rule goes wrong (`shelf`, `potato`, `cactus`, `houses`).
+ * These are not `pluralize`/`singularize`, which rendering and the lens use.
+ */
+export const englishFormRules: FormRules = {
+  toPlural: [
+    { ending: 's', drop: 0, add: 'es' },
+    { ending: 'x', drop: 0, add: 'es' },
+    { ending: 'z', drop: 0, add: 'es' },
+    { ending: 'ch', drop: 0, add: 'es' },
+    { ending: 'sh', drop: 0, add: 'es' },
+    { ending: 'y', after: CONSONANTS, drop: 1, add: 'ies' },
+    { ending: '', drop: 0, add: 's' },
+  ],
+  toSingular: [
+    { ending: 's', drop: 1, add: '' },
+  ],
+  unsafeSingularEndings: ['f', 'fe', 'o', 'us', 'is'],
+  unsafePluralEndings: ['ses', 'xes', 'zes', 'ches', 'shes', 'ies', 'ves', 'oes', 'ss', 'us', 'is'],
 };
 
 /**

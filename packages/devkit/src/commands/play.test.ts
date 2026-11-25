@@ -98,7 +98,7 @@ create the Study
   A narrow study.
 
 create the note
-  a thing, scenery
+  a thing, singular, scenery
   in the Study
 
   A folded note.

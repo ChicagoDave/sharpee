@@ -48,54 +48,54 @@ create the old man
   An old man.
 
 create the sword
-  a thing
+  a thing, singular
   in the Workshop
 
   A sword.
 
 create the gold coin
-  a thing
+  a thing, singular
   in the Workshop
   aka coin
 
   A gold coin.
 
 create the pair of dice
-  a thing
+  a thing, singular of pairs of dice
   in the Workshop
   aka dice
 
   Two dice.
 
 create the box
-  a container, openable
+  a container, singular, openable
   in the Workshop
   starts open
 
   A small box.
 
 create the chest
-  a container, openable
+  a container, singular, openable
   in the Workshop
   starts open
 
   A wooden chest.
 
 create the jack in the box
-  a thing
+  a thing, singular of jacks in the box
   in the Workshop
   aka jack
 
   A jack in the box.
 
 create the door
-  a door, openable, lockable with the iron key
+  a door, singular, openable, lockable with the iron key
   aka door
 
   An iron door.
 
 create the iron key
-  a thing
+  a thing, singular
   in the Workshop
   aka key
 

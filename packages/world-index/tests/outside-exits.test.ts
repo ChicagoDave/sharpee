@@ -35,7 +35,7 @@ create the Top of the Well
   The top of the well.
 
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: flight
   drive: control

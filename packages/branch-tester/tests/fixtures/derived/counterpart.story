@@ -22,7 +22,7 @@ create Courier
   You.
 
 create the returns bin
-  a container, scenery
+  a container, singular, scenery
   in the Depot
   aka bin
 
@@ -34,14 +34,14 @@ create the returns bin
   end on
 
 create the dead letter
-  a thing
+  a thing, singular
   in the Depot
   aka letter
 
   A letter.
 
 create the dust ball
-  a thing
+  a thing, singular
   in the Depot
   aka ball
 
@@ -52,7 +52,7 @@ create the dust ball
   end on
 
 create the brass gong
-  a thing, scenery
+  a thing, singular, scenery
   in the Depot
   aka gong
   states, reversible: still, ringing
@@ -74,13 +74,13 @@ create the grocer
   end on
 
 create the ration bar
-  a thing
+  a thing, singular
   aka bar
 
   A bar.
 
 create the station directory
-  a thing, readable with text "KEPLER STATION"
+  a thing, singular, readable with text "KEPLER STATION"
   in the Depot
   aka directory
   states, reversible: unread, consulted

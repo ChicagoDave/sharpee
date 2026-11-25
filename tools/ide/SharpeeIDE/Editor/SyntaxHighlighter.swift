@@ -50,6 +50,9 @@ final class SyntaxHighlighter {
         // and `passage` are ordinary prose words too; colored anyway, on the
         // tradeoff already accepted for `state`, `score` and `beat`.
         "claims", "landmarks", "passage", "position", "pushing", "sailing",
+        // Chord 4.2.0 (ADR-409 D7.1): the declaration every thing and door
+        // carries. `of` stays uncolored: it is the commonest prose word of all.
+        "singular", "plural",
     ]
 
     /// Property keys — a `name:` field rather than a structural keyword.

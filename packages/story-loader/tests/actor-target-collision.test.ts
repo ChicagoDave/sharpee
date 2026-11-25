@@ -79,7 +79,7 @@ create the Yard
   A yard.
 
 create the loaf
-  a thing
+  a thing, singular of loaves
   in the Yard
 
   Bread.
@@ -89,7 +89,7 @@ create the loaf
   end on
 
 create the stone
-  a thing
+  a thing, singular
   in the Yard
 
   A stone.

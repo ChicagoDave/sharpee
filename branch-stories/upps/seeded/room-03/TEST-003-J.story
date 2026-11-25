@@ -32,7 +32,7 @@ create Postman
   A carrier of the United Planetary Postal Service, in regulation grey.
 
 create the sorting machine
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka machine, sorter
 
@@ -40,7 +40,7 @@ create the sorting machine
   itself as it reads addresses. Its out tray is empty for now.
 
 create the mail satchel
-  a container, wearable
+  a container, singular, wearable
   in the Sorting Room
   aka satchel, bag
 
@@ -52,14 +52,14 @@ create the mail satchel
   end on
 
 create the route card
-  a thing, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
+  a thing, singular, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
   in the Sorting Room
   aka card, route
 
   A laminated card printed with today's route.
 
 create the dock door
-  a thing, scenery
+  a thing, singular, scenery
   in the Sorting Room
   aka door, loading door, dock
   states: sealed, cleared
@@ -70,7 +70,7 @@ create the dock door
 ## Room 2 — the bundle in the tray, and the dock beyond the door.
 
 create the mail bundle
-  a thing
+  a thing, singular
   in the Sorting Room
   aka bundle, mail, parcels, route mail
 
@@ -101,7 +101,7 @@ create the Loading Dock
   end after
 
 create the courier ship
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka ship, courier, sparrow, ramp, skids
   states: buttoned, boarding
@@ -126,7 +126,7 @@ create the loader robot
   end after
 
 create the mail crates
-  a thing, scenery
+  a thing, singular, scenery
   in the Loading Dock
   aka crates, crate, stack
 
@@ -151,7 +151,7 @@ create the Hold
   end after
 
 create the cargo netting
-  a thing, scenery
+  a thing, singular, scenery
   in the Hold
   aka netting, net, nets, webbing
 
@@ -160,7 +160,7 @@ create the cargo netting
   fold.
 
 create the suit locker
-  a container, openable
+  a container, singular, openable
   in the Hold
   aka locker
 
@@ -168,7 +168,7 @@ create the suit locker
   Sparrow carries one suit, and this is where it lives.
 
 create the space suit
-  a thing, wearable
+  a thing, singular, wearable
   in the suit locker
   aka suit, eva suit, pressure suit
 
@@ -176,7 +176,7 @@ create the space suit
   shoulder. The helmet ring is scuffed from a hundred dockings.
 
 create the cockpit hatch
-  a thing, scenery
+  a thing, singular, scenery
   in the Hold
   aka hatch, ladder, cockpit
 

@@ -60,7 +60,7 @@ const WELL_AND_BUCKET = `create the Well
   A well.
 
 create the bucket
-  a container
+  a container, singular
   openable
   in the Well
 

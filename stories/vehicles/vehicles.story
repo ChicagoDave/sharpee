@@ -29,13 +29,13 @@ create the Top of the Well
   The top of the well, open to the sky.
 
 create the water
-  a thing
+  a thing, singular
   in the Well Bottom
 
   A pool of clear water.
 
 create the bucket
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -73,7 +73,7 @@ create the Terminus
   The end of the tram line.
 
 create the tram car
-  a vehicle
+  a vehicle, singular
   in the Depot
   movement: line
   carries: in
@@ -85,7 +85,7 @@ create the tram car
   An open tram car with a brake lever.
 
 create the brake
-  a thing, pushable
+  a thing, singular, pushable
   in the tram car
   aka lever, brake lever
 
@@ -121,7 +121,7 @@ create the Upper Station
   The upper station of the funicular.
 
 create the funicular
-  a vehicle
+  a vehicle, singular
   in the Lower Station
   movement: line
   carries: in
@@ -133,7 +133,7 @@ create the funicular
   A funicular car.
 
 create the cable switch
-  a thing, pushable
+  a thing, singular, pushable
   in the funicular
   aka switch
 
@@ -186,7 +186,7 @@ create the Shoal
   A shoal, too shallow for a keel.
 
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: compass
   carries: in
@@ -197,7 +197,7 @@ create the Marigold
   A barque with a tiller and an anchor.
 
 create the anchor
-  a thing, pullable
+  a thing, singular, pullable
   in the Marigold
 
   A heavy anchor on a chain.
@@ -250,7 +250,7 @@ create the Footpath
   A footpath between hedges.
 
 create the car
-  a vehicle
+  a vehicle, singular
   in the Garage
   movement: streets
   carries: in
@@ -273,7 +273,7 @@ create the Orbit Station
   A station in orbit.
 
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in the Pad
   movement: flight
   drive: player

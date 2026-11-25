@@ -44,7 +44,7 @@ create the Hall
   a room
 
 create the oak door
-  a door
+  a door, singular
 
 `;
 
@@ -150,12 +150,12 @@ describe('ratchet R3 — keyless single-entity `with` config (ADR-234 D6, AC-6)'
   A steel vault.
 
 create the strongbox
-  a container
+  a container, singular
   in the Vault
   openable, ${composition}
 
 create the brass key
-  a thing
+  a thing, singular
 
 `);
 
@@ -176,10 +176,10 @@ create the brass key
 
   it('`with tool the …` is the same parse error', () => {
     expect(errorCodes(story(`create the crate
-  a thing, openable with tool the crowbar
+  a thing, singular, openable with tool the crowbar
 
 create the crowbar
-  a thing
+  a thing, singular
 
 `))).toContain('parse.removed-config-keyword');
   });
@@ -190,10 +190,10 @@ create the crowbar
 end trait
 
 create the goat
-  a thing, feedable with food the handful of feed
+  a thing, singular, feedable with food the handful of feed
 
 create the handful of feed
-  a thing
+  a thing, singular of handfuls of feed
 
 `));
     const goat = result.ir.entities.find((e) => e.id === 'goat')!;
@@ -203,10 +203,10 @@ create the handful of feed
 
   it('word-valued configs keep their keyword (`with position behind`)', () => {
     const result = compile(story(`create the sofa
-  a thing
+  a thing, singular
 
 create the mouse
-  a thing, hiding-spot with position behind
+  a thing, singular of mice, hiding-spot with position behind
 
 `));
     const mouse = result.ir.entities.find((e) => e.id === 'mouse')!;
@@ -225,7 +225,7 @@ create the Hall
   a room
 
 create the rug
-  a thing
+  a thing, singular
 
   A threadbare rug.
 
@@ -253,7 +253,7 @@ create the Hall
   east to the Kitchen through the oak door
 
 create the oak door
-  a door
+  a door, singular
 
 `))).toContain('analysis.door-pair-mismatch');
   });
@@ -268,7 +268,7 @@ create the Hall
   a room
 
 create the oak door
-  a door
+  a door, singular
 
 `))).toContain('analysis.door-pair-mismatch');
   });
@@ -278,17 +278,17 @@ create the oak door
   a room
 
 create the oak door
-  a door
+  a door, singular
 
 `))).toContain('analysis.door-unconnected');
   });
 
   it('rejects a placement line on a door block (analysis.door-placement)', () => {
     expect(errorCodes(story(`${TWO_ROOMS_AND_DOOR.replace(`create the oak door
-  a door
+  a door, singular
 
 `, `create the oak door
-  a door
+  a door, singular
   in the Kitchen
 
 `)}`))).toContain('analysis.door-placement');

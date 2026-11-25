@@ -28,7 +28,7 @@ create the Hall
   A hall.
 
 create the statue
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
   states: dull, gleaming
 

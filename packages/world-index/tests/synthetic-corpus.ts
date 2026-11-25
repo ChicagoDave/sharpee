@@ -129,8 +129,8 @@ export interface StoryPlan {
   edges: PlannedEdge[];
   /** The obstacles standing in spine connections. */
   obstacles: PlannedObstacle[];
-  /** Things, each placed in one room. */
-  things: Array<{ name: string; room: number }>;
+  /** Things, each placed in one room, with the plural its `singular of` line writes. */
+  things: Array<{ name: string; plural: string; room: number }>;
   /** Regions, each holding a run of consecutive rooms. */
   regions: Array<{ name: string; rooms: number[] }>;
 }
@@ -247,13 +247,19 @@ export function planStory(rooms: number, ratios: StoryRatios, shape: CorpusShape
     });
   }
 
-  const things: Array<{ name: string; room: number }> = [];
+  const things: Array<{ name: string; plural: string; room: number }> = [];
   const thingTotal = scaled(rooms, ratios.thingsPerRoom);
   for (let ordinal = 0; ordinal < thingTotal; ordinal += 1) {
     const room = ordinal % rooms;
     const adjective = THING_ADJECTIVES[Math.floor(ordinal / rooms) % THING_ADJECTIVES.length];
     const noun = THING_NOUNS[ordinal % THING_NOUNS.length];
-    things.push({ name: `the ${adjective} ${noun} of ${roomName(room).slice(4)}`, room });
+    // Every THING_NOUNS word takes a plain `s`; the name has `of` inside, so its
+    // plural is written (ADR-409 D2: the rule leaves such a name to the author).
+    things.push({
+      name: `the ${adjective} ${noun} of ${roomName(room).slice(4)}`,
+      plural: `${adjective} ${noun}s of ${roomName(room).slice(4)}`,
+      room,
+    });
   }
 
   const regions: Array<{ name: string; rooms: number[] }> = [];
@@ -484,19 +490,19 @@ export function generateStory(rooms: number, ratios: StoryRatios, shape: CorpusS
   for (const obstacle of plan.obstacles) {
     if (obstacle.kind === 'lock') {
       lines.push(`create ${obstacle.door}`);
-      lines.push(`  a door, lockable with ${obstacle.key}`);
+      lines.push(`  a door, singular, lockable with ${obstacle.key}`);
       lines.push('');
       lines.push(prose(obstacle.from + 1, words));
       lines.push('');
       lines.push(`create ${obstacle.key}`);
-      lines.push('  a thing');
+      lines.push('  a thing, singular');
       lines.push(`  in ${roomName(obstacle.opener)}`);
       lines.push('');
       lines.push(prose(obstacle.from + 2, words));
       lines.push('');
     } else {
       lines.push(`create ${obstacle.lever}`);
-      lines.push('  a thing, switchable');
+      lines.push('  a thing, singular, switchable');
       lines.push(`  in ${roomName(obstacle.opener)}`);
       lines.push('');
       lines.push(prose(obstacle.from + 3, words));
@@ -510,7 +516,7 @@ export function generateStory(rooms: number, ratios: StoryRatios, shape: CorpusS
 
   for (const [ordinal, thing] of plan.things.entries()) {
     lines.push(`create ${thing.name}`);
-    lines.push('  a thing');
+    lines.push(`  a thing, singular of ${thing.plural}`);
     lines.push(`  in ${roomName(thing.room)}`);
     lines.push('');
     lines.push(prose(ordinal, words));

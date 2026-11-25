@@ -70,13 +70,13 @@ create the Vault
   A vault.
 
 create the key
-  a thing, conjurable
+  a thing, singular, conjurable
 ${s.key ?? '  in the Tower'}
 
   A key.
 
 create the chest
-  a container, openable
+  a container, singular, openable
   in the Tower
 ${s.chest ?? ''}
   A chest.

@@ -26,7 +26,7 @@ create the porter
   end on
 
 create the sword
-  a thing
+  a thing, singular
   in the Lodge
 
   Notched and old.

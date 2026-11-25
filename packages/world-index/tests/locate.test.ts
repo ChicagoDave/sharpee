@@ -140,7 +140,7 @@ const WRAPPED = [
   '  lamp, dented and cold.',
   '',
   'create the brass lamp',
-  '  a thing',
+  '  a thing, singular',
   '  in the Hall',
   '',
   ...PLAYER,
@@ -197,7 +197,7 @@ describe('a .story input publishes each phrase at its own span', () => {
       '  A narrow annex. A ledger rests on the sill.',
       '',
       'create the ledger',
-      '  a thing',
+      '  a thing, singular',
       '  in the Annex',
       '',
     ].join('\n');

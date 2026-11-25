@@ -53,7 +53,7 @@ const ORIGINAL: Edit = {
   // The bell exists only in the original: the edit removes it.
   blocks: `
 create the bell
-  a thing
+  a thing, singular
   in the Hall
 
   A bell.
@@ -77,7 +77,7 @@ create the Attic
   An attic.
 
 create the coin
-  a thing
+  a thing, singular
   in the Attic
 
   A coin.
@@ -126,7 +126,7 @@ create the Yard
   end after
 ${e.blocks}
 create the lamp
-  a thing
+  a thing, singular
   in the Hall
   states: dull, bright
 

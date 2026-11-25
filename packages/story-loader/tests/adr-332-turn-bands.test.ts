@@ -57,7 +57,7 @@ create Bea
   A watcher.
 
 create the stone
-  a thing
+  a thing, singular
   in the Camp
 
   A stone.

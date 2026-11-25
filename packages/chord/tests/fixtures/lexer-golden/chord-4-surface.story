@@ -47,7 +47,7 @@ create the Reef
   Coral under a foot of water.
 
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Sargasso at 20, 20
   movement: open
   carries: in
@@ -81,13 +81,13 @@ create the Top of the Well
   The top of the well, open to the sky.
 
 create the water
-  a thing
+  a thing, singular
   in the Well Bottom
 
   A pool of clear water.
 
 create the bucket
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -128,7 +128,7 @@ create the Loading Dock
   A concrete dock.
 
 create the mail trolley
-  a thing, pushable
+  a thing, singular, pushable
   in the Sorting Room
 
   A wire trolley.
@@ -138,7 +138,7 @@ create the mail trolley
   end pushing
 
 create the loaf
-  a thing, edible
+  a thing, singular of loaves, edible
   servings 3
   in the Sorting Room
 
@@ -151,7 +151,7 @@ create the Hall
   A hall.
 
 create the cellar door
-  a door, lockable with the iron key
+  a door, singular, lockable with the iron key
   opens when unlocked
 
   A door.
@@ -162,38 +162,38 @@ create the Cellar
   A cellar.
 
 create the iron key
-  a thing
+  a thing, singular
   in the Hall
 
   A key.
 
 create the display case
-  a container, openable, switchable
+  a container, singular, openable, switchable
   closes when switched off
   in the Hall
 
   A case.
 
 create the ripe cheese
-  a thing, edible, smelly
+  a thing, singular, edible, smelly
   in the Hall
 
   Cheese.
 
 create the brass chime
-  a thing, loud
+  a thing, singular, loud
   in the Cellar
 
   A chime.
 
 create the cap
-  a thing, wearable on the head
+  a thing, singular, wearable on the head
   in the Hall
 
   A cap.
 
 create the glove
-  a thing, wearable on the left hand
+  a thing, singular, wearable on the left hand
   in the Hall
 
   A glove.
@@ -204,7 +204,7 @@ create the Sandler & Sons
   A shop.
 
 create the adder
-  a thing, snake
+  a thing, singular, snake
   in the Hall
 
   An adder behind glass.

@@ -32,7 +32,7 @@ create the Weaponsmith's Stall
   Blades.
 
 create the pear
-  a thing
+  a thing, singular
   in the Weaponsmith's Stall
 
   A pear.
@@ -43,7 +43,7 @@ create the pear
   end after
 
 create the drum
-  a thing
+  a thing, singular
   in the Weaponsmith's Stall
 
   A drum.

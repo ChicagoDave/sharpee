@@ -29,7 +29,7 @@ create the Hall
   The hall.
 
 create the clock
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
   states: stopped, wound
 
@@ -57,7 +57,7 @@ create the clock
   end on
 
 create the lamp
-  a thing, glowing
+  a thing, singular, glowing
   in the Hall
 
   A small lamp.

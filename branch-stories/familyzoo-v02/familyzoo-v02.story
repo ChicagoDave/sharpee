@@ -55,7 +55,7 @@ create Alex
   Just an ordinary visitor to the zoo.
 
 create the welcome sign
-  a thing
+  a thing, singular
   aka sign
   scenery
   in the Zoo Entrance
@@ -64,7 +64,7 @@ create the welcome sign
   ZOO."
 
 create the ticket booth
-  a thing
+  a thing, singular
   aka booth
   scenery
   in the Zoo Entrance

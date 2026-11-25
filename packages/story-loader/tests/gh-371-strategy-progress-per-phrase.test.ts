@@ -27,7 +27,7 @@ create the Hall
   A hall.
 
 create the letter
-  a thing
+  a thing, singular
   in the Hall
 
   A letter.

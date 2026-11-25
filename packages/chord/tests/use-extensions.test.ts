@@ -170,7 +170,7 @@ describe('CORE npc vocabulary (ADR-215 Q4)', () => {
     expect(
       errorCodes(
         story('', `create the crate
-  a container, openable with route [the Arena]
+  a container, singular, openable with route [the Arena]
   in the Arena
 
   A crate.

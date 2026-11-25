@@ -111,25 +111,25 @@ create Alex
   starts in the pen
 
 create the red crate
-  a container
+  a container, singular
   polishable
   in the pen
   states: dull, gleaming
 
 create the blue crate
-  a container
+  a container, singular
   polishable
   in the pen
   states: dull, gleaming
 
 create the green crate
-  a container
+  a container, singular
   polishable
   in the store room
   states: dull, gleaming
 
 create the dust bunny
-  a supporter
+  a supporter, singular
   in the pen
 
   on the player reading

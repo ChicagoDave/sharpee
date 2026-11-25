@@ -21,7 +21,7 @@ create the Annex
   south to the Lab
 
 create the brass bell
-  a thing
+  a thing, singular
   aka bell
   in the Annex
 
@@ -29,7 +29,7 @@ create the brass bell
 
 create the machine
   in the Lab
-  a thing, scenery
+  a thing, singular, scenery
   states: quiet, humming
 
   A squat machine.

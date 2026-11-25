@@ -29,13 +29,13 @@ ${lines.split('\n').map((l) => `    ${l}`).join('\n')}
   end after
 
 create the woolen cap
-  a thing, wearable
+  a thing, singular, wearable
   in the Street
 
   A cap.
 
 create the brick
-  a thing
+  a thing, singular
   in the Street
 
   A brick.

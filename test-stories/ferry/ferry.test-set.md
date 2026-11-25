@@ -23,3 +23,7 @@
 - The biscuit: a thing whose state changes a hundred times, so a walk whose set holds it cannot be exhausted. The walk tells states apart by where things are, their declared states, and a few traits' own fields, of which an edible's servings is one. A counter would not do: the walk does not read counters.
 - The timetable: read by no tree line, so only a walk proves its claim, and the quiet edit can put it out of reach without failing a card.
 - The Far Bank: a room nothing leads to, where the quiet edit of OB-31 puts the timetable.
+
+## Language migrations
+
+- 2026-11-24, Chord 4.2.0 (ADR-409, session ce3248): every thing and door in the story is declared `singular` or `plural`, as the language now requires. Each block keeps the number it read as before: an undeclared one is now `singular`, and one already `plural` stays `plural`. No obligation moves.

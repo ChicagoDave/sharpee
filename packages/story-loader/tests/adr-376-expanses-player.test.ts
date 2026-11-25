@@ -53,7 +53,7 @@ create the Derelict
   A hull.
 
 create the skiff
-  a vehicle
+  a vehicle, singular of skiffs
   in the Belt at 3, 3
   movement: open
   carries: in
@@ -68,7 +68,7 @@ create the skiff
   A skiff.
 
 create the dinghy
-  a vehicle
+  a vehicle, singular
   in the Belt at 3, 3
   movement: open
   carries: in
@@ -82,26 +82,26 @@ create the dinghy
   A dinghy.
 
 create the telescope
-  a thing
+  a thing, singular
   in the skiff
   sight: 12
 
   A brass telescope.
 
 create the anchor
-  a thing
+  a thing, singular
   in the skiff
 
   An anchor.
 
 create the buoy
-  a thing, floats
+  a thing, singular, floats
   in the skiff
 
   A buoy.
 
 create the cask
-  a thing, floats
+  a thing, singular, floats
   in the Belt at 5, 3
   aka cask
 

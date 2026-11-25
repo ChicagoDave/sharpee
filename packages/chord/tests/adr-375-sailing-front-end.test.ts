@@ -63,7 +63,7 @@ create the Reef
 
 const SHIP = `
 create the Marigold
-  a vehicle, openable, transparent
+  a vehicle, singular, openable, transparent
   in the Sargasso at 3, 5
   movement: open
   carries: in
@@ -101,7 +101,7 @@ const CONTROLLED_SHIP = SHIP.replace('  drive: player\n  commands: naval\n', '  
 /** A weather glass in the ship whose clause body is the statement under test. */
 const glass = (body: string): string => `
 create the weather glass
-  a thing, pushable
+  a thing, singular, pushable
   in the Marigold
 
   A glass.
@@ -301,7 +301,7 @@ describe('the gates (D1)', () => {
   it('`commands: naval` on a compass vehicle is analysis.commands-not-for-movement; `wind:` on a room is analysis.expanse-line-owner; a sailing block on a flight vehicle is analysis.sailing-not-open', () => {
     const compassShip = `
 create the dinghy
-  a vehicle
+  a vehicle, singular
   in Port Royal
   movement: compass
   carries: in
@@ -316,7 +316,7 @@ create the dinghy
     expect(errorCodes(story(SEA.replace('  The port.\n', '  wind: from north\n\n  The port.\n'), SHIP))).toContain('analysis.expanse-line-owner');
     const flier = `
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in Port Royal
   movement: flight
   carries: in

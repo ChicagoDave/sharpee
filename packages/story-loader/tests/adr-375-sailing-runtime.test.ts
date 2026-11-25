@@ -40,7 +40,7 @@ create Port Royal
   The port.
 
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Sargasso at 20, 20
   movement: open
   carries: in
@@ -64,7 +64,7 @@ create the Marigold
   end sailing
 
 create the dinghy
-  a vehicle
+  a vehicle, singular
   in the Sargasso at 20, 21
   movement: open
   carries: in
@@ -78,7 +78,7 @@ create the dinghy
   A dinghy.
 
 create the weather glass
-  a thing, pushable
+  a thing, singular, pushable
   in the Marigold
   aka glass
 
@@ -89,7 +89,7 @@ create the weather glass
   end on
 
 create the capstan
-  a thing, pushable
+  a thing, singular, pushable
   in the Marigold
 
   A capstan.
@@ -99,7 +99,7 @@ create the capstan
   end on
 
 create the tug
-  a vehicle
+  a vehicle, singular
   in the Sargasso at 10, 10
   movement: open
   carries: in
@@ -117,7 +117,7 @@ create the tug
   end sailing
 
 create the whistle
-  a thing, pushable
+  a thing, singular, pushable
   in the Marigold
 
   A whistle.
@@ -127,7 +127,7 @@ create the whistle
   end on
 
 create the bell
-  a thing, pushable
+  a thing, singular, pushable
   in the Marigold
 
   A bell.

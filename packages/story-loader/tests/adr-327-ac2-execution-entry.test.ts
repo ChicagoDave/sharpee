@@ -121,7 +121,7 @@ create the guards
   Guards.
 
 create the sword
-  a thing
+  a thing, singular
   in the Yard
 ${sword}
   A sword.

@@ -39,13 +39,13 @@ create the Workshop
   A cluttered workshop.
 
 create the hat
-  a thing, wearable
+  a thing, singular, wearable
   in the Workshop
 
   A felt hat.
 
 create the lamp
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass lamp.

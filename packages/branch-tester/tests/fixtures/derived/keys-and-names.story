@@ -27,7 +27,7 @@ create the Pantry
   A pantry.
 
 create the cellar door
-  a door, lockable with the iron key, starts locked
+  a door, singular, lockable with the iron key, starts locked
   states: shut, swung
 
   A cellar door.
@@ -37,13 +37,13 @@ create the cellar door
   end after
 
 create the iron key
-  a thing
+  a thing, singular
   in the Hall
 
   An iron key.
 
 create the strongbox
-  a container, openable, lockable with the iron key, starts locked
+  a container, singular, openable, lockable with the iron key, starts locked
   in the Hall
 
   A strongbox.
@@ -53,7 +53,7 @@ create the strongbox
   end on
 
 create the padlock
-  a thing, lockable, starts locked
+  a thing, singular, lockable, starts locked
   in the Hall
 
   A padlock.
@@ -63,14 +63,14 @@ create the padlock
   end on
 
 create the display of pears
-  a thing, scenery
+  a thing, singular of displays of pears, scenery
   aka pears, pear
   in the Hall
 
   A display of pears.
 
 create the pear
-  a thing
+  a thing, singular
   aka green pear
   in the Hall
 
@@ -81,7 +81,7 @@ create the pear
   end on
 
 create the shadow
-  a thing, scenery
+  a thing, singular, scenery
   aka figure
   in the Hall
 
@@ -92,14 +92,14 @@ create the shadow
   end on
 
 create the figure
-  a thing, scenery
+  a thing, singular, scenery
   aka shadow
   in the Hall
 
   A figure.
 
 create the stove
-  a container, openable
+  a container, singular, openable
   in the Hall
   states, reversible: cold, hot
 

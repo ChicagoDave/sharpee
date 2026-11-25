@@ -106,7 +106,7 @@ describe('a machine action trigger and the verb it names (GH #712)', () => {
   it('turning a thing no machine names and no clause answers is still refused', async () => {
     const source = DRAWBRIDGE.replace(
       'create Alex\n',
-      ['create the iron ring', '  a thing', '  aka ring', '  in the Gatehouse', '', '  An iron ring set in the wall.', '', 'create Alex', ''].join('\n'),
+      ['create the iron ring', '  a thing, singular', '  aka ring', '  in the Gatehouse', '', '  An iron ring set in the wall.', '', 'create Alex', ''].join('\n'),
     );
     expect(source).toContain('create the iron ring');
     const booted = await bootTurns(source);

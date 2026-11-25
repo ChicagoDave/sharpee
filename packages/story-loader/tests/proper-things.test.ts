@@ -31,7 +31,7 @@ create the Yard
   A yard.
 
 create Grubber's Market
-  a thing, scenery, proper
+  a thing, singular, scenery, proper
   aka market
   in the Yard
 

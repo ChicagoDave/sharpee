@@ -32,7 +32,7 @@ create Teisha
   Teisha.
 
 create the monkey
-  a thing
+  a thing, singular
   in the Stall
 ${body}
   A monkey.

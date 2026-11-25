@@ -34,38 +34,38 @@ create the Workshop
   A cluttered workshop.
 
 create the brass clock
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass clock.
 
 create the pair of dice
-  a thing
+  a thing, singular of pairs of dice
   in the Workshop
 
   Two dice.
 
 create the wall clock
-  a thing
+  a thing, singular
   in the Workshop
   scenery
 
   A wall clock.
 
 create the latchkey
-  a thing
+  a thing, singular
   in the Workshop
 
   An iron latchkey.
 
 create the box
-  a thing
+  a thing, singular
   in the Workshop
 
   A small box.
 
 create the spool
-  a thing
+  a thing, singular
 
   A spool of thread.
 

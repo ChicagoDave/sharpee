@@ -103,33 +103,33 @@ create Keeper
   You.
 
 create the wax taper
-  a thing
+  a thing, singular
   aka taper
 
   A taper.
 
 create the hand lamp
-  a thing, light-source, wick, starts unlit
+  a thing, singular, light-source, wick, starts unlit
   in the Lamp Room
   aka lamp
 
   A lamp.
 
 create the great lantern
-  a container, scenery, light-source, starts unlit, lens-seat, wick
+  a container, singular, scenery, light-source, starts unlit, lens-seat, wick
   in the Lamp Room
   aka lantern
 
   A lantern.
 
 create the glass lens
-  a thing
+  a thing, singular
   in the Lamp Room
 
   A lens for the lantern.
 
 create the cracked lens
-  a thing, breakable, starts broken
+  a thing, singular, breakable, starts broken
   in the Lamp Room
   aka lens
 
@@ -141,7 +141,7 @@ create the cracked lens
   end on
 
 create the tower bell
-  a thing, scenery
+  a thing, singular, scenery
   in the Lamp Room
   aka bell
   states, reversible: unrung, tolling

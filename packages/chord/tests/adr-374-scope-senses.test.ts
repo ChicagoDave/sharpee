@@ -42,7 +42,7 @@ create the Hold
   A hold.
 
 create the crate
-  a container
+  a container, singular
   in the Hold
 
   A crate.
@@ -74,7 +74,7 @@ function ir(source: string): StoryIR {
 describe('backdrop placement (ADR-374 D2)', () => {
   it('lowers a list to every room, the first as its place', () => {
     const view = ir(story(`create the view of Ceres
-  a thing, scenery
+  a thing, singular of views of Ceres, scenery
   in the Landing Pad, the Tram Platform and the Hold
 
   Ceres.
@@ -84,7 +84,7 @@ describe('backdrop placement (ADR-374 D2)', () => {
 
   it('lowers a scenery thing in a region to the region\'s member rooms', () => {
     const haze = ir(story(`create the dust haze
-  a thing, scenery
+  a thing, singular, scenery
   in the Ceres Surface
 
   Haze.
@@ -95,7 +95,7 @@ describe('backdrop placement (ADR-374 D2)', () => {
 
   it('still refuses a portable thing in a region', () => {
     expect(codes(story(`create the rock
-  a thing
+  a thing, singular
   in the Ceres Surface
 
   A rock.
@@ -104,7 +104,7 @@ describe('backdrop placement (ADR-374 D2)', () => {
 
   it('refuses a list on a thing that is not scenery', () => {
     expect(codes(story(`create the rock
-  a thing
+  a thing, singular
   in the Landing Pad and the Hold
 
   A rock.
@@ -113,7 +113,7 @@ describe('backdrop placement (ADR-374 D2)', () => {
 
   it('refuses a list that names something other than a room', () => {
     expect(codes(story(`create the view of Ceres
-  a thing, scenery
+  a thing, singular of views of Ceres, scenery
   in the Landing Pad and the crate
 
   Ceres.
@@ -122,13 +122,13 @@ describe('backdrop placement (ADR-374 D2)', () => {
 
   it('refuses a list on `on`', () => {
     expect(codes(story(`create the shelf
-  a supporter
+  a supporter, singular of shelves
   in the Hold
 
   A shelf.
 
 create the view of Ceres
-  a thing, scenery
+  a thing, singular of views of Ceres, scenery
   on the shelf and the crate
 
   Ceres.
@@ -137,14 +137,14 @@ create the view of Ceres
 
   it('places into a thing whose name contains `and` by its alias, as every name list does', () => {
     const lid = ir(story(`create the pots and pans
-  a container
+  a container, singular
   in the Hold
   aka cookware
 
   Pots.
 
 create the lid
-  a thing
+  a thing, singular
   in the cookware
 
   A lid.
@@ -167,7 +167,7 @@ describe('night-vision (ADR-374 D3)', () => {
 
   it('refuses night-vision on a thing', () => {
     expect(codes(story(`create the lamp
-  a thing, night-vision
+  a thing, singular, night-vision
   in the Hold
 
   A lamp.
@@ -178,7 +178,7 @@ describe('night-vision (ADR-374 D3)', () => {
 describe('dark as a state name (ADR-374 D8, GH #537)', () => {
   it('refuses a declared `dark` state off a room', () => {
     expect(codes(story(`create the lamp
-  a thing
+  a thing, singular
   in the Hold
   states, reversible: dark, glowing
 
@@ -210,7 +210,7 @@ describe('hearing (ADR-374 D6)', () => {
 
   it('lets a thing listen, not only a person', () => {
     expect(codes(story(`${sounds}create the microphone
-  a thing, listener
+  a thing, singular, listener
   in the Hold
 
   A microphone.
@@ -223,7 +223,7 @@ describe('hearing (ADR-374 D6)', () => {
 
   it('refuses hearing on something that is not a listener', () => {
     expect(codes(story(`${sounds}create the packing case
-  a thing
+  a thing, singular
   in the Hold
 
   A packing case.
@@ -252,7 +252,7 @@ describe('hearing (ADR-374 D6)', () => {
 
   it('lowers `play sound` to one statement carrying the sound and, when it has one, its file', () => {
     const lever = ir(story(`${sounds}create the lever
-  a thing, scenery, pullable
+  a thing, singular, scenery, pullable
   in the Hold
 
   A lever.
@@ -273,13 +273,13 @@ describe('hearing (ADR-374 D6)', () => {
 describe('two tails on one owner are two clauses (ADR-372 D1, found 2026-10-15)', () => {
   it('compiles throwing at two different things in one block', () => {
     expect(codes(story(`create the gong
-  a thing, scenery
+  a thing, singular, scenery
   in the Hold
 
   A gong.
 
 create the ball
-  a thing
+  a thing, singular
   in the Hold
 
   A ball.
@@ -298,31 +298,31 @@ create the ball
 describe('lamps (ADR-374 D9, D10)', () => {
   it('lowers `light-source with the <tool>`, `starts unlit` and `powered by` a list', () => {
     const compiled = ir(story(`create the matchbook
-  a thing
+  a thing, singular
   in the Hold
 
   A matchbook.
 
 create the lantern
-  a thing, light-source with the matchbook, starts unlit
+  a thing, singular, light-source with the matchbook, starts unlit
   in the Hold
 
   A lantern.
 
 create the cell
-  a thing
+  a thing, singular
   in the Hold
 
   A cell.
 
 create the spare cell
-  a thing
+  a thing, singular
   in the Hold
 
   A spare cell.
 
 create the torch
-  a container, light-source, switchable, powered by the cell and the spare cell
+  a container, singular, light-source, switchable, powered by the cell and the spare cell
   in the Hold
 
   A torch.
@@ -336,31 +336,31 @@ create the torch
 
   it('refuses `powered by` off a switchable container, and a power source that names nothing', () => {
     expect(codes(story(`create the cell
-  a thing
+  a thing, singular
   in the Hold
 
   A cell.
 
 create the torch
-  a container, light-source, powered by the cell
+  a container, singular, light-source, powered by the cell
   in the Hold
 
   A torch.
 `))).toEqual(['analysis.powered-not-switchable']);
     expect(codes(story(`create the cell
-  a thing
+  a thing, singular
   in the Hold
 
   A cell.
 
 create the torch
-  a thing, light-source, switchable, powered by the cell
+  a thing, singular, light-source, switchable, powered by the cell
   in the Hold
 
   A torch.
 `))).toEqual(['analysis.powered-not-container']);
     expect(codes(story(`create the torch
-  a container, light-source, switchable, powered by the moon
+  a container, singular, light-source, switchable, powered by the moon
   in the Hold
 
   A torch.
@@ -369,13 +369,13 @@ create the torch
 
   it('refuses a light-source tool that names nothing, and `starts lit` off a light source', () => {
     expect(codes(story(`create the lantern
-  a thing, light-source with the flint
+  a thing, singular, light-source with the flint
   in the Hold
 
   A lantern.
 `))).toEqual(['analysis.setting-names-no-entity']);
     expect(codes(story(`create the lantern
-  a thing, starts lit
+  a thing, singular, starts lit
   in the Hold
 
   A lantern.

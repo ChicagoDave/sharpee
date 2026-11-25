@@ -42,7 +42,7 @@ create Courier
   You.
 
 create the brass gong
-  a thing, scenery
+  a thing, singular, scenery
   in the Market Row
   states, reversible: still, ringing
 
@@ -53,14 +53,14 @@ create the brass gong
   end on
 
 create the dome glass
-  a thing, scenery
+  a thing, singular, scenery
   in the Market Row
   states, reversible: whole, chipped
 
   The dome.
 
 create the dust ball
-  a thing
+  a thing, singular
   in the Market Row
   aka ball
 
@@ -71,7 +71,7 @@ create the dust ball
   end on
 
 create the old boot
-  a thing
+  a thing, singular
   in the Market Row
   aka boot
 

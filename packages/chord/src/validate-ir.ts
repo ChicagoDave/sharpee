@@ -981,7 +981,8 @@ function entityReferences(ir: StoryIR): Map<string, EntityReferences> {
     if (key === 'entities' || key === 'identity' || typeof value !== 'object' || value === null) continue;
     visit(value, NO_KEYS);
   }
-  // An entity's own id, name and aliases name it; they do not refer to it.
+  // An entity's own id, name, aliases and singular and plural forms name it;
+  // they do not refer to it (ADR-409).
   for (const e of ir.entities) visit(e, ENTITY_IDENTITY_KEYS);
   return references;
 }
@@ -997,7 +998,7 @@ const NO_KEYS: ReadonlySet<string> = new Set();
 const EVENT_REACTION_GERUNDS: ReadonlySet<string> = new Set(['entering', 'leaving', 'hearing']);
 
 /** The fields of an entity record that are its own identity. */
-const ENTITY_IDENTITY_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'article', 'aka']);
+const ENTITY_IDENTITY_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'article', 'aka', 'forms']);
 
 /**
  * Whether an entity is a flag entity (ADR-394 D7): a thing that declares

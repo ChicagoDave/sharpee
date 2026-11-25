@@ -36,7 +36,7 @@ create the Lane
   end after
 
 create the voices
-  a thing, scenery
+  a thing, singular, scenery
   in the Roof
 
   Voices from below.

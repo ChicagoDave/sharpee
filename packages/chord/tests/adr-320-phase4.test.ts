@@ -263,7 +263,7 @@ end exchange
 
   it('rejects the statement outside conversation rows', () => {
     const errors = errorsOf(`create the playbill
-  a thing
+  a thing, singular
   in the Hall
 
   A playbill.
@@ -337,7 +337,7 @@ end topics
 
   it('rejects both statements outside conversation rows', () => {
     const body = `create the playbill
-  a thing
+  a thing, singular
   in the Hall
 
   A playbill.

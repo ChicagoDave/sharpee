@@ -19,7 +19,7 @@ create the Barn
   A dim barn. The hall is back to the west.
 
 create the owl
-  a thing
+  a thing, singular
   aka bird
   in the Barn
 

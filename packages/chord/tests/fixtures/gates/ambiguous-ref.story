@@ -16,12 +16,12 @@ create the Closet
 
 create the brass hook
   aka hook
-  a thing, scenery
+  a thing, singular, scenery
   in the Closet
 
 create the iron hook
   aka hook
-  a thing, scenery
+  a thing, singular, scenery
   in the Closet
 
 create Alex

@@ -27,7 +27,7 @@ create the Landing
 
 create the note
   aka paper
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   states, reversible: pinned, loose
   in the Hall
 
@@ -39,7 +39,7 @@ create the note
   end on
 
 create the bench
-  a thing, scenery
+  a thing, singular, scenery
   in the Landing
 
   A plain wooden bench.

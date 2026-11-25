@@ -35,21 +35,21 @@ ${s.hall ?? ''}
   A hall.
 
 create the loaf
-  a thing, edible
+  a thing, singular of loaves, edible
 ${s.loaf ?? ''}
   in the Hall
 
   A loaf.
 
 create the flask
-  a thing, drinkable
+  a thing, singular, drinkable
 ${s.flask ?? ''}
   in the Hall
 
   A flask.
 
 create the stone
-  a thing
+  a thing, singular
 ${s.stone ?? ''}
   in the Hall
 

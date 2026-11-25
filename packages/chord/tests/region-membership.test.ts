@@ -168,7 +168,7 @@ create the Attic
   A dusty attic.
 
 create the trunk
-  a container
+  a container, singular
   in the House
 
   A trunk.
@@ -198,7 +198,7 @@ create the Cellar
   A damp cellar.
 
 create the hatch
-  a door
+  a door, singular
   in the House
 
   A hatch.

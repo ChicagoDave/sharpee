@@ -34,7 +34,7 @@ ${animal}
 
 create the cow bell
   aka bell
-  a thing
+  a thing, singular
   in the Barn
 
   A bell.
@@ -64,7 +64,7 @@ end phrase
 
 const CAT = `create the barn cat
   aka cat
-  a thing, skittish
+  a thing, singular, skittish
   in the Barn
   states: hungry, content
 
@@ -72,7 +72,7 @@ const CAT = `create the barn cat
 
 const GOAT = `create the pygmy goat
   aka goat
-  a thing
+  a thing, singular
   in the Barn
   states: hungry, content
 

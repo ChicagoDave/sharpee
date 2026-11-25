@@ -47,7 +47,7 @@ create the Workshop
   A cluttered workshop.
 
 create the button
-  a thing
+  a thing, singular
   in the Workshop
   scenery
 

@@ -52,7 +52,7 @@ describe('the `room name` construct (ADR-349 D1/D15)', () => {
   A well.
 
 create the bucket
-  a container
+  a container, singular
   openable
   in the Well
 
@@ -83,7 +83,7 @@ create the bucket
   A well.
 
 create the bucket
-  a container
+  a container, singular
   openable
   in the Well
 
@@ -140,7 +140,7 @@ create the bucket
   A well.
 
 create the bucket
-  a container
+  a container, singular
   openable
   in the Well
 
@@ -162,7 +162,7 @@ create the bucket
   A well.
 
 create the bucket
-  a container
+  a container, singular
   openable
   in the Well
 
@@ -195,7 +195,7 @@ create the bucket
   A well.
 
 create the lamp
-  a thing
+  a thing, singular
   in the Well
   room name:
     Lamplight
@@ -231,7 +231,7 @@ create the Well
   A well.
 
 create the bucket
-  a container
+  a container, singular
   enterable
   in the Well
   room name:

@@ -457,6 +457,24 @@ export interface IRCoordinates {
   y: number;
 }
 
+/** Where a form came from (ADR-409 D3): the author's `of`, or a locale's suffix rule. */
+export type FormOrigin = 'written' | 'worked-out';
+
+/**
+ * An entity's singular and plural (ADR-409 D2, D3, Amendment 2). Both are
+ * always filled: the name is one of them, and the entity is plural exactly
+ * when its name is its plural. A written form outranks a worked-out one
+ * wherever the runtime matches (D4).
+ */
+export interface IREntityForms {
+  readonly singular: string;
+  readonly plural: string;
+  /** Where the form that is not the name came from: the author's `of` (written) or a suffix rule (worked out). */
+  readonly origin: FormOrigin;
+  /** Worked-out other forms of aka words. Written aka words stay in `aka`. */
+  readonly aka: readonly { readonly word: string; readonly form: string }[];
+}
+
 export interface IREntity {
   /** Canonical slug (lowercased name words joined with `-`). Unique. */
   id: string;
@@ -465,6 +483,13 @@ export interface IREntity {
   /** Leading article as written (`the`), or null. */
   article: string | null;
   aka: string[];
+  /**
+   * The name's singular and plural, and the worked-out forms of its aka
+   * words (ADR-409 D2, D3): on every thing and door and on a declared
+   * person, absent on rooms, regions and undeclared people. Worked out once here, at compile time; the runtime works
+   * nothing out.
+   */
+  forms?: IREntityForms;
   /**
    * `pronouns <word>` (ADR-242 D5) — a standard set (`he`/`she`/`it`/
    * `they`) or a `define pronouns` set name. Present only when declared:

@@ -35,7 +35,7 @@ create the Garden
   A walled garden.
 
 create the sundial
-  a thing, scenery
+  a thing, singular, scenery
   in the Terrace
 
   A brass sundial.

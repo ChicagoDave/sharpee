@@ -31,7 +31,7 @@ create the Gatehouse
   A gatehouse.
 
 create the winch
-  a thing
+  a thing, singular
   in the Gatehouse
 
   A winch.

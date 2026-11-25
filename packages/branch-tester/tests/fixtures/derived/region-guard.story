@@ -39,7 +39,7 @@ create the West Yard
   The west yard.
 
 create the gate
-  a thing, scenery
+  a thing, singular, scenery
   in the East Yard
 
   A gate.

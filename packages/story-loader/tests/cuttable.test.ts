@@ -64,7 +64,7 @@ before the game starts
 end before
 
 create the knife
-  a thing
+  a thing, singular of knives
   in the Shed
 
   A knife.
@@ -72,7 +72,7 @@ create the knife
 
 const CUTTABLE_ROPE = `create the rope
   in the Shed
-  a thing, cuttable with the knife
+  a thing, singular, cuttable with the knife
 
   A rope.
 
@@ -122,7 +122,7 @@ describe('cuttable trait adjective (ADR-230 D3c)', () => {
   it('rejects a tool name that matches no entity', () => {
     const source = storyWith(`create the rope
   in the Shed
-  a thing, cuttable with the chainsaw
+  a thing, singular, cuttable with the chainsaw
 
   A rope.
 
@@ -162,13 +162,13 @@ before the game starts
 end before
 
 create the shovel
-  a thing
+  a thing, singular
 
   A shovel.
 
 create the sand
   in the Beach
-  a thing, diggable with the shovel
+  a thing, singular, diggable with the shovel
 
   Sand.
 
@@ -197,7 +197,7 @@ end phrase
   it('rejects a diggable with no digging implementation at load time', () => {
     const source = storyWith(`create the sand
   in the Shed
-  a thing, diggable
+  a thing, singular, diggable
 
   Sand.`);
     expect(() => loadStory(source)).toThrowError(/registers no digging implementation/);
@@ -216,7 +216,7 @@ end trait
 
 create the rope
   in the Shed
-  a thing, severable, cuttable with the knife
+  a thing, singular, severable, cuttable with the knife
 
   A rope.
 
@@ -280,7 +280,7 @@ end phrase`);
 describe('the loader writes one tool-requirement shape (Older-1)', () => {
   const TOOL_GATED = `create the letter
   in the Shed
-  a thing, flammable with the knife
+  a thing, singular, flammable with the knife
 
   A letter.
 
@@ -294,13 +294,13 @@ end phrase
 
 create the lantern
   in the Shed
-  a thing, light-source with the knife, starts unlit
+  a thing, singular, light-source with the knife, starts unlit
 
   A lantern.
 
 create the lamp
   in the Shed
-  a thing, light-source, starts unlit
+  a thing, singular, light-source, starts unlit
 
   A lamp.`;
 

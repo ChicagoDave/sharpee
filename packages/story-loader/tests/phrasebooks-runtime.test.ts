@@ -26,7 +26,7 @@ create the Parlour
   A parlour.
 
 create the bell
-  a thing, scenery
+  a thing, singular, scenery
   in the Parlour
 
   A hand bell.

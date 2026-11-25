@@ -36,7 +36,7 @@ create the monkey
   A small monkey.
 
 create the necklace
-  a thing, wearable
+  a thing, singular, wearable
 
   A starburst necklace, clear blue with an indigo star.
 
@@ -45,7 +45,7 @@ create the necklace
   end on
 
 create the peanut
-  a thing
+  a thing, singular
 
   A peanut.
 

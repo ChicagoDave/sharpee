@@ -36,14 +36,14 @@ define action tickling
       You tickle {the target}.
 
 create the jar
-  a container, openable, transparent
+  a container, singular, openable, transparent
   starts closed
   in the Workshop
 
   A glass jar.
 
 create the firefly
-  a thing
+  a thing, singular
   in the jar
 
   A firefly.
@@ -54,13 +54,13 @@ create the Workshop
   A cluttered workshop.
 
 create the brass lantern
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass lantern.
 
 create the brass clock
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass clock.

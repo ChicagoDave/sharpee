@@ -188,13 +188,13 @@ before the game starts
 end before
 
 create the widget
-  a thing
+  a thing, singular
   in the Lab
 
   A widget.
 
 create the bell
-  a thing
+  a thing, singular
   in the Lab
 
   A bell.

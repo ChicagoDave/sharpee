@@ -89,7 +89,7 @@ create the Barn
   end after
 
 create the plum
-  a thing, scenery
+  a thing, singular, scenery
   ripenable
   in the Orchard
 
@@ -165,7 +165,7 @@ create the Shore
   end after
 
 create the tide
-  a thing, scenery
+  a thing, singular, scenery
   in the Shore
   states, reversible: low, high
 
@@ -206,7 +206,7 @@ create the Orchard
   An orchard.
 
 create the plum
-  a thing, scenery
+  a thing, singular, scenery
   in the Orchard
   states: green, ripe
 
@@ -294,7 +294,7 @@ create the Barn
   end on
 
 create the bull
-  a thing, scenery
+  a thing, singular, scenery
   jumpy
   in the Barn
 
@@ -303,7 +303,7 @@ create the bull
   end on
 
 create the owl
-  a thing, scenery
+  a thing, singular, scenery
   in the Barn
 
   on every turn, once
@@ -425,12 +425,12 @@ create the Camp
   A camp.
 
 create the badger
-  a thing, scenery
+  a thing, singular, scenery
   pokeable
   in the Camp
 
 create the lantern
-  a thing, scenery
+  a thing, singular, scenery
   in the Camp
   states, reversible: dim, bright
 
@@ -557,7 +557,7 @@ create the Yard
   end on
 
 create the iron gate
-  a thing, scenery
+  a thing, singular, scenery
   openable
   in the Yard
 

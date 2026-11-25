@@ -50,7 +50,7 @@ create the gate warden
   The warden.
 
 create the bell
-  a thing, scenery
+  a thing, singular, scenery
   in the Junction
 
   A bell.

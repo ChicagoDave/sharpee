@@ -100,7 +100,7 @@ create the Yard
   west to the Chapel
 
 create the altar
-  a thing
+  a thing, singular
   in the Chapel
 
   A stone altar.

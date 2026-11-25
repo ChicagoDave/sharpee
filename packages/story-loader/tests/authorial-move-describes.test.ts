@@ -44,7 +44,7 @@ create the Lane
   A lane.
 
 create the banana
-  a thing
+  a thing, singular
   in the Fruit Stall
 
   A banana.
@@ -56,7 +56,7 @@ create the banana
   end after
 
 create the apple
-  a thing
+  a thing, singular
   in the Fruit Stall
 
   An apple.
@@ -68,7 +68,7 @@ create the apple
   end after
 
 create the pear
-  a thing
+  a thing, singular
   in the Fruit Stall
 
   A pear.

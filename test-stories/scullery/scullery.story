@@ -33,18 +33,18 @@ create the jars
   Glazed jars stopped with corks, each one full to the neck.
 
 create the whetstone
-  a thing
+  a thing, singular
   in the Scullery
 
 create the cheese
-  a thing
+  a thing, singular
   in the Larder
 
   Its rind is waxed against the damp.
 
 create the chore list
   aka list
-  a thing
+  a thing, singular
 
   Scour the kettles. Mend the bellows.
 

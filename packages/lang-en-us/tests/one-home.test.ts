@@ -61,6 +61,9 @@ const LISTS: ReadonlyArray<{ name: string; words: readonly string[] }> = [
   { name: 'except words', words: ['except', 'but'] },
   { name: 'list separators', words: ['and', ','] },
   { name: 'manner adverbs', words: ['carefully', 'quietly', 'quickly', 'slowly'] },
+  // The singular and plural rules' unsafe endings (ADR-409 D2): the rules have one home too.
+  { name: 'unsafe singular endings', words: ['f', 'fe', 'o', 'us', 'is'] },
+  { name: 'unsafe plural endings', words: ['ses', 'xes', 'zes', 'ches', 'shes', 'ies', 'ves', 'oes'] },
 ];
 
 /** Symbols that were a second home for a word list; none may exist in any package source. */

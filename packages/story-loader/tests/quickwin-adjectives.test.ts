@@ -83,7 +83,7 @@ describe('D1: pushable/pullable loader cases', () => {
   it('loads a pushable entity (previously a misleading LoadError) and stamps the trait', () => {
     const { story, world } = loadStory(storyWith(`create the boulder
   in the Shed
-  a thing, pushable
+  a thing, singular, pushable
 
   A boulder.`));
     const boulder = world.getEntity('boulder')!;
@@ -93,7 +93,7 @@ describe('D1: pushable/pullable loader cases', () => {
   it('loads a pullable entity and stamps the trait', () => {
     const { story, world } = loadStory(storyWith(`create the lever
   in the Shed
-  a thing, pullable
+  a thing, singular, pullable
 
   A lever.`));
     const lever = world.getEntity('lever')!;
@@ -105,7 +105,7 @@ describe('G1: drinkable liquid marker', () => {
   it('composes EdibleTrait with liquid=true', () => {
     const { story, world } = loadStory(storyWith(`create the potion
   in the Shed
-  a thing, drinkable
+  a thing, singular, drinkable
 
   A potion.`));
     const potion = world.getEntity('potion')!;
@@ -118,7 +118,7 @@ describe('G1: drinkable liquid marker', () => {
     for (const composition of ['edible, drinkable', 'drinkable, edible']) {
       const { story, world } = loadStory(storyWith(`create the broth
   in the Shed
-  a thing, ${composition}
+  a thing, singular, ${composition}
 
   Broth.`));
       const broth = world.getEntity('broth')!;
@@ -132,7 +132,7 @@ describe('G2: concealed marker', () => {
   it('sets IdentityTrait.concealed so searching has something to reveal', () => {
     const { story, world } = loadStory(storyWith(`create the key
   in the Shed
-  a thing, concealed
+  a thing, singular, concealed
 
   A key.`));
     const key = world.getEntity('key')!;
@@ -159,7 +159,7 @@ describe('G3: hiding-spot adjective', () => {
   it('bare form supports every hiding position', () => {
     const { story, world } = loadStory(storyWith(`create the curtain
   in the Shed
-  a thing, hiding-spot
+  a thing, singular, hiding-spot
 
   A curtain.`));
     const curtain = world.getEntity('curtain')!;
@@ -171,7 +171,7 @@ describe('G3: hiding-spot adjective', () => {
   it('`with position behind` narrows to exactly that position', () => {
     const { story, world } = loadStory(storyWith(`create the curtain
   in the Shed
-  a thing, hiding-spot with position behind
+  a thing, singular, hiding-spot with position behind
 
   A curtain.`));
     const curtain = world.getEntity('curtain')!;
@@ -184,7 +184,7 @@ describe('G3: hiding-spot adjective', () => {
     // defensive backstop must still throw.
     const ir = compileSource(storyWith(`create the curtain
   in the Shed
-  a thing, hiding-spot with position behind
+  a thing, singular, hiding-spot with position behind
 
   A curtain.`));
     const rogue = structuredClone(ir);
@@ -205,12 +205,12 @@ describe('G4/D3: openable tool config', () => {
   it('stamps the tool as a resolved WORLD id, not a raw name (was silently dropped)', () => {
     const { story, world } = loadStory(storyWith(`create the crate
   in the Shed
-  a thing, openable with the crowbar
+  a thing, singular, openable with the crowbar
 
   A crate.
 
 create the crowbar
-  a thing
+  a thing, singular
   in the Shed
 
   A crowbar.`));
@@ -226,7 +226,7 @@ create the crowbar
   it('rejects a tool name that matches no entity', () => {
     const source = storyWith(`create the crate
   in the Shed
-  a thing, openable with the ghostbar
+  a thing, singular, openable with the ghostbar
 
   A crate.`);
     expect(() => loadStory(source)).toThrowError(/`ghostbar` \(config `tool`\) names no entity/);
@@ -237,7 +237,7 @@ describe('turning: `on the player turning` through stdlib turningAction (REAL-PA
   it('loads the clause (dead-gerund gate passes) and the turn mutates the world', () => {
     const { story, world, player } = loadStory(storyWith(`create the crank
   in the Shed
-  a thing, scenery
+  a thing, singular, scenery
 
   A crank.
 
@@ -247,7 +247,7 @@ describe('turning: `on the player turning` through stdlib turningAction (REAL-PA
   end on
 
 create the prize
-  a thing
+  a thing, singular
   in the Bin
 
   A prize.
@@ -292,7 +292,7 @@ end phrase`));
 
   it('an entity with no turning implementation refuses with cant_turn_that', () => {
     const { story, world, player } = loadStory(storyWith(`create the statue
-  a thing
+  a thing, singular
   in the Shed
 
   A statue.`));

@@ -20,7 +20,8 @@ import { EnglishAssembler, registerPronounSet as registerAssemblerPronounSet } f
 import type { PronounSetForms } from './assembler/index.js';
 import { parsePhraseTemplate } from './parser/index.js';
 import { englishVerbs } from './data/verbs.js';
-import { englishWords, irregularPlurals, parseCardinal, ordinalNumbers } from './data/words.js';
+import { englishWords, englishFormRules, irregularPlurals, parseCardinal, ordinalNumbers } from './data/words.js';
+import type { FormRules } from './data/words.js';
 import { pluralize as pluralizeNoun } from './pluralize.js';
 import { standardActionLanguage } from './actions/index.js';
 import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc/index.js';
@@ -582,6 +583,17 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    */
   getLanguageWords(): LanguageWords {
     return { selfWords: englishWords.selfWords, nameStopwords: englishWords.nameStopwords };
+  }
+
+  /**
+   * English's plain singular and plural rules (ADR-409 D2), from the one word table. The
+   * stdlib manifest carries them to the compiler, which applies them once to
+   * a name's last word and each aka word; nothing reads them at runtime.
+   *
+   * @returns the suffix rules and the unsafe endings
+   */
+  getFormRules(): FormRules {
+    return englishFormRules;
   }
 
   getListSeparators(): string[] {

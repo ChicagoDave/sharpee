@@ -42,7 +42,7 @@ create the porter
   aka gatekeeper
 
 create the sword
-  a thing
+  a thing, singular
   in the Lodge
   aka blade
 
@@ -161,7 +161,7 @@ end topics
   about the sword: phrase sword-reply
 
 create the gate
-  a thing
+  a thing, singular
   in the Lodge
 `))).toContain('parse.topics-end');
   });

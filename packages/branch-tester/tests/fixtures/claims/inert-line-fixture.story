@@ -26,7 +26,7 @@ create the Landing
 
 create the note
   aka paper
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Hall
 
   A square of paper pinned at eye height.
@@ -37,7 +37,7 @@ create the note
   end on
 
 create the pebble
-  a thing
+  a thing, singular
   in the Hall
 
   A grey pebble.

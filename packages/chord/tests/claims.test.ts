@@ -35,7 +35,7 @@ create the Landing
 
 create the note
   aka paper
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Hall
 
   A square of paper.
@@ -46,14 +46,14 @@ create the note
   end on
 
 create the kettle
-  a thing
+  a thing, singular
   states: cold, hot
   in the Hall
 
   A kettle.
 
 create the box
-  a container, openable
+  a container, singular, openable
   in the Hall
 
   A box.

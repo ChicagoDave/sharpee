@@ -23,3 +23,7 @@
 - OB-17: the tree's manifest names the claims fragment.
 - OB-18: the fragment compiles to exactly the claim set the walked test reads; `lodge.claims.chord` against `lodge.claims.json`.
 - OB-19: the story compiles to the same IR with or without the fragment, and the IR carries no claim.
+
+## Language migrations
+
+- 2026-11-24, Chord 4.2.0 (ADR-409, session ce3248): every thing and door in the story is declared `singular` or `plural`, as the language now requires. Each block keeps the number it read as before: an undeclared one is now `singular`, and one already `plural` stays `plural`. No obligation moves.

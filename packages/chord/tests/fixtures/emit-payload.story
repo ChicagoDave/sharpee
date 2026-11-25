@@ -17,7 +17,7 @@ create the Courtyard
   A cobbled courtyard.
 
 create the well
-  a thing
+  a thing, singular
   in the Courtyard
 
   A stone well.

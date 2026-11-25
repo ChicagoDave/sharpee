@@ -22,13 +22,13 @@ create the Workshop
   A cluttered workshop.
 
 create the brass lantern
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass lantern.
 
 create the bag of holding
-  a container, openable
+  a container, singular of bags of holding, openable
   in the Workshop
   starts open
 

@@ -34,7 +34,7 @@ create the pawnbroker
   A pawnbroker with a jeweller's loupe on a string.
 
 create the brass lamp
-  a thing
+  a thing, singular
   treasure
   in the Pawnshop
   states: shelved, priced
@@ -46,7 +46,7 @@ create the brass lamp
   end after
 
 create the silver spoon
-  a thing
+  a thing, singular
   treasure
   in the Pawnshop
   states: shelved, priced
@@ -58,14 +58,14 @@ create the silver spoon
   end after
 
 create the glass eye
-  a thing
+  a thing, singular
   treasure, counterfeit
   in the Pawnshop
 
   A glass eye that stares at nothing.
 
 create the tin cup
-  a thing
+  a thing, singular
   polishable
   in the Pawnshop
   states: dull, shiny
@@ -77,7 +77,7 @@ create the tin cup
   end after
 
 create the display case
-  a thing, scenery
+  a thing, singular, scenery
   in the Pawnshop
 
   A locked display case.

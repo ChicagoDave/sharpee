@@ -22,14 +22,14 @@ create Courier
   You.
 
 create the sorting machine
-  a thing, scenery
+  a thing, singular, scenery
   in the Specimen Room
   aka machine
 
   A machine.
 
 create the specimen jar
-  a thing, breakable, fragile
+  a thing, singular, breakable, fragile
   in the Specimen Room
   aka jar
   states, reversible: shelved, swept
@@ -42,7 +42,7 @@ create the specimen jar
   end after
 
 create the mooring line
-  a thing
+  a thing, singular
   in the Specimen Room
   aka line
   states, reversible: slack, fast
@@ -55,7 +55,7 @@ create the mooring line
   end on
 
 create the call button
-  a thing, scenery, pushable
+  a thing, singular, scenery, pushable
   in the Specimen Room
   aka button
 

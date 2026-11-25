@@ -46,13 +46,13 @@ ${slots.guards ?? ''}
   Guards.
 
 create the sword
-  a thing
+  a thing, singular
   in the Yard
 ${slots.sword ?? ''}
   A sword.
 
 create the rock
-  a thing
+  a thing, singular
   in the Yard
 
   A rock.

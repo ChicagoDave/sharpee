@@ -66,7 +66,7 @@ create the Annex
   An annex.
 
 create the cat
-  a thing
+  a thing, singular
   in the Lab
 
   A cat.

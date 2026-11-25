@@ -28,7 +28,7 @@ create the Bell Stair
 
 create the bell rope
   aka rope
-  a thing, scenery, pullable
+  a thing, singular, scenery, pullable
   in the Bell Stair
 
   A rope as thick as your wrist.
@@ -44,14 +44,14 @@ create the bell rope
 
 create the iron grille
   aka grille
-  a thing, scenery
+  a thing, singular, scenery
   in the Bell Stair
 
   A grille set in the wall.
 
 create the brass handle
   aka handle
-  a thing, scenery
+  a thing, singular, scenery
   in the Bell Stair
 
   A handle, green with age.
@@ -65,7 +65,7 @@ create the brass handle
 
 create the stone sundial
   aka sundial
-  a thing, scenery
+  a thing, singular, scenery
   in the Bell Stair
 
   A sundial nobody has read in years.

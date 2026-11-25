@@ -25,12 +25,12 @@ create the Stall
   A stall.
 
 create the pear
-  a thing
+  a thing, singular
 
   A pear.
 
 create the box
-  a container, openable, starts open
+  a container, singular, openable, starts open
   in the Stall
 
   A box.

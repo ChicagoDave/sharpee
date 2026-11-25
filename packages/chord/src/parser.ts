@@ -4439,6 +4439,56 @@ class Parser {
         break;
       }
 
+      // ADR-409 D3: `plural of <singular>` / `singular of <plural>` — the
+      // author writes the name's other form, one name of one or more words.
+      // Lowered to the `plural` or `singular` adjective with that form under
+      // the key `of`. A bare `plural`/`singular` takes the ordinary path.
+      if ((c.isWord('plural') || c.isWord('singular')) && c.isWord('of', 1)) {
+        const declaredTok = c.next()!;
+        const ofTok = c.next()!;
+        const formWords: string[] = [];
+        let firstTok: Token | null = null;
+        let lastTok = ofTok;
+        while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('with') && !c.isWord('while')) {
+          lastTok = c.next()!;
+          firstTok ??= lastTok;
+          formWords.push(lastTok.text);
+        }
+        if (firstTok && (c.atEnd() || c.peek()?.kind === 'comma')) {
+          items.push({
+            kind: 'composition',
+            article: null,
+            words: [declaredTok.text],
+            config: [{ key: ['of'], value: formWords.join(' '), valueKind: 'word', span: mergeSpans(firstTok.span, lastTok.span) }],
+            condition: null,
+            span: mergeSpans(declaredTok.span, lastTok.span),
+          });
+          if (c.peek()?.kind === 'comma') {
+            c.next();
+            continue;
+          }
+          break;
+        }
+        const badSpan = firstTok ? mergeSpans(firstTok.span, lastTok.span) : mergeSpans(declaredTok.span, ofTok.span);
+        this.diagnostics.error(
+          'parse.singular-plural-of',
+          `Expected \`${declaredTok.text} of <form>\` — the name's other form, e.g. \`plural of cactus\` or \`singular of mice\`.`,
+          badSpan,
+        );
+        // The declaration stands with no form, so the analyzer does not also
+        // report the block as declaring neither singular nor plural: one mistake, one diagnostic.
+        items.push({
+          kind: 'composition',
+          article: null,
+          words: [declaredTok.text],
+          config: [{ key: ['of'], value: '', valueKind: 'word', span: badSpan }],
+          condition: null,
+          span: mergeSpans(declaredTok.span, lastTok.span),
+        });
+        while (!c.atEnd()) c.next(); // resynchronize
+        break;
+      }
+
       // ADR-373 D1: `attached to <the thing>` — the anchor is the adjective's
       // single-entity value (the keyless `with` form, spelled `to`). Lowered
       // to the `attached` adjective with that value under the empty key.

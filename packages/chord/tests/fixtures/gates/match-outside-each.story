@@ -14,7 +14,7 @@ create Alex
   starts in the Barn
 
 create the goat
-  a thing
+  a thing, singular
   in the Barn
   states: hungry, content
 

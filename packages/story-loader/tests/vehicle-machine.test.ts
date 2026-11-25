@@ -56,7 +56,7 @@ create the Hold
   A hold.
 
 create the water
-  a thing
+  a thing, singular
   in the Well Bottom
 
   Water.
@@ -73,7 +73,7 @@ before the game starts
 end before
 
 create the bucket
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -90,7 +90,7 @@ create the bucket
   end position
 
 create the tram car
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -102,7 +102,7 @@ create the tram car
   A tram.
 
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: compass
   carries: in
@@ -112,7 +112,7 @@ create the Marigold
   A barque.
 
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: flight
   drive: control
@@ -124,7 +124,7 @@ create the Sparrow
   A courier.
 
 create the lever
-  a thing, pullable
+  a thing, singular, pullable
   in the Well Bottom
 
   A lever.
@@ -134,7 +134,7 @@ create the lever
   end on
 
 create the tiller
-  a thing, pullable
+  a thing, singular, pullable
   in the Well Bottom
 
   A tiller.
@@ -144,7 +144,7 @@ create the tiller
   end on
 
 create the hatch
-  a thing, pushable
+  a thing, singular, pushable
   in the Well Bottom
 
   A hatch.
@@ -154,7 +154,7 @@ create the hatch
   end on
 
 create the gangway
-  a thing, pushable
+  a thing, singular, pushable
   in the Well Bottom
 
   A gangway.
@@ -164,7 +164,7 @@ create the gangway
   end on
 
 create the quay
-  a thing, pushable
+  a thing, singular, pushable
   in the Well Bottom
 
   A quay.
@@ -174,7 +174,7 @@ create the quay
   end on
 
 create the plotter
-  a thing, pushable
+  a thing, singular, pushable
   in the Airlock
 
   A plotter.

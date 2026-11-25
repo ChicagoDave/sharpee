@@ -26,6 +26,7 @@ describe('ENTITY_LINE_BUILDERS order', () => {
     expect(names).toEqual([
       'playable',
       'compositions',
+      'singular-plural',
       'starts',
       'identity',
       'character-host',

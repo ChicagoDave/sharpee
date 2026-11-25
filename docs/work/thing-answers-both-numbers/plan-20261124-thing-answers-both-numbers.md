@@ -135,7 +135,7 @@
   - **Tests**, after a Behavior Statement, with each new case shown failing first: chord's analyzer and IR cases for AC-1 and AC-2, including a test locale whose rules give different forms.
 - **Files**: `packages/lang-en-us/src/data/`, `packages/lang-en-us/tests/`, `tools/repokit/src/commands/manifest.ts`, `packages/chord/`, `tools/ide/SharpeeIDE/`, `tools/ide/SharpeeIDETests/`, `tools/ide/PaneHost/`, `tools/ide/PaneHost.Tests/`, `test-stories/`, `branch-stories/`, `stories/*/*.story`, `docs/work/thing-answers-both-numbers/`
 - **Exit state**:
-  - Every in-repo story outside the tutorial editions compiles under Chord 4.2.0.
+  - Every in-repo story outside the tutorial editions and Secret Letter compiles under Chord 4.2.0. Secret Letter is left out of Phase 2 and migrated when it comes off hold (David, 2026-11-24, session ce3248: "a", to "leave Secret Letter out of Phase 2"). Until then it does not compile under 4.2.0.
   - chord's suite and `./repokit grammar --check`, `manifest --check` and `aliases --check` are green.
   - The IR carries every form with its origin.
   - Both heads accept 4.2.0 (AC-9).
@@ -145,8 +145,58 @@
   - A chord test printing each refusal of AC-1 with its diagnostic.
   - `node packages/devkit/dist/cli.js compose test-stories/scullery/scullery.story -o <ir>` showing `forms` on the jars, with `jar` worked out and its origin `worked-out`.
   - `./repokit grammar --check` clean.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-24)
+- **Progress (2026-11-24, session ce3248)**:
+  - **Landed, uncommitted:**
+    - lang-en-us `FormRules`/`FormRewrite`/`englishFormRules` in `data/words.ts`, read through `EnglishLanguageProvider.getFormRules()`, plus one-home entries for the unsafe endings;
+    - `./repokit manifest` carries `formRules` into `StdlibLocaleFacts`;
+    - chord gets `singular` in the catalog, `plural of`/`singular of` in the parser (`parse.singular-plural-of`), and `src/forms.ts` with the rules as data;
+    - the `singular-plural` entity builder (`analyzer/entity/singular-plural.ts`) holds the AC-1 refusals (`analysis.singular-plural-*`) and writes `IREntity.forms`;
+    - `CHORD_LANGUAGE_VERSION` 4.2.0, with the `chord.ebnf` production and its re-pinned hash;
+    - story-loader gets a `singular` route for D1's `grammaticalNumber`, so a migrated story still loads.
+  - **Migration, by hand (David: "No Regex - you have to do the migration the hard way").** Each edit is hand-written as an exact string, single-match or pinned to its line, and applied by an all-or-nothing checker. Sites are found by read-only listers: compiler diagnostics for `.story` files, a scan of kind lines for test sources.
+    - **chord: done.** "127 passed", "1997 passed", covering:
+      - the fixtures and inline test sources;
+      - the lexer golden, re-recorded with a new `chord-4-2-0-surface.story` corpus file for AC-9;
+      - 8 IR and AST snapshots re-recorded, whose diffs are only `forms`, the `singular` composition, `of` settings and `languageVersion`.
+    - **Fixes the migration surfaced:**
+      - `expanse` joins room and region as a place;
+      - `validate-ir`'s `entityReferences` skips an entity's own `forms` (they name it, as `aka` does), which had silenced `analysis.flag-entity`.
+    - **Names that look plural but were never marked `plural`** are kept `singular` and listed for David: `pygmy goats`, `pots and pans`, `crumbs`.
+    - **Done since:**
+      - story-loader (499 sites, and one guide fence its test loads), branch-tester, world-index (its synthetic generator writes `singular of <plural>`), devkit, character, bootstrap, platform-browser, testing-surface, scripts;
+      - every `.story`/`.chord` under `stories/`, `test-stories/`, `branch-stories/` and the package and tool fixtures, except Secret Letter: 185 + 125 + 395 + 1,714 (UPPS) + 63 rows, each hand-written;
+      - the New Story template, re-vendored into SharpeeIDE;
+      - SharpeeIDE: its pin is 4.2.0, its scenery generator emits `a thing, singular, scenery`, and the Swift fixtures that compile are migrated;
+      - both heads color `singular` and `plural` but not `of`, with a test in each;
+      - a dated "Language migrations" line in each test set.
+    - **Not touched:** `website/public` (published copies and the pinned 4.1.0 manual; David updates the manual through naive testing) and the `chord-v4.1.0` tutorial editions.
+    - **Gates, 2026-11-24 20:00 CST:**
+      - package suites: lang-en-us 533, chord 1997, story-loader 1733 (+1 skipped), world-index 260, branch-tester 532, devkit 261, character 641, bootstrap 70, platform-browser 228, ide-protocol 69, world-model 1687, engine 928, stdlib 1970, parser-en-us 553, if-domain 122, all passing; testing-surface 280 passed;
+      - `./repokit {grammar,manifest,aliases,protocol,ebnf} --check` all clean;
+      - the Dungeo chain printed "949 passed", and the units at `--seed 42` printed "1715 passed, 10 failed, 10 expected failures, 2 skipped, 2 transcript error(s)", the baseline's numbers;
+      - test-story trees: ferry 10, lodge 10, orchard 21, quay 1, scullery 2 cards passing, as at baseline;
+      - `compose` on scullery gives the jars `{"singular":"jar","plural":"jars","origin":"worked-out","aka":[{"word":"crocks","form":"crock"}]}`.
+    - **Phase 2 census** (`scratchpad/mig/census2.mjs`, session-local and never committed; Secret Letter and `website/` are excluded):
+      - 191 stories compile;
+      - 46 do not, every one an UPPS seeded defect copy, by design as at Phase 1, and none on a singular/plural code;
+      - 3,141 entities, 2,103 of them with forms: 71 written and 2,032 worked out, plus 4,925 worked-out aka forms;
+      - 150 worked-out words equal another entity's written word in the same story, most in UPPS (59 over 97 stories), the zoo lineage (up to 10 a story) and friendly-zoo (10). Phase 1 counted 1,060 under full derivation, a figure that included Secret Letter's 673. D4's ranking keeps a written match ahead of every one of the 150.
+    - **PaneHost.Tests:** "Passed: 160, Failed: 0". Its real-path tests run against the staged 4.1.0 toolchain and David's capability fixture outside the repo, which will need its declarations when the toolchain is re-staged.
+    - **SharpeeIDE XCTest** (the in-repo DerivedData invocation), 2026-11-24 20:08 CST:
+      - full scheme: "Executed 629 tests, with 3 failures". All three assertions are in one test, `TestRunnerTests.testCancelTerminatesAndKeepsDeliveredLines`: "Exceeded timeout of 30 seconds … cancelled run exits";
+      - rerun with `-only-testing:SharpeeIDETests/TestRunnerTests`: "Executed 7 tests, with 0 failures" in 3.1 s. So it is a cancel deadline under full-suite load, not a 4.2.0 failure.
+    - **Open:** Secret Letter (a real work, on hold; about 25 mass or collective `plural` names need a written form, which is David's call).
+  - **Amendment 3 (D9)** is recorded in ADR-409: a person need not be declared. With it, the chord suite printed "555 failed | 1389 passed", 84 of 127 files failing, before the migration (superseded by the gates above).
+  - **Amendment 2 (D8)** is recorded in ADR-409. The IR carries `forms: { singular, plural, origin, aka }`, and the loader's `singular` row lowers nothing. `IdentityTrait` and the `grammaticalNumber` readers move in Phase 4.
+  - **Tests:** `tests/adr-409-singular-plural-forms.test.ts` had 28 cases at the red run: all 28 passed with the builder in place, and 25 failed with it unregistered. Amendment 3 added two person cases, so it has 30. Rerun at 21:30 CST, it printed "Tests 30 passed (30)".
+  - **Superseded (resolved by David's "No Regex - you have to do the migration the hard way", Amendment 3, and the hand migration recorded above):** before the migration, the chord suite printed "966 failed | 976 passed". 114 of 127 files fail, every one on inline fixtures with no declaration. The same reach extends to about 1,130 `create` lines in story-loader's tests, 170 in branch-tester's, 100 in world-index's, plus devkit, the IDE tests and the 110 `.story` fixtures under `packages/` and `tools/`. Migrating them needs a scripted transform, and about 190 proper names would each need `singular of <Name>s`.
+- **Demonstrated**: 2026-11-24, session ce3248. [reported by session, unverified]
+  - `pnpm --filter '@sharpee/chord' exec vitest run tests/adr-409-singular-plural-forms.test.ts` printed "Tests 30 passed (30)". It holds a case for each AC-1 refusal, naming its diagnostic, plus the AC-2 forms. With the builder unregistered, 25 of the 28 cases failed.
+  - `node packages/devkit/dist/cli.js compose test-stories/scullery/scullery.story -o <ir>` gave the jars `{"singular":"jar","plural":"jars","origin":"worked-out","aka":[{"word":"crocks","form":"crock"}]}`.
+  - `./repokit grammar --check` printed "committed docs blocks match the Chord source". The manifest, aliases, protocol and ebnf checks were clean too.
+  - Both heads accept 4.2.0: PaneHost.Tests "Passed: 160, Failed: 0"; SharpeeIDE 629 tests with one load-timed cancel test, which passes alone (7 of 7).
+  - The rest of the Exit state is in the Progress block above: the gates, the census, and every migrated story compiling.
+- **Status**: DONE
 
 ### Phase 3: The refusal carries a fix, and Chord Writer applies it
 - **Tier**: Large
@@ -167,13 +217,14 @@
   - `node packages/devkit/dist/cli.js compose <story with bare plural "houses"> --json` prints the diagnostic with `fix.edits[0].text` reading `plural of house`.
   - The XCTest and PaneHost.Tests fix-all cases pass.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-24)
 
 ### Phase 4: The runtime reads the forms, and the World Index shows them
 - **Tier**: Large
 - **Budget**: ~350 tool calls
-- **Domain focus**: Naming (ADR-409 D3, D4, D6). It covers:
-  - the story loader copying the IR forms onto `IdentityTrait`;
+- **Domain focus**: Naming (ADR-409 D3, D4, D6, D8). It covers:
+  - the story loader filling `IdentityTrait.singular` and `.plural` from the IR forms, both always set (D8, Amendment 2);
+  - `IdentityTrait.isPlural`, computed as `name === plural`, replacing `grammaticalNumber`, which is removed along with its readers' uses (parser-en-us `pronoun-context.ts`, stdlib `utils/noun-phrase.ts`, helpers `builders/object.ts`, and their tests);
   - `namingSurfaceOf` filling `writtenForms` and `workedOutForms`;
   - the one matcher's tiers;
   - the validator's dominance and the parser's noun rank reading `workedOutWords`;

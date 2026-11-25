@@ -36,7 +36,7 @@ create the Folly
   A folly.
 
 create the warped door
-  a door
+  a door, singular
   states: jammed, braced
 
   A warped door.
@@ -47,13 +47,13 @@ create the warped door
 
 create the deed box
   aka box
-  a container, openable
+  a container, singular, openable
   in the Hall
 
   A box.
 
 create the deed
-  a thing
+  a thing, singular
   in the deed box
 
   A deed.
@@ -66,7 +66,7 @@ create the curtains
   Curtains.
 
 create the fuse
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
   states: coiled, lit
 
@@ -84,7 +84,7 @@ define sequence the burn
 end sequence
 
 create the taper
-  a thing
+  a thing, singular
   in the Hall
 
   A taper.

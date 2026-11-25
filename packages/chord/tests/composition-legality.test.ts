@@ -56,7 +56,7 @@ describe('census 9 — a patrol NPC needs a route (analysis.patrol-needs-route)'
 
 describe('census 11 — dark applies to rooms only (analysis.dark-rooms-only)', () => {
   it('reports dark on a non-room', () => {
-    const found = errors(story('create the lamp\n  a thing, dark\n  in the Vault\n\n  A lamp.'));
+    const found = errors(story('create the lamp\n  a thing, singular, dark\n  in the Vault\n\n  A lamp.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.dark-rooms-only']);
   });
 
@@ -79,7 +79,7 @@ create the Vault
   A vault.
 
 create the cloak
-  a thing
+  a thing, singular
 ${cloakTraits}
   A cloak.
 
@@ -110,7 +110,7 @@ end before
 
 describe('census 13 — tool-gated gerunds register exactly one implementation (analysis.gerund-implementation)', () => {
   const rope = (traits: string, clauses = '') =>
-    story(`create the rope\n  a thing, ${traits}\n  in the Vault\n  states: whole, cut\n\n  A rope.\n${clauses}`);
+    story(`create the rope\n  a thing, singular, ${traits}\n  in the Vault\n  states: whole, cut\n\n  A rope.\n${clauses}`);
 
   it('reports a cuttable with no cutting implementation', () => {
     const found = errors(rope('cuttable'));
@@ -136,7 +136,7 @@ describe('census 14 — conditional composition legality (analysis.conditional-c
   it('reports a conditional composition that is neither room-dark nor NPC-shaped', () => {
     const found = errors(
       story(
-        'create the pebble\n  a thing\n  in the Vault\n\n  A pebble.\n\ncreate the statue\n  a thing, scenery while the player has the pebble\n  in the Vault\n\n  A statue.',
+        'create the pebble\n  a thing, singular\n  in the Vault\n\n  A pebble.\n\ncreate the statue\n  a thing, singular, scenery while the player has the pebble\n  in the Vault\n\n  A statue.',
       ),
     );
     expect(found.map((d) => d.code)).toEqual(['analysis.conditional-composition-unsupported']);
@@ -152,7 +152,7 @@ describe('census 14 — conditional composition legality (analysis.conditional-c
   story-version: 0.0.1
 
 create the cloak
-  a thing, wearable
+  a thing, singular, wearable
 
   A cloak.
 
@@ -179,33 +179,33 @@ end before
 
 describe('census 17/18 (discovered in Phase 1) — kind nouns are the closed catalog set, one per entity', () => {
   it('reports an unknown kind noun', () => {
-    const found = errors(story('create the lamp\n  a gadget\n  in the Vault\n\n  A lamp.'));
+    const found = errors(story('create the lamp\n  a gadget, singular\n  in the Vault\n\n  A lamp.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.unknown-kind-noun']);
     expect(found[0].message).toContain('unknown kind noun `gadget`');
   });
 
   it('reports more than one kind noun', () => {
-    const found = errors(story('create the crate\n  a container, a supporter\n  in the Vault\n\n  A crate.'));
+    const found = errors(story('create the crate\n  a container, a supporter, singular\n  in the Vault\n\n  A crate.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.multiple-kind-nouns']);
   });
 
   it('accepts every catalog kind noun', () => {
     expect(
-      errorCodes(story('create the crate\n  a container\n  in the Vault\n\n  A crate.')),
+      errorCodes(story('create the crate\n  a container, singular\n  in the Vault\n\n  A crate.')),
     ).toEqual([]);
   });
 });
 
 describe('census 15 — traits must be declared or v1 vocabulary (analysis.trait-not-declared)', () => {
   it('reports an unknown trait word', () => {
-    const found = errors(story('create the box\n  a thing, glowy\n  in the Vault\n\n  A box.'));
+    const found = errors(story('create the box\n  a thing, singular, glowy\n  in the Vault\n\n  A box.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.trait-not-declared']);
     expect(found[0].message).toContain('`glowy` is not declared');
   });
 
   it('accepts a declared define trait', () => {
     const src =
-      story('create the box\n  a thing, glowy\n  in the Vault\n\n  A box.') +
+      story('create the box\n  a thing, singular, glowy\n  in the Vault\n\n  A box.') +
       '\ndefine trait glowy\n  states, reversible: dim, bright\nend trait\n';
     expect(errorCodes(src)).toEqual([]);
   });

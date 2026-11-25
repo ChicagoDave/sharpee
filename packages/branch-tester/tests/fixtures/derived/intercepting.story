@@ -24,7 +24,7 @@ create the Hall
   A hall.
 
 create the banana
-  a thing
+  a thing, singular
   in the Hall
   states: shelved, nicked
 
@@ -40,7 +40,7 @@ create the banana
   end after
 
 create the crate
-  a container, openable, lockable with the brass key, starts locked
+  a container, singular, openable, lockable with the brass key, starts locked
   in the Hall
   states: sealed, breached
 
@@ -55,13 +55,13 @@ create the crate
   end after
 
 create the brass key
-  a thing
+  a thing, singular
   in the Hall
 
   A key.
 
 create the lamp
-  a thing
+  a thing, singular
   in the Hall
   states, reversible: dim, bright
 
@@ -76,7 +76,7 @@ create the lamp
   end after
 
 create the relic
-  a thing
+  a thing, singular
   in the Hall
   states: resting, taken
 

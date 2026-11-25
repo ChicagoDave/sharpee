@@ -23,7 +23,9 @@
  * `.chord` fragment), plus the 4.0.3 surface (the `the story is [not]
  * <state>` conditions, a `define sound` block, a one-word `emit`, and the
  * `when the game starts` block with its three routines) in
- * `chord-4-0-3-surface.story`; the golden file
+ * `chord-4-0-3-surface.story`, plus the 4.2.0 singular and plural surface
+ * (ADR-409: bare `singular` and `plural`, `plural of` and `singular of`)
+ * in `chord-4-2-0-surface.story`; the golden file
  * (`lexer-golden.json`) records `lex()`'s exact `Line[]` output per corpus
  * file. A `lexer.ts` change that alters the stream turns this test red in
  * the CI that exists today — REGENERATE THE GOLDEN deliberately
@@ -181,7 +183,7 @@ describe('ADR-258 D7 — lexer golden conformance pin', () => {
       'landmark row': /^ {4}.+: \d+, \d+$/m,
       'sailing block': /^ {2}sailing$[\s\S]+?^ {2}end sailing$/m,
       'sailing row': /^ {4}\d+ to \d+ degrees: /m,
-      'a vehicle': /^ {2}a vehicle$/m,
+      'a vehicle': /^ {2}a vehicle\b/m,
       'position block': /^ {2}position$[\s\S]+?^ {2}end position$/m,
       'position row': /^ {4}when .+ holds .+: the /m,
       'passage block': /^ {2}passage to .+$[\s\S]+?^ {2}end passage$/m,
@@ -198,6 +200,13 @@ describe('ADR-258 D7 — lexer golden conformance pin', () => {
       'story trait read after is a': /^ {2}refuse when .+ is a snake: /m,
       'a name carrying &': /^create the \w+ & \w+$/m,
       'claims block': /^claims$[\s\S]+?^end claims$/m,
+      // The 4.2.0 singular and plural surface (ADR-409) — the corpus the
+      // IDE's Chord 4.2.0 pin cites (AC-9). Same drift guard.
+      'bare singular': /^ {2}a thing, singular$/m,
+      'bare plural': /^ {2}a person, plural$/m,
+      'plural of': /, plural of \w+$/m,
+      'singular of': /, singular of \w+$/m,
+      'a door, singular': /^ {2}a door, singular$/m,
       'claims needs line': /^ {2}needs (rooms|things|verbs): /m,
       'claim head': /^ {2}claim .+$/m,
       'claim with needs of its own': /^ {2}claim .+\n {4}.+\n {4}needs rooms: /m,

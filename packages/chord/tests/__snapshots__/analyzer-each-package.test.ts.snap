@@ -363,6 +363,12 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "deadlyExits": [],
       "descriptionKey": null,
       "exits": [],
+      "forms": {
+        "aka": [],
+        "origin": "worked-out",
+        "plural": "no smoking signs",
+        "singular": "no smoking sign",
+      },
       "id": "no-smoking-sign",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -408,10 +414,21 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         {
           "condition": null,
           "config": [],
-          "name": "skittish",
+          "name": "singular",
           "span": {
             "column": 12,
             "endColumn": 20,
+            "endLine": 61,
+            "line": 61,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "skittish",
+          "span": {
+            "column": 22,
+            "endColumn": 30,
             "endLine": 61,
             "line": 61,
           },
@@ -430,6 +447,12 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "deadlyExits": [],
       "descriptionKey": null,
       "exits": [],
+      "forms": {
+        "aka": [],
+        "origin": "worked-out",
+        "plural": "pygmy goats",
+        "singular": "pygmy goat",
+      },
       "id": "pygmy-goat",
       "initialDescriptionKey": null,
       "isPlayable": false,
@@ -593,7 +616,19 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       ],
       "statesReversible": false,
       "topics": [],
-      "traits": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "singular",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 65,
+            "line": 65,
+          },
+        },
+      ],
       "wears": [],
     },
   ],
@@ -649,7 +684,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
     "stamp": "9f9ca8ca2499670238a58aa457a54a67d37415a59a036bf3b18ff1888d4ee935",
     "timers": [],
   },
-  "languageVersion": "4.1.0",
+  "languageVersion": "4.2.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

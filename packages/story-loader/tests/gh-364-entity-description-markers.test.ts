@@ -26,7 +26,7 @@ create the Street
   A street.
 
 create the sky
-  a thing, scenery
+  a thing, singular, scenery
   in the Street
   states, reversible: day, night
 

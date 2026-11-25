@@ -96,7 +96,14 @@ enum ChordVersionCheck {
     /// one the 4.0.3 corpus file already carries, the opening block
     /// included, so the corpus, the golden and `ChordLexer.swift` are
     /// unchanged.
-    static let supportedLanguageVersion = "4.1.0"
+    ///
+    /// 4.2.0 (2026-11-24, ADR-409 D7.1): every thing and door is declared
+    /// `singular` or `plural`, and `plural of` / `singular of` write the other
+    /// form. One NEW corpus file, `chord-4-2-0-surface.story`, carries the
+    /// surface; the golden was regenerated over it. The declaration words are
+    /// ordinary word tokens, so `ChordLexer.swift` does not move; the
+    /// highlighter colors `singular` and `plural`.
+    static let supportedLanguageVersion = "4.2.0"
 
     /// Extracts the Chord version from `sharpee --version` output
     /// ("Sharpee 4.1.1 · Chord 2.1.0" → "2.1.0"). Nil when the shape is foreign.

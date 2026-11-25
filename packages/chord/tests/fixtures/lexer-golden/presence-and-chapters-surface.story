@@ -86,7 +86,7 @@ define timer lunge for the wandering mercenaries
 end timer
 
 create the wandering mercenaries
-  a person, plural
+  a person, plural of wandering mercenary
   in the Market Square
   states, reversible: approaching, searching
 
@@ -144,13 +144,13 @@ create the wizard
   end goal
 
 create the brass key
-  a thing
+  a thing, singular
   in the Alley
 
   A brass key, warm to the touch.
 
 create the pear
-  a thing
+  a thing, singular
   in the Market Square
 
   A pear, past its best.

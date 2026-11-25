@@ -173,7 +173,7 @@ create the Cellar
   A cellar.
 
 create the crate
-  a thing, stowable
+  a thing, singular, stowable
   states: sealed, stowed, fetched, opened
   in the Cellar
 

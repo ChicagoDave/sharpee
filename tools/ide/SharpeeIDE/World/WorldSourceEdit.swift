@@ -114,7 +114,9 @@ extension WorldSourceEdit {
     static func definingScenery(_ phrase: String,
                                 placedBy placement: WorldRoomPlacement?,
                                 in text: String) -> WorldSourceEdit {
-        var block = "create the \(phrase)\n  a thing, scenery\n"
+        // Chord 4.2.0 (ADR-409 D1): a thing is declared singular or plural; a
+        // declared scenery phrase reads as singular, as an undeclared one did.
+        var block = "create the \(phrase)\n  a thing, singular, scenery\n"
         if let room = placement?.room { block += "  in the \(room)\n" }
 
         let lines = text.components(separatedBy: "\n")

@@ -81,25 +81,25 @@ create the Bell Room
   A room of ropes.
 
 create the tin
-  a container
+  a container, singular
   in the Bell Room
 
   A tin.
 
 create the charm
-  a thing
+  a thing, singular
   in the tin
 
   A charm.
 
 create the lens
-  a thing
+  a thing, singular
   in the Bell Room
 
   A lens.
 
 create the lantern
-  a container, corded
+  a container, singular, corded
   states: dim, glowing
   in the Bell Room
 
@@ -115,7 +115,7 @@ create the lantern
   end after
 
 create the censer
-  a thing, corded, chiming
+  a thing, singular, corded, chiming
   states: cold, smoking
   in the Bell Room
 
@@ -127,7 +127,7 @@ create the censer
   end after
 
 create the bell
-  a thing, stuck
+  a thing, singular, stuck
   in the Bell Room
 
   A bell.
@@ -137,7 +137,7 @@ create the bell
   end on
 
 create the gong
-  a thing, stuck
+  a thing, singular, stuck
   in the Bell Room
 
   A gong.
@@ -147,7 +147,7 @@ create the gong
   end on
 
 create the drum
-  a thing, stuck
+  a thing, singular, stuck
   in the Bell Room
 
   A drum.
@@ -157,7 +157,7 @@ create the drum
   end on
 
 create the lamp
-  a thing, corded
+  a thing, singular, corded
   states: cold, warm
   in the Bell Room
 
@@ -169,7 +169,7 @@ create the lamp
   end on
 
 create the torch
-  a thing, corded
+  a thing, singular, corded
   states: cold, warm
   in the Bell Room
 
@@ -181,25 +181,25 @@ create the torch
   end on
 
 create the chime
-  a thing, stuck, jammed
+  a thing, singular, stuck, jammed
   in the Bell Room
 
   A chime.
 
 create the rattle
-  a thing, jammed, stuck
+  a thing, singular, jammed, stuck
   in the Bell Room
 
   A rattle.
 
 create the shutter
-  a thing, stuck, barred
+  a thing, singular, stuck, barred
   in the Bell Room
 
   A shutter.
 
 create the hatch
-  a thing, latched, stuck
+  a thing, singular, latched, stuck
   in the Bell Room
 
   A hatch.
@@ -369,7 +369,7 @@ define topics for Mara
 end topics
 
 create the cord
-  a thing
+  a thing, singular
   in the Bell Room
 
   A cord.
@@ -416,6 +416,7 @@ create the Bell Room
 
 create the bell
   ${kindLine}
+  singular
   in the Bell Room
 
   A bell.

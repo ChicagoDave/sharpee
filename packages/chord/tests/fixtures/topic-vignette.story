@@ -22,7 +22,7 @@ create the gamekeeper
   end on
 
 create the locket
-  a thing
+  a thing, singular
   in the Gate
 
   A tarnished silver locket, the clasp long broken.

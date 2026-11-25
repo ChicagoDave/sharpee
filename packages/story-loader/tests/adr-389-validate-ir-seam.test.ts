@@ -23,7 +23,7 @@ create the Vault
   A vault.
 
 create the crate
-  a container
+  a container, singular
   in the Vault
 
   A crate.
@@ -153,7 +153,7 @@ define action valuing
 `;
     const CLAUSE = `
 create the lever
-  a thing
+  a thing, singular
   in the Vault
 
   A lever.

@@ -5569,6 +5569,10 @@ export class Analyzer {
         codes: this.codes,
         honorDefs: this.honorDefs,
         groupOrigins: this.groupOrigins,
+        singularPluralFacts: {
+          formRules: STDLIB_MANIFEST.locales[DEFAULT_LOCALE].formRules,
+          nameStopwords: STDLIB_MANIFEST.locales[DEFAULT_LOCALE].nameStopwords,
+        },
         resolveEntityId: (ref) => this.resolveEntityId(ref),
         resolveEntityIdSilent: (ref) => this.findEntitySilent(ref)?.id ?? null,
         vehicles: this.vehicles,

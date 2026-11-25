@@ -49,7 +49,7 @@ create Ringer
 
 create the bell rope
   aka rope
-  a thing, scenery, pullable
+  a thing, singular, scenery, pullable
   in the Belfry
 
   A rope.
@@ -60,7 +60,7 @@ create the bell rope
 
 create the brass latch
   aka latch
-  a thing, scenery, pullable
+  a thing, singular, scenery, pullable
   in the Belfry
 
   A latch.

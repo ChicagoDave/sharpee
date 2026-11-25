@@ -52,7 +52,7 @@ const MERCENARIES = (gate: string) => `define timer pole-destruction for the pla
 end timer
 
 create the mercenaries
-  a thing, scenery, plural
+  a thing, scenery, plural of mercenary
   in the Hall
   states, reversible: huddled, chopping
 

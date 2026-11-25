@@ -72,13 +72,13 @@ create the Lamp Room
 
 create the hand lamp
   aka lamp
-  a thing, light-source, wick, starts unlit
+  a thing, singular, light-source, wick, starts unlit
 
   A lamp.
 
 create the cracked lens
   aka lens
-  a thing, breakable, starts broken
+  a thing, singular, breakable, starts broken
   in the Lamp Room
 
   A lens.
@@ -89,13 +89,13 @@ create the cracked lens
   end on
 
 create the brass key
-  a thing
+  a thing, singular
 
   A key.
 
 create the strongbox
   aka box
-  a container, openable, lockable with the brass key, starts locked
+  a container, singular, openable, lockable with the brass key, starts locked
   in the Lamp Room
 
   A strongbox.
@@ -107,19 +107,19 @@ create the strongbox
   end on
 
 create the tall candle
-  a thing, light-source, starts unlit
+  a thing, singular, light-source, starts unlit
   in the Lamp Room
 
   A candle.
 
 create the short candle
-  a thing, light-source, starts unlit
+  a thing, singular, light-source, starts unlit
   in the Lamp Room
 
   A candle.
 
 create the taper
-  a thing
+  a thing, singular
   in the Lamp Room
 
   A taper.
@@ -132,7 +132,7 @@ create the taper
   end on
 
 create the gong
-  a thing
+  a thing, singular
   in the Lamp Room
 
   A gong.
@@ -145,20 +145,20 @@ create the gong
   end on
 
 create the brazier
-  a thing, banked
+  a thing, singular, banked
   in the Lamp Room
 
   A brazier.
 
 create the electric torch
   aka torch
-  a thing, light-source, switchable, starts unlit
+  a thing, singular, light-source, switchable, starts unlit
   in the Lamp Room
 
   A torch.
 
 create the striker
-  a thing
+  a thing, singular
   in the Lamp Room
 
   A striker.
@@ -174,7 +174,7 @@ create the striker
   end on
 
 create the fuse
-  a thing
+  a thing, singular
   states: coiled, lit
   in the Lamp Room
 

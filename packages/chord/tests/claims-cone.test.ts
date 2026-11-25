@@ -74,13 +74,13 @@ create the Yard
   end after
 
 create the pebble
-  a thing
+  a thing, singular
   in the Square
 
   A pebble.
 
 create the apple
-  a thing
+  a thing, singular
   states: shelved, nicked
   in the Square
 
@@ -92,7 +92,7 @@ create the apple
   end after
 
 create the bell
-  a thing
+  a thing, singular
   in the Square
 
   A bell.
@@ -102,7 +102,7 @@ create the bell
   end after
 
 create the banana
-  a thing
+  a thing, singular
   states: shelved, nicked
   in the Square
 
@@ -118,7 +118,7 @@ create the banana
   end after
 
 create the loaf
-  a thing
+  a thing, singular of loaves
   states: shelved, nicked
   in the Square
 
@@ -129,20 +129,20 @@ create the loaf
   end after
 
 create the brass key
-  a thing
+  a thing, singular
   in the Square
 
   A key.
 
 create the box
-  a container
+  a container, singular
   openable with the brass key
   in the Square
 
   A box.
 
 create the coin
-  a thing
+  a thing, singular
   in the box
 
   A coin.

@@ -24,7 +24,7 @@ create the Yard
   A yard.
 
 create the gate
-  a thing, scenery
+  a thing, singular, scenery
   in the Yard
 
   A gate.

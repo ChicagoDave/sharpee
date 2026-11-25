@@ -66,7 +66,7 @@ create the Reef
   The reef.
 
 create the water
-  a thing
+  a thing, singular
   in the Well Bottom
 
   Water.
@@ -83,7 +83,7 @@ before the game starts
 end before
 
 create the bucket
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -100,7 +100,7 @@ create the bucket
   end position
 
 create the bicycle
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: streets
   carries: on
@@ -110,7 +110,7 @@ create the bicycle
   A bicycle.
 
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: compass
   carries: in
@@ -121,7 +121,7 @@ create the Marigold
   A barque.
 
 create the tram car
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -133,7 +133,7 @@ create the tram car
   A tram.
 
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: flight
   drive: control
@@ -339,7 +339,7 @@ before the game starts
 end before
 
 create the tram car
-  a vehicle
+  a vehicle, singular
   in the Well Bottom
   movement: line
   carries: in
@@ -351,7 +351,7 @@ create the tram car
   A tram.
 
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: compass
   carries: in
@@ -361,7 +361,7 @@ create the Marigold
   A barque.
 
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: flight
   carries: in
@@ -372,7 +372,7 @@ create the Sparrow
   A courier.
 
 create the lever
-  a thing, pullable
+  a thing, singular, pullable
   in the Well Bottom
 
   A lever.
@@ -382,7 +382,7 @@ create the lever
   end on
 
 create the brake
-  a thing, pullable
+  a thing, singular, pullable
   in the Well Bottom
 
   A brake.
@@ -392,7 +392,7 @@ create the brake
   end on
 
 create the tiller
-  a thing, pullable
+  a thing, singular, pullable
   in the Well Bottom
 
   A tiller.
@@ -402,7 +402,7 @@ create the tiller
   end on
 
 create the helm
-  a thing, pullable
+  a thing, singular, pullable
   in the Well Bottom
 
   A helm.
@@ -412,7 +412,7 @@ create the helm
   end on
 
 create the plotter
-  a thing, pushable
+  a thing, singular, pushable
   in the Well Bottom
 
   A plotter.

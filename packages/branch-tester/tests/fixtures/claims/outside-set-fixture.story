@@ -31,7 +31,7 @@ create the Shed
   A tool shed. A crate sits by the door.
 
 create the crate
-  a thing
+  a thing, singular
   in the Shed
 
   A small slatted crate.

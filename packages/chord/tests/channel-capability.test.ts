@@ -90,7 +90,7 @@ describe('define channel (ADR-216, spelling A)', () => {
 describe('play sound is never gated on the client (Q9)', () => {
   const withSound = (line: string) =>
     story(`create the lamp
-  a thing
+  a thing, singular
   in the Hall
 
   A lamp.
@@ -119,7 +119,7 @@ describe('client has <capability> (ADR-216)', () => {
   it('lowers to the camelCase platform key, hyphen words included', () => {
     const result = compile(
       story(`create the lamp
-  a thing
+  a thing, singular
   in the Hall
 
   A lamp.
@@ -143,7 +143,7 @@ end phrase
     expect(
       errorCodes(
         story(`create the lamp
-  a thing
+  a thing, singular
   in the Hall
 
   on every turn

@@ -46,7 +46,7 @@ create the Alley
   An alley.
 
 create the monkey
-  a thing
+  a thing, singular
   in the Alley
 
   A monkey.

@@ -24,14 +24,14 @@ create the Attic
   Dust and one box.
 
 create the strongbox
-  a container
+  a container, singular
   openable
   in the Attic
 
   A closed strongbox.
 
 create the letter
-  a thing
+  a thing, singular
   in the strongbox
 
   The hidden letter.

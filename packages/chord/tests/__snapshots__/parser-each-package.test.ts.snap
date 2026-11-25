@@ -1038,6 +1038,21 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "line": 59,
           },
           "words": [
+            "singular",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 22,
+            "endColumn": 30,
+            "endLine": 59,
+            "line": 59,
+          },
+          "words": [
             "skittish",
           ],
         },

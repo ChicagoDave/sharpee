@@ -6,7 +6,7 @@ story
   story-version: 0.0.1
 
 create the box
-  a thing
+  a thing, singular
   states: shut, open
 
   on the player reading

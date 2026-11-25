@@ -53,7 +53,7 @@ create the Sorting Room
   The sorter.
 
 create the lantern
-  a thing
+  a thing, singular
   in the Cable Trench
   states: cold, warm
 
@@ -66,7 +66,7 @@ end phrase
 
 const CAR = `
 create the car
-  a vehicle
+  a vehicle, singular
   in the Loading Dock
   movement: streets
   carries: in
@@ -79,7 +79,7 @@ create the car
 /** A door for the `through` cases; a door must be wired by exactly one `through` line. */
 const GRATING = `
 create the grating
-  a door
+  a door, singular
 
   A grating.
 `;
@@ -402,7 +402,7 @@ define action shrugging
 describe('the `pushing` block on a thing (ADR-378 D6b)', () => {
   const TROLLEY = (rows: string) => `
 create the trolley
-  a thing, pushable
+  a thing, singular, pushable
   in the Sorting Room
 
   A trolley.
@@ -433,7 +433,7 @@ ${rows}
   });
 
   it('on a thing that is not pushable it is analysis.pushing-not-pushable; a second block is parse.pushing-duplicate; a malformed row is parse.pushing-row', () => {
-    expect(errorCodes(story(TROLLEY('    between the Sorting Room and the Loading Dock').replace('a thing, pushable', 'a thing')))).toContain('analysis.pushing-not-pushable');
+    expect(errorCodes(story(TROLLEY('    between the Sorting Room and the Loading Dock').replace('a thing, singular, pushable', 'a thing, singular')))).toContain('analysis.pushing-not-pushable');
     expect(errorCodes(story(TROLLEY('    between the Sorting Room and the Loading Dock') + '\n  pushing\n    between the Sorting Room and the Loading Dock\n  end pushing\n'))).toContain('parse.pushing-duplicate');
     expect(errorCodes(story(TROLLEY('    the Sorting Room to the Loading Dock')))).toContain('parse.pushing-row');
   });

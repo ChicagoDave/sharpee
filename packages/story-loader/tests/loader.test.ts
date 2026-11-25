@@ -228,7 +228,7 @@ create the Pantry
   A pantry.
 
 create the bread box
-  a container
+  a container, singular
   holds 5
   in the Pantry
 
@@ -281,12 +281,12 @@ create the Pantry
   A pantry.
 
 create the sword
-  a thing
+  a thing, singular
 
   A sword.
 
 create the hat
-  a thing, wearable
+  a thing, singular, wearable
 
   A hat.
 
@@ -338,7 +338,7 @@ create the Pantry
   A pantry.
 
 create the anvil
-  a thing, wearable
+  a thing, singular, wearable
   in the Pantry
 
   Heavy.

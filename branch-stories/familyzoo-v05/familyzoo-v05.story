@@ -60,7 +60,7 @@ create Alex
   Just an ordinary visitor to the zoo.
 
 create the welcome sign
-  a thing
+  a thing, singular
   aka sign
   scenery
   in the Zoo Entrance
@@ -69,7 +69,7 @@ create the welcome sign
   ZOO."
 
 create the ticket booth
-  a thing
+  a thing, singular
   aka booth
   scenery
   in the Zoo Entrance
@@ -77,7 +77,7 @@ create the ticket booth
   A small wooden booth with a "Self-Guided Tours" sign.
 
 create the iron fence
-  a thing
+  a thing, singular
   aka fence, railing
   scenery
   in the Zoo Entrance
@@ -101,7 +101,7 @@ create the flower beds
   Tidy beds of marigolds and petunias.
 
 create the hay bale
-  a thing
+  a thing, singular
   aka hay, bale
   scenery
   in the Petting Zoo
@@ -109,7 +109,7 @@ create the hay bale
   A large round bale of golden hay.
 
 create the toucan
-  a thing
+  a thing, singular
   aka toco toucan
   scenery
   in the Aviary
@@ -117,7 +117,7 @@ create the toucan
   A Toco toucan with an enormous orange-and-black bill.
 
 create the waterfall
-  a thing
+  a thing, singular
   aka water, basin
   scenery
   in the Aviary
@@ -127,13 +127,13 @@ create the waterfall
 create the rope perches
   a thing
   aka perches, ropes
-  scenery, plural
+  scenery, plural of rope perch
   in the Aviary
 
   Thick sisal ropes strung between wooden posts.
 
 create the zoo brochure
-  a thing
+  a thing, singular
   aka brochure, pamphlet, leaflet
   readable
   in the Zoo Entrance
@@ -145,28 +145,28 @@ create the zoo brochure
   end on
 
 create the zoo map
-  a thing
+  a thing, singular
   aka map, folding map
   in the Zoo Entrance
 
   A colorful folding map of the Willowbrook Family Zoo.
 
 create the backpack
-  a container
+  a container, singular
   aka rucksack, pack
   in the Zoo Entrance
 
   A small red canvas backpack.
 
 create the souvenir penny
-  a thing
+  a thing, singular
   aka penny, coin
   in the Main Path
 
   A shiny copper penny.
 
 create the park bench
-  a supporter
+  a supporter, singular
   aka bench, benches, seat
   scenery
   holds 3
@@ -175,7 +175,7 @@ create the park bench
   A sturdy park bench painted forest green.
 
 create the lunchbox
-  a container
+  a container, singular
   aka lunch box, box
   openable
   in the Main Path
@@ -183,7 +183,7 @@ create the lunchbox
   A dented metal lunchbox decorated with cartoon zoo animals.
 
 create the juice box
-  a thing
+  a thing, singular
   aka juice, drink
   in the lunchbox
 

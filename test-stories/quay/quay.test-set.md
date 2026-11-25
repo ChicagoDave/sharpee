@@ -23,3 +23,7 @@
 - The brass key and the locker: one thing to carry and one to open, so a first command can change the world without leaving the room.
 - No timer, no sequence, no meter and no every-turn clause: a story whose opening look moves a clock cannot open word for word the same once the opening stops being a turn. The clock copy is `seeded/quay-clock.story`.
 - `seeded/`: whole copies of the story. Five differ from it only by an opening block added at the end; `quay-clock.story` has no block and adds a timer started before the game starts, a sequence with a step at turn 3, and a hunger meter whose first rung is its first growth. Regenerate them from `quay.story` whenever it changes.
+
+## Language migrations
+
+- 2026-11-24, Chord 4.2.0 (ADR-409, session ce3248): every thing and door in the story and its seeded copies is declared `singular` or `plural`, as the language now requires. Each block keeps the number it read as before: an undeclared one is now `singular`, and one already `plural` stays `plural`. No obligation moves.

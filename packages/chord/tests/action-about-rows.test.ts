@@ -11,7 +11,7 @@ import { compile } from '../src';
 
 const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 const WORLD =
-  'create the Chapel\n  a room\n\n  A chapel.\n\ncreate the altar\n  a thing\n  in the Chapel\n\n  A stone altar.\n\n' +
+  'create the Chapel\n  a room\n\n  A chapel.\n\ncreate the altar\n  a thing, singular\n  in the Chapel\n\n  A stone altar.\n\n' +
   'create Alex\n  a person\n  playable\n  starts in the Chapel\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
 const PHRASES = '\n  phrases en-US\n    knelt:\n      You kneel.\n    prayed:\n      You pray.\n    unheard:\n      Nothing.\n\n';
 

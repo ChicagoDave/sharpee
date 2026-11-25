@@ -56,7 +56,7 @@ function innkeeper(body: string, extra = ''): string {
     .join('\n');
   return `${HEADER}${extra}${WORLD}
 create the innkeeper
-  a thing
+  a thing, singular
   in the Bar
   states: idle, roused
 
@@ -162,7 +162,7 @@ describe('D3 — the parser’s `after` ban descends into routing blocks', () =>
   it('a refusal nested in a `select` inside an `after` clause is still `parse.react-refusal`', () => {
     const source = `${HEADER}${WORLD}
 create the innkeeper
-  a thing
+  a thing, singular
   in the Bar
   states: idle, roused
 
@@ -186,7 +186,7 @@ ${PHRASES}`;
   it('a `must` nested in an ordinal block inside an `after` clause is still `parse.react-refusal`', () => {
     const source = `${HEADER}${WORLD}
 create the innkeeper
-  a thing
+  a thing, singular
   in the Bar
   states: idle, roused
 
@@ -223,7 +223,7 @@ end trait
 
 ${TRAIT}${WORLD}
 create the cat
-  a thing, feedable
+  a thing, singular, feedable
   in the Bar
 
   A cat.
@@ -236,7 +236,7 @@ create the cat
 
 ${WORLD}
 create the cat
-  a thing
+  a thing, singular
   in the Bar
   states: drowsy, alert
 
@@ -250,7 +250,7 @@ create the cat
 
 ${TRAIT}${WORLD}
 create the cat
-  a thing, feedable
+  a thing, singular, feedable
   in the Bar
 
   A cat.
@@ -276,7 +276,7 @@ end trait
 
 ${WORLD}
 create the cat
-  a thing, skittish
+  a thing, singular, skittish
   in the Bar
 
   A cat.

@@ -6229,7 +6229,7 @@
     {
       "lineNo": 42,
       "indent": 2,
-      "raw": "  a thing",
+      "raw": "  a thing, singular",
       "tokens": [
         {
           "kind": "word",
@@ -6249,6 +6249,26 @@
             "column": 5,
             "endLine": 42,
             "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 42,
+            "column": 10,
+            "endLine": 42,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 42,
+            "column": 12,
+            "endLine": 42,
+            "endColumn": 20
           }
         }
       ],
@@ -7112,6 +7132,3305 @@
         }
       ],
       "afterBlank": false,
+      "comment": false
+    }
+  ],
+  "chord-4-2-0-surface.story": [
+    {
+      "lineNo": 1,
+      "indent": 0,
+      "raw": "## Chord 4.2.0 lexer-golden corpus — the singular and plural surface",
+      "tokens": [
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 1,
+            "column": 1,
+            "endLine": 1,
+            "endColumn": 2
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 1,
+            "column": 2,
+            "endLine": 1,
+            "endColumn": 3
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Chord",
+          "span": {
+            "line": 1,
+            "column": 4,
+            "endLine": 1,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "number",
+          "text": "4.2.0",
+          "span": {
+            "line": 1,
+            "column": 10,
+            "endLine": 1,
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "word",
+          "text": "lexer-golden",
+          "span": {
+            "line": 1,
+            "column": 16,
+            "endLine": 1,
+            "endColumn": 28
+          }
+        },
+        {
+          "kind": "word",
+          "text": "corpus",
+          "span": {
+            "line": 1,
+            "column": 29,
+            "endLine": 1,
+            "endColumn": 35
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "—",
+          "span": {
+            "line": 1,
+            "column": 36,
+            "endLine": 1,
+            "endColumn": 37
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 1,
+            "column": 38,
+            "endLine": 1,
+            "endColumn": 41
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 1,
+            "column": 42,
+            "endLine": 1,
+            "endColumn": 50
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 1,
+            "column": 51,
+            "endLine": 1,
+            "endColumn": 54
+          }
+        },
+        {
+          "kind": "word",
+          "text": "plural",
+          "span": {
+            "line": 1,
+            "column": 55,
+            "endLine": 1,
+            "endColumn": 61
+          }
+        },
+        {
+          "kind": "word",
+          "text": "surface",
+          "span": {
+            "line": 1,
+            "column": 62,
+            "endLine": 1,
+            "endColumn": 69
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": true
+    },
+    {
+      "lineNo": 2,
+      "indent": 0,
+      "raw": "## (ADR-409): every thing and door is declared `singular` or `plural`, bare",
+      "tokens": [
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 2,
+            "column": 1,
+            "endLine": 2,
+            "endColumn": 2
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 2,
+            "column": 2,
+            "endLine": 2,
+            "endColumn": 3
+          }
+        },
+        {
+          "kind": "lparen",
+          "text": "(",
+          "span": {
+            "line": 2,
+            "column": 4,
+            "endLine": 2,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "ADR-409",
+          "span": {
+            "line": 2,
+            "column": 5,
+            "endLine": 2,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "rparen",
+          "text": ")",
+          "span": {
+            "line": 2,
+            "column": 12,
+            "endLine": 2,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 2,
+            "column": 13,
+            "endLine": 2,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "every",
+          "span": {
+            "line": 2,
+            "column": 15,
+            "endLine": 2,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "thing",
+          "span": {
+            "line": 2,
+            "column": 21,
+            "endLine": 2,
+            "endColumn": 26
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 2,
+            "column": 27,
+            "endLine": 2,
+            "endColumn": 30
+          }
+        },
+        {
+          "kind": "word",
+          "text": "door",
+          "span": {
+            "line": 2,
+            "column": 31,
+            "endLine": 2,
+            "endColumn": 35
+          }
+        },
+        {
+          "kind": "word",
+          "text": "is",
+          "span": {
+            "line": 2,
+            "column": 36,
+            "endLine": 2,
+            "endColumn": 38
+          }
+        },
+        {
+          "kind": "word",
+          "text": "declared",
+          "span": {
+            "line": 2,
+            "column": 39,
+            "endLine": 2,
+            "endColumn": 47
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "`",
+          "span": {
+            "line": 2,
+            "column": 48,
+            "endLine": 2,
+            "endColumn": 49
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 2,
+            "column": 49,
+            "endLine": 2,
+            "endColumn": 57
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "`",
+          "span": {
+            "line": 2,
+            "column": 57,
+            "endLine": 2,
+            "endColumn": 58
+          }
+        },
+        {
+          "kind": "word",
+          "text": "or",
+          "span": {
+            "line": 2,
+            "column": 59,
+            "endLine": 2,
+            "endColumn": 61
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "`",
+          "span": {
+            "line": 2,
+            "column": 62,
+            "endLine": 2,
+            "endColumn": 63
+          }
+        },
+        {
+          "kind": "word",
+          "text": "plural",
+          "span": {
+            "line": 2,
+            "column": 63,
+            "endLine": 2,
+            "endColumn": 69
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "`",
+          "span": {
+            "line": 2,
+            "column": 69,
+            "endLine": 2,
+            "endColumn": 70
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 2,
+            "column": 70,
+            "endLine": 2,
+            "endColumn": 71
+          }
+        },
+        {
+          "kind": "word",
+          "text": "bare",
+          "span": {
+            "line": 2,
+            "column": 72,
+            "endLine": 2,
+            "endColumn": 76
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": true
+    },
+    {
+      "lineNo": 3,
+      "indent": 0,
+      "raw": "## when the suffix rule can tell the other form, and `plural of <singular>`",
+      "tokens": [
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 3,
+            "column": 1,
+            "endLine": 3,
+            "endColumn": 2
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 3,
+            "column": 2,
+            "endLine": 3,
+            "endColumn": 3
+          }
+        },
+        {
+          "kind": "word",
+          "text": "when",
+          "span": {
+            "line": 3,
+            "column": 4,
+            "endLine": 3,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 3,
+            "column": 9,
+            "endLine": 3,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "suffix",
+          "span": {
+            "line": 3,
+            "column": 13,
+            "endLine": 3,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "word",
+          "text": "rule",
+          "span": {
+            "line": 3,
+            "column": 20,
+            "endLine": 3,
+            "endColumn": 24
+          }
+        },
+        {
+          "kind": "word",
+          "text": "can",
+          "span": {
+            "line": 3,
+            "column": 25,
+            "endLine": 3,
+            "endColumn": 28
+          }
+        },
+        {
+          "kind": "word",
+          "text": "tell",
+          "span": {
+            "line": 3,
+            "column": 29,
+            "endLine": 3,
+            "endColumn": 33
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 3,
+            "column": 34,
+            "endLine": 3,
+            "endColumn": 37
+          }
+        },
+        {
+          "kind": "word",
+          "text": "other",
+          "span": {
+            "line": 3,
+            "column": 38,
+            "endLine": 3,
+            "endColumn": 43
+          }
+        },
+        {
+          "kind": "word",
+          "text": "form",
+          "span": {
+            "line": 3,
+            "column": 44,
+            "endLine": 3,
+            "endColumn": 48
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 3,
+            "column": 48,
+            "endLine": 3,
+            "endColumn": 49
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 3,
+            "column": 50,
+            "endLine": 3,
+            "endColumn": 53
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "`",
+          "span": {
+            "line": 3,
+            "column": 54,
+            "endLine": 3,
+            "endColumn": 55
+          }
+        },
+        {
+          "kind": "word",
+          "text": "plural",
+          "span": {
+            "line": 3,
+            "column": 55,
+            "endLine": 3,
+            "endColumn": 61
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 3,
+            "column": 62,
+            "endLine": 3,
+            "endColumn": 64
+          }
+        },
+        {
+          "kind": "compare",
+          "text": "<",
+          "span": {
+            "line": 3,
+            "column": 65,
+            "endLine": 3,
+            "endColumn": 66
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 3,
+            "column": 66,
+            "endLine": 3,
+            "endColumn": 74
+          }
+        },
+        {
+          "kind": "compare",
+          "text": ">",
+          "span": {
+            "line": 3,
+            "column": 74,
+            "endLine": 3,
+            "endColumn": 75
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "`",
+          "span": {
+            "line": 3,
+            "column": 75,
+            "endLine": 3,
+            "endColumn": 76
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": true
+    },
+    {
+      "lineNo": 4,
+      "indent": 0,
+      "raw": "## or `singular of <plural>` when the author writes it. A person may be",
+      "tokens": [
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 4,
+            "column": 1,
+            "endLine": 4,
+            "endColumn": 2
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 4,
+            "column": 2,
+            "endLine": 4,
+            "endColumn": 3
+          }
+        },
+        {
+          "kind": "word",
+          "text": "or",
+          "span": {
+            "line": 4,
+            "column": 4,
+            "endLine": 4,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "`",
+          "span": {
+            "line": 4,
+            "column": 7,
+            "endLine": 4,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 4,
+            "column": 8,
+            "endLine": 4,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 4,
+            "column": 17,
+            "endLine": 4,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "compare",
+          "text": "<",
+          "span": {
+            "line": 4,
+            "column": 20,
+            "endLine": 4,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "plural",
+          "span": {
+            "line": 4,
+            "column": 21,
+            "endLine": 4,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "compare",
+          "text": ">",
+          "span": {
+            "line": 4,
+            "column": 27,
+            "endLine": 4,
+            "endColumn": 28
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "`",
+          "span": {
+            "line": 4,
+            "column": 28,
+            "endLine": 4,
+            "endColumn": 29
+          }
+        },
+        {
+          "kind": "word",
+          "text": "when",
+          "span": {
+            "line": 4,
+            "column": 30,
+            "endLine": 4,
+            "endColumn": 34
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 4,
+            "column": 35,
+            "endLine": 4,
+            "endColumn": 38
+          }
+        },
+        {
+          "kind": "word",
+          "text": "author",
+          "span": {
+            "line": 4,
+            "column": 39,
+            "endLine": 4,
+            "endColumn": 45
+          }
+        },
+        {
+          "kind": "word",
+          "text": "writes",
+          "span": {
+            "line": 4,
+            "column": 46,
+            "endLine": 4,
+            "endColumn": 52
+          }
+        },
+        {
+          "kind": "word",
+          "text": "it",
+          "span": {
+            "line": 4,
+            "column": 53,
+            "endLine": 4,
+            "endColumn": 55
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 4,
+            "column": 55,
+            "endLine": 4,
+            "endColumn": 56
+          }
+        },
+        {
+          "kind": "word",
+          "text": "A",
+          "span": {
+            "line": 4,
+            "column": 57,
+            "endLine": 4,
+            "endColumn": 58
+          }
+        },
+        {
+          "kind": "word",
+          "text": "person",
+          "span": {
+            "line": 4,
+            "column": 59,
+            "endLine": 4,
+            "endColumn": 65
+          }
+        },
+        {
+          "kind": "word",
+          "text": "may",
+          "span": {
+            "line": 4,
+            "column": 66,
+            "endLine": 4,
+            "endColumn": 69
+          }
+        },
+        {
+          "kind": "word",
+          "text": "be",
+          "span": {
+            "line": 4,
+            "column": 70,
+            "endLine": 4,
+            "endColumn": 72
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": true
+    },
+    {
+      "lineNo": 5,
+      "indent": 0,
+      "raw": "## declared or not. Every spelling compiles; edit only alongside the golden",
+      "tokens": [
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 5,
+            "column": 1,
+            "endLine": 5,
+            "endColumn": 2
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 5,
+            "column": 2,
+            "endLine": 5,
+            "endColumn": 3
+          }
+        },
+        {
+          "kind": "word",
+          "text": "declared",
+          "span": {
+            "line": 5,
+            "column": 4,
+            "endLine": 5,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "or",
+          "span": {
+            "line": 5,
+            "column": 13,
+            "endLine": 5,
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "word",
+          "text": "not",
+          "span": {
+            "line": 5,
+            "column": 16,
+            "endLine": 5,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 5,
+            "column": 19,
+            "endLine": 5,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Every",
+          "span": {
+            "line": 5,
+            "column": 21,
+            "endLine": 5,
+            "endColumn": 26
+          }
+        },
+        {
+          "kind": "word",
+          "text": "spelling",
+          "span": {
+            "line": 5,
+            "column": 27,
+            "endLine": 5,
+            "endColumn": 35
+          }
+        },
+        {
+          "kind": "word",
+          "text": "compiles",
+          "span": {
+            "line": 5,
+            "column": 36,
+            "endLine": 5,
+            "endColumn": 44
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ";",
+          "span": {
+            "line": 5,
+            "column": 44,
+            "endLine": 5,
+            "endColumn": 45
+          }
+        },
+        {
+          "kind": "word",
+          "text": "edit",
+          "span": {
+            "line": 5,
+            "column": 46,
+            "endLine": 5,
+            "endColumn": 50
+          }
+        },
+        {
+          "kind": "word",
+          "text": "only",
+          "span": {
+            "line": 5,
+            "column": 51,
+            "endLine": 5,
+            "endColumn": 55
+          }
+        },
+        {
+          "kind": "word",
+          "text": "alongside",
+          "span": {
+            "line": 5,
+            "column": 56,
+            "endLine": 5,
+            "endColumn": 65
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 5,
+            "column": 66,
+            "endLine": 5,
+            "endColumn": 69
+          }
+        },
+        {
+          "kind": "word",
+          "text": "golden",
+          "span": {
+            "line": 5,
+            "column": 70,
+            "endLine": 5,
+            "endColumn": 76
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": true
+    },
+    {
+      "lineNo": 6,
+      "indent": 0,
+      "raw": "## file.",
+      "tokens": [
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 6,
+            "column": 1,
+            "endLine": 6,
+            "endColumn": 2
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "#",
+          "span": {
+            "line": 6,
+            "column": 2,
+            "endLine": 6,
+            "endColumn": 3
+          }
+        },
+        {
+          "kind": "word",
+          "text": "file",
+          "span": {
+            "line": 6,
+            "column": 4,
+            "endLine": 6,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 6,
+            "column": 8,
+            "endLine": 6,
+            "endColumn": 9
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": true
+    },
+    {
+      "lineNo": 8,
+      "indent": 0,
+      "raw": "story",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "story",
+          "span": {
+            "line": 8,
+            "column": 1,
+            "endLine": 8,
+            "endColumn": 6
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 9,
+      "indent": 2,
+      "raw": "  title: Chord 4.2.0 Surface",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "title",
+          "span": {
+            "line": 9,
+            "column": 3,
+            "endLine": 9,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 9,
+            "column": 8,
+            "endLine": 9,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Chord",
+          "span": {
+            "line": 9,
+            "column": 10,
+            "endLine": 9,
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "number",
+          "text": "4.2.0",
+          "span": {
+            "line": 9,
+            "column": 16,
+            "endLine": 9,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Surface",
+          "span": {
+            "line": 9,
+            "column": 22,
+            "endLine": 9,
+            "endColumn": 29
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 10,
+      "indent": 2,
+      "raw": "  authors:",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "authors",
+          "span": {
+            "line": 10,
+            "column": 3,
+            "endLine": 10,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 10,
+            "column": 10,
+            "endLine": 10,
+            "endColumn": 11
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 11,
+      "indent": 4,
+      "raw": "    Lexer Golden",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Lexer",
+          "span": {
+            "line": 11,
+            "column": 5,
+            "endLine": 11,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Golden",
+          "span": {
+            "line": 11,
+            "column": 11,
+            "endLine": 11,
+            "endColumn": 17
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 12,
+      "indent": 2,
+      "raw": "  id: lexer-golden-chord-4-2-0",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "id",
+          "span": {
+            "line": 12,
+            "column": 3,
+            "endLine": 12,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 12,
+            "column": 5,
+            "endLine": 12,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "lexer-golden-chord-4-2-0",
+          "span": {
+            "line": 12,
+            "column": 7,
+            "endLine": 12,
+            "endColumn": 31
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 13,
+      "indent": 2,
+      "raw": "  story-version: 4.2.0",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "story-version",
+          "span": {
+            "line": 13,
+            "column": 3,
+            "endLine": 13,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 13,
+            "column": 16,
+            "endLine": 13,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "number",
+          "text": "4.2.0",
+          "span": {
+            "line": 13,
+            "column": 18,
+            "endLine": 13,
+            "endColumn": 23
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 15,
+      "indent": 0,
+      "raw": "before the game starts",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "before",
+          "span": {
+            "line": 15,
+            "column": 1,
+            "endLine": 15,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 15,
+            "column": 8,
+            "endLine": 15,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "game",
+          "span": {
+            "line": 15,
+            "column": 12,
+            "endLine": 15,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "word",
+          "text": "starts",
+          "span": {
+            "line": 15,
+            "column": 17,
+            "endLine": 15,
+            "endColumn": 23
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 16,
+      "indent": 2,
+      "raw": "  change the player to Wren",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "change",
+          "span": {
+            "line": 16,
+            "column": 3,
+            "endLine": 16,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 16,
+            "column": 10,
+            "endLine": 16,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "player",
+          "span": {
+            "line": 16,
+            "column": 14,
+            "endLine": 16,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "to",
+          "span": {
+            "line": 16,
+            "column": 21,
+            "endLine": 16,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Wren",
+          "span": {
+            "line": 16,
+            "column": 24,
+            "endLine": 16,
+            "endColumn": 28
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 17,
+      "indent": 0,
+      "raw": "end before",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "end",
+          "span": {
+            "line": 17,
+            "column": 1,
+            "endLine": 17,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "before",
+          "span": {
+            "line": 17,
+            "column": 5,
+            "endLine": 17,
+            "endColumn": 11
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 19,
+      "indent": 0,
+      "raw": "create the Greenhouse",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 19,
+            "column": 1,
+            "endLine": 19,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 19,
+            "column": 8,
+            "endLine": 19,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Greenhouse",
+          "span": {
+            "line": 19,
+            "column": 12,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 20,
+      "indent": 2,
+      "raw": "  a room",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 20,
+            "column": 3,
+            "endLine": 20,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "room",
+          "span": {
+            "line": 20,
+            "column": 5,
+            "endLine": 20,
+            "endColumn": 9
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 21,
+      "indent": 2,
+      "raw": "  east to the Potting Shed through the glass door",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "east",
+          "span": {
+            "line": 21,
+            "column": 3,
+            "endLine": 21,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "to",
+          "span": {
+            "line": 21,
+            "column": 8,
+            "endLine": 21,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 21,
+            "column": 11,
+            "endLine": 21,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Potting",
+          "span": {
+            "line": 21,
+            "column": 15,
+            "endLine": 21,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Shed",
+          "span": {
+            "line": 21,
+            "column": 23,
+            "endLine": 21,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "through",
+          "span": {
+            "line": 21,
+            "column": 28,
+            "endLine": 21,
+            "endColumn": 35
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 21,
+            "column": 36,
+            "endLine": 21,
+            "endColumn": 39
+          }
+        },
+        {
+          "kind": "word",
+          "text": "glass",
+          "span": {
+            "line": 21,
+            "column": 40,
+            "endLine": 21,
+            "endColumn": 45
+          }
+        },
+        {
+          "kind": "word",
+          "text": "door",
+          "span": {
+            "line": 21,
+            "column": 46,
+            "endLine": 21,
+            "endColumn": 50
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 23,
+      "indent": 2,
+      "raw": "  Glass on every side.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Glass",
+          "span": {
+            "line": 23,
+            "column": 3,
+            "endLine": 23,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "word",
+          "text": "on",
+          "span": {
+            "line": 23,
+            "column": 9,
+            "endLine": 23,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "every",
+          "span": {
+            "line": 23,
+            "column": 12,
+            "endLine": 23,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "side",
+          "span": {
+            "line": 23,
+            "column": 18,
+            "endLine": 23,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 23,
+            "column": 22,
+            "endLine": 23,
+            "endColumn": 23
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 25,
+      "indent": 0,
+      "raw": "create the Potting Shed",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 25,
+            "column": 1,
+            "endLine": 25,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 25,
+            "column": 8,
+            "endLine": 25,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Potting",
+          "span": {
+            "line": 25,
+            "column": 12,
+            "endLine": 25,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Shed",
+          "span": {
+            "line": 25,
+            "column": 20,
+            "endLine": 25,
+            "endColumn": 24
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 26,
+      "indent": 2,
+      "raw": "  a room",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 26,
+            "column": 3,
+            "endLine": 26,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "room",
+          "span": {
+            "line": 26,
+            "column": 5,
+            "endLine": 26,
+            "endColumn": 9
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 27,
+      "indent": 2,
+      "raw": "  west to the Greenhouse through the glass door",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "west",
+          "span": {
+            "line": 27,
+            "column": 3,
+            "endLine": 27,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "to",
+          "span": {
+            "line": 27,
+            "column": 8,
+            "endLine": 27,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 27,
+            "column": 11,
+            "endLine": 27,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Greenhouse",
+          "span": {
+            "line": 27,
+            "column": 15,
+            "endLine": 27,
+            "endColumn": 25
+          }
+        },
+        {
+          "kind": "word",
+          "text": "through",
+          "span": {
+            "line": 27,
+            "column": 26,
+            "endLine": 27,
+            "endColumn": 33
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 27,
+            "column": 34,
+            "endLine": 27,
+            "endColumn": 37
+          }
+        },
+        {
+          "kind": "word",
+          "text": "glass",
+          "span": {
+            "line": 27,
+            "column": 38,
+            "endLine": 27,
+            "endColumn": 43
+          }
+        },
+        {
+          "kind": "word",
+          "text": "door",
+          "span": {
+            "line": 27,
+            "column": 44,
+            "endLine": 27,
+            "endColumn": 48
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 29,
+      "indent": 2,
+      "raw": "  Pots and twine.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Pots",
+          "span": {
+            "line": 29,
+            "column": 3,
+            "endLine": 29,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 29,
+            "column": 8,
+            "endLine": 29,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "twine",
+          "span": {
+            "line": 29,
+            "column": 12,
+            "endLine": 29,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 29,
+            "column": 17,
+            "endLine": 29,
+            "endColumn": 18
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 31,
+      "indent": 0,
+      "raw": "create Wren",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 31,
+            "column": 1,
+            "endLine": 31,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Wren",
+          "span": {
+            "line": 31,
+            "column": 8,
+            "endLine": 31,
+            "endColumn": 12
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 32,
+      "indent": 2,
+      "raw": "  a person, proper",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 32,
+            "column": 3,
+            "endLine": 32,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "person",
+          "span": {
+            "line": 32,
+            "column": 5,
+            "endLine": 32,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 32,
+            "column": 11,
+            "endLine": 32,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "proper",
+          "span": {
+            "line": 32,
+            "column": 13,
+            "endLine": 32,
+            "endColumn": 19
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 33,
+      "indent": 2,
+      "raw": "  playable",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "playable",
+          "span": {
+            "line": 33,
+            "column": 3,
+            "endLine": 33,
+            "endColumn": 11
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 34,
+      "indent": 2,
+      "raw": "  starts in the Greenhouse",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "starts",
+          "span": {
+            "line": 34,
+            "column": 3,
+            "endLine": 34,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 34,
+            "column": 10,
+            "endLine": 34,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 34,
+            "column": 13,
+            "endLine": 34,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Greenhouse",
+          "span": {
+            "line": 34,
+            "column": 17,
+            "endLine": 34,
+            "endColumn": 27
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 36,
+      "indent": 2,
+      "raw": "  Wren tends the beds.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Wren",
+          "span": {
+            "line": 36,
+            "column": 3,
+            "endLine": 36,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "tends",
+          "span": {
+            "line": 36,
+            "column": 8,
+            "endLine": 36,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 36,
+            "column": 14,
+            "endLine": 36,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "beds",
+          "span": {
+            "line": 36,
+            "column": 18,
+            "endLine": 36,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 36,
+            "column": 22,
+            "endLine": 36,
+            "endColumn": 23
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 38,
+      "indent": 0,
+      "raw": "create the guards",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 38,
+            "column": 1,
+            "endLine": 38,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 38,
+            "column": 8,
+            "endLine": 38,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "guards",
+          "span": {
+            "line": 38,
+            "column": 12,
+            "endLine": 38,
+            "endColumn": 18
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 39,
+      "indent": 2,
+      "raw": "  a person, plural",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 39,
+            "column": 3,
+            "endLine": 39,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "person",
+          "span": {
+            "line": 39,
+            "column": 5,
+            "endLine": 39,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 39,
+            "column": 11,
+            "endLine": 39,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "plural",
+          "span": {
+            "line": 39,
+            "column": 13,
+            "endLine": 39,
+            "endColumn": 19
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 40,
+      "indent": 2,
+      "raw": "  in the Greenhouse",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 40,
+            "column": 3,
+            "endLine": 40,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 40,
+            "column": 6,
+            "endLine": 40,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Greenhouse",
+          "span": {
+            "line": 40,
+            "column": 10,
+            "endLine": 40,
+            "endColumn": 20
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 42,
+      "indent": 2,
+      "raw": "  Two guards lean on the door frame.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Two",
+          "span": {
+            "line": 42,
+            "column": 3,
+            "endLine": 42,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "guards",
+          "span": {
+            "line": 42,
+            "column": 7,
+            "endLine": 42,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "lean",
+          "span": {
+            "line": 42,
+            "column": 14,
+            "endLine": 42,
+            "endColumn": 18
+          }
+        },
+        {
+          "kind": "word",
+          "text": "on",
+          "span": {
+            "line": 42,
+            "column": 19,
+            "endLine": 42,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 42,
+            "column": 22,
+            "endLine": 42,
+            "endColumn": 25
+          }
+        },
+        {
+          "kind": "word",
+          "text": "door",
+          "span": {
+            "line": 42,
+            "column": 26,
+            "endLine": 42,
+            "endColumn": 30
+          }
+        },
+        {
+          "kind": "word",
+          "text": "frame",
+          "span": {
+            "line": 42,
+            "column": 31,
+            "endLine": 42,
+            "endColumn": 36
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 42,
+            "column": 36,
+            "endLine": 42,
+            "endColumn": 37
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 44,
+      "indent": 0,
+      "raw": "create the candles",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 44,
+            "column": 1,
+            "endLine": 44,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 44,
+            "column": 8,
+            "endLine": 44,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "candles",
+          "span": {
+            "line": 44,
+            "column": 12,
+            "endLine": 44,
+            "endColumn": 19
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 45,
+      "indent": 2,
+      "raw": "  aka prickets",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "aka",
+          "span": {
+            "line": 45,
+            "column": 3,
+            "endLine": 45,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "prickets",
+          "span": {
+            "line": 45,
+            "column": 7,
+            "endLine": 45,
+            "endColumn": 15
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 46,
+      "indent": 2,
+      "raw": "  a thing, scenery, plural, light-source",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 46,
+            "column": 3,
+            "endLine": 46,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "thing",
+          "span": {
+            "line": 46,
+            "column": 5,
+            "endLine": 46,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 46,
+            "column": 10,
+            "endLine": 46,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "scenery",
+          "span": {
+            "line": 46,
+            "column": 12,
+            "endLine": 46,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 46,
+            "column": 19,
+            "endLine": 46,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "plural",
+          "span": {
+            "line": 46,
+            "column": 21,
+            "endLine": 46,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 46,
+            "column": 27,
+            "endLine": 46,
+            "endColumn": 28
+          }
+        },
+        {
+          "kind": "word",
+          "text": "light-source",
+          "span": {
+            "line": 46,
+            "column": 29,
+            "endLine": 46,
+            "endColumn": 41
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 47,
+      "indent": 2,
+      "raw": "  in the Greenhouse",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 47,
+            "column": 3,
+            "endLine": 47,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 47,
+            "column": 6,
+            "endLine": 47,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Greenhouse",
+          "span": {
+            "line": 47,
+            "column": 10,
+            "endLine": 47,
+            "endColumn": 20
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 49,
+      "indent": 2,
+      "raw": "  A row of candles on iron prickets.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "A",
+          "span": {
+            "line": 49,
+            "column": 3,
+            "endLine": 49,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "row",
+          "span": {
+            "line": 49,
+            "column": 5,
+            "endLine": 49,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 49,
+            "column": 9,
+            "endLine": 49,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "candles",
+          "span": {
+            "line": 49,
+            "column": 12,
+            "endLine": 49,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "word",
+          "text": "on",
+          "span": {
+            "line": 49,
+            "column": 20,
+            "endLine": 49,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "word",
+          "text": "iron",
+          "span": {
+            "line": 49,
+            "column": 23,
+            "endLine": 49,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "prickets",
+          "span": {
+            "line": 49,
+            "column": 28,
+            "endLine": 49,
+            "endColumn": 36
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 49,
+            "column": 36,
+            "endLine": 49,
+            "endColumn": 37
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 51,
+      "indent": 0,
+      "raw": "create the cacti",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 51,
+            "column": 1,
+            "endLine": 51,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 51,
+            "column": 8,
+            "endLine": 51,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "cacti",
+          "span": {
+            "line": 51,
+            "column": 12,
+            "endLine": 51,
+            "endColumn": 17
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 52,
+      "indent": 2,
+      "raw": "  aka succulents",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "aka",
+          "span": {
+            "line": 52,
+            "column": 3,
+            "endLine": 52,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "succulents",
+          "span": {
+            "line": 52,
+            "column": 7,
+            "endLine": 52,
+            "endColumn": 17
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 53,
+      "indent": 2,
+      "raw": "  a thing, scenery, plural of cactus",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 53,
+            "column": 3,
+            "endLine": 53,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "thing",
+          "span": {
+            "line": 53,
+            "column": 5,
+            "endLine": 53,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 53,
+            "column": 10,
+            "endLine": 53,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "scenery",
+          "span": {
+            "line": 53,
+            "column": 12,
+            "endLine": 53,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 53,
+            "column": 19,
+            "endLine": 53,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "plural",
+          "span": {
+            "line": 53,
+            "column": 21,
+            "endLine": 53,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 53,
+            "column": 28,
+            "endLine": 53,
+            "endColumn": 30
+          }
+        },
+        {
+          "kind": "word",
+          "text": "cactus",
+          "span": {
+            "line": 53,
+            "column": 31,
+            "endLine": 53,
+            "endColumn": 37
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 54,
+      "indent": 2,
+      "raw": "  in the Greenhouse",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 54,
+            "column": 3,
+            "endLine": 54,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 54,
+            "column": 6,
+            "endLine": 54,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Greenhouse",
+          "span": {
+            "line": 54,
+            "column": 10,
+            "endLine": 54,
+            "endColumn": 20
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 56,
+      "indent": 2,
+      "raw": "  Squat cacti in clay pots.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Squat",
+          "span": {
+            "line": 56,
+            "column": 3,
+            "endLine": 56,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "word",
+          "text": "cacti",
+          "span": {
+            "line": 56,
+            "column": 9,
+            "endLine": 56,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 56,
+            "column": 15,
+            "endLine": 56,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "clay",
+          "span": {
+            "line": 56,
+            "column": 18,
+            "endLine": 56,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "word",
+          "text": "pots",
+          "span": {
+            "line": 56,
+            "column": 23,
+            "endLine": 56,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 56,
+            "column": 27,
+            "endLine": 56,
+            "endColumn": 28
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 58,
+      "indent": 0,
+      "raw": "create the mouse",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 58,
+            "column": 1,
+            "endLine": 58,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 58,
+            "column": 8,
+            "endLine": 58,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "mouse",
+          "span": {
+            "line": 58,
+            "column": 12,
+            "endLine": 58,
+            "endColumn": 17
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 59,
+      "indent": 2,
+      "raw": "  a thing, singular of mice",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 59,
+            "column": 3,
+            "endLine": 59,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "thing",
+          "span": {
+            "line": 59,
+            "column": 5,
+            "endLine": 59,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 59,
+            "column": 10,
+            "endLine": 59,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 59,
+            "column": 12,
+            "endLine": 59,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 59,
+            "column": 21,
+            "endLine": 59,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "mice",
+          "span": {
+            "line": 59,
+            "column": 24,
+            "endLine": 59,
+            "endColumn": 28
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 60,
+      "indent": 2,
+      "raw": "  in the Greenhouse",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 60,
+            "column": 3,
+            "endLine": 60,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 60,
+            "column": 6,
+            "endLine": 60,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Greenhouse",
+          "span": {
+            "line": 60,
+            "column": 10,
+            "endLine": 60,
+            "endColumn": 20
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 62,
+      "indent": 2,
+      "raw": "  A field mouse.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "A",
+          "span": {
+            "line": 62,
+            "column": 3,
+            "endLine": 62,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "field",
+          "span": {
+            "line": 62,
+            "column": 5,
+            "endLine": 62,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "word",
+          "text": "mouse",
+          "span": {
+            "line": 62,
+            "column": 11,
+            "endLine": 62,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 62,
+            "column": 16,
+            "endLine": 62,
+            "endColumn": 17
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 64,
+      "indent": 0,
+      "raw": "create the bee smoker",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 64,
+            "column": 1,
+            "endLine": 64,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 64,
+            "column": 8,
+            "endLine": 64,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "bee",
+          "span": {
+            "line": 64,
+            "column": 12,
+            "endLine": 64,
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "word",
+          "text": "smoker",
+          "span": {
+            "line": 64,
+            "column": 16,
+            "endLine": 64,
+            "endColumn": 22
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 65,
+      "indent": 2,
+      "raw": "  a thing, singular",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 65,
+            "column": 3,
+            "endLine": 65,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "thing",
+          "span": {
+            "line": 65,
+            "column": 5,
+            "endLine": 65,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 65,
+            "column": 10,
+            "endLine": 65,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 65,
+            "column": 12,
+            "endLine": 65,
+            "endColumn": 20
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 66,
+      "indent": 2,
+      "raw": "  in the Greenhouse",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 66,
+            "column": 3,
+            "endLine": 66,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 66,
+            "column": 6,
+            "endLine": 66,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Greenhouse",
+          "span": {
+            "line": 66,
+            "column": 10,
+            "endLine": 66,
+            "endColumn": 20
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 68,
+      "indent": 2,
+      "raw": "  A tin bee smoker.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "A",
+          "span": {
+            "line": 68,
+            "column": 3,
+            "endLine": 68,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "tin",
+          "span": {
+            "line": 68,
+            "column": 5,
+            "endLine": 68,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "word",
+          "text": "bee",
+          "span": {
+            "line": 68,
+            "column": 9,
+            "endLine": 68,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "smoker",
+          "span": {
+            "line": 68,
+            "column": 13,
+            "endLine": 68,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 68,
+            "column": 19,
+            "endLine": 68,
+            "endColumn": 20
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 70,
+      "indent": 0,
+      "raw": "create the glass door",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 70,
+            "column": 1,
+            "endLine": 70,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 70,
+            "column": 8,
+            "endLine": 70,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "glass",
+          "span": {
+            "line": 70,
+            "column": 12,
+            "endLine": 70,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "door",
+          "span": {
+            "line": 70,
+            "column": 18,
+            "endLine": 70,
+            "endColumn": 22
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 71,
+      "indent": 2,
+      "raw": "  a door, singular",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 71,
+            "column": 3,
+            "endLine": 71,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "door",
+          "span": {
+            "line": 71,
+            "column": 5,
+            "endLine": 71,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 71,
+            "column": 9,
+            "endLine": 71,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 71,
+            "column": 11,
+            "endLine": 71,
+            "endColumn": 19
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 73,
+      "indent": 2,
+      "raw": "  A door of glass panes.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "A",
+          "span": {
+            "line": 73,
+            "column": 3,
+            "endLine": 73,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "door",
+          "span": {
+            "line": 73,
+            "column": 5,
+            "endLine": 73,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 73,
+            "column": 10,
+            "endLine": 73,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "glass",
+          "span": {
+            "line": 73,
+            "column": 13,
+            "endLine": 73,
+            "endColumn": 18
+          }
+        },
+        {
+          "kind": "word",
+          "text": "panes",
+          "span": {
+            "line": 73,
+            "column": 19,
+            "endLine": 73,
+            "endColumn": 24
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 73,
+            "column": 24,
+            "endLine": 73,
+            "endColumn": 25
+          }
+        }
+      ],
+      "afterBlank": true,
       "comment": false
     }
   ],
@@ -12434,7 +15753,7 @@
     {
       "lineNo": 50,
       "indent": 2,
-      "raw": "  a vehicle",
+      "raw": "  a vehicle, singular",
       "tokens": [
         {
           "kind": "word",
@@ -12454,6 +15773,26 @@
             "column": 5,
             "endLine": 50,
             "endColumn": 12
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 50,
+            "column": 12,
+            "endLine": 50,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 50,
+            "column": 14,
+            "endLine": 50,
+            "endColumn": 22
           }
         }
       ],
@@ -14347,7 +17686,7 @@
     {
       "lineNo": 84,
       "indent": 2,
-      "raw": "  a thing",
+      "raw": "  a thing, singular",
       "tokens": [
         {
           "kind": "word",
@@ -14367,6 +17706,26 @@
             "column": 5,
             "endLine": 84,
             "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 84,
+            "column": 10,
+            "endLine": 84,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 84,
+            "column": 12,
+            "endLine": 84,
+            "endColumn": 20
           }
         }
       ],
@@ -14533,7 +17892,7 @@
     {
       "lineNo": 90,
       "indent": 2,
-      "raw": "  a vehicle",
+      "raw": "  a vehicle, singular",
       "tokens": [
         {
           "kind": "word",
@@ -14553,6 +17912,26 @@
             "column": 5,
             "endLine": 90,
             "endColumn": 12
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 90,
+            "column": 12,
+            "endLine": 90,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 90,
+            "column": 14,
+            "endLine": 90,
+            "endColumn": 22
           }
         }
       ],
@@ -16282,7 +19661,7 @@
     {
       "lineNo": 131,
       "indent": 2,
-      "raw": "  a thing, pushable",
+      "raw": "  a thing, singular, pushable",
       "tokens": [
         {
           "kind": "word",
@@ -16316,12 +19695,32 @@
         },
         {
           "kind": "word",
-          "text": "pushable",
+          "text": "singular",
           "span": {
             "line": 131,
             "column": 12,
             "endLine": 131,
             "endColumn": 20
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 131,
+            "column": 20,
+            "endLine": 131,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "pushable",
+          "span": {
+            "line": 131,
+            "column": 22,
+            "endLine": 131,
+            "endColumn": 30
           }
         }
       ],
@@ -16605,7 +20004,7 @@
     {
       "lineNo": 141,
       "indent": 2,
-      "raw": "  a thing, edible",
+      "raw": "  a thing, singular of loaves, edible",
       "tokens": [
         {
           "kind": "word",
@@ -16639,12 +20038,52 @@
         },
         {
           "kind": "word",
-          "text": "edible",
+          "text": "singular",
           "span": {
             "line": 141,
             "column": 12,
             "endLine": 141,
-            "endColumn": 18
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 141,
+            "column": 21,
+            "endLine": 141,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "loaves",
+          "span": {
+            "line": 141,
+            "column": 24,
+            "endLine": 141,
+            "endColumn": 30
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 141,
+            "column": 30,
+            "endLine": 141,
+            "endColumn": 31
+          }
+        },
+        {
+          "kind": "word",
+          "text": "edible",
+          "span": {
+            "line": 141,
+            "column": 32,
+            "endLine": 141,
+            "endColumn": 38
           }
         }
       ],
@@ -17046,7 +20485,7 @@
     {
       "lineNo": 154,
       "indent": 2,
-      "raw": "  a door, lockable with the iron key",
+      "raw": "  a door, singular, lockable with the iron key",
       "tokens": [
         {
           "kind": "word",
@@ -17080,7 +20519,7 @@
         },
         {
           "kind": "word",
-          "text": "lockable",
+          "text": "singular",
           "span": {
             "line": 154,
             "column": 11,
@@ -17089,13 +20528,33 @@
           }
         },
         {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 154,
+            "column": 19,
+            "endLine": 154,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "lockable",
+          "span": {
+            "line": 154,
+            "column": 21,
+            "endLine": 154,
+            "endColumn": 29
+          }
+        },
+        {
           "kind": "word",
           "text": "with",
           "span": {
             "line": 154,
-            "column": 20,
+            "column": 30,
             "endLine": 154,
-            "endColumn": 24
+            "endColumn": 34
           }
         },
         {
@@ -17103,9 +20562,9 @@
           "text": "the",
           "span": {
             "line": 154,
-            "column": 25,
+            "column": 35,
             "endLine": 154,
-            "endColumn": 28
+            "endColumn": 38
           }
         },
         {
@@ -17113,9 +20572,9 @@
           "text": "iron",
           "span": {
             "line": 154,
-            "column": 29,
+            "column": 39,
             "endLine": 154,
-            "endColumn": 33
+            "endColumn": 43
           }
         },
         {
@@ -17123,9 +20582,9 @@
           "text": "key",
           "span": {
             "line": 154,
-            "column": 34,
+            "column": 44,
             "endLine": 154,
-            "endColumn": 37
+            "endColumn": 47
           }
         }
       ],
@@ -17369,7 +20828,7 @@
     {
       "lineNo": 165,
       "indent": 2,
-      "raw": "  a thing",
+      "raw": "  a thing, singular",
       "tokens": [
         {
           "kind": "word",
@@ -17389,6 +20848,26 @@
             "column": 5,
             "endLine": 165,
             "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 165,
+            "column": 10,
+            "endLine": 165,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 165,
+            "column": 12,
+            "endLine": 165,
+            "endColumn": 20
           }
         }
       ],
@@ -17525,7 +21004,7 @@
     {
       "lineNo": 171,
       "indent": 2,
-      "raw": "  a container, openable, switchable",
+      "raw": "  a container, singular, openable, switchable",
       "tokens": [
         {
           "kind": "word",
@@ -17559,7 +21038,7 @@
         },
         {
           "kind": "word",
-          "text": "openable",
+          "text": "singular",
           "span": {
             "line": 171,
             "column": 16,
@@ -17579,12 +21058,32 @@
         },
         {
           "kind": "word",
-          "text": "switchable",
+          "text": "openable",
           "span": {
             "line": 171,
             "column": 26,
             "endLine": 171,
-            "endColumn": 36
+            "endColumn": 34
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 171,
+            "column": 34,
+            "endLine": 171,
+            "endColumn": 35
+          }
+        },
+        {
+          "kind": "word",
+          "text": "switchable",
+          "span": {
+            "line": 171,
+            "column": 36,
+            "endLine": 171,
+            "endColumn": 46
           }
         }
       ],
@@ -17770,7 +21269,7 @@
     {
       "lineNo": 178,
       "indent": 2,
-      "raw": "  a thing, edible, smelly",
+      "raw": "  a thing, singular, edible, smelly",
       "tokens": [
         {
           "kind": "word",
@@ -17804,12 +21303,12 @@
         },
         {
           "kind": "word",
-          "text": "edible",
+          "text": "singular",
           "span": {
             "line": 178,
             "column": 12,
             "endLine": 178,
-            "endColumn": 18
+            "endColumn": 20
           }
         },
         {
@@ -17817,9 +21316,29 @@
           "text": ",",
           "span": {
             "line": 178,
-            "column": 18,
+            "column": 20,
             "endLine": 178,
-            "endColumn": 19
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "edible",
+          "span": {
+            "line": 178,
+            "column": 22,
+            "endLine": 178,
+            "endColumn": 28
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 178,
+            "column": 28,
+            "endLine": 178,
+            "endColumn": 29
           }
         },
         {
@@ -17827,9 +21346,9 @@
           "text": "smelly",
           "span": {
             "line": 178,
-            "column": 20,
+            "column": 30,
             "endLine": 178,
-            "endColumn": 26
+            "endColumn": 36
           }
         }
       ],
@@ -17956,7 +21475,7 @@
     {
       "lineNo": 184,
       "indent": 2,
-      "raw": "  a thing, loud",
+      "raw": "  a thing, singular, loud",
       "tokens": [
         {
           "kind": "word",
@@ -17990,12 +21509,32 @@
         },
         {
           "kind": "word",
-          "text": "loud",
+          "text": "singular",
           "span": {
             "line": 184,
             "column": 12,
             "endLine": 184,
-            "endColumn": 16
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 184,
+            "column": 20,
+            "endLine": 184,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "loud",
+          "span": {
+            "line": 184,
+            "column": 22,
+            "endLine": 184,
+            "endColumn": 26
           }
         }
       ],
@@ -18122,7 +21661,7 @@
     {
       "lineNo": 190,
       "indent": 2,
-      "raw": "  a thing, wearable on the head",
+      "raw": "  a thing, singular, wearable on the head",
       "tokens": [
         {
           "kind": "word",
@@ -18156,7 +21695,7 @@
         },
         {
           "kind": "word",
-          "text": "wearable",
+          "text": "singular",
           "span": {
             "line": 190,
             "column": 12,
@@ -18165,13 +21704,33 @@
           }
         },
         {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 190,
+            "column": 20,
+            "endLine": 190,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "wearable",
+          "span": {
+            "line": 190,
+            "column": 22,
+            "endLine": 190,
+            "endColumn": 30
+          }
+        },
+        {
           "kind": "word",
           "text": "on",
           "span": {
             "line": 190,
-            "column": 21,
+            "column": 31,
             "endLine": 190,
-            "endColumn": 23
+            "endColumn": 33
           }
         },
         {
@@ -18179,9 +21738,9 @@
           "text": "the",
           "span": {
             "line": 190,
-            "column": 24,
+            "column": 34,
             "endLine": 190,
-            "endColumn": 27
+            "endColumn": 37
           }
         },
         {
@@ -18189,9 +21748,9 @@
           "text": "head",
           "span": {
             "line": 190,
-            "column": 28,
+            "column": 38,
             "endLine": 190,
-            "endColumn": 32
+            "endColumn": 42
           }
         }
       ],
@@ -18318,7 +21877,7 @@
     {
       "lineNo": 196,
       "indent": 2,
-      "raw": "  a thing, wearable on the left hand",
+      "raw": "  a thing, singular, wearable on the left hand",
       "tokens": [
         {
           "kind": "word",
@@ -18352,7 +21911,7 @@
         },
         {
           "kind": "word",
-          "text": "wearable",
+          "text": "singular",
           "span": {
             "line": 196,
             "column": 12,
@@ -18361,13 +21920,33 @@
           }
         },
         {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 196,
+            "column": 20,
+            "endLine": 196,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "wearable",
+          "span": {
+            "line": 196,
+            "column": 22,
+            "endLine": 196,
+            "endColumn": 30
+          }
+        },
+        {
           "kind": "word",
           "text": "on",
           "span": {
             "line": 196,
-            "column": 21,
+            "column": 31,
             "endLine": 196,
-            "endColumn": 23
+            "endColumn": 33
           }
         },
         {
@@ -18375,9 +21954,9 @@
           "text": "the",
           "span": {
             "line": 196,
-            "column": 24,
+            "column": 34,
             "endLine": 196,
-            "endColumn": 27
+            "endColumn": 37
           }
         },
         {
@@ -18385,9 +21964,9 @@
           "text": "left",
           "span": {
             "line": 196,
-            "column": 28,
+            "column": 38,
             "endLine": 196,
-            "endColumn": 32
+            "endColumn": 42
           }
         },
         {
@@ -18395,9 +21974,9 @@
           "text": "hand",
           "span": {
             "line": 196,
-            "column": 33,
+            "column": 43,
             "endLine": 196,
-            "endColumn": 37
+            "endColumn": 47
           }
         }
       ],
@@ -18651,7 +22230,7 @@
     {
       "lineNo": 207,
       "indent": 2,
-      "raw": "  a thing, snake",
+      "raw": "  a thing, singular, snake",
       "tokens": [
         {
           "kind": "word",
@@ -18685,12 +22264,32 @@
         },
         {
           "kind": "word",
-          "text": "snake",
+          "text": "singular",
           "span": {
             "line": 207,
             "column": 12,
             "endLine": 207,
-            "endColumn": 17
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 207,
+            "column": 20,
+            "endLine": 207,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "snake",
+          "span": {
+            "line": 207,
+            "column": 22,
+            "endLine": 207,
+            "endColumn": 27
           }
         }
       ],
@@ -32580,7 +36179,7 @@
     {
       "lineNo": 36,
       "indent": 0,
-      "raw": "create the brass lamp, a thing, portable",
+      "raw": "create the brass lamp, a thing, singular, portable",
       "tokens": [
         {
           "kind": "word",
@@ -32664,12 +36263,32 @@
         },
         {
           "kind": "word",
-          "text": "portable",
+          "text": "singular",
           "span": {
             "line": 36,
             "column": 33,
             "endLine": 36,
             "endColumn": 41
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 36,
+            "column": 41,
+            "endLine": 36,
+            "endColumn": 42
+          }
+        },
+        {
+          "kind": "word",
+          "text": "portable",
+          "span": {
+            "line": 36,
+            "column": 43,
+            "endLine": 36,
+            "endColumn": 51
           }
         }
       ],
@@ -41467,7 +45086,7 @@
     {
       "lineNo": 89,
       "indent": 2,
-      "raw": "  a person, plural",
+      "raw": "  a person, plural of wandering mercenary",
       "tokens": [
         {
           "kind": "word",
@@ -41507,6 +45126,36 @@
             "column": 13,
             "endLine": 89,
             "endColumn": 19
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 89,
+            "column": 20,
+            "endLine": 89,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "word",
+          "text": "wandering",
+          "span": {
+            "line": 89,
+            "column": 23,
+            "endLine": 89,
+            "endColumn": 32
+          }
+        },
+        {
+          "kind": "word",
+          "text": "mercenary",
+          "span": {
+            "line": 89,
+            "column": 33,
+            "endLine": 89,
+            "endColumn": 42
           }
         }
       ],
@@ -43802,7 +47451,7 @@
     {
       "lineNo": 147,
       "indent": 2,
-      "raw": "  a thing",
+      "raw": "  a thing, singular",
       "tokens": [
         {
           "kind": "word",
@@ -43822,6 +47471,26 @@
             "column": 5,
             "endLine": 147,
             "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 147,
+            "column": 10,
+            "endLine": 147,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 147,
+            "column": 12,
+            "endLine": 147,
+            "endColumn": 20
           }
         }
       ],
@@ -44008,7 +47677,7 @@
     {
       "lineNo": 153,
       "indent": 2,
-      "raw": "  a thing",
+      "raw": "  a thing, singular",
       "tokens": [
         {
           "kind": "word",
@@ -44028,6 +47697,26 @@
             "column": 5,
             "endLine": 153,
             "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 153,
+            "column": 10,
+            "endLine": 153,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "singular",
+          "span": {
+            "line": 153,
+            "column": 12,
+            "endLine": 153,
+            "endColumn": 20
           }
         }
       ],
@@ -50591,7 +54280,7 @@
     {
       "lineNo": 20,
       "indent": 2,
-      "raw": "  a thing, readable, portable",
+      "raw": "  a thing, singular, readable, portable",
       "tokens": [
         {
           "kind": "word",
@@ -50625,7 +54314,7 @@
         },
         {
           "kind": "word",
-          "text": "readable",
+          "text": "singular",
           "span": {
             "line": 20,
             "column": 12,
@@ -50645,12 +54334,32 @@
         },
         {
           "kind": "word",
-          "text": "portable",
+          "text": "readable",
           "span": {
             "line": 20,
             "column": 22,
             "endLine": 20,
             "endColumn": 30
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 20,
+            "column": 30,
+            "endLine": 20,
+            "endColumn": 31
+          }
+        },
+        {
+          "kind": "word",
+          "text": "portable",
+          "span": {
+            "line": 20,
+            "column": 32,
+            "endLine": 20,
+            "endColumn": 40
           }
         }
       ],

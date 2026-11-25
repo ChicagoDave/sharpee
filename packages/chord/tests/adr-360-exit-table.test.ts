@@ -94,7 +94,7 @@ describe('the table lowers onto its rooms (D3, AC-1 sixteen rows)', () => {
     the Room 1: east to the Garden through the gate
 `, `
 create the gate
-  a door
+  a door, singular
   openable
 
   A gate.

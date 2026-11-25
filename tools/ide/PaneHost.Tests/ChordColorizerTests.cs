@@ -57,6 +57,15 @@ public sealed class ChordColorizerTests
         Assert.Contains(opener, ChordColorizer.Keywords);
     }
 
+    [Theory]
+    [InlineData("singular")]
+    [InlineData("plural")]
+    public void the_chord_4_2_declaration_is_a_keyword_and_of_is_not(string declaration)
+    {
+        Assert.Contains(declaration, ChordColorizer.Keywords);
+        Assert.DoesNotContain("of", ChordColorizer.Keywords);
+    }
+
     [Fact]
     public void the_keyword_set_equals_the_macos_heads()
     {

@@ -37,19 +37,19 @@ create the Loft
   A loft.
 
 create the oak door
-  a door
+  a door, singular
 
   An oak door.
 
 create the cable
-  a thing, scenery
+  a thing, singular, scenery
   in the Roof
   hangable
 
   A cable.
 
 create the cloak
-  a thing, wearable
+  a thing, singular, wearable
   in the Roof
 
   A cloak.
@@ -60,7 +60,7 @@ create the boots
   Boots.
 
 create the dress
-  a thing, wearable
+  a thing, singular, wearable
 
   A dress.
 
@@ -72,7 +72,7 @@ create Teisha
   Teisha.
 
 create the bell
-  a thing
+  a thing, singular
   in the Roof
 
   A bell.

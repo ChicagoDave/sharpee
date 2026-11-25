@@ -66,7 +66,7 @@ before the game starts
 end before
 
 create the Marigold
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: compass
   carries: in
@@ -77,7 +77,7 @@ create the Marigold
   A barque.
 
 create the bicycle
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: streets
   carries: on
@@ -87,7 +87,7 @@ create the bicycle
   A bicycle.
 
 create the bucket
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: none
   carries: in
@@ -95,7 +95,7 @@ create the bucket
   A bucket.
 
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in the Harbour
   movement: flight
   drive: player

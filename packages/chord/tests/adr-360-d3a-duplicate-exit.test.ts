@@ -97,4 +97,4 @@ describe('analysis.duplicate-exit: an explicit exit against an inferred reverse'
   });
 });
 
-const OAK_DOOR = 'create the oak door\n  a door, openable\n\n  An oak door.\n\n';
+const OAK_DOOR = 'create the oak door\n  a door, singular, openable\n\n  An oak door.\n\n';

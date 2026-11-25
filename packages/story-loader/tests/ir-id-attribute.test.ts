@@ -36,7 +36,7 @@ create the Hall
   A hall.
 
 create the brass bell
-  a thing, scenery
+  a thing, singular, scenery
   aka bell
   states, reversible: still, ringing
   in the Hall
@@ -44,19 +44,19 @@ create the brass bell
   A bell.
 
 create the oak chest
-  a container
+  a container, singular
   in the Hall
 
   A chest.
 
 create the table
-  a supporter
+  a supporter, singular
   in the Hall
 
   A table.
 
 create the pebble
-  a thing
+  a thing, singular
   in the Hall
 
   A pebble.

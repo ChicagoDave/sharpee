@@ -53,7 +53,7 @@ create the Barn
   A barn.
 
 create the crate
-  a thing, pushable
+  a thing, singular, pushable
   in the Lane
 
   A crate.
@@ -64,7 +64,7 @@ create the crate
   end pushing
 
 create the barrel
-  a thing, pushable
+  a thing, singular, pushable
   in the Lane
 
   A barrel.

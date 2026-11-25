@@ -95,26 +95,26 @@ describe('AC-7 — the canonical adjective cases, with no `adjectives` declared'
   beforeAll(() => {
     balls = compileSource(`${ROOMS}
 create the red ball
-  a thing
+  a thing, singular
   in the Hall
 
   A red ball.
 
 create the green ball
-  a thing
+  a thing, singular
   in the Hall
 
   A green ball.
 
 create the blue ball
-  a thing
+  a thing, singular
   in the Hall
 
   A blue ball.
 `);
     plant = compileSource(`${ROOMS}
 create the potted plant
-  a thing
+  a thing, singular
   in the Hall
 
   A potted plant.
@@ -158,7 +158,7 @@ create the potted plant
   it('says nothing about prose that names a ball by its colour', () => {
     const clean = compileSource(`${ROOMS.replace('  A hall.', '  A hall. On the floor sits the red ball.')}
 create the red ball
-  a thing
+  a thing, singular
   in the Hall
 
   A red ball.
@@ -169,19 +169,19 @@ create the red ball
   it('reports the ambiguity when the prose names a ball with three of them present', () => {
     const ambiguous = compileSource(`${ROOMS.replace('  A hall.', '  A hall. Someone left the ball here.')}
 create the red ball
-  a thing
+  a thing, singular
   in the Hall
 
   A red ball.
 
 create the green ball
-  a thing
+  a thing, singular
   in the Hall
 
   A green ball.
 
 create the blue ball
-  a thing
+  a thing, singular
   in the Hall
 
   A blue ball.
@@ -207,26 +207,26 @@ describe('ADR-385 D10 — resolvePhrase decides with the one noun matcher', () =
   beforeAll(() => {
     balls = compileSource(`${ROOMS}
 create the red ball
-  a thing
+  a thing, singular
   in the Hall
 
   A red ball.
 
 create the green ball
-  a thing
+  a thing, singular
   in the Hall
 
   A green ball.
 `);
     aliased = compileSource(`${ROOMS}
 create the brass key
-  a thing
+  a thing, singular
   in the Hall
 
   A brass key.
 
 create the ring
-  a thing
+  a thing, singular
   aka key
   in the Hall
 
@@ -279,7 +279,7 @@ describe('the three classes are three different problems', () => {
   beforeAll(() => {
     story = compileSource(`${ROOMS.replace('  A hall.', '  A hall. The hurricane lamp stands on the scrollwork.')}
 create the oil lamp
-  a thing
+  a thing, singular
   in the Hall
 
   An oil lamp.
@@ -309,7 +309,7 @@ create the oil lamp
   it('goes quiet once the object answers to the word', () => {
     const fixed = compileSource(`${ROOMS.replace('  A hall.', '  A hall. The hurricane lamp stands here.')}
 create the oil lamp
-  a thing
+  a thing, singular
   aka hurricane lamp
   in the Hall
 
@@ -534,11 +534,11 @@ describe('D6b — the corpus pin', () => {
   it('reports a thing that says nothing, and excludes what is never examined', () => {
     const story = compileSource(`${ROOMS}
 create the bankside sign
-  a thing, scenery
+  a thing, singular, scenery
   in the Hall
 
 create the lantern
-  a thing
+  a thing, singular
   in the Hall
 
   A tin lantern.
@@ -652,7 +652,7 @@ describe('the view reads prose only through the extractor it is given (ADR-407 D
   beforeAll(() => {
     story = compileSource(`${ROOMS}
 create the oil lamp
-  a thing
+  a thing, singular
   in the Hall
 
   An oil lamp.

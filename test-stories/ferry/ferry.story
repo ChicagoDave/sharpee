@@ -37,7 +37,7 @@ create the Far Bank
   The far bank of the river.
 
 create the timetable
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Landing
 
   A timetable under cracked glass.
@@ -47,14 +47,14 @@ create the timetable
   end on
 
 create the ferry
-  a thing, scenery
+  a thing, singular, scenery
   in the Landing
   states: away, docked
 
   A flat ferry on a chain.
 
 create the lever
-  a thing, scenery, pullable
+  a thing, singular, scenery, pullable
   in the Landing
 
   An iron lever, worn bright.
@@ -66,20 +66,20 @@ create the lever
 
 create the biscuit
   aka biscuits, sack
-  a thing, edible
+  a thing, singular, edible
   servings 100
   in the Ticket Hut
 
   A sack of ship's biscuit, enough to last a crossing or a hundred.
 
 create the ticket
-  a thing
+  a thing, singular
   in the Ticket Hut
 
   A ferry ticket.
 
 create the lantern
-  a thing, openable
+  a thing, singular, openable
   in the Deck
 
   A storm lantern with a glass door.

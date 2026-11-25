@@ -75,7 +75,7 @@ create the Break Room
   Lockers, a kettle, one sagging couch.
 
 create the flimsy basket
-  a thing
+  a thing, singular
   aka basket
   in the Break Room
 

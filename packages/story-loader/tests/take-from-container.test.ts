@@ -26,24 +26,24 @@ create the Stall
   A stall.
 
 create the cloth satchel
-  a container, openable, starts open
+  a container, singular, openable, starts open
 
   A satchel.
 
 create the woolen cap
-  a thing, wearable
+  a thing, singular, wearable
   in the cloth satchel
 
   A cap.
 
 create the pear
-  a thing
+  a thing, singular
   in the cloth satchel
 
   A pear.
 
 create the bell
-  a thing
+  a thing, singular
   in the Stall
 
   A bell.

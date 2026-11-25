@@ -47,6 +47,7 @@ const errorCodes = (source: string) => errors(source).map((d) => d.code);
 
 const lamp = (compositions: string, statement: string, extra = '') => story(`create the hand lamp
   ${compositions}${extra}
+  singular
   in the Cellar
 
   A lamp.
@@ -97,6 +98,7 @@ end trait
 
 create the hand lamp
   ${lampCompositions}
+  singular
   in the Cellar
 
   A lamp.`);
@@ -122,14 +124,14 @@ create the hand lamp
 end trait
 
 create the fuse
-  a thing, wick
+  a thing, singular, wick
   states: coiled, lit
   in the Cellar
 
   A fuse.
 
 create the hand lamp
-  a thing, wick
+  a thing, singular, wick
   in the Cellar
 
   A lamp.`);
@@ -149,7 +151,7 @@ create the hand lamp
 end trait
 
 create the hand lamp
-  a thing, wick
+  a thing, singular, wick
   in the Cellar
 
   A lamp.`);
@@ -165,12 +167,12 @@ describe('change a door to open (GH #707)', () => {
   A vault.
 
 create the oak door
-  a door
+  a door, singular
 
   A door.
 
 create the bell
-  a thing
+  a thing, singular
   in the Cellar
 
   A bell.
@@ -187,6 +189,7 @@ create the bell
 describe('a thing may not declare a word of a state trait it carries (GH #707)', () => {
   const box = (compositions: string, states: string) => story(`create the strongbox
   ${compositions}
+  singular
   states: ${states}
   in the Cellar
 
@@ -213,7 +216,7 @@ describe('a thing may not declare a word of a state trait it carries (GH #707)',
 end trait
 
 create the hand lamp
-  a thing, light-source, banked
+  a thing, singular, light-source, banked
   in the Cellar
 
   A lamp.`);

@@ -28,7 +28,7 @@ create the Landing
 
 create the note
   aka paper
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Hall
 
   A square of paper pinned at eye height.

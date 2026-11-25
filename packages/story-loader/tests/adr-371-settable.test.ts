@@ -40,7 +40,7 @@ create Pilot
   You.
 
 create the guidance selector
-  a thing, scenery, settable
+  a thing, singular, scenery, settable
   in the Cockpit
   aka selector
   states, reversible: ceres, titan, kepler-station
@@ -139,7 +139,7 @@ describe('the clause interceptor claims only its owners (ADR-371 D1a)', () => {
     const source = SOURCE.replace(
       'define phrase kepler-last',
       `create the flight couch
-  a thing, scenery
+  a thing, singular, scenery
   in the Cockpit
   aka couch
 

@@ -44,7 +44,7 @@ create the Vault
   A vault.
 
 create the iron gate
-  a door, openable, starts open
+  a door, singular, openable, starts open
 
   An iron gate.
 

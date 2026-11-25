@@ -16,7 +16,7 @@ define trait tethered
 end trait
 
 create the rope
-  a thing, scenery
+  a thing, singular, scenery
 
 create Alex
   a person

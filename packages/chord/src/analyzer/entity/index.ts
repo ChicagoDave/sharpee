@@ -29,6 +29,7 @@ import { exitsBuilder } from './exits.js';
 import { hostGatesBuilder } from './host-gates.js';
 import { identityBuilder } from './identity.js';
 import { normativeLinesBuilder } from './normative-lines.js';
+import { singularPluralBuilder } from './singular-plural.js';
 import { placementBuilder } from './placement.js';
 import { playableBuilder } from './playable.js';
 import { startsBuilder } from './starts.js';
@@ -47,6 +48,7 @@ export type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './conte
 export const ENTITY_LINE_BUILDERS: ReadonlyArray<EntityLineBuilder> = [
   playableBuilder,
   compositionsBuilder,
+  singularPluralBuilder,
   startsBuilder,
   identityBuilder,
   characterHostBuilder,

@@ -402,5 +402,17 @@
  * whose payload has a field named `message`, `text` or `messageId`, no
  * longer prints (GH #724). David called the change a patch; the number is
  * set when the next version is cut, not here.
+ *
+ * **4.2.0 — ADR-409, 2026-11-24 (session ce3248; David, Q-9: "nope Chord
+ * 4.2.0 and sharpee 5.8.0"): a thing answers to its singular and its plural.** Every thing
+ * and door declares `singular` or `plural`, and a person may; a bare declaration takes
+ * the locale's suffix rule for the name's other form, and `plural of
+ * <singular>` / `singular of <plural>` writes it. The IR carries each
+ * entity's forms with their origin (`IREntity.forms`); `IR_FORMAT` does not
+ * move, because IR without the field reads as forms not yet worked out.
+ * **A second recorded one-time override of D2**: the required declaration
+ * stops existing stories compiling, which D2 defines as a major, and it
+ * ships as a minor by the owner's ruling, as 1.1.0 did. Cross-noted at
+ * ADR-257 D2 by ADR-409's closing phase.
  */
-export const CHORD_LANGUAGE_VERSION = '4.1.0';
+export const CHORD_LANGUAGE_VERSION = '4.2.0';

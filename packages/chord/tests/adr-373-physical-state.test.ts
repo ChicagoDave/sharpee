@@ -36,7 +36,7 @@ create Alex
   You.
 
 create the sorting machine
-  a thing, scenery
+  a thing, singular, scenery
   in the Specimen Room
 
   A machine.
@@ -61,7 +61,7 @@ function ir(source: string): StoryIR {
 describe('attached to (ADR-373 D1)', () => {
   it('lowers to the `attached` adjective carrying the anchor as its entity value', () => {
     const compiled = ir(story(`create the route placard
-  a thing, attached to the sorting machine, detachable
+  a thing, singular, attached to the sorting machine, detachable
   in the Specimen Room
 
   A placard.
@@ -74,7 +74,7 @@ describe('attached to (ADR-373 D1)', () => {
 
   it('refuses `attached` with no `to <the thing>`', () => {
     expect(codes(story(`create the route placard
-  a thing, attached
+  a thing, singular, attached
   in the Specimen Room
 
   A placard.
@@ -83,7 +83,7 @@ describe('attached to (ADR-373 D1)', () => {
 
   it('refuses an anchor that names no entity', () => {
     expect(codes(story(`create the route placard
-  a thing, attached to the hull
+  a thing, singular, attached to the hull
   in the Specimen Room
 
   A placard.
@@ -92,7 +92,7 @@ describe('attached to (ADR-373 D1)', () => {
 
   it('refuses `detachable` without `attached to`', () => {
     expect(codes(story(`create the route placard
-  a thing, detachable
+  a thing, singular, detachable
   in the Specimen Room
 
   A placard.
@@ -103,13 +103,13 @@ describe('attached to (ADR-373 D1)', () => {
 describe('breakable and fragile (ADR-373 D2, D4, D7)', () => {
   it('lowers `breakable, fragile` and `starts broken` to the trait words and the pairing', () => {
     const compiled = ir(story(`create the specimen jar
-  a container, breakable, fragile
+  a container, singular, breakable, fragile
   in the Specimen Room
 
   A jar.
 
 create the cracked lens
-  a thing, breakable, starts broken
+  a thing, singular, breakable, starts broken
   in the Specimen Room
 
   A lens.
@@ -122,7 +122,7 @@ create the cracked lens
 
   it('refuses `fragile` without `breakable`', () => {
     expect(codes(story(`create the specimen jar
-  a container, fragile
+  a container, singular, fragile
   in the Specimen Room
 
   A jar.
@@ -131,7 +131,7 @@ create the cracked lens
 
   it('refuses `starts broken` without `breakable`', () => {
     expect(codes(story(`create the cracked lens
-  a thing, starts broken
+  a thing, singular, starts broken
   in the Specimen Room
 
   A lens.
@@ -140,7 +140,7 @@ create the cracked lens
 
   it('reports a declared `whole, broken` state set as shadowing breakable', () => {
     const result = compile(story(`create the vase
-  a thing
+  a thing, singular
   in the Specimen Room
   states: whole, broken
 
@@ -155,7 +155,7 @@ create the cracked lens
 describe('broken and attached as state adjectives (ADR-373 D1, D2)', () => {
   it('reads `is broken` and `is attached` on a thing that declares no states', () => {
     expect(codes(story(`create the specimen jar
-  a container, breakable
+  a container, singular, breakable
   in the Specimen Room
 
   A jar.
@@ -165,7 +165,7 @@ describe('broken and attached as state adjectives (ADR-373 D1, D2)', () => {
   end after
 
 create the route placard
-  a thing, attached to the sorting machine
+  a thing, singular, attached to the sorting machine
   in the Specimen Room
 
   A placard.
@@ -180,7 +180,7 @@ create the route placard
 describe('the breaking clause (ADR-373 D3)', () => {
   it('compiles `after the player breaking` on a breakable thing', () => {
     const compiled = ir(story(`create the specimen jar
-  a container, breakable, fragile
+  a container, singular, breakable, fragile
   in the Specimen Room
 
   A jar.
@@ -195,7 +195,7 @@ describe('the breaking clause (ADR-373 D3)', () => {
 
   it('refuses `on the player breaking`, naming the after form', () => {
     const result = compile(story(`create the specimen jar
-  a container, breakable
+  a container, singular, breakable
   in the Specimen Room
 
   A jar.
@@ -213,7 +213,7 @@ describe('the breaking clause (ADR-373 D3)', () => {
 describe('tying with a counterpart (ADR-373 D6)', () => {
   it('compiles `on the player tying to <the anchor>`', () => {
     expect(codes(story(`create the mooring line
-  a thing
+  a thing, singular
   in the Specimen Room
 
   A line.

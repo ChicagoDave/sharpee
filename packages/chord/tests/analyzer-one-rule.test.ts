@@ -66,7 +66,7 @@ const compiled = (source: string): StoryIR => {
 
 const vehicle = (lines: string) => `
 create the launch
-  a vehicle
+  a vehicle, singular
   in the Dock
 ${lines
   .trim()

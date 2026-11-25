@@ -45,19 +45,19 @@ before the game starts
 end before
 
 create the goat
-  a thing, feedable
+  a thing, singular, feedable
   in the Barn
 
   A goat.
 
 create the sheep
-  a thing, feedable
+  a thing, singular, feedable
   in the Barn
 
   A sheep.
 
 create the anvil
-  a thing
+  a thing, singular
   in the Barn
 
   An anvil, which is never hungry.

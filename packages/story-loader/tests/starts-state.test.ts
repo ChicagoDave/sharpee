@@ -41,37 +41,37 @@ create the Vault
   A vault.
 
 create the safe
-  a container, openable, lockable with the brass key, starts locked
+  a container, singular of safes, openable, lockable with the brass key, starts locked
   in the Vault
 
   A safe.
 
 create the crate
-  a container, openable, starts closed
+  a container, singular, openable, starts closed
   in the Vault
 
   A crate.
 
 create the hamper
-  a container, openable
+  a container, singular, openable
   in the Vault
 
   A hamper.
 
 create the bin
-  a container, openable, starts open
+  a container, singular, openable, starts open
   in the Vault
 
   A bin.
 
 create the locket
-  a thing, openable
+  a thing, singular, openable
   in the Vault
 
   A locket.
 
 create the generator
-  a thing, switchable, starts on
+  a thing, singular, switchable, starts on
   in the Vault
 
   A generator.
@@ -89,7 +89,7 @@ before the game starts
 end before
 
 create the brass key
-  a thing
+  a thing, singular
 
   A small brass key.
 `;

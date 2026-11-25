@@ -110,14 +110,14 @@ create the Yard
   A yard.
 
 create the apple
-  a thing, ripenable
+  a thing, singular, ripenable
   in the Yard
   states, reversible: green, ripe
 
   An apple.
 
 create the pear
-  a thing, ripenable
+  a thing, singular, ripenable
   in the Yard
   states, reversible: green, ripe
 

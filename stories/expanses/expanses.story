@@ -46,7 +46,7 @@ create the Derelict
   The inside of a hull that has not held air in a hundred years.
 
 create the skiff
-  a vehicle
+  a vehicle, singular of skiffs
   in the Belt at 3, 3
   movement: open
   carries: in
@@ -61,7 +61,7 @@ create the skiff
   A skiff: one seat, one console, a hull you can see through.
 
 create the telescope
-  a thing
+  a thing, singular
   in the skiff
   sight: 12
   aka scope
@@ -69,7 +69,7 @@ create the telescope
   A brass telescope, older than the skiff.
 
 create the cask
-  a thing, floats
+  a thing, singular, floats
   in the Belt at 5, 3
   aka barrel
 

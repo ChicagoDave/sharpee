@@ -31,7 +31,7 @@ create the Vault
   A vault.
 
 create the crate
-  a container
+  a container, singular
   in the Vault
 
   A crate.
@@ -128,7 +128,7 @@ create the guard
   A guard.
 
 create the sword
-  a thing, weapon with is-blessed false
+  a thing, singular, weapon with is-blessed false
   in the Vault
 
   A sword.
@@ -149,13 +149,13 @@ create the sword
       BASE +
         `
 create the chest
-  a thing, lockable with the iron key
+  a thing, singular, lockable with the iron key
   in the Vault
 
   A chest.
 
 create the iron key
-  a thing
+  a thing, singular
   in the Vault
 
   A key.
@@ -172,7 +172,7 @@ create the iron key
       BASE +
         `
 create the wardrobe
-  a thing, hiding-spot with position behind
+  a thing, singular, hiding-spot with position behind
   in the Vault
 
   A wardrobe.
@@ -203,7 +203,7 @@ create the wardrobe
       BASE +
         `
 create the cloak
-  a thing, wearable
+  a thing, singular, wearable
   in the Vault
 
   A cloak.
@@ -232,7 +232,7 @@ create the Hall
   A hall.
 
 create the oak door
-  a door
+  a door, singular
 
   A door.
 `,
@@ -248,7 +248,7 @@ create the oak door
       BASE.replace('  starts in the Vault\n', '  starts in the Vault\n\n  after the player waiting\n    change the lever to thrown when the lever is upright\n  end after\n') +
         `
 create the lever
-  a thing
+  a thing, singular
   in the Vault
   states: upright, thrown
 `,
@@ -312,7 +312,7 @@ const SCORING_SOURCE = BASE
 
 const CHAPTERS_SOURCE = BASE
   .replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n  use chapters\n')
-  .replace('create the crate\n  a container\n  in the Vault\n', 'create the crate\n  a container\n  in the Vault\n\n  on the player taking during one\n    refuse no-time\n  end on\n') +
+  .replace('create the crate\n  a container, singular\n  in the Vault\n', 'create the crate\n  a container, singular\n  in the Vault\n\n  on the player taking during one\n    refuse no-time\n  end on\n') +
   `define chapters
   one - Chapter I
     begins when the game starts
@@ -339,7 +339,7 @@ const EXPANSES_SOURCE = BASE
   end landmarks
 
 create the skiff
-  a vehicle, openable
+  a vehicle, singular of skiffs, openable
   in the Belt at 3, 4
   movement: open
   carries: in
@@ -414,7 +414,7 @@ describe('validateIR holds every `use` gate (D4c: the gated constructs and words
     expect(messages(rogue)[0]).toContain('`Belt` writes `use sailing` vocabulary');
 
     const written = without(
-      compileClean(EXPANSES_SOURCE.replace('create the crate\n  a container\n  in the Vault\n', "create the crate\n  a container\n  in the Vault\n\n  on the player taking\n    set the Belt's wind to calm\n  end on\n")),
+      compileClean(EXPANSES_SOURCE.replace('create the crate\n  a container, singular\n  in the Vault\n', "create the crate\n  a container, singular\n  in the Vault\n\n  on the player taking\n    set the Belt's wind to calm\n  end on\n")),
       'sailing',
     );
     const words = validateIR(written).filter((d) => d.message.startsWith('`set … wind`'));
@@ -474,7 +474,7 @@ describe('validateIR holds every `use` gate (D4c: the gated constructs and words
 
 describe('the compile reports validateIR as its last pass', () => {
   it('a rogue story compiles to exactly the diagnostics validateIR gives its IR', () => {
-    const result = compile(BASE.replace('create the crate\n  a container\n', 'create the crate\n  a container, dark\n'));
+    const result = compile(BASE.replace('create the crate\n  a container, singular\n', 'create the crate\n  a container, singular, dark\n'));
     expect(result.ok).toBe(false);
     const fromCompile = result.diagnostics.filter((d) => d.code === 'analysis.dark-rooms-only');
     expect(fromCompile).toHaveLength(1);
@@ -485,7 +485,7 @@ describe('the compile reports validateIR as its last pass', () => {
     // `dark` on the crate is validateIR's; a `through` naming a non-door is checkDoors' (analysis.door-through-kind).
     const source = BASE
       .replace('  a room\n\n  A vault.\n', '  a room\n  north to the Hall through the crate\n\n  A vault.\n')
-      .replace('create the crate\n  a container\n', 'create the crate\n  a container, dark\n') +
+      .replace('create the crate\n  a container, singular\n', 'create the crate\n  a container, singular, dark\n') +
       `
 create the Hall
   a room
@@ -499,7 +499,7 @@ create the Hall
   });
 
   it('a moved code is reported once per site, never by both the analyzer and validateIR', () => {
-    const source = BASE.replace('  a room\n\n  A vault.\n', '  a room\n\n  A vault.\n\ncreate the oak door\n  a door\n\n  A door.\n');
+    const source = BASE.replace('  a room\n\n  A vault.\n', '  a room\n\n  A vault.\n\ncreate the oak door\n  a door, singular\n\n  A door.\n');
     const worn = compile(
       BASE.replace('create Alex\n  a person\n  playable\n  starts in the Vault\n', 'create Alex\n  a person\n  playable\n  starts in the Vault\n  wears the crate\n'),
     );

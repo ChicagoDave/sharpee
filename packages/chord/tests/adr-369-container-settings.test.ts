@@ -40,13 +40,14 @@ ${s.closet ?? ''}
 
 create the jar
   ${s.jarKind ?? 'a container, openable'}
+  singular
 ${s.jar ?? ''}
   in the Hall
 
   A jar.
 
 create the shelf
-  a supporter
+  a supporter, singular of shelves
 ${s.shelf ?? ''}
   in the Hall
 
@@ -164,7 +165,7 @@ describe('AC-5 (D2a) — kind nouns take no `with` settings', () => {
   });
 
   it('a setting on an adjective still parses', () => {
-    const top = 'create the chest\n  a container, lockable with the iron key\n  in the Hall\n\n  A chest.\n\ncreate the iron key\n  a thing\n  in the Hall\n\n  A key.\n';
+    const top = 'create the chest\n  a container, singular, lockable with the iron key\n  in the Hall\n\n  A chest.\n\ncreate the iron key\n  a thing, singular\n  in the Hall\n\n  A key.\n';
     const chest = entity(ok({ top }), 'chest');
     expect(chest.traits.find((t) => t.name === 'lockable')?.config).toHaveLength(1);
   });
@@ -180,7 +181,7 @@ describe('AC-6 (D3) — `in` and `out` are exit directions', () => {
   });
 
   it('takes `, one-way` and `through <door>`', () => {
-    const top = 'create the hatch\n  a door\n\n  A hatch.\n';
+    const top = 'create the hatch\n  a door, singular\n\n  A hatch.\n';
     const ir = ok({ top, hall: '  in to the Closet through the hatch\n', closet: '  out to the Hall, one-way\n' });
     expect(entity(ir, 'hall').exits[0]).toMatchObject({ direction: 'in', to: { kind: 'room', id: 'closet' }, via: 'hatch' });
     expect(entity(ir, 'closet').exits[0]).toMatchObject({ direction: 'out', to: { kind: 'room', id: 'hall' }, oneWay: true });

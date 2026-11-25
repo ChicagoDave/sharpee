@@ -60,7 +60,7 @@ ${s.jack ?? ''}
   Jack.
 
 create the sword
-  a thing
+  a thing, singular
   in the Hall
 ${s.sword ?? ''}
   A sword.

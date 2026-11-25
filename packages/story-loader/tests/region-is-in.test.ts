@@ -112,13 +112,13 @@ create the Camp
   end after
 
 create the chest
-  a container
+  a container, singular
   in the Camp
 
   A chest.
 
 create the coin
-  a thing
+  a thing, singular
   in the chest
 
   A coin.

@@ -107,7 +107,7 @@ const PINNED = {
   // opening block, an additive construct. The hash is unchanged by the bump:
   // the surface as re-pinned for the opening block (below) is the 4.1.0
   // surface.
-  languageVersion: '4.1.0',
+  languageVersion: '4.2.0',
   // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
   // chapters` — the first additive grammar of the chapters extension,
   // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.
@@ -293,7 +293,13 @@ const PINNED = {
   // holding `opening-routine` lines (`show-prologue`, `show-banner`,
   // `do-first-look`). Additive: no story stops compiling. On the unpublished
   // 4.0.3 surface; the number is the owner's at the cut.
-  ebnfSha256: '30001285c45c66f953769c387c0ef7dd52c261709f3122cbfa0eb0ff2d64fded',
+  // 4.2.0 — ADR-409, 2026-11-24 (session ce3248; David, Q-9: "Chord 4.2.0
+  // and sharpee 5.8.0"): `composition` gains `( "plural" | "singular" ) "of"
+  // WORD { WORD }`, and every thing and door must be declared singular or
+  // plural (a person may be). A required declaration stops existing stories compiling, which
+  // ADR-257 D2 makes a major; it ships as a minor, a recorded one-time
+  // override of D2 (as 1.1.0 was).
+  ebnfSha256: '904cc5384de4bc94699cdb28dbe78a29d63270f8fe44c5974a60a59b52f9fc52',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

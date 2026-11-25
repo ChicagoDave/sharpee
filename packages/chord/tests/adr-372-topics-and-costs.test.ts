@@ -35,13 +35,13 @@ ${courierLines}
   You.
 
 create the station directory
-  a thing, readable with text "KEPLER"
+  a thing, singular, readable with text "KEPLER"
   in the Directory Hall
 
   A directory.
 
 create the crate
-  a thing
+  a thing, singular
   in the Directory Hall
 
   A crate.
@@ -93,7 +93,7 @@ end topics
 
 describe('costs <amount> <currency> (ADR-372 D5)', () => {
   const priced = (line: string, courierLines?: string) => story(`create the map
-  a thing, ${line}
+  a thing, singular, ${line}
   in the Directory Hall
 
   A map.

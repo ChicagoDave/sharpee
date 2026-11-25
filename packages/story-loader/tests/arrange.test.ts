@@ -47,39 +47,39 @@ create the Shed
   A shed.
 
 create the vine
-  a thing, scenery, prunable
+  a thing, singular, scenery, prunable
   states, reversible: flowering, fruiting
   in the Greenhouse
 
   A vine.
 
 create the garden shears
-  a thing
+  a thing, singular
   aka shears
   in the Shed
 
   Shears.
 
 create the chest
-  a container, openable, lockable with the brass key, starts locked
+  a container, singular, openable, lockable with the brass key, starts locked
   in the Shed
 
   A chest.
 
 create the brass key
-  a thing
+  a thing, singular
   in the Shed
 
   A key.
 
 create the lantern
-  a thing, switchable
+  a thing, singular, switchable
   in the Greenhouse
 
   A lantern.
 
 create the pebble
-  a thing
+  a thing, singular
   in the Greenhouse
 
   A pebble.
@@ -387,26 +387,26 @@ create the Cellar
   A cellar.
 
 create the stove
-  a container, openable
+  a container, singular, openable
   in the Cellar
   states, reversible: cold, hot
 
   A stove.
 
 create the strongbox
-  a container, openable, lockable with the small key, starts locked
+  a container, singular, openable, lockable with the small key, starts locked
   in the Cellar
 
   A strongbox.
 
 create the small key
-  a thing
+  a thing, singular
   in the Cellar
 
   A key.
 
 create the lantern
-  a thing, switchable
+  a thing, singular, switchable
   in the Cellar
   states: dusty, polished
 
@@ -471,26 +471,26 @@ create the Lamp Room
   A lamp room.
 
 create the hand lamp
-  a thing, light-source, starts unlit
+  a thing, singular, light-source, starts unlit
   in the Lamp Room
   states: dusty, polished
 
   A lamp.
 
 create the torch
-  a thing, light-source, switchable
+  a thing, singular, light-source, switchable
   in the Lamp Room
 
   A torch.
 
 create the cracked lens
-  a thing, breakable, starts broken
+  a thing, singular, breakable, starts broken
   in the Lamp Room
 
   A lens.
 
 create the pebble
-  a thing
+  a thing, singular
   in the Lamp Room
 
   A pebble.

@@ -52,7 +52,7 @@ create the Belt
 
 const SKIFF = `
 create the skiff
-  a vehicle, openable
+  a vehicle, singular of skiffs, openable
   in the Belt at 3, 4
   movement: open
   carries: in
@@ -161,7 +161,7 @@ create the Western Ocean
   end landmarks
 
 create the Marigold
-  a vehicle, openable, transparent
+  a vehicle, singular, openable, transparent
   in the Western Ocean at 40, 251
   movement: open
   carries: in
@@ -188,14 +188,14 @@ create the Azores
   Islands.
 
 create the brass telescope
-  a thing
+  a thing, singular
   in the Marigold
   sight: 75
 
   A telescope.
 
 create the cask of rum
-  a thing, floats
+  a thing, singular of casks of rum, floats
   in the Western Ocean at 300, 260
   aka cask, rum
 
@@ -257,7 +257,7 @@ create the Mining Platform
   A platform.
 
 create the cask
-  a thing, floats
+  a thing, singular, floats
   in the Mining Platform
 
   A cask.
@@ -311,7 +311,7 @@ describe('sight and distant prose off the vehicle (D6)', () => {
 
   it('`sight:` on a person is analysis.sight-owner; `seen from afar:` on a thing is analysis.seen-from-afar-owner', () => {
     expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate Bo\n  a person\n  in the Derelict\n  sight: 4\n\n  Bo.\n'))).toContain('analysis.sight-owner');
-    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the rock\n  a thing\n  in the Derelict\n  seen from afar: a rock\n\n  A rock.\n'))).toContain('analysis.seen-from-afar-owner');
+    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the rock\n  a thing, singular\n  in the Derelict\n  seen from afar: a rock\n\n  A rock.\n'))).toContain('analysis.seen-from-afar-owner');
   });
 });
 
@@ -335,8 +335,8 @@ describe('the open vehicle\'s diagnostics (D3)', () => {
 
 describe('placements in an expanse (D2, D3, D10)', () => {
   it('a thing that does not float is analysis.expanse-not-open-vehicle, with or without coordinates', () => {
-    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the rock\n  a thing\n  in the Belt at 5, 5\n\n  A rock.\n'))).toContain('analysis.expanse-not-open-vehicle');
-    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the rock\n  a thing\n  in the Belt\n\n  A rock.\n'))).toContain('analysis.expanse-not-open-vehicle');
+    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the rock\n  a thing, singular\n  in the Belt at 5, 5\n\n  A rock.\n'))).toContain('analysis.expanse-not-open-vehicle');
+    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the rock\n  a thing, singular\n  in the Belt\n\n  A rock.\n'))).toContain('analysis.expanse-not-open-vehicle');
   });
 
   it('coordinates outside the size are analysis.coordinates-outside-expanse', () => {
@@ -348,12 +348,12 @@ describe('placements in an expanse (D2, D3, D10)', () => {
   });
 
   it('`at` into a room is analysis.at-not-expanse', () => {
-    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the cask\n  a thing, floats\n  in the Derelict at 1, 1\n\n  A cask.\n'))).toContain('analysis.at-not-expanse');
+    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the cask\n  a thing, singular, floats\n  in the Derelict at 1, 1\n\n  A cask.\n'))).toContain('analysis.at-not-expanse');
   });
 
   it('a floating thing in an expanse that does not drift is analysis.floats-without-drift', () => {
-    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the cask\n  a thing, floats\n  in the Belt at 5, 5\n\n  A cask.\n'))).toContain('analysis.floats-without-drift');
-    const drifting = compiled(story(BELT.replace('  aka belt, void\n', '  aka belt, void\n  drift: 1 unit every 2 turns\n'), SKIFF, LANDMARKS, '\ncreate the cask\n  a thing, floats\n  in the Belt at 5, 5\n\n  A cask.\n'));
+    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, '\ncreate the cask\n  a thing, singular, floats\n  in the Belt at 5, 5\n\n  A cask.\n'))).toContain('analysis.floats-without-drift');
+    const drifting = compiled(story(BELT.replace('  aka belt, void\n', '  aka belt, void\n  drift: 1 unit every 2 turns\n'), SKIFF, LANDMARKS, '\ncreate the cask\n  a thing, singular, floats\n  in the Belt at 5, 5\n\n  A cask.\n'));
     expect(entityOf(drifting, 'cask').placement).toMatchObject({ place: 'belt', at: { x: 5, y: 5 } });
   });
 
@@ -383,7 +383,7 @@ const CONTROLLED_SKIFF = SKIFF.replace('  drive: player\n  commands: compass, co
 /** A console in the Derelict whose clause body is the statement under test. */
 const console = (body: string): string => `
 create the console
-  a thing, pushable
+  a thing, singular, pushable
   in the Derelict
 
   A console.
@@ -418,7 +418,7 @@ describe('`send` to coordinates or a landmark (D3)', () => {
   it('coordinates on a flight vehicle are analysis.vehicle-statement-not-for-movement; a malformed pair is parse.send', () => {
     const SPARROW = `
 create the Sparrow
-  a vehicle
+  a vehicle, singular
   in the Mining Platform
   movement: flight
   drive: control
@@ -466,10 +466,10 @@ describe('the voyage reads (D7)', () => {
   });
 
   it('`is within` on a compass vehicle, a non-landmark point and a sight read without the use line are each refused', () => {
-    const BOAT = '\ncreate the boat\n  a vehicle\n  in the Derelict\n  movement: compass\n  carries: in\n  drive: control\n  pace: 1 turn\n\n  A boat.\n';
+    const BOAT = '\ncreate the boat\n  a vehicle, singular\n  in the Derelict\n  movement: compass\n  carries: in\n  drive: control\n  pace: 1 turn\n\n  A boat.\n';
     expect(errorCodes(story(BELT, SKIFF, LANDMARKS, BOAT, console('    phrase x when the boat is within 3 of the Derelict'), '\ndefine phrase x\n  X.\nend phrase\n'))).toContain('analysis.vehicle-condition-not-for-movement');
     expect(errorCodes(story(BELT, SKIFF, LANDMARKS, console('    phrase x when the skiff is within 3 of the console'), '\ndefine phrase x\n  X.\nend phrase\n'))).toContain('analysis.not-a-destination');
-    const noUse = storyNoUse('\ncreate the Mining Platform\n  a room\n\n  A platform.\n\ncreate the rock\n  a thing\n  in the Mining Platform\n\n  A rock.\n', console('    phrase x when the rock is in sight').replace('in the Derelict', 'in the Mining Platform'), '\ndefine phrase x\n  X.\nend phrase\n');
+    const noUse = storyNoUse('\ncreate the Mining Platform\n  a room\n\n  A platform.\n\ncreate the rock\n  a thing, singular\n  in the Mining Platform\n\n  A rock.\n', console('    phrase x when the rock is in sight').replace('in the Derelict', 'in the Mining Platform'), '\ndefine phrase x\n  X.\nend phrase\n');
     expect(errorCodes(noUse)).toContain('analysis.expanses-needs-use');
   });
 

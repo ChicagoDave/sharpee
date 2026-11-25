@@ -36,7 +36,7 @@ ${upper}
   end after
 
 create the funicular
-  a vehicle
+  a vehicle, singular
   in the Lower Station
   movement: line
   carries: in
@@ -48,7 +48,7 @@ create the funicular
   A funicular car.
 
 create the switch
-  a thing, pushable
+  a thing, singular, pushable
   in the funicular
 
   A switch.
@@ -58,7 +58,7 @@ create the switch
   end on
 
 create the ticket
-  a thing
+  a thing, singular
   in the Lower Station
 
   A ticket.
@@ -113,13 +113,13 @@ create the Shore
   The shore.
 
 create the bottle
-  a thing, floats
+  a thing, singular, floats
   in the Pool at 2, 2
 
   A bottle.
 
 create the gull
-  a thing
+  a thing, singular
   in the Shore
 
   A gull.
@@ -169,7 +169,7 @@ create the Shore
   The shore.
 
 create the raft
-  a vehicle
+  a vehicle, singular
   in the Pool at 2, 3
   movement: open
   carries: in

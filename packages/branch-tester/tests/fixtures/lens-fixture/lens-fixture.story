@@ -19,11 +19,11 @@ create the Shed
   runs across the ceiling.
 
 create the pebble
-  a thing
+  a thing, singular
   in the Shed
 
 create the bucket
-  a thing
+  a thing, singular
   in the Shed
 
   A dented tin bucket.

@@ -19,7 +19,7 @@ create the troll
 
 create the elvish sword
   aka sword
-  a thing, weapon with damage 5 and skill-bonus 2
+  a thing, singular, weapon with damage 5 and skill-bonus 2
   in the Arena
 
   A sharp elvish blade.

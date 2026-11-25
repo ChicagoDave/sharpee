@@ -39,7 +39,7 @@ create the Garden
   A walled garden.
 
 create the bell
-  a thing
+  a thing, singular
   in the Terrace
 
   A small brass bell.

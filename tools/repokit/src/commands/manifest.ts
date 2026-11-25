@@ -53,6 +53,14 @@ import { compileStandardGrammarRules, readStdlibActionIds } from './grammar';
 /** Code-unit order for ids and slot names: the order a bare `sort()` gives, made explicit so the generated module never moves. */
 const byCodeUnit = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
+/** The singular and plural rules' shape the English provider hands over (ADR-409 D2), as the generated module declares it. */
+interface FormRulesFacts {
+  readonly toPlural: ReadonlyArray<{ ending: string; after?: readonly string[]; drop: number; add: string }>;
+  readonly toSingular: ReadonlyArray<{ ending: string; after?: readonly string[]; drop: number; add: string }>;
+  readonly unsafeSingularEndings: readonly string[];
+  readonly unsafePluralEndings: readonly string[];
+}
+
 const MODULE_PATH = 'packages/chord/src/stdlib-manifest.ts';
 const CHARACTER_MODULE_PATH = 'packages/chord/src/character-manifest.ts';
 
@@ -132,10 +140,14 @@ export function generateManifestModule(root: string): { source: string; actionId
     EnglishLanguageProvider: new () => {
       getSpecialVocabulary(): { articles: readonly string[] };
       getLanguageWords(): { selfWords: readonly string[]; nameStopwords: readonly string[] };
+      getFormRules(): FormRulesFacts;
     };
   };
   const englishProvider = new EnglishLanguageProvider();
   const words = { articles: englishProvider.getSpecialVocabulary().articles, ...englishProvider.getLanguageWords() };
+  // Singular-and-plural slice (ADR-409 D2): the suffix rules the compiler works
+  // out a name's singular or plural by, from the same provider — chord holds no English.
+  const formRules = englishProvider.getFormRules();
   const settingSchema: Array<[string, Array<[string, string]>]> = [];
   for (const [trait, entries] of SETTING_SCHEMA) {
     settingSchema.push([trait, [...entries].map(([key, spec]) => [key, spec.value])]);
@@ -154,7 +166,7 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(' * locale-owned facts (grammar shapes, direction words) go under `locales`,');
   lines.push(' * keyed from day one (Q-2), `en-US` the sole entry.');
   lines.push(' *');
-  lines.push(' * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts, ActSlotType.');
+  lines.push(' * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts, FormRules, FormRewrite, ActSlotType.');
   lines.push(' * Owner context: @sharpee/chord (generated artifact; browser-safe).');
   lines.push(' */');
   lines.push('');
@@ -162,6 +174,27 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push('');
   lines.push('/** The type a typed grammar slot carries: a seat table leaves these slots out. */');
   lines.push("export type ActSlotType = 'instrument' | 'topic' | 'text';");
+  lines.push('');
+  lines.push('/** One suffix rewrite of a word, singular to plural or plural to singular (ADR-409 D2). */');
+  lines.push('export interface FormRewrite {');
+  lines.push('  /** The word\'s ending; `""` matches any word. */');
+  lines.push('  readonly ending: string;');
+  lines.push('  /** Letters the ending must follow, when the rule needs them (`y` after a consonant). */');
+  lines.push('  readonly after?: readonly string[];');
+  lines.push('  /** How many letters of the word to drop, then what to add. */');
+  lines.push('  readonly drop: number;');
+  lines.push('  readonly add: string;');
+  lines.push('}');
+  lines.push('');
+  lines.push('/** The suffix rules a locale works out a word\'s singular or plural by (ADR-409 D2). */');
+  lines.push('export interface FormRules {');
+  lines.push('  /** Rewrites tried in order; the first whose `ending` matches applies. */');
+  lines.push('  readonly toPlural: readonly FormRewrite[];');
+  lines.push('  readonly toSingular: readonly FormRewrite[];');
+  lines.push('  /** Endings with no rule: a bare declaration on them is refused. */');
+  lines.push('  readonly unsafeSingularEndings: readonly string[];');
+  lines.push('  readonly unsafePluralEndings: readonly string[];');
+  lines.push('}');
   lines.push('');
   lines.push('/** Locale-owned stdlib facts: the grammar shapes, seats and typed slots, and the language words the IDE reads without a runtime (ADR-387 D2). */');
   lines.push('export interface StdlibLocaleFacts {');
@@ -171,6 +204,8 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push('  selfWords: readonly string[];');
   lines.push('  /** Words dropped when a name\'s content words are derived (ADR-387 D2). */');
   lines.push('  nameStopwords: readonly string[];');
+  lines.push("  /** The locale's singular and plural rules, applied once at compile time (ADR-409 D2). */");
+  lines.push('  formRules: FormRules;');
   lines.push('  /**');
   lines.push("   * Standard grammar pattern shapes per action id, as parts — the loader's");
   lines.push('   * removable surface (ADR-270 D3), compared to a removal by shape and');
@@ -232,6 +267,18 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(`      articles: [${words.articles.map((w) => JSON.stringify(w)).join(', ')}],`);
   lines.push(`      selfWords: [${words.selfWords.map((w) => JSON.stringify(w)).join(', ')}],`);
   lines.push(`      nameStopwords: [${words.nameStopwords.map((w) => JSON.stringify(w)).join(', ')}],`);
+  lines.push('      formRules: {');
+  for (const direction of ['toPlural', 'toSingular'] as const) {
+    lines.push(`        ${direction}: [`);
+    for (const rewrite of formRules[direction]) {
+      const after = rewrite.after ? `, after: [${rewrite.after.map((l) => JSON.stringify(l)).join(', ')}]` : '';
+      lines.push(`          { ending: ${JSON.stringify(rewrite.ending)}${after}, drop: ${rewrite.drop}, add: ${JSON.stringify(rewrite.add)} },`);
+    }
+    lines.push('        ],');
+  }
+  lines.push(`        unsafeSingularEndings: [${formRules.unsafeSingularEndings.map((e) => JSON.stringify(e)).join(', ')}],`);
+  lines.push(`        unsafePluralEndings: [${formRules.unsafePluralEndings.map((e) => JSON.stringify(e)).join(', ')}],`);
+  lines.push('      },');
   lines.push('      grammarShapes: {');
   for (const [action, shapes] of [...grammarShapes.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     lines.push(`        ${JSON.stringify(action)}: [`);

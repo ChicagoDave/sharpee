@@ -127,7 +127,7 @@ create Alex
   Just an ordinary visitor to the zoo.
 
 create the staff keycard
-  a thing
+  a thing, singular
   aka keycard, key card, card, key
   in the Zoo Entrance
 
@@ -136,7 +136,7 @@ create the staff keycard
 
 create the staff gate
   aka gate, metal gate, staff door
-  a thing, scenery, openable, lockable with the staff keycard
+  a thing, singular, scenery, openable, lockable with the staff keycard
   in the Main Path
 
   A sturdy metal gate with a "STAFF ONLY" sign.
@@ -152,21 +152,21 @@ create the staff gate
 
 create the welcome sign
   aka sign
-  a thing, scenery
+  a thing, singular, scenery
   in the Zoo Entrance
 
   A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY ZOO."
 
 create the ticket booth
   aka booth
-  a thing, scenery
+  a thing, singular, scenery
   in the Zoo Entrance
 
   A small wooden booth with a "Self-Guided Tours" sign.
 
 create the iron fence
   aka fence, railing
-  a thing, scenery
+  a thing, singular, scenery
   in the Zoo Entrance
 
   A tall wrought-iron fence with animal silhouettes.
@@ -187,35 +187,35 @@ create the flower beds
 
 create the hay bale
   aka hay, bale
-  a thing, scenery
+  a thing, singular, scenery
   in the Petting Zoo
 
   A large round bale of golden hay.
 
 create the toucan
   aka toco toucan
-  a thing, scenery
+  a thing, singular, scenery
   in the Aviary
 
   A Toco toucan with an enormous orange-and-black bill.
 
 create the waterfall
   aka water, basin
-  a thing, scenery
+  a thing, singular, scenery
   in the Aviary
 
   A gentle artificial waterfall cascading into a stone basin.
 
 create the rope perches
   aka perches, ropes
-  a thing, scenery, plural
+  a thing, scenery, plural of rope perch
   in the Aviary
 
   Thick sisal ropes strung between wooden posts.
 
 create the metal shelves
   aka shelves, shelf
-  a thing, scenery, plural
+  a thing, scenery, plural of metal shelf
   in the Supply Room
 
   Industrial metal shelving units stacked with supplies.
@@ -229,21 +229,21 @@ create the sugar gliders
 
 create the bush babies
   aka galagos
-  a thing, scenery, plural
+  a thing, scenery, plural of bush baby
   in the Nocturnal Animals Exhibit
 
   Two bush babies with impossibly large round eyes.
 
 create the barn owl
   aka owl
-  a thing, scenery
+  a thing, singular, scenery
   in the Nocturnal Animals Exhibit
 
   An enormous barn owl with a heart-shaped white face.
 
 create the snake
   aka python, snake enclosure
-  a thing, scenery
+  a thing, singular, scenery
   in the Nocturnal Animals Exhibit
   score confession worth 5
 
@@ -284,7 +284,7 @@ create the enamel pins
 
 create the cork board
   aka board, notices
-  a thing, scenery
+  a thing, singular, scenery
   in the Supply Room
 
   A cork board with staff schedules. A note in red marker: "DON'T FORGET:
@@ -292,7 +292,7 @@ create the cork board
 
 create the info plaque
   aka plaque, brass plaque
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Petting Zoo
 
   A brass plaque mounted on a wooden post near the petting zoo gate.
@@ -308,7 +308,7 @@ create the info plaque
 
 create the aviary plaque
   aka information board
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Aviary
 
   A colorful information board near the aviary entrance.
@@ -324,7 +324,7 @@ create the aviary plaque
 
 create the warning sign
   aka warning, yellow sign
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Supply Room
 
   A yellow warning sign near the nocturnal exhibit entrance.
@@ -338,7 +338,7 @@ create the warning sign
 
 create the zoo brochure
   aka brochure, pamphlet, leaflet
-  a thing, readable
+  a thing, singular, readable
   in the Zoo Entrance
   score read worth 5
 
@@ -350,7 +350,7 @@ create the zoo brochure
   end on
 
 create the zoo map
-  a thing
+  a thing, singular
   aka map, folding map
   in the Zoo Entrance
   score collected worth 5
@@ -363,20 +363,20 @@ create the zoo map
 
 create the backpack
   aka rucksack, pack
-  a container
+  a container, singular
   in the Zoo Entrance
 
   A small red canvas backpack.
 
 create the bag of animal feed
-  a thing
+  a thing, singular of bags of animal feed
   aka feed, animal feed, bag of feed, corn
   in the Petting Zoo
 
   A small brown paper bag filled with dried corn and pellets.
 
 create the souvenir penny
-  a thing
+  a thing, singular
   aka penny, coin
   in the Main Path
 
@@ -384,7 +384,7 @@ create the souvenir penny
 
 create the park bench
   aka bench, benches, seat
-  a supporter, scenery
+  a supporter, singular, scenery
   holds 3
   in the Main Path
 
@@ -392,13 +392,13 @@ create the park bench
 
 create the lunchbox
   aka lunch box, box
-  a container, openable
+  a container, singular, openable
   in the Main Path
 
   A dented metal lunchbox decorated with cartoon zoo animals.
 
 create the juice box
-  a thing
+  a thing, singular
   aka juice, drink
   in the lunchbox
 
@@ -406,7 +406,7 @@ create the juice box
 
 create the feed dispenser
   aka dispenser
-  a container, openable, scenery
+  a container, singular, openable, scenery
   in the Petting Zoo
 
   A coin-operated feed dispenser mounted on a wooden post. Sign: "FREE —
@@ -414,7 +414,7 @@ create the feed dispenser
 
 create the souvenir press
   aka press, penny press, machine
-  a container, scenery
+  a container, singular, scenery
   in the Gift Shop
 
   A heavy cast-iron machine with a big crank handle. A slot on top accepts
@@ -423,14 +423,14 @@ create the souvenir press
 
 create the flashlight
   aka torch, light, lamp
-  a thing, light-source, switchable
+  a thing, singular, light-source, switchable
   in the Supply Room
 
   A heavy-duty yellow flashlight.
 
 create the radio
   aka portable radio
-  a thing, scenery, switchable
+  a thing, singular of radios, scenery, switchable
   in the Supply Room
 
   A battered portable radio held together with duct tape. The antenna is
@@ -438,7 +438,7 @@ create the radio
   Animals, All The Time."
 
 create the disposable camera
-  a thing
+  a thing, singular
   aka camera
   in the Gift Shop
 

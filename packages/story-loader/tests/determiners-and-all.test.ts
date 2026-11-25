@@ -32,46 +32,46 @@ create the Workshop
   A cluttered workshop.
 
 create the brass lantern
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass lantern.
 
 create the sword
-  a thing
+  a thing, singular
   in the Workshop
 
   A sword.
 
 create the brass clock
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass clock.
 
 create the wall clock
-  a thing
+  a thing, singular
   in the Workshop
   scenery
 
   A wall clock.
 
 create the gold coins
-  a thing
+  a thing, singular
   in the Workshop
   aka coins
 
   Some gold coins.
 
 create the copper coins
-  a thing
+  a thing, singular
   in the Workshop
   aka coins
 
   Some copper coins.
 
 create the box
-  a thing
+  a thing, singular
   in the Workshop
 
   A small box.

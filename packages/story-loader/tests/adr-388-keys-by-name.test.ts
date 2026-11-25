@@ -348,7 +348,7 @@ create the Hat Stall
   A stall.
 
 create the monkey
-  a thing
+  a thing, singular
   in the Hat Stall
 
   A monkey.

@@ -92,7 +92,7 @@ create the Garden
   Roses everywhere.
 
 create the brass lamp
-  a thing
+  a thing, singular
   in the Den
 
   It gleams dully.

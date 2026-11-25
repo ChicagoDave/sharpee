@@ -67,7 +67,7 @@ describe('parse.exit-trailing', () => {
   });
 
   it('reports leftover words after a door, and after `, one-way`', () => {
-    const door = 'create the oak door\n  a door, openable\n\n  An oak door.\n\n';
+    const door = 'create the oak door\n  a door, singular, openable\n\n  An oak door.\n\n';
     const afterDoor = errors(compileStory(hall('east to the Den through the oak door, one way') + DEN + door));
     expect(afterDoor.map((d) => d.code)).toEqual(['parse.exit-trailing']);
     expect(afterDoor[0].message).toContain('Did you mean `, one-way`?');

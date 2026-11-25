@@ -73,7 +73,7 @@ define trait pettable
 end trait
 
 create the goat
-  a thing
+  a thing, singular
   in the Yard
   pettable
 
@@ -83,7 +83,7 @@ create the goat
     The goat leans into your hand.
 
 create the hen
-  a thing
+  a thing, singular
   in the Yard
   pettable
 
@@ -109,14 +109,14 @@ define trait pettable
 end trait
 
 create the goat
-  a thing
+  a thing, singular
   in the Yard
   pettable
 
   A pygmy goat.
 
 create the bell
-  a thing
+  a thing, singular
   in the Yard
 
   A brass bell.
@@ -146,7 +146,7 @@ define timer echo for the bell
 end timer
 
 create the clock
-  a thing
+  a thing, singular
   in the Yard
 
   A clock.
@@ -199,7 +199,7 @@ define trait creaking
 end trait
 
 create the weathervane
-  a thing
+  a thing, singular
   in the Yard
   creaking
 

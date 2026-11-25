@@ -29,27 +29,27 @@ create the Hall
   A hall.
 
 create the loaf
-  a thing, edible
+  a thing, singular of loaves, edible
   servings 3
   in the Hall
 
   A loaf.
 
 create the biscuit
-  a thing, edible
+  a thing, singular, edible
   in the Hall
 
   A biscuit.
 
 create the flask
-  a thing, drinkable
+  a thing, singular, drinkable
   servings 2
   in the Hall
 
   A flask.
 
 create the stone
-  a thing
+  a thing, singular
   in the Hall
 
   A stone.

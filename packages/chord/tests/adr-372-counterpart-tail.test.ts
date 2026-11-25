@@ -40,19 +40,19 @@ create Tobias
   A grocer.
 
 create the brass gong
-  a thing, scenery
+  a thing, singular, scenery
   in the Market Row
 
   A gong.
 
 create the dust ball
-  a thing
+  a thing, singular
   in the Market Row
 
   A ball.
 
 create the old boot
-  a thing
+  a thing, singular
   in the Market Row
 
   A boot.
@@ -82,12 +82,12 @@ function clausesOf(compiled: StoryIR, id: string) {
 /** A block of clauses appended to one existing entity via a trailing `create`-free story. */
 function onGong(clauses: string): string {
   return story('').replace(`create the brass gong
-  a thing, scenery
+  a thing, singular, scenery
   in the Market Row
 
   A gong.
 `, `create the brass gong
-  a thing, scenery
+  a thing, singular, scenery
   in the Market Row
 
   A gong.
@@ -97,12 +97,12 @@ ${clauses}`);
 
 function onBall(clauses: string): string {
   return story('').replace(`create the dust ball
-  a thing
+  a thing, singular
   in the Market Row
 
   A ball.
 `, `create the dust ball
-  a thing
+  a thing, singular
   in the Market Row
 
   A ball.

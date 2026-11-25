@@ -368,6 +368,10 @@ export const CORE_TRAIT_ROUTES: ReadonlyMap<string, TraitRoute> = new Map<string
       if (identity) identity.grammaticalNumber = 'plural';
     },
   ],
+  // ADR-409 D1: every Chord thing and door is declared singular or plural,
+  // and a person may be. The declaration lowers nothing here: the IR's `forms` carries the
+  // name's singular and plural, which the runtime reads (Amendment 2).
+  ['singular', qualifier],
   // Unconditional dark is the room builder's; a non-room `dark` is
   // validateIR's refusal.
   ['dark', qualifier],

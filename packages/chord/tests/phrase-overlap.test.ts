@@ -44,7 +44,7 @@ create the porter
   mood calm
 
 create the sword
-  a thing
+  a thing, singular
   in the Lodge
 
 define phrase reply-a

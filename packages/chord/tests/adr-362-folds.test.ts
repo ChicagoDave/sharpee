@@ -63,7 +63,7 @@ describe('the kind line folds onto the head (D1, AC-2)', () => {
 
   A hall.
 
-create the brass lamp, a thing, switchable
+create the brass lamp, a thing, singular, switchable
   in the Hall
 
   A lamp.
@@ -75,7 +75,7 @@ create the brass lamp, a thing, switchable
   A hall.
 
 create the brass lamp
-  a thing, switchable
+  a thing, singular, switchable
   in the Hall
 
   A lamp.
@@ -97,7 +97,7 @@ create the Maze, a region
 
     A cell.
 
-create the chest, a container, readable with text "KEEP OUT"
+create the chest, a container, singular, readable with text "KEEP OUT"
   in the Hall
 
   A chest.
@@ -131,8 +131,8 @@ ${body}  in the Hall
   A hall.
 
 `;
-    expect(codes(base + 'create the lamp, a thing\n  switchable\n  in the Hall\n\n  A lamp.\n\n')).toEqual([]);
-    expect(codes(base + 'create the lamp, switchable\n  a thing\n  in the Hall\n\n  A lamp.\n\n')).toEqual(['analysis.kind-not-first']);
+    expect(codes(base + 'create the lamp, a thing, singular\n  switchable\n  in the Hall\n\n  A lamp.\n\n')).toEqual([]);
+    expect(codes(base + 'create the lamp, switchable\n  a thing, singular\n  in the Hall\n\n  A lamp.\n\n')).toEqual(['analysis.kind-not-first']);
   });
 
   it('a comma with nothing after it → parse.composition on the head', () => {
@@ -186,7 +186,7 @@ ${ROOMS}`;
 
   it('a door tail reads on the line, and `exits:` lines mix with single lines', () => {
     const r = compileStory(hall('  exits: east to the B through the oak door\n  north to the C\n') +
-      'create the oak door\n  a door, openable\n\n  An oak door.\n\n');
+      'create the oak door\n  a door, singular, openable\n\n  An oak door.\n\n');
     expect(errors(r)).toEqual([]);
     expect(entity(r, 'hall').exits.map((e) => `${e.direction}>${e.to.kind === 'room' ? e.to.id : e.to.kind}:${e.via}`)).toEqual(['east>b:oak-door', 'north>c:null']);
   });
@@ -263,7 +263,7 @@ ${ROOMS}`));
   A hall.
 
 create the lamp
-  a thing
+  a thing, singular
 ${line}  in the Hall
 
   A lamp.
@@ -316,7 +316,7 @@ ${ROOMS}`;
   A hall.
 
 create the lamp
-  a thing
+  a thing, singular
   in the Hall
 
   A lamp.

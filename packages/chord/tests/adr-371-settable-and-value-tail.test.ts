@@ -49,13 +49,13 @@ function ir(source: string): StoryIR {
 describe('flammable (ADR-371 D2)', () => {
   it('requires exactly one burning implementation, as cuttable does', () => {
     expect(codes(story(`create the letter
-  a thing, flammable
+  a thing, singular, flammable
   in the Cockpit
 
   A letter.
 `))).toContain('analysis.gerund-implementation');
     expect(codes(story(`create the letter
-  a thing, flammable
+  a thing, singular, flammable
   in the Cockpit
 
   A letter.
@@ -68,13 +68,13 @@ describe('flammable (ADR-371 D2)', () => {
 
   it('carries `with the <tool>` as its single-entity value', () => {
     const compiled = ir(story(`create the torch
-  a thing
+  a thing, singular
   in the Cockpit
 
   A torch.
 
 create the letter
-  a thing, flammable with the torch
+  a thing, singular, flammable with the torch
   in the Cockpit
 
   A letter.
@@ -92,7 +92,7 @@ create the letter
 describe('settable (ADR-371 D3)', () => {
   it('needs a states line', () => {
     expect(codes(story(`create the dial
-  a thing, settable
+  a thing, singular, settable
   in the Cockpit
 
   A dial.
@@ -101,7 +101,7 @@ describe('settable (ADR-371 D3)', () => {
 
   it('needs the states to be reversible', () => {
     expect(codes(story(`create the dial
-  a thing, settable
+  a thing, singular, settable
   in the Cockpit
   states: low, high
 
@@ -111,7 +111,7 @@ describe('settable (ADR-371 D3)', () => {
 
   it('compiles with reversible states and lowers to nothing but the adjective', () => {
     const compiled = ir(story(`create the dial
-  a thing, settable
+  a thing, singular, settable
   in the Cockpit
   states, reversible: low, medium, high
 
@@ -126,7 +126,7 @@ describe('settable (ADR-371 D3)', () => {
 
 describe('the `to <value>` head tail (ADR-371 D4)', () => {
   const dial = (clauses: string) => story(`create the dial
-  a thing, settable
+  a thing, singular, settable
   in the Cockpit
   states, reversible: low, medium, high
 

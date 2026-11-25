@@ -193,7 +193,7 @@ create the Barn
   A barn.
 
 create the crate
-  a thing, pushable
+  a thing, singular, pushable
   in the Lane
 
   A crate.
@@ -206,14 +206,14 @@ create the crate
   end pushing
 
 create the strongbox
-  a container
+  a container, singular
   in the Shed
   openable, lockable with the brass key
 
   A strongbox.
 
 create the brass key
-  a thing
+  a thing, singular
   in the Lane
 
   A small brass key.

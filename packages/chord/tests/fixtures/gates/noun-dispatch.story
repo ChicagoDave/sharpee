@@ -6,7 +6,7 @@ story
   story-version: 0.0.1
 
 create the narrator
-  a thing
+  a thing, singular
   states, reversible: listening, finished
 
 create the Pawnshop
@@ -15,27 +15,27 @@ create the Pawnshop
   A narrow pawnshop with a glass counter.
 
 create the brass lamp
-  a thing
+  a thing, singular
   in the Pawnshop
   states: shelved, priced
 
   A dented brass lamp.
 
 create the silver spoon
-  a thing
+  a thing, singular
   in the Pawnshop
   states: shelved, priced
 
   A tarnished silver spoon.
 
 create the glass eye
-  a thing
+  a thing, singular
   in the Pawnshop
 
   A glass eye that stares at nothing.
 
 create the tin cup
-  a thing
+  a thing, singular
   in the Pawnshop
   states: dull, shiny
 
@@ -46,7 +46,7 @@ create the tin cup
   end on
 
 create the display case
-  a thing, scenery
+  a thing, singular, scenery
   in the Pawnshop
 
   A locked display case.

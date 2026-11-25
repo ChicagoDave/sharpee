@@ -6,7 +6,7 @@
 
 **Status**: **ACCEPTED** (David, 2026-11-24, session 4a60b3: "yes", to "mark ADR-409 ACCEPTED?". This came after the open-questions interview and an `adr-review` that went from 17/22 to 22/22 once four findings were folded in: the interface shapes, the module list, the restated collision evidence, and the owner of the notes on other records. The review's two further findings, stopword names and proper names, were folded the same way.) Acceptance does not authorize the `packages/` work. The implementing plan's phases each need David's explicit go.
 
-**Amended**: Amendment 1 (2026-11-24, session 4a60b3, David: "a", after "this is an effort to make the IDE v1.0.0 worthy") adds D7 and AC-9 to AC-12: Chord Writer surfaces the forms.
+**Amended**: Amendment 1 (2026-11-24, session 4a60b3, David: "a", after "this is an effort to make the IDE v1.0.0 worthy") adds D7 and AC-9 to AC-12: Chord Writer surfaces the forms. Amendment 2 (2026-11-24, session ce3248, David: "IdentityTrait should have .plural and .singular properties, not gramaticalNumber", then ".name is its name and .plural and .singular are filled regardless...if we need a signal we can have a calculated property .isPlural = (.name == .plural)") adds D8: the singular and the plural are both filled, and `grammaticalNumber` is removed. Amendment 3 (2026-11-24, session ce3248, David: "I guess an object with a room or a person don't need to follow the plural rule") adds D9: a person need not be declared.
 
 **Date**: 2026-11-24
 
@@ -231,6 +231,23 @@ It reads its guess from lang-en-us's `singularize`/`pluralize` (ADR-407 D5), whi
 4. **The lens card offers the edit.** A "Singular/plural" finding card (D5) already selects its phrase (ADR-408 D9). It also offers the edit its wording names (`singular of mice`, or adding `pricket` to aka), using the same edit shape as item 2.
 
 Acceptance: AC-9 to AC-12 below.
+
+### D8 — `.singular` and `.plural` are both filled; `grammaticalNumber` goes (Amendment 2)
+
+*(Amendment 2, David, 2026-11-24, session ce3248: "IdentityTrait should have .plural and .singular properties, not gramaticalNumber"; ".name is its name and .plural and .singular are filled regardless...if we need a signal we can have a calculated property .isPlural = (.name == .plural)".)* This replaces D1's "`singular` sets `IdentityTrait.grammaticalNumber = 'singular'`, as `plural` sets `'plural'`" and D3's "one fact for matching and rendering" rule. In D3, a `plural` thing set only `.singular` and a `singular` thing set only `.plural`.
+- **The trait.** `IdentityTrait.name` stays the name. `IdentityTrait.singular` and `.plural` are both filled, and the name is one of them. `IdentityTrait.isPlural` is a computed property, `name === plural`. `IdentityTrait.grammaticalNumber` (ADR-089) is removed. Its readers read `isPlural` instead: parser-en-us's pronoun context ("it" or "them"), stdlib's `noun-phrase.ts`, and the helpers builder's `.plural()`. `nameFormOrigin` records where the form that is not the name came from.
+- **The IR.** `IREntityForms` is `{ singular, plural, origin, aka }`, with D2's `name: { form, origin }` gone. `origin` is the origin of the form that is not the name.
+- **The declaration.** In Chord, `singular` and `plural` say which of the two forms the name is. The loader lowers nothing from the adjective itself; it fills both strings from `forms`.
+- **TypeScript.** An entity that sets neither string reads as singular. One that sets `.plural` equal to its name is plural.
+- **When.** The IR shape lands with the language (Phase 2). The trait, the loader and the readers land with the runtime (Phase 4), and AC-4 reads `.singular`, `.plural`, `.isPlural`, `.nameFormOrigin` and `.akaForms`.
+
+### D9 — A person need not be declared (Amendment 3)
+
+*(Amendment 3, David, 2026-11-24, session ce3248: "I guess an object with a room or a person don't need to follow the plural rule".)* This narrows D1's requirement to things and doors. In D1, a person carried the declaration beside `proper`, and requiring things only was rejected because it left `the guards` with no singular.
+- **Undeclared.** A person with no declaration compiles. It has no `forms`, reads as singular, and answers to its name and aka words as written. Most proper names are people, so D2's proper-name refusal reaches few blocks.
+- **Declared.** A person may still be declared (`the guards`, `plural`). A declared person takes D2 and D3 as a thing does, including the proper-name refusal on a bare declaration.
+- **Amendment 2.** D8's "filled regardless" holds for every declared block. An undeclared person carries neither string.
+- **AC-1** refuses an undeclared thing or door. It does not refuse an undeclared person.
 
 ## Acceptance Criteria
 

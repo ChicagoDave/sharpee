@@ -71,7 +71,7 @@ create the Beach
   A beach.
 
 create the sea
-  a thing
+  a thing, singular
   in the Beach
 
   The sea.

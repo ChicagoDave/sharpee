@@ -17,7 +17,7 @@ create the Hall
   A hall.
 
 create the dishes
-  a thing, scenery, plural
+  a thing, scenery, plural of dish
   in the Hall
   states, reversible: dirty, clean
 

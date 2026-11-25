@@ -22,7 +22,7 @@ create the Bath
   A bath.
 
 create the stove
-  a thing, scenery
+  a thing, singular, scenery
   in the Bath
   states, reversible: cold, hot
 

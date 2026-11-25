@@ -108,7 +108,7 @@ final class WorldSourceEditTests: XCTestCase {
                          north to the Yard
 
                        create the bankside sign
-                         a thing, scenery
+                         a thing, singular, scenery
                          in the Tavern
 
                        create the Yard
@@ -156,7 +156,7 @@ final class WorldSourceEditTests: XCTestCase {
           end topic
 
         create the pen
-          a thing, scenery
+          a thing, singular, scenery
           in the Tiring-House
 
         define phrase ides-nothing
@@ -190,7 +190,7 @@ final class WorldSourceEditTests: XCTestCase {
           a door, openable
 
         create the iron latch
-          a thing, scenery
+          a thing, singular, scenery
 
         create the Yard
           a room
@@ -204,7 +204,7 @@ final class WorldSourceEditTests: XCTestCase {
         let after = apply(edit, to: source)
 
         XCTAssertFalse(edit.text.contains("in the"), edit.text)
-        XCTAssertTrue(after.hasSuffix("create the false modesty\n  a thing, scenery\n"), after)
+        XCTAssertTrue(after.hasSuffix("create the false modesty\n  a thing, singular, scenery\n"), after)
         XCTAssertTrue(after.hasPrefix(source), "an append never disturbs what is already there")
     }
 
@@ -239,7 +239,7 @@ final class WorldSourceEditTests: XCTestCase {
           aka bankside
 
         create the long bar
-          a thing, scenery
+          a thing, singular, scenery
           in the Tavern
 
         define phrase closing-time

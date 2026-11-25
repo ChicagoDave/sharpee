@@ -34,7 +34,7 @@ create Jack
     Jack in the dress and the fashionable hat, boots underneath.
 
 create the dress
-  a thing, wearable
+  a thing, singular, wearable
   in the Stall
 
   A dress.

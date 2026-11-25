@@ -6,7 +6,7 @@ story
   story-version: 0.0.1
 
 create the vault door
-  a thing, scenery
+  a thing, singular, scenery
   states: open, closed
 
 create Alex

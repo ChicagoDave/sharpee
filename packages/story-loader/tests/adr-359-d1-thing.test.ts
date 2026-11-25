@@ -40,7 +40,7 @@ before the game starts
 end before
 
 create the cap
-  a thing, wearable
+  a thing, singular, wearable
   in the Hall
 
   A cap.
@@ -52,14 +52,14 @@ define trait heirloom
 end trait
 
 create the scarf
-  a thing, wearable
+  a thing, singular of scarves, wearable
   heirloom
   in the Hall
 
   A scarf.
 
 create the crate
-  a container
+  a container, singular
   in the Hall
 
   A crate.

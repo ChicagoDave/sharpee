@@ -63,7 +63,7 @@ describe('`proper` trait adjective (ADR-242 D1)', () => {
 
   it('`proper` composes on a non-person kind — a named thing is as proper as a named person (GH #342)', () => {
     const ir = compiled(`create the lantern
-  a container, proper
+  a container, singular, proper
   in the Hall
 `);
     expect(ir.entities.find((e) => e.id === 'lantern')!.traits.map((t) => t.name)).toContain('proper');
@@ -71,7 +71,7 @@ describe('`proper` trait adjective (ADR-242 D1)', () => {
 
   it('`proper` composes on a plain thing with no kind noun (GH #342)', () => {
     const ir = compiled(`create the doormat
-  a thing, proper
+  a thing, singular, proper
   in the Hall
 `);
     expect(ir.entities.find((e) => e.id === 'doormat')!.traits.map((t) => t.name)).toContain('proper');
@@ -119,7 +119,7 @@ describe('`pronouns <word>` person line (ADR-242 D5)', () => {
 
   it('`pronouns` on a non-person is rejected', () => {
     expect(codesOf(`create the lantern
-  a container
+  a container, singular
   pronouns she
   in the Hall
 `)).toContain('analysis.pronouns-person-only');

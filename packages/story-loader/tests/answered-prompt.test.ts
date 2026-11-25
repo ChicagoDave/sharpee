@@ -24,33 +24,33 @@ create the Workshop
   A cluttered workshop.
 
 create the sword
-  a thing
+  a thing, singular
   in the Workshop
 
   A sword.
 
 create the brass clock
-  a thing
+  a thing, singular
   in the Workshop
 
   A brass clock.
 
 create the wall clock
-  a thing
+  a thing, singular
   in the Workshop
   scenery
 
   A wall clock.
 
 create the brass key
-  a thing
+  a thing, singular
   in the Workshop
   aka key
 
   A brass key.
 
 create the silver key
-  a thing
+  a thing, singular
   in the Workshop
   aka key
 

@@ -47,6 +47,13 @@ final class SyntaxHighlighterTests: XCTestCase {
             XCTAssertEqual(SyntaxHighlighter.color(for: token(.word, opener)), Theme.tokenKeyword,
                            "`\(opener)` opens a Chord 4.0 block")
         }
+        // Chord 4.2.0 (ADR-409 D7.1): the declaration every thing and door carries.
+        for declaration in ["singular", "plural"] {
+            XCTAssertEqual(SyntaxHighlighter.color(for: token(.word, declaration)), Theme.tokenKeyword,
+                           "`\(declaration)` says whether a name is singular or plural")
+        }
+        XCTAssertNil(SyntaxHighlighter.color(for: token(.word, "of")),
+                     "`of` is a prose word first and stays uncolored")
         XCTAssertNil(SyntaxHighlighter.color(for: token(.word, "lighthouse")),
                      "non-keyword words stay at base foreground")
         XCTAssertNil(SyntaxHighlighter.color(for: token(.punct, "—")))

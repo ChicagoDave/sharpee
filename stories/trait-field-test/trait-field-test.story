@@ -39,21 +39,21 @@ end before
 ## Row 6 — two hats on one head (wearable on the <part>)
 
 create the straw hat
-  a thing, wearable on the head
+  a thing, singular, wearable on the head
   in the Hall
   aka hat
 
   A wide straw hat.
 
 create the felt cap
-  a thing, wearable on the head
+  a thing, singular, wearable on the head
   in the Hall
   aka cap
 
   A soft felt cap.
 
 create the wool scarf
-  a thing, wearable on the neck
+  a thing, singular of wool scarves, wearable on the neck
   in the Hall
   aka scarf
 
@@ -62,7 +62,7 @@ create the wool scarf
 ## Row 3 — a wearable that will not come off (the refusing clause is the idiom)
 
 create the iron ring
-  a thing, wearable
+  a thing, singular, wearable
   aka ring
 
   A plain iron ring, cold to the touch.
@@ -78,21 +78,21 @@ end phrase
 ## Row 7 — a door that opens when unlocked; a case that closes when switched off
 
 create the iron key
-  a thing
+  a thing, singular
   in the Hall
   aka key
 
   A heavy iron key.
 
 create the cellar door
-  a door, lockable with the iron key
+  a door, singular, lockable with the iron key
   opens when unlocked
   aka door
 
   A heavy grey door. Its latch springs when the lock turns.
 
 create the display case
-  a container, openable, switchable, starts open, starts on
+  a container, singular, openable, switchable, starts open, starts on
   closes when switched off
   in the Hall
   aka case
@@ -102,7 +102,7 @@ create the display case
 ## Row 1 — a light switched on and off, in the dark cellar and again in the lit hall
 
 create the oil lamp
-  a thing, light-source, switchable
+  a thing, singular, light-source, switchable
   in the Hall
   aka lamp
 
@@ -111,7 +111,7 @@ create the oil lamp
 ## Row 2 — a liquid touched
 
 create the cordial
-  a thing, drinkable
+  a thing, singular, drinkable
   in the Hall
 
   A small glass of cordial.
@@ -119,21 +119,21 @@ create the cordial
 ## Row 8 — a strong scent escapes a closed box; a plain edible does not
 
 create the tin box
-  a container, openable
+  a container, singular, openable
   in the Hall
   aka box
 
   A dented tin box.
 
 create the ripe cheese
-  a thing, edible, smelly
+  a thing, singular, edible, smelly
   in the tin box
   aka cheese
 
   A wedge of very ripe cheese.
 
 create the plain bread
-  a thing, edible
+  a thing, singular, edible
   in the tin box
   aka bread
 
@@ -142,21 +142,21 @@ create the plain bread
 ## Row 8 — a loud thing is heard through a closed crate and through the cellar door
 
 create the bell crate
-  a container, openable
+  a container, singular, openable
   in the Hall
   aka crate
 
   A slatted crate, lid shut.
 
 create the brass bell
-  a thing, loud
+  a thing, singular, loud
   in the bell crate
   aka bell
 
   A brass bell that rings at the slightest touch.
 
 create the wooden rattle
-  a thing
+  a thing, singular
   in the bell crate
   aka rattle
 
@@ -165,14 +165,14 @@ create the wooden rattle
 ## Row 8 — a declared scent on a thing that is not food: smelled in the dark, and `smell` names it
 
 create the bundle of lavender
-  a thing, smelly
+  a thing, singular of bundles of lavender, smelly
   in the Cellar
   aka lavender
 
   A bundle of dried lavender hung from a nail.
 
 create the wind chime
-  a thing, loud
+  a thing, singular, loud
   in the Cellar
   aka chime
 
@@ -181,7 +181,7 @@ create the wind chime
 ## Rows 4 and 5 — a farmhand who refuses a gift, with a topic table; a quiet one without
 
 create the withered apple
-  a thing, edible
+  a thing, singular, edible
   aka apple
 
   A withered apple.

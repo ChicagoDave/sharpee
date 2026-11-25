@@ -38,7 +38,7 @@ create the Kitchen
   A kitchen.
 
 create the oak door
-  a door
+  a door, singular
 
   An oak door.
 
@@ -147,7 +147,7 @@ create the Gatehouse
   A gatehouse.
 
 create the rusty winch
-  a thing
+  a thing, singular
   in the Gatehouse
 
   A winch.
@@ -203,7 +203,7 @@ create the Hall
   A hall.
 
 create the goat
-  a thing
+  a thing, singular
   in the Hall
 
   A goat.

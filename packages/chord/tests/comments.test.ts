@@ -121,13 +121,13 @@ describe('ADR-249 parser: comment position (AC group 2)', () => {
   });
 
   it('a blank-delimited comment between a create header and its body raises parse.comment-inside-block', () => {
-    const src = story('create the lamp\n  a thing\n\n## still deciding\n\n  a thing, portable\n\n');
+    const src = story('create the lamp\n  a thing, singular\n\n## still deciding\n\n  a thing, portable\n\n');
     expect(errorCodes(src)).toContain('parse.comment-inside-block');
     expect(errorCodes(src)).not.toContain('lex.comment-blank-lines');
   });
 
   it('the same header/body split without blanks raises lex.comment-blank-lines', () => {
-    const src = story('create the lamp\n  a thing\n## still deciding\n  a thing, portable\n\n');
+    const src = story('create the lamp\n  a thing, singular\n## still deciding\n  a thing, portable\n\n');
     expect(errorCodes(src)).toContain('lex.comment-blank-lines');
   });
 
@@ -152,7 +152,7 @@ describe('ADR-249 parser: comment position (AC group 2)', () => {
   });
 
   it('an indented `##` line in a statement body raises parse.comment-inside-block', () => {
-    const mid = 'create the lamp\n  a thing, portable\n  starts in the Cave\n\n  A lamp.\n\n  on the player taking\n    ## remember to gate this\n    phrase taken-note\n  end on\n\n';
+    const mid = 'create the lamp\n  a thing, singular, portable\n  starts in the Cave\n\n  A lamp.\n\n  on the player taking\n    ## remember to gate this\n    phrase taken-note\n  end on\n\n';
     expect(errorCodes(story(mid))).toContain('parse.comment-inside-block');
   });
 

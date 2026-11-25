@@ -126,7 +126,7 @@ describe('D6 — exits are gated to rooms (Acceptance 15)', () => {
   it('Acceptance 15: `north to the Hall` in a non-room create block is a compile error', () => {
     const source = `${HEADER}${WORLD}
 create the crate
-  a container
+  a container, singular
   in the Hall
   north to the Hall
 
@@ -141,7 +141,7 @@ create the crate
   it('a blocked exit rides the same gate', () => {
     const source = `${HEADER}${WORLD}
 create the crate
-  a container
+  a container, singular
   in the Hall
   north is blocked: sealed
 
@@ -159,7 +159,7 @@ define phrases en-US
   it('a deadly exit rides the same gate', () => {
     const source = `${HEADER}${WORLD}
 create the crate
-  a container
+  a container, singular
   in the Hall
   north is deadly: fell
 

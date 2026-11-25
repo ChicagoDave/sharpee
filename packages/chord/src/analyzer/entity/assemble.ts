@@ -29,6 +29,7 @@ export function assembleEntity(draft: EntityDraft): IREntity {
     name: draft.name,
     article: draft.article,
     aka: draft.aka,
+    ...(draft.forms !== undefined ? { forms: draft.forms } : {}),
     ...(draft.pronouns !== undefined ? { pronouns: draft.pronouns } : {}),
     isPlayable: draft.isPlayable,
     kinds: draft.kinds,

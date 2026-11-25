@@ -6,7 +6,7 @@ story
   story-version: 0.0.1
 
 create the vase
-  a thing, scenery
+  a thing, singular, scenery
   states: sealed, cracked
 
 create the Parlor

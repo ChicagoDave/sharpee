@@ -54,25 +54,25 @@ create Alex
   You.
 
 create the sorting machine
-  a thing, scenery
+  a thing, singular, scenery
   in the Specimen Room
 
   A machine.
 
 create the route placard
-  a thing, detachable, attached to the sorting machine
+  a thing, singular, detachable, attached to the sorting machine
   in the Specimen Room
 
   A placard.
 
 create the brass plate
-  a thing, attached to the sorting machine
+  a thing, singular, attached to the sorting machine
   in the Specimen Room
 
   A plate.
 
 create the specimen jar
-  a thing, fragile, breakable
+  a thing, singular, fragile, breakable
   in the Specimen Room
   states, reversible: intact-shelf, swept
 
@@ -84,25 +84,25 @@ create the specimen jar
   end after
 
 create the clay pot
-  a thing, breakable
+  a thing, singular, breakable
   in the Specimen Room
 
   A pot.
 
 create the cracked lens
-  a thing, breakable, starts broken
+  a thing, singular, breakable, starts broken
   in the Specimen Room
 
   A lens.
 
 create the crate
-  a container
+  a container, singular
   in the Specimen Room
 
   A crate.
 
 create the mooring line
-  a thing
+  a thing, singular
   in the Specimen Room
   aka line
 
@@ -113,7 +113,7 @@ create the mooring line
   end on
 
 create the signal lamp
-  a thing
+  a thing, singular
   in the Specimen Room
   states, reversible: dim, flagged
 

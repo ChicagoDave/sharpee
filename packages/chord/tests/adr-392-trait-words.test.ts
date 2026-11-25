@@ -32,6 +32,7 @@ create the Hall
 
 create the cellar door
   ${door}
+  singular
 
   A door.
 
@@ -48,7 +49,7 @@ create Alex
   You.
 
 create the iron key
-  a thing
+  a thing, singular
   in the Hall
 
   A key.
@@ -72,7 +73,7 @@ describe('wearable on the <part> (ADR-392 D2)', () => {
   it('lowers to the `wearable` adjective with the part under the key `on`', () => {
     const hat = entity(
       ir(story(`create the straw hat
-  a thing, wearable on the head
+  a thing, singular, wearable on the head
   in the Hall
 
   A hat.
@@ -86,7 +87,7 @@ describe('wearable on the <part> (ADR-392 D2)', () => {
   it('joins a multi-word part with spaces', () => {
     const glove = entity(
       ir(story(`create the glove
-  a thing, wearable on the left hand
+  a thing, singular, wearable on the left hand
   in the Hall
 
   A glove.
@@ -99,21 +100,21 @@ describe('wearable on the <part> (ADR-392 D2)', () => {
   it('takes a sibling adjective after the part', () => {
     const cap = entity(
       ir(story(`create the cap
-  a thing, wearable on the head, scenery
+  a thing, singular, wearable on the head, scenery
   in the Hall
 
   A cap.
 `)),
       'cap',
     );
-    expect(cap.traits.map((t) => t.name)).toEqual(['wearable', 'scenery']);
-    expect(cap.traits[0].config[0].value).toBe('head');
+    expect(cap.traits.map((t) => t.name)).toEqual(['singular', 'wearable', 'scenery']);
+    expect(cap.traits[1].config[0].value).toBe('head');
   });
 
   it('a bare `wearable` carries no setting — the simple wearable', () => {
     const ring = entity(
       ir(story(`create the ring
-  a thing, wearable
+  a thing, singular, wearable
   in the Hall
 
   A ring.
@@ -127,7 +128,7 @@ describe('wearable on the <part> (ADR-392 D2)', () => {
     expect(
       codes(
         story(`create the cap
-  a thing, wearable on head
+  a thing, singular, wearable on head
   in the Hall
 
   A cap.
@@ -140,7 +141,7 @@ describe('wearable on the <part> (ADR-392 D2)', () => {
     expect(
       codes(
         story(`create the cap
-  a thing, wearable on the
+  a thing, singular, wearable on the
   in the Hall
 
   A cap.
@@ -160,7 +161,7 @@ describe('opens when unlocked (ADR-392 D4)', () => {
   it('sets the flag on a lockable, openable container, whatever the line order', () => {
     const chest = entity(
       ir(story(`create the chest
-  a container
+  a container, singular
   opens when unlocked
   openable, lockable with the iron key
   in the Hall
@@ -181,7 +182,7 @@ describe('opens when unlocked (ADR-392 D4)', () => {
     expect(
       codes(
         story(`create the box
-  a container, openable
+  a container, singular, openable
   opens when unlocked
   in the Hall
 
@@ -195,7 +196,7 @@ describe('opens when unlocked (ADR-392 D4)', () => {
     expect(
       codes(
         story(`create the padlock
-  a thing, lockable with the iron key
+  a thing, singular, lockable with the iron key
   opens when unlocked
   in the Hall
 
@@ -222,7 +223,7 @@ describe('opens when unlocked (ADR-392 D4)', () => {
 describe('closes when switched off (ADR-392 D4)', () => {
   it('sets the flag on a switchable, openable container', () => {
     const story$ = ir(story(`create the display case
-  a container, openable, switchable
+  a container, singular, openable, switchable
   closes when switched off
   in the Hall
 
@@ -237,7 +238,7 @@ describe('closes when switched off (ADR-392 D4)', () => {
     expect(
       codes(
         story(`create the display case
-  a container, openable
+  a container, singular, openable
   closes when switched off
   in the Hall
 
@@ -251,7 +252,7 @@ describe('closes when switched off (ADR-392 D4)', () => {
     expect(
       codes(
         story(`create the lamp
-  a thing, switchable
+  a thing, singular, switchable
   closes when switched off
   in the Hall
 
@@ -263,7 +264,7 @@ describe('closes when switched off (ADR-392 D4)', () => {
 
   it('refuses a second line and keeps the first', () => {
     const source = story(`create the display case
-  a container, openable, switchable
+  a container, singular, openable, switchable
   closes when switched off
   closes when switched off
   in the Hall
@@ -276,7 +277,7 @@ describe('closes when switched off (ADR-392 D4)', () => {
   it('refuses a malformed line, naming the form', () => {
     const result = compile(
       story(`create the display case
-  a container, openable, switchable
+  a container, singular, openable, switchable
   closes when off
   in the Hall
 
@@ -298,18 +299,18 @@ describe('smelly and loud (ADR-392 D6)', () => {
 
   it('compile clean on any thing and lower as bare trait compositions', () => {
     const story$ = ir(story(`create the ripe cheese
-  a thing, edible, smelly
+  a thing, singular, edible, smelly
   in the Hall
 
   Cheese.
 
 create the brass chime
-  a thing, loud
+  a thing, singular, loud
   in the Cellar
 
   A chime.
 `));
-    expect(entity(story$, 'ripe-cheese').traits.map((t) => t.name)).toEqual(['edible', 'smelly']);
+    expect(entity(story$, 'ripe-cheese').traits.map((t) => t.name)).toEqual(['singular', 'edible', 'smelly']);
     const loud = entity(story$, 'brass-chime').traits.find((t) => t.name === 'loud')!;
     expect(loud.config).toEqual([]);
     expect(loud.condition).toBeNull();

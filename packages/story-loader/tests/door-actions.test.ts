@@ -61,19 +61,19 @@ create the Hall
   A long hall.
 
 create the oak door
-  a door, lockable with the brass key
+  a door, singular, lockable with the brass key
 
   A heavy oak door.
 
 create the chest
-  a container
+  a container, singular
   in the Kitchen
   openable, lockable
 
   A pine chest.
 
 create the brass key
-  a thing
+  a thing, singular
 
   A small brass key.
 
@@ -92,8 +92,8 @@ end before
 `;
 
 const STORY_UNLOCKED = STORY.replace(
-  'a door, lockable with the brass key',
-  'a door, lockable with the brass key, starts unlocked',
+  'a door, singular, lockable with the brass key',
+  'a door, singular, lockable with the brass key, starts unlocked',
 );
 
 interface Loaded {

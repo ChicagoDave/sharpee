@@ -82,34 +82,34 @@ create Alex
   You.
 
 create the magic sack
-  a container
+  a container, singular
   gathering
   in the Gallery
 
   A sack with a will of its own.
 
 create the gold coin
-  a thing
+  a thing, singular
   treasure
   in the Gallery
 
   A gold coin.
 
 create the clay pot
-  a thing
+  a thing, singular
   in the Gallery
 
   A clay pot.
 
 create the jewel box
-  a container
+  a container, singular
   treasure
   in the Gallery
 
   A jewel box.
 
 create the marble plinth
-  a thing, scenery
+  a thing, singular, scenery
   in the Gallery
 
   A marble plinth, set into the floor.

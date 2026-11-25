@@ -35,7 +35,7 @@ end before
 define sound chime from "chime.ogg"
 
 create the bell
-  a thing
+  a thing, singular
   in the Yard
 
   A bell.
@@ -51,7 +51,7 @@ create the bell
   end after
 
 create the clock
-  a thing
+  a thing, singular
   in the Yard
 
   A clock.

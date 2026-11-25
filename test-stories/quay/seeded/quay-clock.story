@@ -63,13 +63,13 @@ create the Lamp Room
   A round room around a cold lamp.
 
 create the locker
-  a container, openable
+  a container, singular, openable
   in the Quay
 
   A tin locker bolted to the quay wall.
 
 create the brass key
-  a thing
+  a thing, singular
   in the Quay
 
   A brass key on a loop of tarred string.

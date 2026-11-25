@@ -37,19 +37,19 @@ create the Stall
   A stall.
 
 create the pyramid display
-  a supporter, scenery
+  a supporter, singular, scenery
   in the Stall
 
   A display.
 
 create the cheese
-  a thing
+  a thing, singular
   on the pyramid display
 
   A cheese.
 
 create the fuse
-  a thing, scenery
+  a thing, singular, scenery
   cuttable with the shears
   in the Yard
   states: coiled, cut
@@ -62,7 +62,7 @@ create the fuse
   end on
 
 create the shears
-  a thing
+  a thing, singular
   in the Yard
 
   Shears.

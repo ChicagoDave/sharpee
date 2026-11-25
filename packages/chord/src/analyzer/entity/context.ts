@@ -75,10 +75,12 @@ import type {
   IRVehicle,
   IRExpanse,
   IRPushingWay,
+  IREntityForms,
 } from '../../ir.js';
 import type { Span } from '../../span.js';
 import type { EntitySymbol, Scope } from '../../analyzer.js';
 import type { RoomGroupOrigin } from '../room-groups.js';
+import type { SingularPluralFacts } from '../../forms.js';
 
 /**
  * The entity under construction. Identity fields are set at creation; each
@@ -103,6 +105,8 @@ export interface EntityDraft {
   readonly span: Span;
 
   pronouns?: string;
+  /** The name's other form and the aka words' worked-out forms (ADR-409); undefined on rooms and regions. */
+  forms?: IREntityForms;
   kinds: IRComposition[];
   traits: IRComposition[];
   personality: IRPersonalityEntry[];
@@ -184,6 +188,8 @@ export interface EntityBuildContext {
   readonly honorDefs: ReadonlyMap<string, string[]>;
   /** The `rooms` group each created room came from (ADR-360 D1); written blocks are absent. */
   readonly groupOrigins: ReadonlyMap<CreateDecl, RoomGroupOrigin>;
+  /** The story locale's singular and plural rules and its name stopwords (ADR-409 D2). */
+  readonly singularPluralFacts: SingularPluralFacts;
 
   resolveEntityId(ref: NameRef): string | null;
   /** Resolve a name without reporting — for a check whose owner reports the name itself. */

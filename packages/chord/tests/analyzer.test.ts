@@ -87,7 +87,7 @@ describe('cloak.story IR', () => {
     const hook = ir.entities[5];
     expect(hook.kinds).toMatchObject([{ name: 'supporter', config: [] }]);
     expect(hook.holds).toBe(1);
-    expect(hook.traits).toMatchObject([{ name: 'scenery' }]);
+    expect(hook.traits).toMatchObject([{ name: 'singular' }, { name: 'scenery' }]);
   });
 
   it('registers descriptions as derived phrase keys', () => {

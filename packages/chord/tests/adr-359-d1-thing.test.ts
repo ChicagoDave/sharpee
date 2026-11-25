@@ -37,23 +37,23 @@ const errors = (src: string) => compile(src).diagnostics.filter((d) => d.severit
 
 describe('ADR-359 D1 — `a thing` is a kind', () => {
   it('compiles `a thing` with traits and records the kind', () => {
-    const result = compile(story('create the bell\n  a thing, scenery\n  in the Vault\n\n  A bell.'));
+    const result = compile(story('create the bell\n  a thing, singular, scenery\n  in the Vault\n\n  A bell.'));
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const bell = result.ir.entities.find((e) => e.id === 'bell')!;
     expect(bell.kinds.map((k) => k.name)).toEqual(['thing']);
-    expect(bell.traits.map((t) => t.name)).toEqual(['scenery']);
+    expect(bell.traits.map((t) => t.name)).toEqual(['singular', 'scenery']);
   });
 });
 
 describe('ADR-359 D1 — a kind beside `a thing` names the fix', () => {
   it('`a thing, container` says a container is already a thing', () => {
-    const found = errors(story('create the box\n  a thing, container\n  in the Vault\n\n  A box.'));
+    const found = errors(story('create the box\n  a thing, singular, container\n  in the Vault\n\n  A box.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.thing-with-kind']);
     expect(found[0].message).toContain('a container is already a kind of thing; write `a container`');
   });
 
   it('`a thing, a supporter` reports the fix, not multiple kinds', () => {
-    const found = errors(story('create the shelf\n  a thing, a supporter\n  in the Vault\n\n  A shelf.'));
+    const found = errors(story('create the shelf\n  a thing, a supporter, singular of shelves\n  in the Vault\n\n  A shelf.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.thing-with-kind']);
     expect(found[0].message).toContain('write `a supporter`');
   });
@@ -97,34 +97,34 @@ describe('ADR-359 D1 — every block names its kind', () => {
 
 describe('ADR-359 D1 — the kind leads the block', () => {
   it('a kind after a trait on the same line is analysis.kind-not-first at the kind', () => {
-    const found = errors(story('create the table\n  scenery, a supporter\n  in the Vault\n\n  A table.'));
+    const found = errors(story('create the table\n  scenery, a supporter, singular\n  in the Vault\n\n  A table.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.kind-not-first']);
     expect(found[0].span).toMatchObject({ line: 25, column: 12 });
     expect(found[0].message).toContain('move `a supporter` to the front');
   });
 
   it('a kind on a line below a trait line is analysis.kind-not-first', () => {
-    const found = errors(story('create the shelf\n  scenery\n  a supporter\n  in the Vault\n\n  A shelf.'));
+    const found = errors(story('create the shelf\n  scenery\n  a supporter, singular of shelves\n  in the Vault\n\n  A shelf.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.kind-not-first']);
     expect(found[0].span.line).toBe(26);
   });
 
   it('a kind line below an `aka` line still leads the block: aka is not a composition', () => {
-    expect(errors(story('create the doormat\n  aka mat\n  a supporter, scenery\n  in the Vault\n\n  A mat.'))).toEqual([]);
+    expect(errors(story('create the doormat\n  aka mat\n  a supporter, singular, scenery\n  in the Vault\n\n  A mat.'))).toEqual([]);
   });
 });
 
 describe('ADR-359 D1 — a kind cannot come and go', () => {
   it('refuses `a thing while …`', () => {
     const found = errors(
-      story('create the coin\n  a thing while the coin is visible\n  in the Vault\n\n  A coin.'),
+      story('create the coin\n  a thing while the coin is visible\n  singular\n  in the Vault\n\n  A coin.'),
     );
     expect(found.map((d) => d.code)).toContain('analysis.conditional-kind');
   });
 
   it('refuses a conditional kind of any name', () => {
     const found = errors(
-      story('create the chest\n  a container while the chest is visible\n  in the Vault\n\n  A chest.'),
+      story('create the chest\n  a container while the chest is visible\n  singular\n  in the Vault\n\n  A chest.'),
     );
     expect(found.map((d) => d.code)).toContain('analysis.conditional-kind');
   });

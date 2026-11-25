@@ -214,7 +214,7 @@ describeFerry('AC-4 on the ferry — the lever no longer docks the ferry', () =>
 describeFerry('AC-4 on the ferry — a claim\'s own verdict moves nothing (ADR-365 D9)', () => {
   it('the timetable moved out of reach: every card green, the claim UNPROVEN by walk, exit 0', async () => {
     const dir = copyOf(FERRY, 'sharpee-ferry-unproven-');
-    edit(path.join(dir, 'ferry.story'), '  a thing, scenery, readable\n  in the Landing\n', '  a thing, scenery, readable\n  in the Far Bank\n');
+    edit(path.join(dir, 'ferry.story'), '  a thing, singular, scenery, readable\n  in the Landing\n', '  a thing, singular, scenery, readable\n  in the Far Bank\n');
     const { code, stdout } = await run(() => runTestCommand([dir]));
     expect(code).toBe(0);
     expect(stdout.some((row) => row.startsWith('✗'))).toBe(false);

@@ -54,7 +54,7 @@ create the Derelict
   A hull.
 
 create the skiff
-  a vehicle
+  a vehicle, singular of skiffs
   in the Belt at 3, 3
   movement: open
   carries: in
@@ -68,7 +68,7 @@ create the skiff
   A skiff.
 
 create the barge
-  a vehicle
+  a vehicle, singular
   in the Belt at 10, 2
   movement: open
   carries: in
@@ -81,7 +81,7 @@ create the barge
   A barge.
 
 create the helm
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
 
   The helm.
@@ -91,7 +91,7 @@ create the helm
   end on
 
 create the compass
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
 
   A compass.
@@ -101,7 +101,7 @@ create the compass
   end on
 
 create the tiller
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
 
   A tiller.
@@ -111,7 +111,7 @@ create the tiller
   end on
 
 create the console
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
 
   A console.
@@ -121,7 +121,7 @@ create the console
   end on
 
 create the plotter
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
 
   A plotter.
@@ -131,7 +131,7 @@ create the plotter
   end on
 
 create the brake
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
 
   A brake.
@@ -141,7 +141,7 @@ create the brake
   end on
 
 create the fog horn
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
   aka horn
 
@@ -152,7 +152,7 @@ create the fog horn
   end on
 
 create the lookout bell
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
   aka bell
 
@@ -192,7 +192,7 @@ define phrase cell
 end phrase
 
 create the winch
-  a thing, pushable
+  a thing, singular, pushable
   in the skiff
 
   A winch.
@@ -204,13 +204,13 @@ create the winch
   end on
 
 create the anchor
-  a thing
+  a thing, singular
   in the skiff
 
   An anchor.
 
 create the bottle
-  a thing
+  a thing, singular
   in the skiff
 
   A bottle.
@@ -219,14 +219,14 @@ create the bottle
     The bottle sinks without a trace.
 
 create the telescope
-  a thing
+  a thing, singular
   in the skiff
   sight: 12
 
   A telescope.
 
 create the cask
-  a thing, floats
+  a thing, singular, floats
   in the Belt at 5, 3
   aka cask
 
@@ -242,7 +242,7 @@ define sequence landfall
 end sequence
 
 create the beacon
-  a thing, pushable
+  a thing, singular, pushable
   in the Mining Platform
 
   A beacon.
@@ -252,7 +252,7 @@ create the beacon
   end on
 
 create the relay
-  a thing, pushable
+  a thing, singular, pushable
   in the Mining Platform
 
   A relay.
@@ -262,7 +262,7 @@ create the relay
   end on
 
 create the hatch
-  a thing, pushable
+  a thing, singular, pushable
   in the Mining Platform
 
   A hatch.
@@ -272,7 +272,7 @@ create the hatch
   end on
 
 create the harbour bell
-  a thing, pushable
+  a thing, singular, pushable
   in the Mining Platform
 
   A bell.
@@ -282,7 +282,7 @@ create the harbour bell
   end on
 
 create the hull bell
-  a thing, pushable
+  a thing, singular, pushable
   in the Derelict
 
   A bell.
@@ -325,7 +325,7 @@ create the Upper Station
   The upper station.
 
 create the funicular
-  a vehicle
+  a vehicle, singular
   in the Lower Station
   movement: line
   carries: in
@@ -337,7 +337,7 @@ create the funicular
   A funicular car.
 
 create the switch
-  a thing, pushable
+  a thing, singular, pushable
   in the funicular
 
   A switch.
@@ -680,7 +680,7 @@ create the Southwest Rock
   A rock.
 
 create the raft
-  a vehicle
+  a vehicle, singular
   in the Pool at 1, 2
   movement: open
   carries: in
@@ -693,13 +693,13 @@ create the raft
   A raft.
 
 create the bottle
-  a thing, floats
+  a thing, singular, floats
   in the Pool at 1, 1
 
   A bottle.
 
 create the lever
-  a thing, pushable
+  a thing, singular, pushable
   in the North Shore
 
   A lever.

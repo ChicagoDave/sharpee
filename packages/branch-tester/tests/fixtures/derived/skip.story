@@ -21,7 +21,7 @@ create the Hall
   A hall.
 
 create the brass bell
-  a thing, scenery
+  a thing, singular, scenery
   aka bell
   states, reversible: still, ringing
   in the Hall

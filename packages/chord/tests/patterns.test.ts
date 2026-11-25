@@ -225,7 +225,7 @@ create the Yard
   A yard.
 
 create the rock
-  a thing
+  a thing, singular
   in the Yard
 
   A rock.

@@ -95,7 +95,7 @@ create the Bar
 
 describe('GH #335: `phrase … with … when …` parses in both orders', () => {
   const BODY = (line: string) => `create the pear
-  a thing
+  a thing, singular
   in the Stall
 
   A pear.
@@ -143,7 +143,7 @@ end phrase
 describe('GH #337: the `bare` hint marker passes the marker gate', () => {
   it('accepts `{bare item}` for the taking action’s slot and `{bare ware}` for a `with` param', () => {
     const errors = errorsOf(story(`create the pear
-  a thing
+  a thing, singular
   in the Stall
 
   A pear.

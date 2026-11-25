@@ -25,7 +25,7 @@ create the Crypt
   A crypt under the belfry.
 
 create the plaque
-  a thing, scenery, readable
+  a thing, singular, scenery, readable
   in the Belfry
 
   A brass plaque, worn smooth.

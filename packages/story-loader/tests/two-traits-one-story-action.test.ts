@@ -99,41 +99,41 @@ create the Gallery
   A gallery.
 
 create the great lantern
-  a container, scenery, light-source, starts unlit, ${traits}
+  a container, singular, scenery, light-source, starts unlit, ${traits}
   in the Gallery
   aka lantern
 
   A lantern.
 
 create the glass lens
-  a thing
+  a thing, singular
   in the Gallery
   aka lens
 
   A lens.
 
 create the hand lamp
-  a thing, light-source, starts unlit, wick
+  a thing, singular, light-source, starts unlit, wick
   in the Gallery
   aka lamp
 
   A lamp.
 
 create the censer
-  a thing, light-source, starts unlit, chime, ember
+  a thing, singular, light-source, starts unlit, chime, ember
   in the Gallery
 
   A censer.
 
 create the brass plate
-  a thing, rub-warm
+  a thing, singular, rub-warm
   in the Gallery
   aka plate
 
   A plate.
 
 create the stone
-  a thing
+  a thing, singular
   in the Gallery
 
   A stone.

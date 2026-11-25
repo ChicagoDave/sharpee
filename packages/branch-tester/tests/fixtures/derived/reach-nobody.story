@@ -17,7 +17,7 @@ create the Hall
   A hall.
 
 create the medal
-  a thing
+  a thing, singular
   in the Hall
 
   A medal.

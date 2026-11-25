@@ -38,7 +38,7 @@ create the Vault
   A vault.
 
 create the crate
-  a container
+  a container, singular
   in the Vault
 
   A crate.

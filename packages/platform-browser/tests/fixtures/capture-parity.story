@@ -48,7 +48,7 @@ before the game starts
 end before
 
 create the lectern
-  a supporter
+  a supporter, singular
   scenery
   in the Proving Room
 
@@ -56,7 +56,7 @@ create the lectern
 
 create the notice
   aka card
-  a thing, readable
+  a thing, singular, readable
   on the lectern
 
   A stiff card, printed on one side.
