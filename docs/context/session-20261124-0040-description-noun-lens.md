@@ -129,3 +129,74 @@ Rule 15 not fired: no changed function carries a side-effect name.
 **Progressive update**: session completed 2026-11-24 00:58 — commit 5ba1f111d pushed; 835 and 837 verified CLOSED; Phase 5 DONE with Demonstrated marked verified, Plan Status DONE; 841 filed for D2's persistent marks, 662 commented; hand archive of the plan and final commit+push pending.
 
 **Progressive update**: session completed 2026-11-24 09:43 — b4a9e9336 landed and pushed (plan archived, pointer removed); David accepted D-3(a)'s class titles and the `lens.test.ts:53` assertion as invented; machine-local memory note recorded; next goal 836.
+
+## Activity Log (auto-captured)
+```
+[06:44:02] BUILD: Build passed — grep -h 'BUILD:' docs/context/.events* docs/context/*.log 2>/dev/null | tail -3;
+[06:44:31] TEST: Tests ran (status unverified) — dotnet test tools/ide/PaneHost.Tests 2>&1 | tail -8
+[06:44:36] TEST: Tests ran (status unverified) — dotnet test tools/ide/PaneHost.Tests --no-build 2>&1 | grep -E "^\s+Failed |Erro
+[06:45:41] EDIT: File changed via Bash — docs/context/project-profile.md
+[06:46:24] EDIT: File edited — tools/ide/PaneHost/Shell/TestingSurfacePosts.cs
+[06:46:24] EDIT: File edited — tools/ide/PaneHost/Shell/TestingSurfacePosts.cs
+[06:46:24] EDIT: File edited — tools/ide/PaneHost/Shell/TestingSurfacePosts.cs
+[06:46:24] EDIT: File edited — tools/ide/PaneHost/Shell/TestingSurfacePosts.cs
+[06:46:25] EDIT: File edited — tools/ide/PaneHost/Shell/TestingSurfacePosts.cs
+[06:46:31] EDIT: File changed via Bash — tools/ide/PaneHost/Shell/TestingSurfacePosts.cs
+[06:46:41] EDIT: File edited — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[06:46:42] EDIT: File edited — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[06:46:42] EDIT: File edited — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[06:47:15] EDIT: File edited — tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs
+[06:47:15] EDIT: File edited — tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs
+[06:47:24] EDIT: File changed via Bash — tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs
+[06:47:24] EDIT: File changed via Bash — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[06:47:34] EDIT: File edited — tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs
+[06:47:34] EDIT: File edited — tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs
+[06:47:35] EDIT: File edited — tools/ide/PaneHost.Tests/TestingSurfacePostsTests.cs
+[06:47:56] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:48:04] EDIT: File changed via Bash — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:48:40] TEST: Tests passed — 28 passed 280 passed
+[06:49:31] EDIT: File edited — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[06:49:31] EDIT: File edited — docs/architecture/adrs/adr-277-ide-integrated-testing.md
+[06:49:39] EDIT: File changed via Bash — docs/architecture/adrs/adr-277-ide-integrated-testing.md
+[06:49:39] EDIT: File changed via Bash — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[06:50:00] EDIT: File edited — docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md
+[06:50:00] EDIT: File edited — docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md
+[06:50:03] EDIT: File changed via Bash — docs/architecture/adrs/INDEX.md
+[06:50:03] EDIT: File changed via Bash — docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md
+[06:54:12] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:55:15] EDIT: File written — docs/context/session-20261124-0040-description-noun-lens.md
+[06:55:25] EDIT: File changed via Bash — docs/context/session-20261124-0040-description-noun-lens.md
+[06:55:57] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:56:16] TEST: Tests passed — 14 passed 143 passed
+[06:56:22] EDIT: File written — .commit-files
+[06:56:22] EDIT: File written — .commit-msg
+[06:56:27] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+[06:56:43] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/5cc4f692-ef40-485c-98f5-60c6bc4d417c/scratchpad/close-837.md
+[06:56:50] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/5cc4f692-ef40-485c-98f5-60c6bc4d417c/scratchpad/close-835.md
+[06:57:22] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:57:23] EDIT: File changed via Bash — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:58:38] EDIT: File edited — docs/work/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[06:59:34] EDIT: File written — docs/context/session-20261124-0040-description-noun-lens.md
+[06:59:42] EDIT: File changed via Bash — docs/context/session-20261124-0040-description-noun-lens.md
+[07:00:11] EDIT: File changed via Bash — docs/context/.current-plan
+[07:00:11] EDIT: File changed via Bash — docs/work/archive/lens-findings-select-phrase/plan-20261123-lens-findings-select-phrase.md
+[07:00:47] EDIT: File written — .commit-files
+[07:00:47] EDIT: File written — .commit-msg
+[07:00:51] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+[07:01:06] EDIT: File written — /Users/david/.claude/projects/-Users-david-repos-sharpee/memory/reference_panehost_test_env.md
+[07:01:07] EDIT: File edited — /Users/david/.claude/projects/-Users-david-repos-sharpee/memory/MEMORY.md
+[15:44:20] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:21] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:21] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:21] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:21] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:22] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:22] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:22] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:22] EDIT: File edited — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:30] EDIT: File changed via Bash — docs/context/session-20261124-0040-description-noun-lens.md
+[15:44:59] TEST: Tests passed — 145 passed
+[15:45:20] EDIT: File written — .commit-files
+[15:45:20] EDIT: File written — .commit-msg
+[15:45:24] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```

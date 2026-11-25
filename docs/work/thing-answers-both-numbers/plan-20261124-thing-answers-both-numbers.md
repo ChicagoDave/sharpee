@@ -1,0 +1,249 @@
+# Session Plan: A thing answers to both grammatical numbers (GH #836)
+
+**Created**: 2026-11-24
+**Plan Status**: ACTIVE
+**Overall scope**: A thing's name and aka words are matched only in the number they are written in: `examine candle` fails on a thing named "candles", and `examine support posts` fails on a "support post". This plan measures the gap, records the decision on where the other number comes from (ADR-409, with David, before any `packages/` edit), then teaches the one noun matcher both numbers and brings the lens, the World Index and the records into line with it.
+**Bounded contexts touched**: Naming (world-model identity: the naming surface and the one noun matcher), Language (lang-en-us's word table and English number), Parsing (parser-en-us's noun rank, stdlib's validator), World Index (world-index and Chord Writer's Incomplete view), Testing Intelligence (the examinable lens and `test-stories/`)
+**Key domain language**: naming surface, the one noun matcher (`matchNoun`), number forms (singular and plural of one noun), aka (an alias), language words (the roles the world learns at install), written form against derived form
+
+## References consulted
+- `docs/architecture/adrs/INDEX.md`: the ADR index, rebuilt for this plan. 412 records (29 OPEN, 151 IMPLEMENTED, 52 ABANDONED, 7 IGNORE, 173 unclassified). OPEN and unclassified rows were triaged by title and Summary, not all opened. 15 were opened because they bear on naming, number, the matcher, the lens or test stories (1 OPEN, 6 unclassified, 8 IMPLEMENTED). ABANDONED and IGNORE records were not opened.
+- `docs/architecture/adrs/adr-385-one-noun-matcher.md`: there is one matcher, `matchNoun`, in world-model, over a `NamingSurface`, and every reader calls it: the gate, the validator, lists and `all but`, the noun rank and world-index. The vocabulary is derived and never stored. D2 says outright that the matcher "does not recognise plurals: 'coins' matches an entity only when its vocabulary holds 'coins'". This plan reverses that sentence, so ADR-409 must amend it.
+- `docs/architecture/adrs/adr-387-language-tables-and-per-parser-state.md`: world-model holds no English. It reads `LanguageWords` from the world, and the engine assigns them from the provider at install (D2). A provider that lacks a role fails to compile rather than falling back to English. Words are declared once in lang-en-us, and `tests/one-home.test.ts` enforces that. The rejected alternatives (words threaded through every caller, a module-level setter) stay rejected.
+- `docs/architecture/adrs/adr-407-a-lens-reads-prose-through-the-story-language.md`: Amendment 4 made `packages/lang-en-us/src/singularize.ts` English's one home for the singular, beside `pluralize.ts`. It is placed so that "if issue 836 teaches the matcher both numbers, the runtime imports this file, and the lens and the parser read number from the same function". `lemmatize` is a stemmer with no caller (#839). D5 leaves #836 undecided. AC-3 holds that the published runtime must not carry `compromise`.
+- `docs/architecture/adrs/adr-408-lens-findings-in-chord-writer.md`: lens findings, including the `number-form` kind, flow through `packages/ide-protocol/src/lens-output.ts` to the Testing tab and both IDE heads. AC-1 pins orchard at 6 number-form findings and scullery at OB-54 to OB-60. Both pins move once the matcher derives.
+- `docs/architecture/adrs/adr-386-the-parser-searches-slot-extents.md`: every reading is ranked by `{ unnamed, named, exact }` through `matchNoun` (D4). Wherever a derived word newly names something, the parse can change. Dungeo lines that move are re-recorded after the census is reviewed, and a move that looks like a defect goes to David.
+- `docs/architecture/adrs/adr-231-player-surface-contract-rulings.md`: under D3, every content word of a name is vocabulary. The head-noun heuristic was rejected ("bag of holding"). Exact outranks words, more matched words win, and an unmatched word disqualifies. The tiers stand.
+- `docs/architecture/adrs/adr-321-world-index.md`: the Incomplete view resolves prose "the way the parser resolves a player's command" (D5). The IDE resolves against the published surface and never derives it (D11). So derived words must be published, not rebuilt in Swift.
+- `docs/architecture/adrs/adr-395-exploring-tests-run-on-test-stories.md`: exploring tests and Demonstrations use `test-stories/`, and real stories other than Dungeo do not gate (D7). A test story changes only when its test set changes (D4). Claude writes the test stories (D3), and they carry no ADR references.
+- `docs/architecture/adrs/adr-147-equivalent-objects-and-groups.md` (OPEN): what a plural typed against several identical things means (groups, `take 3 coins`, `pluralName`) belongs to this record. ADR-409 must say what a derived plural does against several singular things and leave group semantics here.
+- `docs/architecture/adrs/adr-089-pronoun-identity-system.md`: `IdentityTrait.grammaticalNumber` is the inanimate "it"/"them" number. Chord's `plural` sets it (`packages/story-loader/src/build/trait-routes.ts:368`).
+- `docs/architecture/adrs/adr-190-natural-language-list-rendering.md`: `IdentityTrait.plural` is an author-supplied irregular plural, used for rendering and settable only from TypeScript.
+- `docs/architecture/adrs/adr-093-i18n-entity-vocabulary.md`: name and alias words already serve as modifiers, and `adjectives` is redundant. The Phase 2 vocabulary redesign is deferred.
+- `docs/architecture/adrs/adr-214-chord-platform-parity.md`: a platform capability ships with a Chord surface, or an ADR says why not. If ADR-409 has the matcher read `IdentityTrait.plural`, it must give Chord a surface or say why aka suffices.
+- `docs/architecture/adrs/adr-017-disambiguation.md`: ties go to scoring, and the player is asked only on a true tie. Derived forms can create ties the written forms never did, so the written-against-derived ruling decides whether new prompts appear.
+- `docs/architecture/adrs/adr-037-parser-language-provider.md`: a language package implements the whole provider contract. The number role reaches the world through the provider's `getLanguageWords`, and #839's `lemmatize` sits on the same contract.
+- `docs/context/project-profile.md`: lang-en-us holds all user-facing English, and world-model, stdlib and engine hold none. The gates are `pnpm exec turbo run test:ci`, the Dungeo chain (one run), `./sharpee test` on test stories, and the four repokit `--check`s. `typecheck:tests` is already red (#401) and is not this plan's floor.
+- `packages/parser-en-us/CLAUDE.md`, `packages/lang-en-us/CLAUDE.md`: the parser holds no English word, and every word list lives in lang-en-us's `data/words.ts`, read through the provider. A `.where()` gate asks the one matcher. Pronoun and vocabulary state is per parser.
+- `docs/context/session-20261124-0040-description-noun-lens.md`: #835 and #837 are closed and #836 is the recommended next goal. #539 (`plan-archive.sh` requires `plan.md`) means this plan is archived by hand.
+- `docs/proposals/`: scanned. No accepted item cites #836 or number matching, so no proposal status changes.
+- Product ADRs not consulted (no Scope intersection): none
+
+## Phases
+
+### Phase 1: Measure the number gap and decide where the other number comes from (ADR-409)
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: Naming and Language. Where a thing's other grammatical number is derived, and what that does to the noun matcher's tiers, the parser's rank, the lens and the World Index. No code changes.
+- **Entry state**: Branch `description-noun-lens` at 4560c4811 or later, with no active plan. #836 is open. David's go is needed to run probes and builds. No edits under `packages/`, `stories/`, `test-stories/`, `tools/` or `tutorials/`.
+- **Deliverable**: The measurements go in `docs/work/thing-answers-both-numbers/census-20261124.md` (new), quoted in this phase's Demonstrated line with command and result, followed by the ADR-409 draft.
+  - **(1) Baseline at HEAD.** `./repokit build dungeo`, then:
+    - the Dungeo walkthrough chain count and the Dungeo unit transcripts (pass, fail, expected and skipped counts, and the names of failures);
+    - `./sharpee test` on each of the six test stories (bazaar, ferry, lodge, orchard, quay, scullery);
+    - `./sharpee lens examinable` on scullery and orchard at seed 42, with each number-form finding listed;
+    - suite counts for world-model, if-domain, lang-en-us, parser-en-us, stdlib, engine, story-loader, world-index, branch-tester, devkit and ide-protocol, plus the testing-surface vitest run;
+    - repokit's grammar, manifest, aliases and protocol `--check`s;
+    - the published runtime's size, measured as ADR-407 AC-3 measured it.
+
+    A failing build or suite is reported and nothing is retried.
+  - **(2) The code path, confirmed by grep.** Today's behavior comes from five places:
+    - `packages/world-model/src/traits/identity/noun-match.ts#vocabularyOf` builds the vocabulary from the written name, alias and adjective words only.
+    - `packages/world-model/src/traits/identity/name-vocabulary.ts#deriveNameVocabulary` splits on whitespace and drops stopwords.
+    - `packages/if-domain/src/vocabulary-contracts/vocabulary-types.ts#LanguageWords` holds `selfWords` and `nameStopwords` and nothing else. The engine assigns it in `packages/engine/src/install/language-words.ts`, and world-index builds it from the Chord manifest in `packages/world-index/src/vocabulary.ts#localeWordsOf`.
+    - English number lives in `packages/lang-en-us/src/singularize.ts#numberForms` and `packages/lang-en-us/src/pluralize.ts`. Only the nouns subpath reaches `numberForms`. `packages/lang-en-us/src/language-provider.ts#lemmatize` is a stemmer with no runtime caller (#839).
+    - Chord's `plural` sets only `grammaticalNumber` (`packages/story-loader/src/build/trait-routes.ts:368`). aka becomes `aliases` verbatim (`packages/story-loader/src/build/entity.ts:90`).
+
+    Every reader of `matchNoun`, `vocabularyOf` and `namingSurfaceOf` is listed: the gate, the noun rank, the validator, the list expander, and world-index's index, publish and unnamed check. Also listed: every site that builds `LanguageWords` by hand (about 62 test files at plan time: stdlib 44, parser-en-us 14, world-model 3, engine 1), and the Swift `WorldVocabulary` in `tools/ide/SharpeeIDE/World/WorldIndexDocument.swift`, which derives nothing.
+  - **(3) The derivation census.** A scratchpad script reads lang-en-us's built `numberForms`. No source is edited. It runs over Dungeo's world-json and the compiled IR of every story under `stories/`, `branch-stories/`, `test-stories/` and `tutorials/`. For every name and aka content word it lists the other number, then flags:
+    - (a) a derived form equal to another entity's written word in the same story, where a new tie or a rank change could appear;
+    - (b) a derived form that reads as wrong (the leaves-to-leave class);
+    - (c) words whose two numbers are the same word.
+
+    Over Dungeo's unit and walkthrough inputs and the test stories' tree inputs, it also lists every typed word that names nothing at HEAD and would name something with derivation. Those are the predicted moves. It simulates the lens on orchard and scullery with derivation on, to count the number-form findings that would remain.
+  - **(4) The ADR-409 draft** goes under `docs/architecture/adrs/`, with the next free number confirmed at writing. Kind is technical, Planning is OPEN, and the Summary and Scope lines name every package the decision reaches.
+    - Its **Context** is the measurement above. It includes the issue's Relighting probe at `tutorials/relighting/chord-v4.1.0/chapter-40/relighting.story:767`, quoted as evidence and not as a gate.
+    - Its **recommended decision** follows the existing rulings and so poses none of them as questions. The other number is derived in the one matcher (ADR-385 D1), over a number role the world learns with its language words (ADR-387 D2). lang-en-us fills that role from `singularize.ts` and `pluralize.ts` (ADR-407 Amendment 4). The word lists those functions read (the same-in-both-numbers nouns and the singulars ending in s) move into `packages/lang-en-us/src/data/words.ts` beside `irregularPlurals`, because the matcher now reads them (ADR-387 D1, D7). Neither story-loader nor chord holds English morphology. It applies to every content word, not the head alone (ADR-231 D3). The role is required on the contract (ADR-387 Consequences), and world-index builds it from the extractor its callers already hold (ADR-407 D8), so the published surface carries derived words and Swift stays a reader.
+    - Its **Open Questions** are the genuinely undecided ones:
+      - whether a written form outranks a derived one at the words tier, or ties with it;
+      - whether `plural`/`grammaticalNumber` steers which way the derivation runs, or `numberForms` runs both ways regardless;
+      - irregulars: whether `IdentityTrait.plural` joins the naming surface and what Chord's parity obligation is, with aka as the author's override;
+      - what a derived plural typed against several singular things does, and how `take all coins` reads with ADR-385 D2's sentence amended (ADR-147's groups stay there);
+      - the lens's `number-form` class and scullery's OB-56 and OB-58 once both numbers resolve: kept as a check on the language's two number functions disagreeing, or retired across the protocol, Testing tab and both heads;
+      - whether the World Index shows derived words as derived;
+      - #839's `lemmatize`, deleted from the contract or left.
+
+    The index is rebuilt with `adr-index.sh`, David is asked whether to start the open-questions interview (rule 11a), and Phases 2 and 3 are amended to the accepted text.
+- **Files**: `docs/work/thing-answers-both-numbers/`, `docs/architecture/adrs/`
+- **Exit state**:
+  - Baseline and census recorded, with every predicted move listed by story, input, old outcome and new outcome.
+  - ADR-409 ACCEPTED by David with no Open Questions. Its Consequences say how Dungeo's moved lines are handled under the floor-to-its-own-requirements rule.
+  - Phases 2 and 3 of this plan amended to the accepted decision, and David's go for Phase 2 recorded.
+  - No file under `packages/`, `stories/`, `test-stories/`, `tools/` or `tutorials/` changed.
+- **Demonstration**:
+  - `printf 'examine jars\nexamine jar\nexamine crock\nnorth\nexamine cheeses\n' | ./sharpee play test-stories/scullery`, re-run at Phase 1's HEAD, still prints the jars' description for jars and You can't see any such thing. for jar, crock and cheeses. The planner measured this on 2026-11-24 at 4560c4811.
+  - `bash ~/.claude/scripts/adr-index.sh` rebuilds an index whose ADR-409 row reads OPEN with a Summary, and the record's Status line reads ACCEPTED.
+  - `git status --short packages stories test-stories tools tutorials` prints nothing.
+- **Progress (2026-11-24, session 4a60b3)**: steps (1) to (4) are done and recorded in `census-20261124.md`. The Exit state still waits on David: ADR-409 ACCEPTED with no Open Questions, then Phases 2 and 3 amended and David's go for Phase 2.
+  - **Baseline.**
+    - Dungeo chain: 949 passed.
+    - Dungeo units at `--seed 42`: 1715 passed, with 10 failing at HEAD (in adr-287, dam-puzzle, flooding and troll-interactions) and 2 refusing the seed because they are pinned to 4242.
+    - Test stories, seed 42: ferry 10, lodge 10, orchard 21, quay 1 and scullery 2 cards passing; bazaar has no tree.
+    - Lens: scullery has 4 number-form findings and orchard 6.
+    - The 11 package suites, testing-surface (280) and the 4 repokit checks are green.
+    - Relighting `game.js`: 1,971,327 bytes.
+  - **Census.** It covered 195 stories and 5,297 entities.
+    - Test stories: 0 collisions.
+    - Dungeo: 23 collisions in 5 clusters (the control panel's `buttons` is the sharpest). 38 story-wide candidate lines, 0 predicted to move after the scope and exact-tier review.
+    - The lens simulation leaves 0 number-form findings.
+    - The `pluralize`/`singularize` defects it found were filed as #842.
+  - **ADR-409** was drafted (DRAFT, Planning OPEN) with 8 open questions, and the index was rebuilt. In the interview David ruled out derivation altogether ("it's too complicated to ensure success with derived meanings"). The record was rewritten as `docs/architecture/adrs/adr-409-singular-and-plural-forms.md`: every thing, person and door is declared `plural of <singular>` or `singular of <plural>`, in Chord 4.2.0 and Sharpee 5.8.0. The design then settled on a few suffix rules for plain forms, with the author writing the rest. ADR-409 was ACCEPTED on 2026-11-24 (David: "yes", after `adr-review` reached 22/22), and Phases 2 to 4 below were rewritten to it. Then Amendment 1 (D7, Chord Writer surfaces the forms; David: "this is an effort to make the IDE v1.0.0 worthy", "a") moved the IDE pin into Phase 2 and added Phase 3 (fixes), the World Index display to Phase 4, and the lens card's edit to Phase 5.
+  - **Demonstration, run at HEAD:**
+    - The scullery probe printed the jars' description for `examine jars` and "You can't see any such thing." for `jar`, `crock` and `cheeses`.
+    - `git status --short packages stories test-stories tools tutorials` printed nothing after the build's `BUILD_DATE` stamp in `stories/dungeo/src/version.ts` was restored.
+- **Demonstrated**: 2026-11-24, session 4a60b3. [reported by session, unverified]
+  - The scullery probe, `printf 'examine jars\nexamine jar\nexamine crock\nnorth\nexamine cheeses\n' | ./sharpee play test-stories/scullery`, printed "Glazed jars stopped with corks, each one full to the neck." for `jars` and "You can't see any such thing." for `jar`, `crock` and `cheeses`.
+  - `bash ~/.claude/scripts/adr-index.sh` rebuilt the index. The ADR-409 row reads `OPEN | technical` with its Summary, and the record's Status reads ACCEPTED (David: "yes", after `adr-review` 22/22). Amendment 1 (D7) was added the same day.
+  - At 18:22 CST, `git status --short packages stories test-stories tools tutorials` printed nothing.
+  - Phases 2 to 5 are amended to the accepted record. David's go for Phase 2 is "proceed" (2026-11-24, session 4a60b3), and Phase 2 starts in a new session.
+- **Status**: DONE
+
+### Phase 2: Chord 4.2.0 declares singular or plural, works out the plain forms, and the in-repo stories migrate
+- **Tier**: Large
+- **Budget**: ~400 tool calls
+- **Domain focus**: The language and its compiler (ADR-409 D1 to D3). It covers:
+  - the `singular`/`plural` declaration and its `of <form>`;
+  - lang-en-us's suffix rules as locale data;
+  - the analyzer's gate, which applies the rules once at compile time and writes every form, with its origin, into the IR;
+  - the corpus migration a required declaration forces.
+- **Entry state**: Phase 1 DONE, ADR-409 ACCEPTED, David's go for this phase recorded, and the census baseline (§1) in hand.
+- **Deliverable**:
+  - **The rules as data.**
+    - `FormRules` and `FormRewrite` (ADR-409 D2) go in `packages/lang-en-us/src/data/words.ts`, covered by `tests/one-home.test.ts`.
+    - `./repokit manifest` carries them into `StdlibLocaleFacts.formRules` (`tools/repokit/src/commands/manifest.ts` → `packages/chord/src/stdlib-manifest.ts`), and `./repokit manifest --check` holds.
+  - **Chord.**
+    - `singular` joins `TRAIT_ADJECTIVES` (`packages/chord/src/catalog.ts`).
+    - The parser reads `plural of <form>` and `singular of <form>`.
+    - The analyzer refuses every case in ADR-409 AC-1: neither or both, a room or region, an empty `of`, a bare declaration on an unsafe ending, and a stopword name.
+    - It applies the locale's `formRules` to the name's last word and to each aka word, skipping `proper` people and stopword names, and writes `IREntity.forms` (`packages/chord/src/ir.ts`). `IR_FORMAT` moves if the loader's gate needs it.
+    - `CHORD_LANGUAGE_VERSION` moves to 4.2.0 (`packages/chord/src/version.ts`, pinned by `tests/language-version.test.ts`).
+    - The grammar docs blocks are regenerated (`./repokit grammar`). The one-time ADR-257 D2 override is recorded as Consequences state.
+  - **Chord Writer moves with the language (ADR-409 D7.1).** Both heads' version check and lexer corpus move to 4.2.0, covering `singular`, `plural of` and `singular of` (AC-9). The SharpeeIDE scheme and PaneHost.Tests run after the move.
+  - **The migration.** Every thing, person and door in `test-stories/`, `branch-stories/` and `stories/*.story` gains its declaration, plus an `of` form wherever the analyzer refuses a bare one. Each form is written into the source and shown in the diff.
+    - A scratchpad script may list the refusals and propose forms. It is never committed, and nothing is worked out at runtime.
+    - A test story changes only as its test set requires (ADR-395 D4). Scullery's and orchard's test sets are updated first, for the forms their OB lines now expect.
+    - The `chord-v4.1.0` tutorial editions are not touched.
+  - **Tests**, after a Behavior Statement, with each new case shown failing first: chord's analyzer and IR cases for AC-1 and AC-2, including a test locale whose rules give different forms.
+- **Files**: `packages/lang-en-us/src/data/`, `packages/lang-en-us/tests/`, `tools/repokit/src/commands/manifest.ts`, `packages/chord/`, `tools/ide/SharpeeIDE/`, `tools/ide/SharpeeIDETests/`, `tools/ide/PaneHost/`, `tools/ide/PaneHost.Tests/`, `test-stories/`, `branch-stories/`, `stories/*/*.story`, `docs/work/thing-answers-both-numbers/`
+- **Exit state**:
+  - Every in-repo story outside the tutorial editions compiles under Chord 4.2.0.
+  - chord's suite and `./repokit grammar --check`, `manifest --check` and `aliases --check` are green.
+  - The IR carries every form with its origin.
+  - Both heads accept 4.2.0 (AC-9).
+  - The runtime is untouched, so the forms are written but not yet read.
+  - The Phase 2 census counts AC-2's forms and re-measures the Chord-story collisions under D2's rules, recorded in this plan.
+- **Demonstration**:
+  - A chord test printing each refusal of AC-1 with its diagnostic.
+  - `node packages/devkit/dist/cli.js compose test-stories/scullery/scullery.story -o <ir>` showing `forms` on the jars, with `jar` worked out and its origin `worked-out`.
+  - `./repokit grammar --check` clean.
+- **Demonstrated**: 
+- **Status**: CURRENT (since 2026-11-24)
+
+### Phase 3: The refusal carries a fix, and Chord Writer applies it
+- **Tier**: Large
+- **Budget**: ~350 tool calls
+- **Domain focus**: ADR-409 D7.2. The generic `Diagnostic.fix`, devkit's compose filling the suggested form from the story's language, the compose payload in `@sharpee/ide-protocol`, and each head's editor fix and fix-all.
+- **Entry state**: Phase 2 DONE and David's go for this phase recorded.
+- **Deliverable**:
+  - **chord.** `Diagnostic` gains `fix?: { label, edits: { span, text }[] }` (`packages/chord/src/diagnostics.ts`). The bare-declaration refusal attaches one with a placeholder form, and chord holds no English.
+  - **devkit.** `compose` fills the placeholder from lang-en-us's `singularize`/`pluralize`, through the story's language, never in chord.
+  - **The wire.** The fix rides the compose payload in `@sharpee/ide-protocol`, and `./repokit protocol` regenerates both heads.
+  - **SharpeeIDE and PaneHost.** Each offers the fix on the diagnostic in the editor, plus a fix-all for the story.
+  - **Tests**, after a Behavior Statement, with each new case shown failing first:
+    - a devkit real-path test on `compose --json` (AC-10);
+    - an XCTest and a PaneHost.Tests case that apply the fix and then fix-all over a multi-refusal story, and recompile clean.
+- **Files**: `packages/chord/src/diagnostics.ts`, `packages/chord/src/analyzer*`, `packages/devkit/`, `packages/ide-protocol/`, `tools/ide/SharpeeIDE/`, `tools/ide/SharpeeIDETests/`, `tools/ide/PaneHost/`, `tools/ide/PaneHost.Tests/`, `test-stories/`, `docs/work/thing-answers-both-numbers/`
+- **Exit state**: AC-10 holds in both heads, `./repokit protocol --check` is fresh, and the SharpeeIDE scheme and PaneHost.Tests are green.
+- **Demonstration**:
+  - `node packages/devkit/dist/cli.js compose <story with bare plural "houses"> --json` prints the diagnostic with `fix.edits[0].text` reading `plural of house`.
+  - The XCTest and PaneHost.Tests fix-all cases pass.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 4: The runtime reads the forms, and the World Index shows them
+- **Tier**: Large
+- **Budget**: ~350 tool calls
+- **Domain focus**: Naming (ADR-409 D3, D4, D6). It covers:
+  - the story loader copying the IR forms onto `IdentityTrait`;
+  - `namingSurfaceOf` filling `writtenForms` and `workedOutForms`;
+  - the one matcher's tiers;
+  - the validator's dominance and the parser's noun rank reading `workedOutWords`;
+  - world-index reading the same forms from the IR;
+  - `lemmatize` leaving the provider contract.
+- **Entry state**: Phase 3 DONE and David's go for this phase recorded.
+- **Deliverable**:
+  - **The loader.** `packages/story-loader/src/build/trait-routes.ts` and `entity.ts` set `grammaticalNumber`, `IdentityTrait.singular` or `.plural`, `.nameFormOrigin` and `.akaForms`.
+  - **The world model.** `packages/world-model/src/traits/identity/identityTrait.ts` gains the three fields. `noun-match.ts` changes as follows:
+    - `NamingSurface` gains `writtenForms` and `workedOutForms`;
+    - `NounMatch` gains `workedOutWords`;
+    - a worked-out form answers at the words tier only.
+  - **Ranking.** `packages/stdlib/src/validation/command-validator.ts` and `packages/parser-en-us/src/reading-names.ts` rank a fully written match above one that needs a worked-out form (D4).
+  - **world-index.** `irNamingSurface` (`packages/world-index/src/vocabulary.ts`) reads `IREntity.forms`, and `resolvePhrase` agrees with `matchNoun` (AC-6).
+  - **The World Index in both heads (ADR-409 D7.3).** Each thing lists its name, its aka words and its forms, with worked-out forms marked as such. Both heads read `IREntity.forms` from the published surface and work nothing out (AC-11).
+  - **lemmatize.** It is deleted from `ParserLanguageProvider`, `EnglishLanguageProvider` and every test fake that ADR-409 D6 lists.
+  - **Tests**, after a Behavior Statement, with each new case shown failing first:
+    - AC-4's noun-match cases, including the `buttons` ranking case and the TypeScript `IdentityTrait.plural` path;
+    - a real-path test through the real loader and engine for AC-5, on a test story whose test set calls for candles/prickets and a `singular of mice`;
+    - world-index's AC-6 case.
+  - **Moved pins.** Only pins the Phase 2 census predicts are re-recorded. A move nobody predicted stops for David. Then mutation-verification runs, and the build regenerates the genai API reference.
+- **Files**: `tools/ide/SharpeeIDE/World/`, `tools/ide/SharpeeIDETests/`, `tools/ide/PaneHost/`, `tools/ide/PaneHost.Tests/`, `packages/story-loader/`, `packages/world-model/`, `packages/stdlib/`, `packages/parser-en-us/`, `packages/world-index/`, `packages/if-domain/`, `packages/lang-en-us/`, `packages/engine/tests/`, `test-stories/`, `packages/sharpee/docs/genai-api/`, `docs/work/thing-answers-both-numbers/`
+- **Exit state**:
+  - Through the bundle, AC-5 holds.
+  - The Dungeo chain prints 949 passed. The unit transcripts at `--seed 42` print 1715 passed, with the same 10 failures and 2 seed refusals.
+  - Every package suite in the Phase 1 baseline is green.
+  - No English rule appears in chord, story-loader, world-model, if-domain or world-index (AC-8).
+- **Demonstration**:
+  - The new noun-match cases fail against the pre-phase source, then `pnpm --filter '@sharpee/world-model' test noun-match` passes.
+  - After `./repokit build dungeo`, a `./sharpee play` probe on the AC-5 test story prints the candles' description for `examine candle` and `examine pricket`.
+  - The Dungeo chain and unit counts match the baseline.
+  - `pnpm exec turbo run test:ci` is green.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 5: The lens names what to write and offers the edit, and the records close
+- **Tier**: Medium
+- **Budget**: ~300 tool calls
+- **Domain focus**: Testing Intelligence and Chord Writer (ADR-409 D5 and Consequences).
+  - The lens finding is retitled "Singular/plural", with its kind id `singular-plural`, and it names the fix.
+  - The card offers the edit (D7.4).
+  - The dated notes on other records are written.
+- **Entry state**: Phase 4 DONE and David's go for this phase recorded.
+- **Deliverable**:
+  - **The lens card's edit (ADR-409 D7.4).** A Singular/plural card offers the edit its wording names, using Phase 3's edit shape, in the Testing tab both heads host (AC-12).
+  - **The lens.**
+    - `packages/branch-tester/src/lens/lens-words.ts` and `examinable-classify.ts` change as D5 describes. The suggestion reads lang-en-us's `singularize`/`pluralize`, and its wording names `singular of …`, `plural of …` or "add … to aka".
+    - The kind id is renamed in `packages/ide-protocol/src/lens-output.ts` and `run-events.ts`, `packages/devkit/src/commands/lens-sources.ts` and `tools/ide/web/testing-surface/`, and `./repokit protocol` regenerates both heads.
+    - The lens pins are re-recorded against the migrated test stories: scullery's OB-56 and OB-58 and orchard's count, in `packages/branch-tester/tests/examinable-lens-real-path.test.ts`, devkit's `lens.test.ts`, `test-lens.test.ts` and `lens-phrase-place.test.ts`, and `tools/ide/web/testing-surface/tests/lens-real-path.test.ts`.
+  - **The records.**
+    - ADR-409: Planning IMPLEMENTED with an Implemented paragraph naming the commits and the gate counts inline.
+    - Dated notes on ADR-257 D2 (the one-time override), ADR-385 D2, ADR-408 AC-1 and ADR-190, as ADR-409 Consequences names them.
+    - The index is rebuilt.
+    - `packages/parser-en-us/CLAUDE.md`, `packages/lang-en-us/CLAUDE.md` (the form rules' one home) and `test-stories/README.md` are updated.
+  - **The floor, run once each after the last source edit.** The Dungeo chain and unit transcripts, the six test-story trees, `test:ci`, `test:scripts`, the four repokit `--check`s, the testing-surface vitest run, the SharpeeIDE scheme, and PaneHost.Tests with its real-path variables set.
+  - **Close-out.**
+    - #836 and #839 are closed with evidence inline.
+    - #842 stays open as the rendering fallback's fix.
+    - The plan is archived by hand (`git mv` to `docs/work/archive/`, then remove `docs/context/.current-plan`), because `plan-archive.sh` requires `plan.md` (#539).
+- **Files**: `tools/ide/SharpeeIDE/`, `tools/ide/SharpeeIDETests/`, `tools/ide/PaneHost/`, `tools/ide/PaneHost.Tests/`, `tools/ide/web/testing-surface/`, `packages/branch-tester/`, `packages/ide-protocol/`, `packages/devkit/`, `docs/architecture/adrs/`, `packages/parser-en-us/CLAUDE.md`, `packages/lang-en-us/CLAUDE.md`, `test-stories/README.md`, `docs/work/thing-answers-both-numbers/`, `docs/work/archive/`
+- **Exit state**:
+  - The lens finding matches ADR-409 D5 in code, protocol and both heads.
+  - AC-12 holds: an applied card edit clears the finding on the next lens run.
+  - ADR-409 is IMPLEMENTED, and every record it names carries its note.
+  - The floor is green or differs only by recorded moves.
+  - #836 and #839 are closed and the plan is archived.
+- **Demonstration**:
+  - `./sharpee lens examinable test-stories/scullery --seed 42` prints "Singular/plural" findings that match the rewritten test set, each naming its fix.
+  - `./repokit protocol --check` is fresh.
+  - The SharpeeIDE scheme reports TEST SUCCEEDED, and PaneHost.Tests passes.
+  - `gh issue view 836 --json state` reads CLOSED.
+- **Demonstrated**: 
+- **Status**: PENDING
