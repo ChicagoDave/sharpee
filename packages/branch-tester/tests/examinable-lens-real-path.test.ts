@@ -72,34 +72,33 @@ describeWith(ORCHARD)('REAL-PATH — orchard at seed 42 / 600 states on the shar
     expect(report.rooms.map((room) => room.room)).toEqual(['Gate', 'Rows', 'Press House', 'Hive Yard', 'Cellar']);
   });
 
-  it('executes 92 forms: 40 not-in-scope, 6 described, 6 number-form', () => {
+  // Re-recorded 2026-11-28 (thing-answers-both-numbers Phase 4): a thing now
+  // answers to both numbers, so the 6 plurals that were number-form findings
+  // resolve and leave no row. The forms typed stay 92: both numbers are still tried.
+  it('executes 92 forms: 40 not-in-scope, 6 described, no number-form', () => {
     expect(report.phrasesExecuted).toBe(92);
-    expect(report.counts).toEqual({ 'not-in-scope': 40, 'resolved-described': 6, 'number-form': 6 });
+    expect(report.counts).toEqual({ 'not-in-scope': 40, 'resolved-described': 6 });
   });
 
   it('pins the findings, folded, with the rooms each recurs in', () => {
     expect(report.findings.map((finding) => [finding.phrase, finding.rooms.length])).toEqual([
-      ['cellar', 2], ['rows', 2], ['age', 1], ['arm', 1], ['bark split', 1], ['barrels', 1], ['bee smokers', 1], ['bees', 1],
-      ['brass valve', 1], ['cider press fills', 1], ['cider presses', 1], ['cloud', 1], ['cool cellar', 1], ['door', 1],
-      ['honeycombs', 1], ['hook', 1], ['iron crank handle', 1], ['lane', 1], ['leather strap', 1], ['long ash pole', 1],
+      ['cellar', 2], ['rows', 2], ['age', 1], ['arm', 1], ['bark split', 1], ['barrels', 1], ['bees', 1],
+      ['brass valve', 1], ['cider press fills', 1], ['cloud', 1], ['cool cellar', 1], ['door', 1],
+      ['hook', 1], ['iron crank handle', 1], ['lane', 1], ['leather strap', 1], ['long ash pole', 1],
       ['low wall', 1], ['old apple trees', 1], ['oldest hive', 1], ['oldest tree', 1], ['orchard', 1], ['orchard gate', 1],
-      ['orchard keeper', 1], ['paint lifting', 1], ['painted sign', 1], ['pipe', 1], ['presses', 1], ['screw', 1], ['slab', 1],
+      ['orchard keeper', 1], ['paint lifting', 1], ['painted sign', 1], ['pipe', 1], ['screw', 1], ['slab', 1],
       ['sleeves', 1], ['slope', 1], ['small green apple', 1], ['steps', 1], ['stone', 1], ['straw', 1], ['straw hives hum', 1],
-      ['top bar', 1], ['trees', 1], ['wall', 1], ['water valves', 1],
+      ['top bar', 1], ['wall', 1],
     ]);
-    expect(report.findings.every((finding) => (finding.kind === 'not-in-scope' || finding.kind === 'number-form') && finding.detail === NOT_FOUND)).toBe(true);
+    expect(report.findings.every((finding) => finding.kind === 'not-in-scope' && finding.detail === NOT_FOUND)).toBe(true);
     expect(report.findings.filter((finding) => !finding.thing).map((finding) => finding.phrase)).toEqual(['straw hives hum']);
   });
 
-  it('each singular thing that resolves has its plural tried, and the plural is a number-form finding', () => {
-    expect(report.findings.filter((finding) => finding.kind === 'number-form').map((finding) => [finding.phrase, finding.resolvedForm, finding.target, finding.targetId, keysOf(finding.sources)])).toEqual([
-      ['bee smokers', 'bee smoker', 'bee smoker', 'bee-smoker', ['bee-smoker.description']],
-      ['cider presses', 'cider press', 'cider press', 'cider-press', ['press-house.description', 'cider-press.description']],
-      ['honeycombs', 'honeycomb', 'honeycomb', 'honeycomb', ['honeycomb.description']],
-      ['presses', 'press', 'cider press', 'cider-press', ['keeper.description']],
-      ['trees', 'tree', 'apple tree', 'apple-tree', ['rows.description']],
-      ['water valves', 'water valve', 'water valve', 'water-valve', ['press-house.description']],
-    ]);
+  it('each singular thing that resolves has its plural tried, and the plural resolves too, so it is no finding', () => {
+    const plurals = ['bee smokers', 'cider presses', 'honeycombs', 'presses', 'trees', 'water valves'];
+    const rowPhrases = report.rooms.flatMap((room) => room.rows.map((row) => row.phrase));
+    expect(plurals.filter((phrase) => rowPhrases.includes(phrase))).toEqual([]);
+    expect(report.findings.filter((finding) => finding.kind === 'number-form')).toEqual([]);
   });
 
   it('a phrase found in two rooms is one finding naming both rooms, by IR id, and the union of its passages by key', () => {
@@ -119,26 +118,28 @@ describeWith(SCULLERY)('REAL-PATH — scullery at seed 42 / 600 states on the sh
     report = asReport(await runExaminableLens(ir, loaderFor(ir), { story: 'scullery.story', seed: SEED, lookup, ...BUDGETS }));
   }, 120_000);
 
+  // Re-recorded 2026-11-28 (thing-answers-both-numbers Phase 4), with the test
+  // set's OB-56 and OB-58 rewritten first: jar, crock, whetstones and cheeses
+  // now resolve, so their 4 number-form rows are gone. The forms typed stay 42.
   it('reaches both rooms and types 42 forms', () => {
     expect(report.reach).toMatchObject({ roomsReached: 2, roomsDeclared: 2, unreached: [] });
     expect(report.rooms.map((room) => room.room)).toEqual(['Scullery', 'Larder']);
     expect(report.phrasesExecuted).toBe(42);
-    expect(report.counts).toEqual({ 'resolved-described': 3, 'number-form': 4, 'not-in-scope': 18, 'resolved-default': 1 });
+    expect(report.counts).toEqual({ 'resolved-described': 3, 'not-in-scope': 18, 'resolved-default': 1 });
   });
 
-  it('a plural thing and its plural alias resolve, and each singular is a number-form finding (OB-56)', () => {
-    expect(rowsOf('Scullery').slice(0, 4)).toEqual([
+  it('a plural thing and its plural alias resolve, and so does each singular, so neither singular is a finding (OB-56)', () => {
+    expect(rowsOf('Scullery').slice(0, 2)).toEqual([
       ['jars', 'resolved-described', 'jars', undefined, ['scullery.description', 'jars.description']],
-      ['jar', 'number-form', 'jars', 'jars', ['scullery.description', 'jars.description']],
       ['crocks', 'resolved-described', 'jars', undefined, ['scullery.description']],
-      ['crock', 'number-form', 'jars', 'crocks', ['scullery.description']],
     ]);
+    expect(rowsOf('Scullery').some((row) => row[0] === 'jar' || row[0] === 'crock')).toBe(false);
   });
 
-  it('a thing with no description answers with the default response, and its plural is tried (OB-54, OB-58)', () => {
+  it('a thing with no description answers with the default response, and its plural, tried, resolves (OB-54, OB-58)', () => {
     expect(rowsOf('Scullery').find((row) => row[0] === 'whetstone')).toEqual(['whetstone', 'resolved-default', 'whetstone', undefined, ['scullery.description']]);
-    expect(rowsOf('Scullery').find((row) => row[0] === 'whetstones')).toEqual(['whetstones', 'number-form', 'whetstone', 'whetstone', ['scullery.description']]);
-    expect(rowsOf('Larder').find((row) => row[0] === 'cheeses')).toEqual(['cheeses', 'number-form', 'cheese', 'cheese', ['larder.description']]);
+    expect(rowsOf('Scullery').some((row) => row[0] === 'whetstones')).toBe(false);
+    expect(rowsOf('Larder').some((row) => row[0] === 'cheeses')).toBe(false);
   });
 
   it('the whetstone\'s no-text finding names the Scullery\'s description passage and owner, and the whetstone\'s IR id (ADR-408 D4, AC-2)', () => {
@@ -171,12 +172,12 @@ describeWith(SCULLERY)('REAL-PATH — scullery at seed 42 / 600 states on the sh
   it('pins every finding, folded', () => {
     expect(report.findings.map((finding) => [finding.phrase, finding.kind, finding.rooms.length])).toEqual([
       ['bellows', 'not-in-scope', 2], ['kettles', 'not-in-scope', 2], ['scour', 'not-in-scope', 2],
-      ['beams', 'not-in-scope', 1], ['cheeses', 'number-form', 1], ['cold larder', 'not-in-scope', 1],
-      ['corks', 'not-in-scope', 1], ['crock', 'number-form', 1], ['damp', 'not-in-scope', 1],
-      ['drainboard', 'not-in-scope', 1], ['jar', 'number-form', 1], ['neck', 'not-in-scope', 1],
+      ['beams', 'not-in-scope', 1], ['cold larder', 'not-in-scope', 1],
+      ['corks', 'not-in-scope', 1], ['damp', 'not-in-scope', 1],
+      ['drainboard', 'not-in-scope', 1], ['neck', 'not-in-scope', 1],
       ['rind', 'not-in-scope', 1], ['shelf', 'not-in-scope', 1], ['sink', 'not-in-scope', 1],
       ['slate', 'not-in-scope', 1], ['wheel', 'not-in-scope', 1], ['whetstone', 'resolved-default', 1],
-      ['whetstones', 'number-form', 1], ['window', 'not-in-scope', 1],
+      ['window', 'not-in-scope', 1],
     ]);
   });
 });
@@ -259,19 +260,19 @@ describe('REAL-PATH — the lens fixture, through the real engine (ported from t
     expect(report.reach.stoppedBy).toBe('every-route');
   });
 
+  // Re-recorded 2026-11-28 (thing-answers-both-numbers Phase 4): pebbles and
+  // buckets now resolve, so their 2 number-form rows are gone. The forms typed stay 12.
   it('reaches the one room and types every form in both numbers', () => {
     expect(report.reach).toMatchObject({ roomsReached: 1, roomsDeclared: 1, unreached: [] });
     expect(report.phrasesExecuted).toBe(12);
-    expect(report.counts).toEqual({ 'not-in-scope': 4, 'resolved-default': 1, 'number-form': 2, 'resolved-described': 1 });
+    expect(report.counts).toEqual({ 'not-in-scope': 4, 'resolved-default': 1, 'resolved-described': 1 });
   });
 
-  it('classifies the described bucket, the descriptionless pebble, the entity-less crack, and each plural', () => {
+  it('classifies the described bucket, the descriptionless pebble and the entity-less crack; each plural resolves and leaves no row', () => {
     expect(report.rooms[0].rows.map((row) => [row.phrase, row.kind, row.detail, row.target, row.targetId, row.resolvedForm, keysOf(row.sources), row.thing])).toEqual([
       ['bare shed', 'not-in-scope', NOT_FOUND, undefined, undefined, undefined, ['shed.description'], true],
       ['pebble', 'resolved-default', 'if.action.examining.default_description', 'pebble', 'pebble', undefined, ['shed.description'], true],
-      ['pebbles', 'number-form', NOT_FOUND, 'pebble', 'pebble', 'pebble', ['shed.description'], true],
       ['bucket', 'resolved-described', 'if.action.examining.examined', 'bucket', 'bucket', undefined, ['shed.description'], true],
-      ['buckets', 'number-form', NOT_FOUND, 'bucket', 'bucket', 'bucket', ['shed.description'], true],
       ['crack', 'not-in-scope', NOT_FOUND, undefined, undefined, undefined, ['shed.description'], true],
       ['dented tin bucket', 'not-in-scope', NOT_FOUND, undefined, undefined, undefined, ['bucket.description'], true],
       ['tin bucket', 'not-in-scope', NOT_FOUND, undefined, undefined, undefined, ['bucket.description'], true],
@@ -281,11 +282,9 @@ describe('REAL-PATH — the lens fixture, through the real engine (ported from t
   it('folds the findings, each seen in the one room, the described row excluded', () => {
     expect(report.findings.map((finding) => [finding.phrase, finding.kind, finding.rooms.map((room) => room.room)])).toEqual([
       ['bare shed', 'not-in-scope', ['Shed']],
-      ['buckets', 'number-form', ['Shed']],
       ['crack', 'not-in-scope', ['Shed']],
       ['dented tin bucket', 'not-in-scope', ['Shed']],
       ['pebble', 'resolved-default', ['Shed']],
-      ['pebbles', 'number-form', ['Shed']],
       ['tin bucket', 'not-in-scope', ['Shed']],
     ]);
   });

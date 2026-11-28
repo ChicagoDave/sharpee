@@ -52,7 +52,9 @@ describe('sharpee test — the examinable lens tier on scullery (ADR-408 D8, OB-
 
     const findings = events.filter(isLensFindingEvent);
     const summaries = events.filter(isLensSummaryEvent);
-    expect(findings).toHaveLength(20);
+    // Re-recorded 2026-11-28 (thing-answers-both-numbers Phase 4): 20 → 16, as
+    // jar, crock, whetstones and cheeses now resolve (scullery's OB-56, OB-58).
+    expect(findings).toHaveLength(16);
     expect(summaries).toHaveLength(1);
 
     const whetstone = findings.find((finding) => finding.phrase === 'whetstone' && finding.kind === 'resolved-default') as LensFindingEvent;

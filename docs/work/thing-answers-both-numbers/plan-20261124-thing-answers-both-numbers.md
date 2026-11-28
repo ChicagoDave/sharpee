@@ -285,6 +285,14 @@
     - Orchard's located phrases went 82 → 83, and Fernhill's first-visit list loses `lamps`.
     - world-index: "Tests 264 passed | 1 skipped (265)".
   - **Next (a new session):** the lens pins below (scullery's test set first), then AC-11, the World Index in both heads.
+  - **Lens pins re-recorded (2026-11-28, session 1facc0).** The runtime half was committed first, in d4587b940.
+    - Scullery's test set came first: OB-56 and OB-58 were rewritten, because `jar`, `crock`, `cheeses` and `whetstones` now resolve. The story is unchanged.
+    - branch-tester `examinable-lens-real-path.test.ts`: orchard's 6, scullery's 4 and the lens fixture's 2 number-form rows are gone. The forms typed stay at 92, 42 and 12. "Tests 532 passed (532)".
+    - devkit `lens.test.ts` and `test-lens.test.ts`: orchard's header line drops "Number form 6", and scullery's findings go 20 → 16.
+    - The Testing tab's `tools/ide/web/testing-surface/tests/lens-real-path.test.ts` goes 20 → 16. It was not on the moved-pin list, but it is the same census-predicted move.
+    - devkit `lens-phrase-place.test.ts`: the orchard case read only number-form findings, and none remain. David ruled "a": it was widened to place all 38 orchard findings. The fall-through to the resolved form keeps its unit case until Phase 5's Singular/plural finding brings real rows back.
+    - `pnpm exec turbo run test:ci --continue`: "Tasks: 73 successful, 73 total".
+    - Remaining: AC-11 (the World Index in both heads), then the Demonstrated line and the flip.
   - **Moved pins, as found:**
     - world-index's Incomplete corpus pins, which the census did not predict. Fernhill gains `doors` (now ambiguous across three doors) and `feed pipe` (now names the iron pipes, `feed` missing), and loses four no-object rows (`doors`, `feed pipe`, `kippers`, `lamps`). Ides of March loses `boards`, `old boards` and `doors`, and gains `old boards` as missing-word. Orchard's `old apple trees` moves from no-object to missing-word. The roles, located-phrases and CLI pins move with them.
     - The examinable lens's number-form pins in branch-tester and devkit (orchard's 6, scullery's OB-56/OB-58, the lens fixture), which the census did predict ("leaves 0 number-form findings"). Scullery's test set describes the old behavior and changes first (ADR-395 D4).

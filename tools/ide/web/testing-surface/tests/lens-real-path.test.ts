@@ -43,8 +43,10 @@ describe.skipIf(!available)('the lens tier from a real run of the scullery test 
     finishRun(state, run.status === 0);
 
     const findingLines = lines.filter((line) => line.includes('"type":"lens-finding"'));
-    expect(findingLines).toHaveLength(20);
-    expect(state.lensFindings).toHaveLength(20);
+    // Re-recorded 2026-11-28 (thing-answers-both-numbers Phase 4): 20 → 16, as
+    // jar, crock, whetstones and cheeses now resolve (scullery's OB-56, OB-58).
+    expect(findingLines).toHaveLength(16);
+    expect(state.lensFindings).toHaveLength(16);
 
     const status = lensStatusOf(state);
     expect(status.kind).toBe('reported');

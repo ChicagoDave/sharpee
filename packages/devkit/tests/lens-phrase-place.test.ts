@@ -73,15 +73,19 @@ describe('a lens finding\'s phrase, placed inside its passage (ADR-408 D9)', () 
     expect(row.sources[0].length).toBe(9);
   }, 120_000);
 
-  it('orchard — every number-form finding\'s keyed source reads its phrase or its resolved form at `at`, and `length` spans exactly that text', async () => {
+  // Widened 2026-11-28 (thing-answers-both-numbers Phase 4, David "a"): this
+  // read only orchard's number-form findings, and orchard has none now that a
+  // thing answers to both numbers. It now places every finding; the fall-through
+  // to the resolved form keeps its unit case below until the Singular/plural
+  // finding brings real number-form rows back.
+  it('orchard — every finding\'s keyed source reads its phrase or its resolved form at `at`, and `length` spans exactly that text', async () => {
     const findings = await lensFindings(ORCHARD);
     const ir = compileChordStory(ORCHARD);
     const source = readFileSync(ORCHARD, 'utf8');
-    const numberForms = findings.filter((finding) => finding.kind === 'number-form');
-    expect(numberForms.length).toBeGreaterThan(0);
+    expect(findings.length).toBe(38);
 
     let keyed = 0;
-    for (const finding of numberForms) {
+    for (const finding of findings) {
       const row = lensFindingEventOf(finding, ir, lensSourceReader(ORCHARD));
       for (const placed of row.sources) {
         if (placed.key === null) {

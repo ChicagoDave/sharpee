@@ -50,7 +50,9 @@ describe('sharpee lens examinable — the real path', () => {
     expect(stdout).toContain('rooms reached     5 of 5 declared');
     expect(stdout).toContain('phrases examined  92');
     // The class titles are lens-words.ts's, the one vocabulary the Testing tab prints too.
-    expect(stdout).toContain('by class          Not answered 40, Described 6, Number form 6');
+    // Re-recorded 2026-11-28 (thing-answers-both-numbers Phase 4): orchard's 6
+    // plurals now resolve, so no Number form class remains.
+    expect(stdout).toContain('by class          Not answered 40, Described 6\n');
     expect(stdout).toContain('Absence is not proof');
   }, 120_000);
 
@@ -70,7 +72,9 @@ describe('sharpee lens examinable — the real path', () => {
       targetId: 'whetstone',
       sources: [{ key: 'scullery.description', kind: 'description', ownerId: 'scullery', ownerName: 'Scullery' }],
     });
-    expect(report.findings.length).toBe(20);
+    // Re-recorded 2026-11-28 (thing-answers-both-numbers Phase 4): 20 → 16, as
+    // jar, crock, whetstones and cheeses now resolve (scullery's OB-56, OB-58).
+    expect(report.findings.length).toBe(16);
   }, 120_000);
 
   it('the console form prints each source\'s owner, kind, file and line', async () => {
