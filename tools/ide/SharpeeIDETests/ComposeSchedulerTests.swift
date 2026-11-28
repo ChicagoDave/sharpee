@@ -92,7 +92,7 @@ final class ComposeSchedulerTests: XCTestCase {
             // The record's site names the snapshot — the scheduler must remap it.
             let record = ComposeDiagnosticRecord(severity: .error, code: "analysis.unknown-entity",
                                                  message: "test", file: url.path, line: 1,
-                                                 span: DiagnosticSpan(line: 1, column: 1, endLine: 1, endColumn: 2))
+                                                 span: DiagnosticSpan(line: 1, column: 1, endLine: 1, endColumn: 2), fix: nil)
             completion(.success(ComposeJsonPayload(schemaVersion: 2, diagnostics: [record], ir: nil)))
         }
 

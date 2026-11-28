@@ -29,6 +29,8 @@ import type { ComposeDiagnosticRecord, ComposeJsonPayload } from '@sharpee/ide-p
 // author-game loader behind `sharpee test`/`play`).
 import { makeFsImportResolver } from '../standalone/author-game.js';
 import { configPathFor, readStoryConfig } from '../standalone/story-config.js';
+import { resolveNounExtractor, type NounExtractorResolution, type NounsModule } from '@sharpee/if-domain/nouns';
+import { fillFix } from './compose-fix.js';
 
 const USAGE = 'usage: sharpee compose <file.story> [--check] [--json] [-o <ir.json>]';
 
@@ -87,18 +89,36 @@ export function runComposeGates(file: string): ComposeGatesResult {
     importResolver: makeFsImportResolver(storyDir),
   });
 
+  // ADR-409 D7.2: a fix's forms come from the story's language, resolved once
+  // and only when some diagnostic carries a fix. A compile that failed still
+  // names its locale in the IR the analyzer drafted.
+  let language: NounExtractorResolution | undefined;
+  const languageForFixes = (): NounExtractorResolution => {
+    if (!language) {
+      const locale = compile.ir?.phrases?.defaultLocale;
+      language = locale
+        ? resolveNounExtractor(locale, (moduleName) => require(moduleName) as NounsModule)
+        : { found: false, refusal: 'compose: the compile named no story language to fill a fix from' };
+    }
+    return language;
+  };
+
   const diagnostics: ComposeDiagnostic[] = [
     ...configDiagnostics,
-    ...compile.diagnostics.map((d) => ({
-      severity: d.severity,
-      code: d.code,
-      message: d.message,
-      // A span's `file` names an imported fragment relative to the story's
-      // directory; absent means the story file itself (ADR-251 D6).
-      file: d.span.file ? path.join(path.dirname(file), d.span.file) : file,
-      line: d.span.line,
-      span: d.span,
-    })),
+    ...compile.diagnostics.map((d) => {
+      const fix = d.fix ? fillFix(d.fix, languageForFixes()) : undefined;
+      return {
+        severity: d.severity,
+        code: d.code,
+        message: d.message,
+        // A span's `file` names an imported fragment relative to the story's
+        // directory; absent means the story file itself (ADR-251 D6).
+        file: d.span.file ? path.join(path.dirname(file), d.span.file) : file,
+        line: d.span.line,
+        span: d.span,
+        ...(fix ? { fix } : {}),
+      };
+    }),
   ];
 
   return {

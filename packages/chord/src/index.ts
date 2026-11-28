@@ -49,7 +49,15 @@ export { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 export { REMOVED_FORMS, removedFormMessage } from './removed-forms.js';
 export type { RemovedForm, RemovedFormCode } from './removed-forms.js';
 export type { PhrasebookManifest } from './phrasebooks.js';
-export { Diagnostic, DiagnosticSeverity, DiagnosticBag } from './diagnostics.js';
+export {
+  Diagnostic,
+  DiagnosticSeverity,
+  DiagnosticFix,
+  DiagnosticFixEdit,
+  FixFormSlot,
+  FIX_FORM_MARKER,
+  DiagnosticBag,
+} from './diagnostics.js';
 export { Span, spanOf, mergeSpans } from './span.js';
 export { lex, Line, Token, TokenKind } from './lexer.js';
 export { parseStory } from './parser.js';

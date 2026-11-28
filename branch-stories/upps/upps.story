@@ -68,6 +68,12 @@ create the route placard
   A tin placard clipped to the machine's flank: ROUTES 4-9. The clip
   has been bent and rebent by every carrier who ever wanted it.
 
+create the carrier
+  a thing, singular, scenery
+  in the Sorting Room
+  
+  You're the only carrier here now.
+
 create the inspection plate
   a thing, singular, attached to the sorting machine
   in the Sorting Room

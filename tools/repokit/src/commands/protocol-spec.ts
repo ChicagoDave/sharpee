@@ -84,6 +84,9 @@ export const PROTOCOL_SPEC: ProtocolSpec = {
     { ts: 'DiagnosticSeverity', as: 'ComposeSeverity' },
     { ts: 'Span', as: 'DiagnosticSpan' },
     { ts: 'ComposeDiagnosticRecord' },
+    // ADR-409 D7.2 — a diagnostic's fix, filled by compose before it ships.
+    { ts: 'ComposeFix' },
+    { ts: 'ComposeFixEdit' },
     { ts: 'ComposeJsonPayload' },
     // ADR-258 D6 — the IR projection the shells decode, nested under the
     // payload's IR type exactly as the shipping Swift nests it.

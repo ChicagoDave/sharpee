@@ -29,7 +29,8 @@ final class ProblemsVisibilityTests: XCTestCase {
             message: "The story header has a problem that covers the whole block.",
             file: storyURL.path,
             line: 5,
-            span: DiagnosticSpan(line: 5, column: 1, endLine: 20, endColumn: 9))
+            span: DiagnosticSpan(line: 5, column: 1, endLine: 20, endColumn: 9),
+            fix: nil)
     }
 
     func testAWarningOnlyComposeStillCountsAsAProblem() {
@@ -46,7 +47,7 @@ final class ProblemsVisibilityTests: XCTestCase {
             severity: .error, code: "analysis.unknown-entity",
             message: "The player starts in the Attic, which is never created.",
             file: storyURL.path, line: 30,
-            span: DiagnosticSpan(line: 30, column: 3, endLine: 30, endColumn: 24))
+            span: DiagnosticSpan(line: 30, column: 3, endLine: 30, endColumn: 24), fix: nil)
         let view = ProblemsView()
         view.setProblems([blockSpanningWarning, error], for: storyURL)
 

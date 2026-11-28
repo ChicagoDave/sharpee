@@ -9,7 +9,7 @@
  *
  * Owner context: @sharpee/devkit test suite.
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -202,5 +202,100 @@ describe('compose --json — piped stdout integrity (the real IDE transport)', (
     const payload = JSON.parse(stdout) as ComposeJsonPayload; // throws on truncation
     expect(isComposeJsonPayload(payload)).toBe(true);
     expect(payload.ir?.entities).toHaveLength(first.length * second.length + 1);
+  });
+});
+
+/** A thing in the Lab, declared with `declaration` (ADR-409 D1). */
+function thingLines(name: string, declaration: string): string[] {
+  return [`create the ${name}`, `  a thing, ${declaration}`, '  in the Lab', '', '  It is there.', ''];
+}
+
+/**
+ * Apply every edit to a source, last first so earlier spans stay put. Spans are
+ * 1-based and half-open, the way the heads read them.
+ */
+function applyEdits(source: string, edits: { span: { line: number; column: number; endLine: number; endColumn: number }; text: string }[]): string {
+  const lines = source.split('\n');
+  const offset = (line: number, column: number) =>
+    lines.slice(0, line - 1).reduce((sum, l) => sum + l.length + 1, 0) + (column - 1);
+  const ordered = [...edits].sort((a, b) => offset(b.span.line, b.span.column) - offset(a.span.line, a.span.column));
+  let out = source;
+  for (const { span, text } of ordered) {
+    out = out.slice(0, offset(span.line, span.column)) + text + out.slice(offset(span.endLine, span.endColumn));
+  }
+  return out;
+}
+
+describe('compose --json — a refusal carries a fix filled from the story language (ADR-409 D7.2, AC-10)', () => {
+  it('fills the bare `plural` on "houses" as `plural of house`, with no slot or marker on the wire', async () => {
+    const file = join(DIR, 'houses.story');
+    writeFileSync(file, storySource(thingLines('houses', 'plural')));
+    const { code, stdout } = await run([file, '--json']);
+    expect(code).toBe(1);
+    expect(stdout).not.toContain('{form}');
+    const payload = payloadOf(stdout);
+    const record = payload.diagnostics.find((d) => d.code === 'analysis.singular-plural-unsafe-ending');
+    expect(record?.fix).toBeDefined();
+    expect(record!.fix!.label).toBe('Write `plural of house`');
+    expect(record!.fix!.edits).toHaveLength(1);
+    expect(record!.fix!.edits[0].text).toBe('plural of house');
+    expect(record!.fix!.edits[0].span).toEqual(record!.span);
+    expect('slot' in record!.fix!.edits[0]).toBe(false);
+  });
+
+  it('leaves a source that compiles once the fix is applied, the form written', async () => {
+    const file = join(DIR, 'houses-apply.story');
+    const source = storySource(thingLines('houses', 'plural'));
+    writeFileSync(file, source);
+    const first = payloadOf((await run([file, '--json'])).stdout);
+    const fix = first.diagnostics.find((d) => d.fix)!.fix!;
+    writeFileSync(file, applyEdits(source, fix.edits));
+    expect(readFileSync(file, 'utf8')).toContain('  a thing, plural of house\n');
+    const { code, stdout } = await run([file, '--json']);
+    expect(code).toBe(0);
+    const payload = payloadOf(stdout);
+    expect(payload.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const houses = payload.ir!.entities.find((e) => e.name === 'houses') as unknown as { forms?: unknown };
+    expect(houses.forms).toMatchObject({ singular: 'house', plural: 'houses', origin: 'written' });
+  });
+
+  it('fix-all: every refusal in a story fixed at once recompiles clean', async () => {
+    const file = join(DIR, 'fix-all.story');
+    const source = storySource([
+      ...thingLines('houses', 'plural'),
+      ...thingLines('shelf', 'singular'),
+      ...thingLines('mice', 'plural'),
+      ...thingLines('pot of gold', 'singular'),
+      ...thingLines('candles', 'plural'),
+    ]);
+    writeFileSync(file, source);
+    const first = payloadOf((await run([file, '--json'])).stdout);
+    const fixes = first.diagnostics.filter((d) => d.fix).map((d) => d.fix!);
+    expect(fixes.map((f) => f.edits[0].text)).toEqual([
+      'plural of house',
+      'singular of shelves',
+      'plural of mouse',
+      'singular of pots of gold',
+    ]);
+    writeFileSync(file, applyEdits(source, fixes.flatMap((f) => f.edits)));
+    const { code, stdout } = await run([file, '--json']);
+    expect(code).toBe(0);
+    expect(payloadOf(stdout).diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+  });
+
+  it('ships the filled fix through the built CLI the heads spawn', async () => {
+    const { execFileSync } = await import('node:child_process');
+    const { fileURLToPath } = await import('node:url');
+    const cli = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
+    const file = join(DIR, 'houses-cli.story');
+    writeFileSync(file, storySource(thingLines('houses', 'plural')));
+    let stdout = '';
+    try {
+      execFileSync(process.execPath, [cli, 'compose', file, '--json'], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (error) {
+      stdout = (error as { stdout: string }).stdout; // a refusal exits 1
+    }
+    const record = payloadOf(stdout).diagnostics.find((d) => d.code === 'analysis.singular-plural-unsafe-ending');
+    expect(record?.fix?.edits[0].text).toBe('plural of house');
   });
 });

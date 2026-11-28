@@ -48,6 +48,7 @@ using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using PaneHost.Editor;
 using PaneHost.Hosting;
+using PaneHost.Protocol;
 using PaneHost.Theme;
 
 namespace PaneHost.Shell;
@@ -85,6 +86,15 @@ public partial class ShellWindow : Window
 
     /// <summary>Cancels the running toolchain command; null when none is running.</summary>
     private CancellationTokenSource? _commandCts;
+
+    /// <summary>The last check's records and the story text it read; null before the first check.</summary>
+    private ComposeRun? _composeRun;
+
+    /// <summary>The editor's diagnostic underlines for the active document.</summary>
+    private readonly DiagnosticUnderlines _underlines = new();
+
+    /// <summary>Where the pointer last pressed in the editor, so the context menu knows what it opened over.</summary>
+    private Point? _contextPoint;
 
     /// <summary>True when this run is the scripted evaluation pass rather than an app session.</summary>
     private static bool IsProbeRun => Environment.GetCommandLineArgs().Contains("--shell-probe");
@@ -145,6 +155,14 @@ public partial class ShellWindow : Window
 
         Editor.TextArea.TextView.LineTransformers.Add(_colorizer);
 
+        // The compose diagnostics surface (ADR-258 D5, ADR-409 D7.2): underlines in the
+        // editor, and a context menu that offers the fix under the pointer and Fix All.
+        Editor.TextArea.TextView.BackgroundRenderers.Add(_underlines);
+        Editor.AddHandler(PointerPressedEvent, (_, e) => _contextPoint = e.GetPosition(Editor),
+            RoutingStrategies.Tunnel, handledEventsToo: true);
+        Editor.ContextMenu = new ContextMenu();
+        Editor.ContextMenu.Opening += (_, _) => FillEditorContextMenu();
+
         // Before the underlying web view is created: some doors must name their
         // script-message handler at this moment and cannot do it later.
         _door.Configure(PlayWeb);
@@ -165,7 +183,7 @@ public partial class ShellWindow : Window
         WorldTabs.Selected += ShowWorldSubPane;
         WorldReach.FindingActivated += line => _ = RevealAsync(new IndexSpan(null, line, 1));
         IndexPane.RowActivated += span => _ = RevealAsync(span);
-        BottomTabs.Selected += _ => { };
+        BottomTabs.Selected += ShowBottomTab;
         ProjectPane.FileSelected += path => _ = OpenAsync(path);
         EditorTabs.Selected += SwitchToDocument;
         EditorTabs.Closed += index => _ = CloseDocumentAsync(index);
@@ -699,7 +717,16 @@ public partial class ShellWindow : Window
 
         var document = new TextDocument(await File.ReadAllTextAsync(path));
         var opened = new OpenDocument { Path = path, Document = document };
-        document.TextChanged += (_, _) => MarkDirty(opened);
+        document.TextChanged += (_, _) =>
+        {
+            MarkDirty(opened);
+            // Underlines describe the text a check read; an edit makes them stale.
+            if (ReferenceEquals(_underlines.Document, document))
+            {
+                _underlines.Clear();
+                Editor.TextArea.TextView.InvalidateLayer(_underlines.Layer);
+            }
+        };
 
         _documents.Add(opened);
         SwitchToDocument(_documents.Count - 1);
@@ -724,6 +751,7 @@ public partial class ShellWindow : Window
         Editor.CaretOffset = Math.Min(document.CaretOffset, document.Document.TextLength);
 
         RefreshEditorTabs();
+        RefreshUnderlines();
         _ = HighlightAsync();
     }
 
@@ -993,13 +1021,249 @@ public partial class ShellWindow : Window
         }
     }
 
-    /// <summary>Runs the load-time gates over the open story without emitting IR.</summary>
+    /// <summary>
+    /// Runs the load-time gates over the open story — its buffer, saved or not — and shows
+    /// the result as the Problems list and the editor's underlines (ADR-258 D5). The check
+    /// itself, snapshot and site mapping included, is ComposeCheck's; the run it returns
+    /// keeps the text it composed, and a fix is offered only while the buffer still reads it.
+    /// </summary>
     private async Task ComposeAsync()
     {
         if (_project is not { } project) { Report("check: nothing is open."); return; }
+        if (_running) { Report("check: another command is already running."); return; }
+        if (HostServices.Current.ToolchainShim is not { } shim)
+        {
+            Report("check: this build carries no toolchain, so it cannot run `sharpee`.");
+            return;
+        }
 
-        var exit = await RunToolchainAsync("check", new[] { "compose", project.StoryFile, "--check" }, project.Folder);
+        var story = project.StoryFile;
+        var content = BufferOf(story) ?? await File.ReadAllTextAsync(story);
+
+        _running = true;
+        _commandCts = new CancellationTokenSource();
+        Report($"$ sharpee compose {Path.GetFileName(story)} --json --check");
+        StatusText.Text = "check…";
+        BuildPill.Text = "check…";
+        ComposeCheck.Result result;
+        try
+        {
+            result = await ComposeCheck.RunAsync(HostServices.Current, shim, Array.Empty<string>(), story, content,
+                line => Dispatcher.UIThread.Post(() => Report(line)), _commandCts.Token);
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or InvalidOperationException or IOException
+                                       or System.ComponentModel.Win32Exception)
+        {
+            Report($"check could not run: {ex.GetType().Name}: {ex.Message}");
+            StatusText.Text = "check failed";
+            BuildPill.Text = "check failed";
+            return;
+        }
+        finally
+        {
+            _running = false;
+            _commandCts?.Dispose();
+            _commandCts = null;
+        }
+
+        var exit = result.Exit;
+        if (result.Run is not { } run)
+        {
+            Report($"— check exited {exit} without a compose payload this head can read");
+            StatusText.Text = "check failed";
+            BuildPill.Text = "check failed";
+            return;
+        }
+
+        _composeRun = run;
+        var records = run.Records;
+        Report($"— check exited {exit}: {records.Count} problem(s)");
+        StatusText.Text = exit == 0 ? "check ok" : $"check failed ({exit})";
         BuildPill.Text = exit == 0 ? "gate-clean" : "gate errors";
+        RenderProblems();
+        RefreshUnderlines();
+        if (records.Count > 0)
+        {
+            SetBottomPanelVisible(true);
+            BottomTabs.ActiveIndex = 0;
+            ShowBottomTab(0);
+        }
+    }
+
+    /// <summary>The open buffer of a file, or null when it is not open.</summary>
+    private string? BufferOf(string path) =>
+        _documents.FirstOrDefault(d => string.Equals(d.Path, path, StringComparison.Ordinal))?.Document.Text;
+
+    /// <summary>Whether a file's open buffer has unsaved edits.</summary>
+    private bool IsDirty(string path) =>
+        _documents.FirstOrDefault(d => string.Equals(d.Path, path, StringComparison.Ordinal))?.Dirty ?? false;
+
+    /// <summary>The last check's records whose fix still applies (ADR-409 D7.2).</summary>
+    private IReadOnlyList<ComposeDiagnosticRecord> CurrentFixes() =>
+        ComposeProblems.CurrentFixes(_composeRun, BufferOf, IsDirty);
+
+    /// <summary>Shows the Problems list on the Problems tab and the command log on the others.</summary>
+    /// <param name="index">The bottom tab chosen.</param>
+    private void ShowBottomTab(int index)
+    {
+        ProblemsScroll.IsVisible = index == 0;
+        BottomText.IsVisible = index != 0;
+    }
+
+    /// <summary>
+    /// Redraws the Problems list from the last check: one row per record, its severity
+    /// dot, code, message and site; a row with a current fix carries a button titled by
+    /// the fix's label. Double-tapping a row reveals its range in the editor.
+    /// </summary>
+    private void RenderProblems()
+    {
+        ProblemsList.Children.Clear();
+        var records = _composeRun?.Records ?? Array.Empty<ComposeDiagnosticRecord>();
+        BottomTabs.Badges = new Dictionary<int, int> { [0] = records.Count };
+        BottomTabs.InvalidateVisual();
+        if (records.Count == 0)
+        {
+            ProblemsList.Children.Add(new TextBlock { Text = "No problems", FontSize = 11, Foreground = ThemeTokens.ForegroundDim, Margin = new Thickness(4) });
+            return;
+        }
+
+        var current = CurrentFixes();
+        foreach (var row in ComposeProblems.Rows(records))
+        {
+            var line = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Height = 22 };
+            var text = new TextBlock
+            {
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                FontSize = 11.5,
+                Inlines = new Avalonia.Controls.Documents.InlineCollection
+                {
+                    new Avalonia.Controls.Documents.Run("● ") { Foreground = row.Record.Severity == ComposeSeverity.Error ? Brushes.IndianRed : Brushes.Goldenrod },
+                    new Avalonia.Controls.Documents.Run($"[{row.Record.Code}] ") { Foreground = ThemeTokens.ForegroundDim, FontFamily = new FontFamily("Menlo") },
+                    new Avalonia.Controls.Documents.Run(row.Record.Message) { Foreground = ThemeTokens.Foreground },
+                    new Avalonia.Controls.Documents.Run($"   {row.Site}") { Foreground = ThemeTokens.ForegroundDim },
+                },
+            };
+            var record = row.Record;
+            text.DoubleTapped += (_, _) => _ = RevealRecordAsync(record);
+            line.Children.Add(text);
+            if (row.FixLabel is { } label && current.Contains(record))
+            {
+                var button = new Button { Content = label, FontSize = 11, Padding = new Thickness(6, 1), Margin = new Thickness(8, 0, 0, 0) };
+                Grid.SetColumn(button, 1);
+                button.Click += (_, _) => _ = ApplyFixAsync(record);
+                line.Children.Add(button);
+            }
+            ProblemsList.Children.Add(line);
+        }
+    }
+
+    /// <summary>Opens a record's file and selects its range (its line, for the story-config record).</summary>
+    private async Task RevealRecordAsync(ComposeDiagnosticRecord record)
+    {
+        await OpenAsync(record.File);
+        if (!string.Equals(_openFile, record.File, StringComparison.Ordinal)) return;
+        if (record.Span is { } span && ComposeProblems.SpanRange(span, Editor.Document.Text) is { } range)
+            Editor.Select(range.Offset, range.Length);
+        Editor.ScrollToLine(record.Line);
+        Editor.Focus();
+    }
+
+    /// <summary>
+    /// Underlines the last check's records in the active document, when that document still
+    /// reads what the check read; otherwise clears them.
+    /// </summary>
+    private void RefreshUnderlines()
+    {
+        _underlines.Clear();
+        if (_composeRun is { } run && _openFile is { } path && Editor.Document is { } document
+            && ComposeProblems.IsUnchangedSince(run, path, BufferOf, IsDirty))
+        {
+            var text = document.Text;
+            _underlines.Show(document, run.Records
+                .Where(r => string.Equals(r.File, path, StringComparison.Ordinal) && r.Span is not null)
+                .Select(r => (Range: ComposeProblems.UnderlineRange(r.Span!, text), IsError: r.Severity == ComposeSeverity.Error))
+                .Where(m => m.Range is not null)
+                .Select(m => (m.Range!.Value.Offset, m.Range!.Value.Length, m.IsError)));
+        }
+        Editor.TextArea.TextView.InvalidateLayer(_underlines.Layer);
+    }
+
+    /// <summary>
+    /// Fills the editor's context menu: the fix of the record under the pointer and Fix All,
+    /// when the last check left a current fix, then the clipboard commands.
+    /// </summary>
+    private void FillEditorContextMenu()
+    {
+        if (Editor.ContextMenu is not { } menu) return;
+        menu.Items.Clear();
+        var current = CurrentFixes();
+        if (current.Count > 0 && _openFile is { } path)
+        {
+            var offset = _contextPoint is { } point && Editor.GetPositionFromPoint(point) is { } position
+                ? Editor.Document.GetOffset(position.Location)
+                : Editor.CaretOffset;
+            var text = Editor.Document.Text;
+            var here = current.FirstOrDefault(r => string.Equals(r.File, path, StringComparison.Ordinal)
+                && r.Span is { } span && ComposeProblems.SpanRange(span, text) is { } range
+                && offset >= range.Offset && offset <= range.Offset + range.Length);
+            if (here?.Fix is { } fix)
+            {
+                var item = new MenuItem { Header = fix.Label };
+                item.Click += (_, _) => _ = ApplyFixAsync(here);
+                menu.Items.Add(item);
+            }
+            var all = new MenuItem { Header = $"Fix All ({current.Count})" };
+            all.Click += (_, _) => _ = ApplyAllFixesAsync();
+            menu.Items.Add(all);
+            menu.Items.Add(new Separator());
+        }
+        foreach (var (header, action) in new (string, Action)[] { ("Cut", Editor.Cut), ("Copy", Editor.Copy), ("Paste", Editor.Paste) })
+        {
+            var item = new MenuItem { Header = header };
+            item.Click += (_, _) => action();
+            menu.Items.Add(item);
+        }
+    }
+
+    /// <summary>
+    /// Applies one record's fix to its file as one undoable edit, then checks again so the
+    /// Problems list and underlines describe the fixed text.
+    /// </summary>
+    private async Task ApplyFixAsync(ComposeDiagnosticRecord record)
+    {
+        if (record.Fix is not { } fix || !CurrentFixes().Contains(record))
+        {
+            Report("fix: the file changed since the last check — check again to get a current fix.");
+            return;
+        }
+        await OpenAsync(record.File);
+        if (_documents.FirstOrDefault(d => string.Equals(d.Path, record.File, StringComparison.Ordinal)) is not { } open
+            || !ComposeProblems.ApplyFix(open.Document, fix))
+        {
+            Report($"fix: `{fix.Label}` no longer fits {Path.GetFileName(record.File)} — check again.");
+            return;
+        }
+        Report($"fix: {fix.Label} — {Path.GetFileName(record.File)}:{record.Line}");
+        await ComposeAsync();
+    }
+
+    /// <summary>
+    /// Fix All: applies every current fix in the story at once, each file's fixes as one
+    /// undoable edit, then checks again.
+    /// </summary>
+    private async Task ApplyAllFixesAsync()
+    {
+        var current = CurrentFixes();
+        var applied = 0;
+        foreach (var path in current.Select(r => r.File).Distinct(StringComparer.Ordinal).ToList())
+        {
+            await OpenAsync(path);
+            if (_documents.FirstOrDefault(d => string.Equals(d.Path, path, StringComparison.Ordinal)) is { } open)
+                applied += ComposeProblems.ApplyAll(open.Document, current, path);
+        }
+        Report($"fix all: {applied} fix(es) applied");
+        if (applied > 0) await ComposeAsync();
     }
 
     /// <summary>Builds and zips a distributable browser app (ADR-284), as Build ▸ Publish… does.</summary>

@@ -83,7 +83,13 @@
                       RowDefinitions="30,*">
                     <shell:TabStripView x:Name="BottomTabs" Grid.Row="0" />
                     <TextBox x:Name="BottomText" Grid.Row="1" AcceptsReturn="True" IsReadOnly="True"
-                             FontFamily="Menlo" FontSize="11" BorderThickness="0" />
+                             FontFamily="Menlo" FontSize="11" BorderThickness="0" IsVisible="False" />
+                    <!-- The Problems tab: the last check's diagnostics, one row each, a row
+                         with a fix carrying its button (ADR-258 D5, ADR-409 D7.2). -->
+                    <ScrollViewer x:Name="ProblemsScroll" Grid.Row="1"
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="ProblemsList" Margin="6,2" Spacing="1" />
+                    </ScrollViewer>
                 </Grid>
             </Grid>
 

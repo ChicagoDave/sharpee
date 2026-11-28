@@ -6,7 +6,7 @@
  *   story-config record with file+line and no end-span) plus, when the compile succeeded
  *   and the mode emits IR, the Story IR the IDE's project tree is built from
  *   (ADR-258 D6). Gates + IR, never the load-proof.
- * Public interface: COMPOSE_JSON_SCHEMA_VERSION, ComposeDiagnosticRecord,
+ * Public interface: COMPOSE_JSON_SCHEMA_VERSION, ComposeDiagnosticRecord, ComposeFix, ComposeFixEdit,
  *   ComposeJsonPayload, isComposeDiagnosticRecord, isComposeJsonPayload.
  * Owner context: @sharpee/ide-protocol (ADR-258 D5) — the TS emitter (devkit
  *   `compose.ts`) imports these types directly (DEVARCH 8b); the Swift decoder
@@ -44,6 +44,27 @@ export interface ComposeDiagnosticRecord {
   line: number;
   /** Full source span — compile diagnostics only (the underline range, ADR-258 D5). */
   span?: Span;
+  /**
+   * Edits that clear the diagnostic, which the editor offers to apply
+   * (ADR-409 D7.2). Compose fills every form from the story's language
+   * before it writes the payload, so the text is final: the heads apply it
+   * as written and work nothing out. Absent when there is no fix, or when
+   * the story's language could not fill it.
+   */
+  fix?: ComposeFix;
+}
+
+/** One replacement in a compile diagnostic's file: `text` replaces what `span` covers. */
+export interface ComposeFixEdit {
+  span: Span;
+  text: string;
+}
+
+/** A diagnostic's fix on the wire (ADR-409 D7.2): what it does, and its edits. */
+export interface ComposeFix {
+  /** What applying the fix does, e.g. "Write `plural of house`". */
+  label: string;
+  edits: ComposeFixEdit[];
 }
 
 /** The `compose --json` stdout payload (ADR-258 D5). */
@@ -76,6 +97,17 @@ function isSpan(v: unknown): v is Span {
   );
 }
 
+/** Narrow a value to a valid {@link ComposeFix}: a label and at least one edit. */
+function isComposeFix(v: unknown): v is ComposeFix {
+  if (!isObject(v)) return false;
+  return (
+    typeof v.label === 'string' &&
+    Array.isArray(v.edits) &&
+    v.edits.length > 0 &&
+    v.edits.every((e) => isObject(e) && isSpan(e.span) && typeof e.text === 'string')
+  );
+}
+
 /** Narrow a value to a valid {@link ComposeDiagnosticRecord}. */
 export function isComposeDiagnosticRecord(value: unknown): value is ComposeDiagnosticRecord {
   if (!isObject(value)) return false;
@@ -85,7 +117,8 @@ export function isComposeDiagnosticRecord(value: unknown): value is ComposeDiagn
     typeof value.message === 'string' &&
     typeof value.file === 'string' &&
     typeof value.line === 'number' &&
-    (value.span === undefined || isSpan(value.span))
+    (value.span === undefined || isSpan(value.span)) &&
+    (value.fix === undefined || isComposeFix(value.fix))
   );
 }
 

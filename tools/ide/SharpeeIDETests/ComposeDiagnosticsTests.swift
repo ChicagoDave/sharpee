@@ -33,6 +33,21 @@ final class ComposeDiagnosticsTests: XCTestCase {
         XCTAssertNil(payload.diagnostics[0].span)
     }
 
+    /// ADR-409 D7.2: a record's fix, as compose fills it. Byte-identical to
+    /// PaneHost.Tests' `a_diagnostic_fix_decodes_with_its_edits`.
+    func testDecodesARecordsFixWithItsEdits() throws {
+        let payload = try ComposeJsonPayload.decode(from: data("""
+        {"schemaVersion":2,"diagnostics":[{"severity":"error","code":"analysis.singular-plural-unsafe-ending",
+         "message":"`houses`: write `plural of <its singular>`","file":"/tmp/probe.story","line":20,
+         "span":{"line":20,"column":12,"endLine":20,"endColumn":18},
+         "fix":{"label":"Write `plural of house`","edits":[{"span":{"line":20,"column":12,"endLine":20,"endColumn":18},"text":"plural of house"}]}}]}
+        """))
+        let fix = try XCTUnwrap(payload.diagnostics[0].fix)
+        XCTAssertEqual(fix.label, "Write `plural of house`")
+        XCTAssertEqual(fix.edits, [ComposeFixEdit(span: DiagnosticSpan(line: 20, column: 12, endLine: 20, endColumn: 18),
+                                                  text: "plural of house")])
+    }
+
     func testDecodesIRSubsetWhenPresent() throws {
         let payload = try ComposeJsonPayload.decode(from: data("""
         {"schemaVersion":2,"diagnostics":[],

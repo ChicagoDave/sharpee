@@ -34,7 +34,7 @@ final class IRTreeStateTests: XCTestCase {
               result: .success(ComposeJsonPayload(schemaVersion: 2, diagnostics: [
                   ComposeDiagnosticRecord(severity: .error, code: "analysis.unknown-entity",
                                           message: "boom", file: url.path, line: 1,
-                                          span: DiagnosticSpan(line: 1, column: 1, endLine: 1, endColumn: 2)),
+                                          span: DiagnosticSpan(line: 1, column: 1, endLine: 1, endColumn: 2), fix: nil),
               ], ir: nil)))
     }
 

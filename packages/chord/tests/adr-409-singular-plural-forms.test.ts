@@ -8,8 +8,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { compile, otherFormOfPhrase, workOutAkaForms, STDLIB_MANIFEST } from '../src';
-import type { FormRules, SingularPluralFacts } from '../src';
+import { compile, otherFormOfPhrase, workOutAkaForms, DiagnosticBag, STDLIB_MANIFEST } from '../src';
+import type { Diagnostic, DiagnosticFix, FormRules, SingularPluralFacts, Span } from '../src';
 import type { IREntity } from '../src/ir';
 
 const HEADER = `story
@@ -246,5 +246,119 @@ describe('ADR-409 AC-2: the analyzer writes every form into the IR with its orig
     expect(otherFormOfPhrase('pot of gold', 'singular', testLocale)).toEqual({ form: 'pot of golden' });
     expect(otherFormOfPhrase('haus von gold', 'singular', testLocale)).toEqual({ reason: 'stopword-inside' });
     expect(workOutAkaForms(['box'], 'singular', ['box'], testLocale)).toEqual([{ word: 'box', form: 'boxen' }]);
+  });
+});
+
+/**
+ * Apply a fix's edits to a source, last edit first so earlier spans stay put.
+ * Spans are 1-based and half-open (`endColumn` is just past the last character).
+ */
+function applyEdits(source: string, edits: readonly { span: Span; text: string }[]): string {
+  const lines = source.split('\n');
+  const offset = (line: number, column: number) =>
+    lines.slice(0, line - 1).reduce((sum, l) => sum + l.length + 1, 0) + (column - 1);
+  let out = source;
+  const ordered = [...edits].sort((a, b) => offset(b.span.line, b.span.column) - offset(a.span.line, a.span.column));
+  for (const { span, text } of ordered) {
+    out = out.slice(0, offset(span.line, span.column)) + text + out.slice(offset(span.endLine, span.endColumn));
+  }
+  return out;
+}
+
+/** The one singular/plural refusal a body gets, with its fix. */
+function refusalWithFix(body: string): { diagnostic: Diagnostic; fix: DiagnosticFix; source: string } {
+  const source = story(body);
+  const found = compile(source).diagnostics.filter((d) => d.code.startsWith('analysis.singular-plural-'));
+  expect(found).toHaveLength(1);
+  expect(found[0].fix).toBeDefined();
+  return { diagnostic: found[0], fix: found[0].fix!, source };
+}
+
+describe('ADR-409 D7.2: the bare-declaration refusal carries a fix with a form slot', () => {
+  it('rewrites a bare `plural` on `houses` as `plural of {form}`, the slot asking for the singular of `houses`', () => {
+    const { diagnostic, fix, source } = refusalWithFix(thing('houses', 'plural'));
+    expect(fix.label).toBe('Write `plural of {form}`');
+    expect(fix.edits).toHaveLength(1);
+    expect(fix.edits[0].text).toBe('plural of {form}');
+    expect(fix.edits[0].slot).toEqual({ word: 'houses', want: 'singular' });
+    // The edit covers exactly the declaration word, which is the diagnostic's span.
+    expect(fix.edits[0].span).toEqual(diagnostic.span);
+    const line = source.split('\n')[fix.edits[0].span.line - 1];
+    expect(line.slice(fix.edits[0].span.column - 1, fix.edits[0].span.endColumn - 1)).toBe('plural');
+  });
+
+  it('asks for the plural of a singular: `shelf` → slot `{ shelf, plural }`', () => {
+    const { fix } = refusalWithFix(thing('shelf', 'singular'));
+    expect(fix.edits[0].text).toBe('singular of {form}');
+    expect(fix.edits[0].slot).toEqual({ word: 'shelf', want: 'plural' });
+  });
+
+  it('keeps a name\'s other words and slots only its last: `glass houses`', () => {
+    const { fix } = refusalWithFix(thing('glass houses', 'plural'));
+    expect(fix.edits[0].text).toBe('plural of glass {form}');
+    expect(fix.edits[0].slot).toEqual({ word: 'houses', want: 'singular' });
+    expect(fix.label).toBe('Write `plural of glass {form}`');
+  });
+
+  it('slots the head before the stopword in a stopword name: `pot of gold`', () => {
+    const { diagnostic, fix } = refusalWithFix(thing('pot of gold', 'singular'));
+    expect(diagnostic.code).toBe('analysis.singular-plural-stopword-name');
+    expect(fix.edits[0].text).toBe('singular of {form} of gold');
+    expect(fix.edits[0].slot).toEqual({ word: 'pot', want: 'plural' });
+  });
+
+  it('leaves a source that compiles once the slot is filled (AC-10, chord side)', () => {
+    const { fix, source } = refusalWithFix(thing('houses', 'plural'));
+    const fixed = applyEdits(source, fix.edits.map((e) => ({ span: e.span, text: e.text.replace('{form}', 'house') })));
+    expect(fixed).toContain('a thing, plural of house');
+    const result = compile(fixed);
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const houses = result.ir.entities.find((e) => e.id === 'houses');
+    expect(houses?.forms).toMatchObject({ singular: 'house', plural: 'houses', origin: 'written' });
+  });
+
+  it('attaches no fix to a missing declaration or a proper person\'s refusal', () => {
+    const missing = errors(`create the lamp
+  a thing
+  in the Hall
+
+  It is there.
+`);
+    expect(missing.map((d) => d.code)).toEqual(['analysis.singular-plural-missing']);
+    expect(missing[0].fix).toBeUndefined();
+    const proper = errors(`create Wren
+  a person, proper, singular
+  in the Hall
+
+  Wren.
+`);
+    expect(proper.map((d) => d.code)).toEqual(['analysis.singular-plural-proper-name']);
+    expect(proper[0].fix).toBeUndefined();
+  });
+});
+
+describe('ADR-409 D7.2: DiagnosticBag holds a fix to its invariant', () => {
+  const span: Span = { line: 1, column: 1, endLine: 1, endColumn: 2 };
+  const slot = { word: 'houses', want: 'singular' as const };
+
+  it('keeps a well-formed fix on the diagnostic it reports', () => {
+    const bag = new DiagnosticBag();
+    const fix: DiagnosticFix = { label: 'Write `{form}`', edits: [{ span, text: '{form}', slot }] };
+    bag.error('analysis.test', 'message', span, fix);
+    expect(bag.all()[0].fix).toEqual(fix);
+    expect(bag.hasErrors()).toBe(true);
+  });
+
+  it('refuses a fix with no edits', () => {
+    expect(() => new DiagnosticBag().error('analysis.test', 'm', span, { label: 'x', edits: [] })).toThrow(/has no edits/);
+  });
+
+  it('refuses a slotted edit with no marker, and an unslotted edit with one', () => {
+    expect(() => new DiagnosticBag().error('analysis.test', 'm', span, { label: '{form}', edits: [{ span, text: 'plural of', slot }] })).toThrow(/0 times, not 1/);
+    expect(() => new DiagnosticBag().error('analysis.test', 'm', span, { label: 'x', edits: [{ span, text: '{form}' }] })).toThrow(/1 times, not 0/);
+  });
+
+  it('refuses a label whose markers do not match the slotted edits', () => {
+    expect(() => new DiagnosticBag().error('analysis.test', 'm', span, { label: 'Write it', edits: [{ span, text: '{form}', slot }] })).toThrow(/once per slotted edit/);
   });
 });

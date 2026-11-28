@@ -370,6 +370,10 @@ private final class RootViewController: NSViewController {
                                                            line: item.record.line, column: 1)
             }
         }
+        // ADR-409 D7.2: a row's inline fix applies through the editor, undoably.
+        bottomPanelViewController.problems.onFix = { [weak self] item in
+            self?.mainSplitViewController.applyFix(item.record)
+        }
 
         bottomPanelViewController.gameErrors.onErrorFocused = { [weak self] error in
             self?.mainSplitViewController.revealDiagnosis(error)
@@ -635,7 +639,8 @@ private final class RootViewController: NSViewController {
         case .success(let payload):
             bottomPanelViewController.setProblems(payload.diagnostics, for: outcome.storyURL)
             mainSplitViewController.applyComposeDiagnostics(payload.diagnostics,
-                                                            forFile: outcome.storyURL)
+                                                            forFile: outcome.storyURL,
+                                                            composedContent: outcome.composedContent)
             // The panel is collapsed by default, so a diagnostic could underline
             // the editor while the only surface that NAMES it stayed hidden —
             // the author saw a coloured squiggle and no text anywhere. Reveal on
@@ -1161,9 +1166,17 @@ private final class MainSplitViewController: NSSplitViewController {
         editorViewController.replaceText(text, in: range, in: url)
     }
 
-    /// Applies a compose run's records as editor underlines for `url`.
-    fileprivate func applyComposeDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
-        editorViewController.setDiagnostics(records, forFile: url)
+    /// Applies a compose run's records as editor underlines for `url`, offering their
+    /// fixes while the buffer still reads `composedContent` (ADR-409 D7.2).
+    fileprivate func applyComposeDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL,
+                                             composedContent: String?) {
+        editorViewController.setDiagnostics(records, forFile: url, composedContent: composedContent)
+    }
+
+    /// Applies one record's fix through the editor (undoable; re-composes).
+    @discardableResult
+    fileprivate func applyFix(_ record: ComposeDiagnosticRecord) -> Bool {
+        editorViewController.applyFix(record)
     }
 
     // MARK: - Imports (GH #288)

@@ -19,6 +19,10 @@ final class ComposeScheduler {
     struct Outcome {
         let storyURL: URL
         let result: Result<ComposeJsonPayload, ComposeRunner.Failure>
+        /// The story buffer this run composed. A record's fix (ADR-409 D7.2) is
+        /// offered only while the buffer still reads exactly this, since its spans
+        /// describe this text and no other.
+        var composedContent: String? = nil
     }
 
     /// Published on the main actor after every compose attempt (success or failure).
@@ -72,7 +76,7 @@ final class ComposeScheduler {
         let onDisk = try? String(contentsOf: storyURL, encoding: .utf8)
         if onDisk == content {
             composeInvoker(storyURL) { [weak self] result in
-                self?.onOutcome?(Outcome(storyURL: storyURL, result: result))
+                self?.onOutcome?(Outcome(storyURL: storyURL, result: result, composedContent: content))
             }
             return
         }
@@ -93,7 +97,7 @@ final class ComposeScheduler {
             try? FileManager.default.removeItem(at: snapshot)
             guard let self else { return }
             let mapped = result.map { Self.remap($0, from: snapshot, to: storyURL) }
-            self.onOutcome?(Outcome(storyURL: storyURL, result: mapped))
+            self.onOutcome?(Outcome(storyURL: storyURL, result: mapped, composedContent: content))
         }
     }
 
@@ -110,7 +114,8 @@ final class ComposeScheduler {
                                            message: record.message,
                                            file: storyURL.path,
                                            line: record.line,
-                                           span: record.span)
+                                           span: record.span,
+                                           fix: record.fix)
         }
         return ComposeJsonPayload(schemaVersion: payload.schemaVersion,
                                   diagnostics: diagnostics,

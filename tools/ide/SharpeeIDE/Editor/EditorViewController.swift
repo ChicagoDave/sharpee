@@ -3,7 +3,10 @@
 // Public interface: openDocument(at:) opens a file in a new or existing tab;
 // closeDocument(at:) closes a tab; switchTo(index:) activates a tab;
 // hasUnsavedChanges(at:)/reloadFromDisk(at:) let a writer outside the editor
-// (ADR-282's re-bless) avoid clobbering an open tab, and refresh it afterwards.
+// (ADR-282's re-bless) avoid clobbering an open tab, and refresh it afterwards;
+// setDiagnostics(_:forFile:composedContent:) underlines a compose run and offers
+// its fixes, which currentFixRecords(), applyFix(_:), applyAllFixes() and the
+// context menu's fixMenuItems(at:) apply (ADR-409 D7.2).
 // Owner context: tools/ide — Editor pane.
 
 import AppKit
@@ -107,6 +110,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// The ranges currently carrying a diagnostic underline, so they can be cleared
     /// before the next compose result (or on edit, when they go stale).
     private var diagnosticUnderlineRanges: [NSRange] = []
+
+    /// The last compose's records that carry a fix (ADR-409 D7.2), with the story it
+    /// composed and the exact buffer it read. A fix is offered only while its file
+    /// still reads what that compose read (see `currentFixRecords`).
+    private var offeredFixes: (storyURL: URL, composedContent: String, records: [ComposeDiagnosticRecord])?
 
     override func loadView() {
         let pane = ThemedPane(color: Theme.editorBackground)
@@ -484,8 +492,19 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// A multi-line span underlines only its FIRST line (see
     /// `SpanText.underlineRange`); the gutter still flags the record's line and
     /// the Problems list still carries the full span.
-    func setDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
+    ///
+    /// - Parameters:
+    ///   - records: one compose run's records
+    ///   - url: the story that run composed
+    ///   - composedContent: the story buffer that run read. The records' fixes
+    ///     are offered only when it is given, and only while the buffer still
+    ///     reads it (ADR-409 D7.2); nil offers none.
+    func setDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL,
+                        composedContent: String? = nil) {
         clearDiagnosticUnderlines()
+        offeredFixes = composedContent.map { content in
+            (storyURL: url, composedContent: content, records: records.filter { $0.fix != nil })
+        }
         // Records name their own file (`Span.file`, ADR-251 D6 as amended): a
         // fragment's records underline in the fragment's tab, the story's in
         // the story's. `url` is the composed story; an active fragment is
@@ -507,6 +526,146 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             flaggedLines.insert(record.line)
         }
         lineNumberRuler?.errorLines = flaggedLines
+    }
+
+    // MARK: - Fixes (ADR-409 D7.2)
+
+    /// The last compose's fixed records whose file has not changed since that compose
+    /// read it: the story's buffer still reads the composed content, and any other
+    /// file (an imported fragment, which compose reads from disk) has no unsaved edits.
+    ///
+    /// - Returns: the records whose fix may be applied now, in compose order
+    func currentFixRecords() -> [ComposeDiagnosticRecord] {
+        guard let offered = offeredFixes else { return [] }
+        return offered.records.filter { record in
+            let document = documents.first { $0.url.path == record.file }
+            if record.file == offered.storyURL.path {
+                let content = document?.content
+                    ?? (try? String(contentsOf: offered.storyURL, encoding: .utf8))
+                return content == offered.composedContent
+            }
+            return !(document?.isDirty ?? false)
+        }
+    }
+
+    /// Applies one record's fix to its file, as a single undoable edit named by the
+    /// fix's label. Opens the file when it is not the active tab.
+    ///
+    /// - Parameter record: a record from the last compose
+    /// - Returns: false, with a beep, when the record has no current fix (the file
+    ///   changed since the compose) or its edits no longer fit the buffer; nothing
+    ///   is changed then
+    @discardableResult
+    func applyFix(_ record: ComposeDiagnosticRecord) -> Bool {
+        guard let fix = record.fix, currentFixRecords().contains(record) else {
+            NSSound.beep()
+            return false
+        }
+        openDocument(at: URL(fileURLWithPath: record.file))
+        guard activeDocument?.url.path == record.file,
+              let changes = DiagnosticFixes.changes(for: fix, in: textView.string),
+              applyChanges(changes, actionName: fix.label) else {
+            NSSound.beep()
+            return false
+        }
+        return true
+    }
+
+    /// Applies every current fix in the story at once — Fix All. Each file's fixes
+    /// are one undoable edit; a fix that overlaps another in its file waits for the
+    /// next compose.
+    ///
+    /// - Returns: how many fixes were applied; 0 when none is current
+    @discardableResult
+    func applyAllFixes() -> Int {
+        let records = currentFixRecords()
+        var files: [String] = []
+        for record in records where !files.contains(record.file) { files.append(record.file) }
+        var applied = 0
+        for path in files {
+            openDocument(at: URL(fileURLWithPath: path))
+            guard activeDocument?.url.path == path else { continue }
+            let changes = DiagnosticFixes.changesForAll(records, inFile: path, text: textView.string)
+            if !changes.isEmpty, applyChanges(changes, actionName: "Fix All") {
+                applied += changes.count
+            }
+        }
+        return applied
+    }
+
+    /// Replaces each range in the active buffer, last first, as one undo group.
+    ///
+    /// - Parameters:
+    ///   - changes: changes in descending order, computed against the active buffer
+    ///   - actionName: what Edit ▸ Undo names the group
+    /// - Returns: false when a range does not fit or the text view refuses the edit
+    private func applyChanges(_ changes: [DiagnosticFixes.Change], actionName: String) -> Bool {
+        let length = (textView.string as NSString).length
+        guard changes.allSatisfy({ NSMaxRange($0.range) <= length }) else { return false }
+        let undo = textView.undoManager
+        textView.breakUndoCoalescing()
+        undo?.beginUndoGrouping()
+        defer {
+            undo?.setActionName(actionName)
+            undo?.endUndoGrouping()
+            textView.breakUndoCoalescing()
+        }
+        for change in changes {
+            guard textView.shouldChangeText(in: change.range, replacementString: change.text) else { return false }
+            textView.textStorage?.replaceCharacters(in: change.range, with: change.text)
+            textView.didChangeText()
+        }
+        return true
+    }
+
+    /// Offers the fix under the click and Fix All at the top of the editor's context
+    /// menu, when the last compose left any current fix.
+    func textView(_ view: NSTextView, menu: NSMenu, for event: NSEvent, at charIndex: Int) -> NSMenu? {
+        let items = fixMenuItems(at: charIndex)
+        guard !items.isEmpty else { return menu }
+        for (offset, item) in (items + [NSMenuItem.separator()]).enumerated() {
+            menu.insertItem(item, at: offset)
+        }
+        return menu
+    }
+
+    /// The context menu's fix items for a click at `charIndex` in the active buffer:
+    /// the fix of the record whose span holds it, then Fix All.
+    ///
+    /// - Parameter charIndex: the UTF-16 offset the menu opened at
+    /// - Returns: the items, or none when no fix is current
+    func fixMenuItems(at charIndex: Int) -> [NSMenuItem] {
+        let records = currentFixRecords()
+        guard !records.isEmpty else { return [] }
+        var items: [NSMenuItem] = []
+        let text = textView.string
+        let here = records.first { record in
+            guard record.file == activeDocument?.url.path, let span = record.span,
+                  let range = SpanText.characterRange(of: span, in: text) else { return false }
+            return charIndex >= range.location && charIndex <= NSMaxRange(range)
+        }
+        if let here, let fix = here.fix {
+            let item = NSMenuItem(title: fix.label, action: #selector(applyFixFromMenu(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = here
+            item.setAccessibilityIdentifier("editor.fix")
+            items.append(item)
+        }
+        let all = NSMenuItem(title: "Fix All (\(records.count))",
+                             action: #selector(applyAllFixesFromMenu(_:)), keyEquivalent: "")
+        all.target = self
+        all.setAccessibilityIdentifier("editor.fix-all")
+        items.append(all)
+        return items
+    }
+
+    @objc private func applyFixFromMenu(_ sender: NSMenuItem) {
+        guard let record = sender.representedObject as? ComposeDiagnosticRecord else { return }
+        applyFix(record)
+    }
+
+    @objc private func applyAllFixesFromMenu(_ sender: NSMenuItem) {
+        applyAllFixes()
     }
 
     /// True when `candidate` is a `.chord` fragment under `story`'s folder.

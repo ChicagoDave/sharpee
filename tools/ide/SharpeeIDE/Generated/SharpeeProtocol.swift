@@ -131,6 +131,24 @@ struct ComposeDiagnosticRecord: Codable, Equatable, Sendable {
     let line: Int
     /// Full source span — compile diagnostics only (the underline range, ADR-258 D5).
     let span: DiagnosticSpan?
+    /// Edits that clear the diagnostic, which the editor offers to apply (ADR-409 D7.2).
+    /// Compose fills every form from the story's language before it writes the payload, so
+    /// the text is final: the heads apply it as written and work nothing out. Absent when
+    /// there is no fix, or when the story's language could not fill it.
+    let fix: ComposeFix?
+}
+
+/// A diagnostic's fix on the wire (ADR-409 D7.2): what it does, and its edits.
+struct ComposeFix: Codable, Equatable, Sendable {
+    /// What applying the fix does, e.g. "Write `plural of house`".
+    let label: String
+    let edits: [ComposeFixEdit]
+}
+
+/// One replacement in a compile diagnostic's file: `text` replaces what `span` covers.
+struct ComposeFixEdit: Codable, Equatable, Sendable {
+    let span: DiagnosticSpan
+    let text: String
 }
 
 /// The `compose --json` stdout payload (ADR-258 D5).

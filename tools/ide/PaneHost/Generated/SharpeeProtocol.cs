@@ -227,6 +227,36 @@ public sealed record ComposeDiagnosticRecord
     /// <summary>Full source span — compile diagnostics only (the underline range, ADR-258 D5).</summary>
     [JsonPropertyName("span")]
     public DiagnosticSpan? Span { get; init; }
+
+    /// <summary>
+    /// Edits that clear the diagnostic, which the editor offers to apply (ADR-409 D7.2).
+    /// Compose fills every form from the story's language before it writes the payload, so the
+    /// text is final: the heads apply it as written and work nothing out. Absent when there is
+    /// no fix, or when the story's language could not fill it.
+    /// </summary>
+    [JsonPropertyName("fix")]
+    public ComposeFix? Fix { get; init; }
+}
+
+/// <summary>A diagnostic's fix on the wire (ADR-409 D7.2): what it does, and its edits.</summary>
+public sealed record ComposeFix
+{
+    /// <summary>What applying the fix does, e.g. "Write `plural of house`".</summary>
+    [JsonPropertyName("label")]
+    public required string Label { get; init; }
+
+    [JsonPropertyName("edits")]
+    public required IReadOnlyList<ComposeFixEdit> Edits { get; init; }
+}
+
+/// <summary>One replacement in a compile diagnostic's file: `text` replaces what `span` covers.</summary>
+public sealed record ComposeFixEdit
+{
+    [JsonPropertyName("span")]
+    public required DiagnosticSpan Span { get; init; }
+
+    [JsonPropertyName("text")]
+    public required string Text { get; init; }
 }
 
 /// <summary>The `compose --json` stdout payload (ADR-258 D5).</summary>

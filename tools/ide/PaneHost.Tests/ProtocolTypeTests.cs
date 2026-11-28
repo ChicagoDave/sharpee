@@ -50,6 +50,25 @@ public class ProtocolTypeTests
         Assert.Null(payload.Ir);
     }
 
+    /// <summary>ADR-409 D7.2: a record's fix, as compose fills it. Byte-identical to SharpeeIDETests' testDecodesARecordsFixWithItsEdits.</summary>
+    [Fact]
+    public void a_diagnostic_fix_decodes_with_its_edits()
+    {
+        var payload = Decode<ComposeJsonPayload>("""
+        {"schemaVersion":2,"diagnostics":[{"severity":"error","code":"analysis.singular-plural-unsafe-ending",
+         "message":"`houses`: write `plural of <its singular>`","file":"/tmp/probe.story","line":20,
+         "span":{"line":20,"column":12,"endLine":20,"endColumn":18},
+         "fix":{"label":"Write `plural of house`","edits":[{"span":{"line":20,"column":12,"endLine":20,"endColumn":18},"text":"plural of house"}]}}]}
+        """);
+
+        var fix = Present(Assert.Single(payload.Diagnostics).Fix);
+        Assert.Equal("Write `plural of house`", fix.Label);
+        var edit = Assert.Single(fix.Edits);
+        Assert.Equal("plural of house", edit.Text);
+        Assert.Equal(12, edit.Span.Column);
+        Assert.Equal(18, edit.Span.EndColumn);
+    }
+
     [Fact]
     public void story_config_diagnostic_decodes_without_a_span()
     {

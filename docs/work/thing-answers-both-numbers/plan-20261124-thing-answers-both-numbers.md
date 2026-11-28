@@ -208,6 +208,7 @@
   - **devkit.** `compose` fills the placeholder from lang-en-us's `singularize`/`pluralize`, through the story's language, never in chord.
   - **The wire.** The fix rides the compose payload in `@sharpee/ide-protocol`, and `./repokit protocol` regenerates both heads.
   - **SharpeeIDE and PaneHost.** Each offers the fix on the diagnostic in the editor, plus a fix-all for the story.
+  - **PaneHost's diagnostics surface (added 2026-11-25, session 62310c, David: "a").** PaneHost showed no compose diagnostics: its Compose button ran `compose --check` as text into the log, and its Problems tab had no feed. This phase builds that surface first (compose `--json`, editor underlines, the Problems list), and the fix and fix-all sit on it.
   - **Tests**, after a Behavior Statement, with each new case shown failing first:
     - a devkit real-path test on `compose --json` (AC-10);
     - an XCTest and a PaneHost.Tests case that apply the fix and then fix-all over a multi-refusal story, and recompile clean.
@@ -216,8 +217,13 @@
 - **Demonstration**:
   - `node packages/devkit/dist/cli.js compose <story with bare plural "houses"> --json` prints the diagnostic with `fix.edits[0].text` reading `plural of house`.
   - The XCTest and PaneHost.Tests fix-all cases pass.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-24)
+- **Demonstrated**: 2026-11-25, session 62310c. [reported by session, unverified]
+  - `node packages/devkit/dist/cli.js compose <scratch>/houses.story --json` (a bare `plural` on "houses") printed `"code":"analysis.singular-plural-unsafe-ending"` with `"fix":{"label":"Write \`plural of house\`","edits":[{"span":{"line":21,"column":12,"endLine":21,"endColumn":18},"text":"plural of house"}]}`, exit 1.
+  - SharpeeIDE: the full scheme `xcodebuild test … -scheme SharpeeIDE` gave "Executed 635 tests, with 0 failures". After the two cases mutation-verification asked for (one fix's undo, a fragment-sited fix), `DiagnosticFixTests` plus `ComposeDiagnosticsTests` gave "Executed 15 tests, with 0 failures". `testFixAllAppliesEveryFixAsOneUndoAndTheStoryComposesClean` applies 4 fixes and recomposes with no errors.
+  - PaneHost: `dotnet test PaneHost.Tests` (capability env set) gave "Passed: 170, Failed: 0", including `fix_all_applies_every_fix_as_one_undo_and_the_story_composes_clean`.
+  - `./repokit protocol --check`: "generated protocol types match the TypeScript wire contract". chord 2007/2007, devkit 268 passed + 1 skipped, ide-protocol 69/69, repokit 143 passed + 1 skipped.
+  - Untested wiring (mutation-verification): the PaneHost window's ApplyFixAsync/ApplyAllFixesAsync re-check, SharpeeIDE MainWindow's forwarding of `composedContent` and the row button through the root controller, and compose with a language that has no nouns module (unreachable while chord fixes the locale at en-US).
+- **Status**: DONE
 
 ### Phase 4: The runtime reads the forms, and the World Index shows them
 - **Tier**: Large
@@ -258,7 +264,7 @@
   - The Dungeo chain and unit counts match the baseline.
   - `pnpm exec turbo run test:ci` is green.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-25)
 
 ### Phase 5: The lens names what to write and offers the edit, and the records close
 - **Tier**: Medium

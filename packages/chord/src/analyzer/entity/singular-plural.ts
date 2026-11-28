@@ -23,7 +23,8 @@
  * - ADR-409 D3 — `of <form>`, always allowed as an override.
  */
 import type { CompositionItem } from '../../ast.js';
-import { otherFormOfPhrase, workOutAkaForms, type SingularOrPlural } from '../../forms.js';
+import { FIX_FORM_MARKER, type DiagnosticFix } from '../../diagnostics.js';
+import { otherFormOfPhrase, workOutAkaForms, type NoFormReason, type SingularOrPlural } from '../../forms.js';
 import type { EntityLineBuilder } from './context.js';
 
 /**
@@ -41,6 +42,40 @@ function bareWord(comp: CompositionItem): string | null {
 /** The form a written `of` gives: the plural of a singular thing, the singular of a plural one. */
 function otherOf(declared: SingularOrPlural): SingularOrPlural {
   return declared === 'singular' ? 'plural' : 'singular';
+}
+
+/**
+ * The fix for a refused bare declaration (ADR-409 D7.2): rewrite it as
+ * `<declared> of <the name, its head word in its other form>`. The head is
+ * the last word, or, in a name with a stopword inside it, the word before the
+ * first stopword. The head's other form is a slot the story's language fills;
+ * chord never works it out.
+ * @param name the entity's name as written
+ * @param declaration the bare `singular` or `plural` composition
+ * @param declared what it declares
+ * @param reason why the rule gave no form
+ * @param stopwords the locale's name stopwords
+ * @returns the fix, or undefined when the name has no head word to fill
+ */
+function writtenFormFix(
+  name: string,
+  declaration: CompositionItem,
+  declared: SingularOrPlural,
+  reason: NoFormReason,
+  stopwords: readonly string[],
+): DiagnosticFix | undefined {
+  const words = name.split(/\s+/).filter((w) => w.length > 0);
+  const head =
+    reason === 'stopword-inside'
+      ? words.findIndex((w) => stopwords.includes(w.toLowerCase())) - 1
+      : words.length - 1;
+  if (head < 0) return undefined;
+  const filled = [...words.slice(0, head), FIX_FORM_MARKER, ...words.slice(head + 1)].join(' ');
+  const text = `${declaration.words[0]} of ${filled}`;
+  return {
+    label: `Write \`${text}\``,
+    edits: [{ span: declaration.span, text, slot: { word: words[head], want: otherOf(declared) } }],
+  };
 }
 
 export const singularPluralBuilder: EntityLineBuilder = {
@@ -122,6 +157,7 @@ export const singularPluralBuilder: EntityLineBuilder = {
             ? `\`${name}\`: write \`${declared} of <its ${otherOf(declared)}>\` — a name with a small word inside it has its head before its last word, so the rule cannot tell its other form.`
             : `\`${name}\`: write \`${declared} of <its ${otherOf(declared)}>\` — the rule cannot tell the other form of \`${lastWord}\`.`,
           declaration.span,
+          writtenFormFix(name, declaration, declared, result.reason, singularPluralFacts.nameStopwords),
         );
         return;
       }

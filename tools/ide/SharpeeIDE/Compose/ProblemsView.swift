@@ -5,9 +5,11 @@
 // story-config record (`story-config.broken`, no span) opens file:line only. Warnings render alongside
 // errors. A compose-pipeline failure (sharpee missing, decode error) renders as
 // a status line instead of rows — Problems never silently goes blank.
+// A record that carries a fix (ADR-409 D7.2) shows an inline button titled by
+// the fix's label; the editor applies it.
 // Public interface: setProblems(_:for:), setStatus(_:), clear(), errorCount,
 // problemCount,
-// onActivate.
+// onActivate, onFix.
 // Owner context: tools/ide — Compose (bottom panel).
 
 import AppKit
@@ -22,6 +24,10 @@ final class ProblemsView: NSView {
 
     /// Invoked when a row is double-clicked (or Return-activated).
     var onActivate: ((ProblemItem) -> Void)?
+
+    /// Invoked when a row's inline fix button is clicked — a record that carries a
+    /// fix (ADR-409 D7.2), titled by the fix's label.
+    var onFix: ((ProblemItem) -> Void)?
 
     private let scrollView = NSScrollView()
     private let tableView = NSTableView()
@@ -169,6 +175,29 @@ extension ProblemsView: NSTableViewDelegate {
         field.lineBreakMode = .byTruncatingTail
         field.maximumNumberOfLines = 1
         field.translatesAutoresizingMaskIntoConstraints = false
-        return field
+
+        guard let fix = record.fix else { return field }
+
+        let button = NSButton(title: fix.label, target: self, action: #selector(fixClicked(_:)))
+        button.bezelStyle = .accessoryBarAction
+        button.controlSize = .small
+        button.font = Self.bodyFont
+        button.setAccessibilityIdentifier("problems.fix.\(record.code)")
+        button.setContentHuggingPriority(.required, for: .horizontal)
+
+        let stack = NSStackView(views: [field, button])
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }
+
+    /// Runs the row's inline fix. The row is resolved from the button's position
+    /// in the table rather than a captured index — rows are rebuilt on reload.
+    @objc private func fixClicked(_ sender: NSButton) {
+        let row = tableView.row(for: sender)
+        guard items.indices.contains(row) else { return }
+        onFix?(items[row])
     }
 }

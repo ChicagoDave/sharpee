@@ -103,10 +103,10 @@ final class EditorFragmentTests: XCTestCase {
         editor.openDocument(at: fragmentURL)
         let onPier = ComposeDiagnosticRecord(
             severity: .error, code: "analysis.x", message: "x", file: fragmentURL.path, line: 1,
-            span: DiagnosticSpan(line: 1, column: 8, endLine: 1, endColumn: 16))
+            span: DiagnosticSpan(line: 1, column: 8, endLine: 1, endColumn: 16), fix: nil)
         let onStory = ComposeDiagnosticRecord(
             severity: .error, code: "analysis.y", message: "y", file: storyURL.path, line: 6,
-            span: DiagnosticSpan(line: 6, column: 1, endLine: 6, endColumn: 7))
+            span: DiagnosticSpan(line: 6, column: 1, endLine: 6, endColumn: 7), fix: nil)
 
         editor.setDiagnostics([onPier, onStory], forFile: storyURL)
 
@@ -127,7 +127,7 @@ final class EditorFragmentTests: XCTestCase {
         editor.openDocument(at: stray)
         let record = ComposeDiagnosticRecord(
             severity: .error, code: "analysis.x", message: "x", file: stray.path, line: 1,
-            span: DiagnosticSpan(line: 1, column: 8, endLine: 1, endColumn: 12))
+            span: DiagnosticSpan(line: 1, column: 8, endLine: 1, endColumn: 12), fix: nil)
 
         editor.setDiagnostics([record], forFile: storyURL)
 

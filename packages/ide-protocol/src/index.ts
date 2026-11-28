@@ -33,7 +33,7 @@ export {
 export * from './story-ir.js';
 
 // `compose --json` wire contract (ADR-258 D5): the versioned gates+IR payload.
-export type { ComposeDiagnosticRecord, ComposeJsonPayload } from './compose-diagnostics.js';
+export type { ComposeDiagnosticRecord, ComposeFix, ComposeFixEdit, ComposeJsonPayload } from './compose-diagnostics.js';
 export {
   COMPOSE_JSON_SCHEMA_VERSION,
   isComposeDiagnosticRecord,
