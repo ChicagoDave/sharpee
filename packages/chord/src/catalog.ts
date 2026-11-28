@@ -44,7 +44,7 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'pullable',
   'light-source',
   'plural', // ADR-409 D1 — every thing and door is declared `plural` or `singular` (a person may be); `plural of <singular>` writes the other form
-  'singular', // ADR-409 D1 — IdentityTrait.grammaticalNumber = 'singular'; `singular of <plural>` writes the other form
+  'singular', // ADR-409 D1, D8 — the name is the singular (IdentityTrait.singular and .plural are both filled from the IR's forms); `singular of <plural>` writes the other form
   'dark',
   'enterable', // ADR-218 §1a (ratchet F1) — composes EnterableTrait; always explicit
   'climbable', // ADR-218 §1a (ratchet F2) — composes ClimbableTrait

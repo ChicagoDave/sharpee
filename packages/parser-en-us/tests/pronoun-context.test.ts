@@ -84,7 +84,7 @@ describe('PronounContext', () => {
             id,
             get: (trait: string) => {
               if (trait === 'actor') return null;
-              if (trait === 'identity') return { grammaticalNumber: 'singular' };
+              if (trait === 'identity') return { isPlural: false };
               return null;
             }
           }),
@@ -187,7 +187,7 @@ describe('PronounContext', () => {
             id,
             get: (trait: string) => {
               if (trait === 'actor') return null;
-              if (trait === 'identity') return { grammaticalNumber: 'singular' };
+              if (trait === 'identity') return { isPlural: false };
               return null;
             }
           })
@@ -206,7 +206,7 @@ describe('PronounContext', () => {
             id,
             get: (trait: string) => {
               if (trait === 'actor') return null;
-              if (trait === 'identity') return { grammaticalNumber: 'plural' };
+              if (trait === 'identity') return { isPlural: true };
               return null;
             }
           })

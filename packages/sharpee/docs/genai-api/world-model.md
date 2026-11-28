@@ -2537,11 +2537,40 @@ export declare class IdentityTrait implements ITrait {
      */
     pronounSet?: string;
     /**
-     * Author-supplied plural form for irregular nouns (ADR-190), e.g. "geese" for
-     * "goose". The `list`/`count` formatters use this when set, else fall back to the
-     * `pluralize()` heuristic. Flows to the language layer via `entityInfoFrom`.
+     * The name's plural (ADR-190; ADR-409 D8). For a Chord thing it is always
+     * filled from the IR's forms, and the name is it or `singular`. A
+     * TypeScript author sets it for an irregular ("geese" for "goose"), or to
+     * the name itself to mark the name plural. The `list`/`count` formatters
+     * use it when set, else fall back to the `pluralize()` heuristic, and the
+     * one noun matcher answers to it (ADR-409 D3).
      */
     plural?: string;
+    /**
+     * The name's singular (ADR-409 D3, D8): always filled for a Chord thing,
+     * alongside `plural`. A TypeScript author sets it on a plural-named entity
+     * so it answers to the singular.
+     */
+    singular?: string;
+    /**
+     * Where the form that is not the name came from (ADR-409 D3): the author
+     * wrote it, or a locale's suffix rule worked it out at compile time.
+     * Unset means written, which is what a TypeScript author gets.
+     */
+    nameFormOrigin?: 'written' | 'worked-out';
+    /**
+     * The worked-out other forms of the aka words (ADR-409 D3), kept apart
+     * from `aliases` so a written match can outrank them (D4). The Chord
+     * loader's; a TypeScript author writes aliases instead.
+     */
+    akaForms?: readonly {
+        readonly word: string;
+        readonly form: string;
+    }[];
+    /**
+     * Whether the name is plural (ADR-409 D8): the name is its own plural.
+     * Picks "them" over "it" (ADR-089) and plural agreement in prose.
+     */
+    get isPlural(): boolean;
     /** Whether this entity is concealed from normal view */
     concealed: boolean;
     /**
@@ -2560,13 +2589,6 @@ export declare class IdentityTrait implements ITrait {
     /** Size category of the object */
     size?: 'tiny' | 'small' | 'medium' | 'large' | 'huge';
     /**
-     * Grammatical number for inanimate objects (ADR-089).
-     * - 'singular': "it" (default) - "take it", "the lamp"
-     * - 'plural': "them" - "take them", "the coins"
-     * Only used for entities WITHOUT ActorTrait.
-     */
-    grammaticalNumber?: 'singular' | 'plural';
-    /**
      * Adjectives that can be used to refer to this entity (ADR-093).
      * Used for disambiguation when multiple entities share a noun.
      * Example: ['yellow'] for "yellow button" vs ['red'] for "red button"
@@ -2580,7 +2602,7 @@ export declare class IdentityTrait implements ITrait {
      * - 'unique': One-of-a-kind (the sun, not "a sun")
      * - 'plural': Inherently plural (scissors, pants)
      *
-     * If not set, formatters use `properName` and `grammaticalNumber` as fallback.
+     * If not set, formatters use `properName` and `isPlural` as fallback.
      */
     nounType?: 'common' | 'proper' | 'mass' | 'unique' | 'plural';
     /**
@@ -2714,19 +2736,27 @@ export declare function deriveNameVocabulary(name: string, stopwords: readonly s
  *
  * The tiers, in order:
  * - the self words name the observer, at the exact tier;
- * - exact: the whole phrase equals the name, an alias or the type, tried
- *   first with the leading articles restored (so "The Grail" survives),
- *   then as given;
+ * - exact: the whole phrase equals the name, an alias, a written form or the
+ *   type, tried first with the leading articles restored (so "The Grail"
+ *   survives), then as given;
  * - words: every content word of the phrase is in the vocabulary (name
- *   words, alias words, adjectives);
+ *   words, alias words, adjectives, written-form words, worked-out-form
+ *   words);
  * - any content word found nowhere matches nothing.
+ *
+ * Forms (ADR-409 D3, D4): the name's other number and the aka words' other
+ * numbers sit on the surface as the compiler or the author gave them; the
+ * matcher works nothing out. A written form answers as an alias does. A
+ * worked-out form answers at the words tier only, and the match counts the
+ * words only a worked-out form supplied (`workedOutWords`), so a reader can
+ * rank a fully written match above it.
  *
  * `matchNoun` reads a naming surface, never an entity. `namingSurfaceOf`
  * builds the surface from the world, and is the only code that knows walls
  * have per-side adjectives or who the observer is.
  *
- * Public interface: `matchNoun`, `namingSurfaceOf`, `vocabularyOf`, `NamingSurface`,
- * `NounQuery`, `NounMatch`, `NounMatchTier`.
+ * Public interface: `matchNoun`, `namingSurfaceOf`, `namingFormsOf`, `vocabularyOf`,
+ * `NamingSurface`, `NamingFormsSource`, `NounQuery`, `NounMatch`, `NounMatchTier`.
  * Owner context: world-model identity area (naming).
  *
  * The self words and the name stopwords are the language's: the surface
@@ -2735,7 +2765,8 @@ export declare function deriveNameVocabulary(name: string, stopwords: readonly s
  *
  * References: ADR-385 D1 (one matcher), ADR-231 D3 and PIN 2 (the tiers),
  * ADR-173 (per-side wall adjectives), ADR-327 (the self words name the
- * player role), ADR-387 D2 (the words come from the world).
+ * player role), ADR-387 D2 (the words come from the world), ADR-409 D3, D4
+ * (written and worked-out forms).
  */
 import type { EntityId } from '@sharpee/core';
 import type { LanguageWords } from '@sharpee/if-domain';
@@ -2749,6 +2780,10 @@ export interface NamingSurface {
     readonly aliases: readonly string[];
     /** Authored adjectives. They join the vocabulary. */
     readonly adjectives: readonly string[];
+    /** The name's other number as the author wrote it: whole at the exact tier, its words at the words tier (ADR-409 D3). */
+    readonly writtenForms: readonly string[];
+    /** Other numbers a locale rule worked out, of the name and of aka words: words tier only (ADR-409 D3, D4). */
+    readonly workedOutForms: readonly string[];
     /** The entity type, matched only as a whole phrase. */
     readonly type?: string;
     /** True when the self words name this entity. */
@@ -2769,10 +2804,15 @@ export interface NounQuery {
 }
 /** The tier a match reached: exact outranks words. */
 export type NounMatchTier = 'exact' | 'words';
-/** How well a phrase names a surface. More matched words wins within a tier. */
+/**
+ * How well a phrase names a surface. More matched words wins within a tier;
+ * a match with no worked-out word outranks one that needs one (ADR-409 D4).
+ */
 export interface NounMatch {
     readonly tier: NounMatchTier;
     readonly wordsMatched: number;
+    /** Content words only a worked-out form supplied: 0 at the exact tier, never more than `wordsMatched`. */
+    readonly workedOutWords: number;
 }
 /**
  * Match a noun phrase against a naming surface.
@@ -2785,8 +2825,9 @@ export interface NounMatch {
 export declare function matchNoun(surface: NamingSurface, query: NounQuery): NounMatch | null;
 /**
  * The words a surface answers to at the words tier: name content words,
- * alias content words and adjectives, lowercased. Derived on demand, never
- * stored, so a rename cannot leave stale vocabulary.
+ * alias content words, adjectives, and the content words of its written and
+ * worked-out forms, lowercased. Derived on demand, never stored, so a rename
+ * cannot leave stale vocabulary.
  *
  * @param surface the entity's naming
  * @returns the vocabulary set
@@ -2807,6 +2848,31 @@ export declare function vocabularyOf(surface: NamingSurface): Set<string>;
  *   (`WorldModel.getLanguageWords`)
  */
 export declare function namingSurfaceOf(world: WorldModel, entity: IFEntity, observerId: EntityId): NamingSurface;
+/** An entity's forms as the trait or the IR carries them (ADR-409 D3, D8). */
+export interface NamingFormsSource {
+    /** The name, which is one of the two forms when both are given. */
+    readonly name: string;
+    readonly singular?: string;
+    readonly plural?: string;
+    /** Where the form that is not the name came from; absent means written. */
+    readonly origin?: 'written' | 'worked-out';
+    /** Worked-out other forms of aka words. */
+    readonly akaForms?: readonly {
+        readonly word: string;
+        readonly form: string;
+    }[];
+}
+/**
+ * Sort an entity's forms onto the surface (ADR-409 D3): the name's other
+ * form goes to `writtenForms` or `workedOutForms` by its origin, and every
+ * aka form is worked out. A form equal to the name adds nothing. The one
+ * place the trait's and the IR's forms become surface fields, so the
+ * runtime and world-index cannot sort them differently.
+ *
+ * @param source the name and its forms
+ * @returns the surface's form fields
+ */
+export declare function namingFormsOf(source: NamingFormsSource): Pick<NamingSurface, 'writtenForms' | 'workedOutForms'>;
 ```
 
 ### traits/container/containerTrait

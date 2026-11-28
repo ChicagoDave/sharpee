@@ -243,7 +243,6 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
     getConjunctions(): string[];
     getNumbers(): string[];
     getGrammarPatterns(): LanguageGrammarPattern[];
-    lemmatize(word: string): string;
     formatList(items: string[], conjunction?: 'and' | 'or'): string;
     getIndefiniteArticle(noun: string): string;
     pluralize(noun: string): string;

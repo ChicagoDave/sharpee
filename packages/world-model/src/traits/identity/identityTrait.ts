@@ -66,11 +66,43 @@ export class IdentityTrait implements ITrait {
   pronounSet?: string;
 
   /**
-   * Author-supplied plural form for irregular nouns (ADR-190), e.g. "geese" for
-   * "goose". The `list`/`count` formatters use this when set, else fall back to the
-   * `pluralize()` heuristic. Flows to the language layer via `entityInfoFrom`.
+   * The name's plural (ADR-190; ADR-409 D8). For a Chord thing it is always
+   * filled from the IR's forms, and the name is it or `singular`. A
+   * TypeScript author sets it for an irregular ("geese" for "goose"), or to
+   * the name itself to mark the name plural. The `list`/`count` formatters
+   * use it when set, else fall back to the `pluralize()` heuristic, and the
+   * one noun matcher answers to it (ADR-409 D3).
    */
   plural?: string;
+
+  /**
+   * The name's singular (ADR-409 D3, D8): always filled for a Chord thing,
+   * alongside `plural`. A TypeScript author sets it on a plural-named entity
+   * so it answers to the singular.
+   */
+  singular?: string;
+
+  /**
+   * Where the form that is not the name came from (ADR-409 D3): the author
+   * wrote it, or a locale's suffix rule worked it out at compile time.
+   * Unset means written, which is what a TypeScript author gets.
+   */
+  nameFormOrigin?: 'written' | 'worked-out';
+
+  /**
+   * The worked-out other forms of the aka words (ADR-409 D3), kept apart
+   * from `aliases` so a written match can outrank them (D4). The Chord
+   * loader's; a TypeScript author writes aliases instead.
+   */
+  akaForms?: readonly { readonly word: string; readonly form: string }[];
+
+  /**
+   * Whether the name is plural (ADR-409 D8): the name is its own plural.
+   * Picks "them" over "it" (ADR-089) and plural agreement in prose.
+   */
+  get isPlural(): boolean {
+    return this.plural !== undefined && this.name === this.plural;
+  }
   
   /** Whether this entity is concealed from normal view */
   concealed = false;
@@ -95,14 +127,6 @@ export class IdentityTrait implements ITrait {
   size?: 'tiny' | 'small' | 'medium' | 'large' | 'huge';
 
   /**
-   * Grammatical number for inanimate objects (ADR-089).
-   * - 'singular': "it" (default) - "take it", "the lamp"
-   * - 'plural': "them" - "take them", "the coins"
-   * Only used for entities WITHOUT ActorTrait.
-   */
-  grammaticalNumber?: 'singular' | 'plural';
-
-  /**
    * Adjectives that can be used to refer to this entity (ADR-093).
    * Used for disambiguation when multiple entities share a noun.
    * Example: ['yellow'] for "yellow button" vs ['red'] for "red button"
@@ -117,7 +141,7 @@ export class IdentityTrait implements ITrait {
    * - 'unique': One-of-a-kind (the sun, not "a sun")
    * - 'plural': Inherently plural (scissors, pants)
    *
-   * If not set, formatters use `properName` and `grammaticalNumber` as fallback.
+   * If not set, formatters use `properName` and `isPlural` as fallback.
    */
   nounType?: 'common' | 'proper' | 'mass' | 'unique' | 'plural';
 
@@ -134,7 +158,7 @@ export class IdentityTrait implements ITrait {
    */
   pointsDescription?: string;
 
-  constructor(data?: Partial<IdentityTrait>) {
+  constructor(data?: Omit<Partial<IdentityTrait>, 'isPlural' | 'type'>) {
     if (data) {
       Object.assign(this, data);
     }

@@ -239,6 +239,8 @@ export function buildEntity(story: BuildContext, world: WorldModel, irEntity: IR
     );
   }
 
+  applyForms(entity, irEntity);
+
   // ADR-376 D6: `sight:` off a vehicle is a landmark room's outlook or an
   // instrument's reach. A room an expanse names in its `landmarks` block
   // carries the extension's own trait with its outlook and its `seen from
@@ -286,6 +288,35 @@ export function buildEntity(story: BuildContext, world: WorldModel, irEntity: IR
   // tree-document runner resolves `chord.state.<ir-id>` through it.
   entity.attributes[CHORD_IR_ID_ATTRIBUTE] = irEntity.id;
   return entity;
+}
+
+/**
+ * ADR-409 D3, D8: copy the IR's forms onto the identity trait — both the
+ * singular and the plural (the name is one of them), where the other came
+ * from, and the aka words' worked-out forms. Nothing is worked out here.
+ * An entity with no `forms` (a room, a region, an undeclared person) keeps
+ * the trait as built.
+ * @param entity the entity just built, carrying its identity trait
+ * @param irEntity its IR
+ * @throws LoadError when the forms do not include the name, or the entity has no identity trait
+ */
+function applyForms(entity: IFEntity, irEntity: IREntity): void {
+  const forms = irEntity.forms;
+  if (forms === undefined) return;
+  if (forms.singular !== irEntity.name && forms.plural !== irEntity.name) {
+    throw new LoadError(
+      `\`${irEntity.name}\`: its forms (\`${forms.singular}\`, \`${forms.plural}\`) do not include its name.`,
+      irEntity.span,
+    );
+  }
+  const identity = entity.getTrait(IdentityTrait);
+  if (!identity) {
+    throw new LoadError(`\`${irEntity.name}\` has singular and plural forms but no identity was built for it.`, irEntity.span);
+  }
+  identity.singular = forms.singular;
+  identity.plural = forms.plural;
+  identity.nameFormOrigin = forms.origin;
+  identity.akaForms = forms.aka.map((entry) => ({ word: entry.word, form: entry.form }));
 }
 
 /** ADR-376 D2: whether some expanse names this room in its `landmarks` block. */

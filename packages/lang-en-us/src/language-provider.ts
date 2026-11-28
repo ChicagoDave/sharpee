@@ -20,7 +20,7 @@ import { EnglishAssembler, registerPronounSet as registerAssemblerPronounSet } f
 import type { PronounSetForms } from './assembler/index.js';
 import { parsePhraseTemplate } from './parser/index.js';
 import { englishVerbs } from './data/verbs.js';
-import { englishWords, englishFormRules, irregularPlurals, parseCardinal, ordinalNumbers } from './data/words.js';
+import { englishWords, englishFormRules, parseCardinal, ordinalNumbers } from './data/words.js';
 import type { FormRules } from './data/words.js';
 import { pluralize as pluralizeNoun } from './pluralize.js';
 import { standardActionLanguage } from './actions/index.js';
@@ -669,44 +669,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
         priority: 60
       }
     ];
-  }
-
-  lemmatize(word: string): string {
-    if (!word) return '';
-    
-    const lower = word.toLowerCase();
-    
-    // Check irregular plurals
-    const singular = irregularPlurals.get(lower);
-    if (singular) return singular;
-    
-    // Handle special cases first
-    if (lower === 'yes' || lower === 'ties') return lower;
-    
-    // Simple rules for common endings
-    if (lower.endsWith('ies') && lower.length > 4) {
-      return lower.slice(0, -3) + 'y';
-    }
-    if (lower.endsWith('es') && lower.length > 3) {
-      // Don't lemmatize words like 'yes'
-      if (lower === 'yes') return lower;
-      return lower.slice(0, -2);
-    }
-    if (lower.endsWith('s') && !lower.endsWith('ss') && lower.length > 2) {
-      return lower.slice(0, -1);
-    }
-    if (lower.endsWith('ed') && lower.length > 3) {
-      // Handle double consonants (dropped -> drop)
-      if (lower.length > 4 && lower[lower.length - 3] === lower[lower.length - 4]) {
-        return lower.slice(0, -3);
-      }
-      return lower.slice(0, -2);
-    }
-    if (lower.endsWith('ing') && lower.length > 4 && !lower.includes('-')) {
-      return lower.slice(0, -3);
-    }
-    
-    return lower;
   }
 
   formatList(items: string[], conjunction: 'and' | 'or' = 'and'): string {

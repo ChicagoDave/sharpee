@@ -470,7 +470,11 @@ export declare class ReadingNamer {
     private namesOf;
     /** A gated item names what its gate admitted. */
     private namesAmong;
-    /** An ungated item names every entity in the world the matcher names, at the best tier reached. */
+    /**
+     * An ungated item names every entity in the world the matcher names, at
+     * the best tier reached; at the words tier, a fully written match names
+     * ahead of one that needs a worked-out form (ADR-409 D4).
+     */
     private namesInWorld;
 }
 ```

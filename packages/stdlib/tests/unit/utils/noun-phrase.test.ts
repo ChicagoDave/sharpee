@@ -135,12 +135,12 @@ describe('nounPhraseFor', () => {
     expect(np.number).toBe('singular'); // article never implies number
   });
 
-  test('explicit article "some" + grammaticalNumber plural (the book\'s zoo shape)', () => {
+  test('explicit article "some" + a plural name (the book\'s zoo shape)', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const signs = makeEntity(world, 'direction signs', {
       article: 'some',
-      grammaticalNumber: 'plural',
+      plural: 'direction signs',
     });
 
     const np = nounPhraseFor(signs);
@@ -175,12 +175,22 @@ describe('nounPhraseFor', () => {
     expect(nounPhraseFor(sun).articleType).toBe('definite');
   });
 
-  test('grammaticalNumber "plural" → number "plural"', () => {
+  test('a name that is its own plural → number "plural" (ADR-409 D8)', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
-    const coins = makeEntity(world, 'coins', { grammaticalNumber: 'plural' });
+    const coins = makeEntity(world, 'coins', { plural: 'coins' });
 
     expect(nounPhraseFor(coins).number).toBe('plural');
+  });
+
+  test('a singular name with its plural set stays singular, and renders the plural it carries', () => {
+    const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
+    const goose = makeEntity(world, 'goose', { singular: 'goose', plural: 'geese' });
+
+    const np = nounPhraseFor(goose);
+    expect(np.number).toBe('singular');
+    expect(np.pluralForm).toBe('geese');
   });
 
   test('nounType "plural" → number "plural"', () => {

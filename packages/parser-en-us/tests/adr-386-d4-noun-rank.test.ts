@@ -77,6 +77,27 @@ describe('ADR-386 D4: readings are ranked by their nouns', () => {
     ]);
   });
 
+  it('a fully written name names ahead of names that need a worked-out form (ADR-409 D4)', () => {
+    thing('control panel', { aliases: ['brass buttons'] });
+    const workedOut = { nameFormOrigin: 'worked-out' as const };
+    thing('red button', { singular: 'red button', plural: 'red buttons', ...workedOut });
+    thing('blue button', { singular: 'blue button', plural: 'blue buttons', ...workedOut });
+    engine.createBuilder().define('examine :item').mapsTo('if.action.examining').build();
+    expect(spans('examine buttons')).toEqual([
+      { action: 'if.action.examining', slots: { item: [1] }, rank: { unnamed: 0, named: 1, exact: 0 } }
+    ]);
+  });
+
+  it('worked-out forms name when nothing written does', () => {
+    const workedOut = { nameFormOrigin: 'worked-out' as const };
+    thing('red button', { singular: 'red button', plural: 'red buttons', ...workedOut });
+    thing('blue button', { singular: 'blue button', plural: 'blue buttons', ...workedOut });
+    engine.createBuilder().define('examine :item').mapsTo('if.action.examining').build();
+    expect(spans('examine buttons')).toEqual([
+      { action: 'if.action.examining', slots: { item: [1] }, rank: { unnamed: 0, named: 2, exact: 0 } }
+    ]);
+  });
+
   it('fewer items naming nothing wins across rules, before definition order', () => {
     thing('lamp');
     const grammar = engine.createBuilder();

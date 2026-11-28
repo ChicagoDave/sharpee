@@ -21,7 +21,7 @@ const fakeWorld = {
     if (actors[id]) {
       return { id, get: (type: string) => (type === 'actor' ? { pronouns: { object: actors[id] } } : undefined) };
     }
-    return { id, get: (type: string) => (type === 'identity' ? { grammaticalNumber: 'singular' } : undefined) };
+    return { id, get: (type: string) => (type === 'identity' ? { isPlural: false } : undefined) };
   }
 };
 describe('ADR-385 D2: the English parser splits articles and determiners once', () => {

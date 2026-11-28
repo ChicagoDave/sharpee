@@ -237,8 +237,9 @@
   - world-index reading the same forms from the IR;
   - `lemmatize` leaving the provider contract.
 - **Entry state**: Phase 3 DONE and David's go for this phase recorded.
+- **Go**: David "yes" (2026-11-28, session a1ecea), after being told the phase removes `grammaticalNumber` for `isPlural` and deletes `lemmatize` from the provider contract.
 - **Deliverable**:
-  - **The loader.** `packages/story-loader/src/build/trait-routes.ts` and `entity.ts` set `grammaticalNumber`, `IdentityTrait.singular` or `.plural`, `.nameFormOrigin` and `.akaForms`.
+  - **The loader.** `packages/story-loader/src/build/trait-routes.ts` and `entity.ts` set `IdentityTrait.singular` and `.plural` (both, D8), `.nameFormOrigin` and `.akaForms`; `grammaticalNumber` is gone.
   - **The world model.** `packages/world-model/src/traits/identity/identityTrait.ts` gains the three fields. `noun-match.ts` changes as follows:
     - `NamingSurface` gains `writtenForms` and `workedOutForms`;
     - `NounMatch` gains `workedOutWords`;
@@ -263,6 +264,30 @@
   - After `./repokit build dungeo`, a `./sharpee play` probe on the AC-5 test story prints the candles' description for `examine candle` and `examine pricket`.
   - The Dungeo chain and unit counts match the baseline.
   - `pnpm exec turbo run test:ci` is green.
+- **Progress (2026-11-28, session a1ecea)**: the runtime half is landed, uncommitted. The World Index in both heads (AC-11) is not started.
+  - **Landed:**
+    - world-model: `IdentityTrait.singular`/`.nameFormOrigin`/`.akaForms`, the computed `isPlural` (`name === plural`), and `grammaticalNumber` removed. `NamingSurface.writtenForms`/`workedOutForms`, `NounMatch.workedOutWords`, and `namingFormsOf`, which is the one place trait or IR forms become surface fields.
+    - story-loader: `applyForms` copies `IREntity.forms` onto the trait and refuses forms that omit the name. The `plural` route lowers nothing.
+    - Ranking: the validator's sort and dominance, the parser's `namesInWorld`, and world-index's `resolvePhrase` all rank a fully written match above a worked-out one (D4).
+    - world-index: `irNamingSurface` reads `IREntity.forms` through `namingFormsOf`, and `exactForms` indexes written forms.
+    - Readers moved to `isPlural`: pronoun context, `nounPhraseFor`, and helpers' `.plural()`, which now sets `plural` to the name.
+    - `lemmatize` is deleted from `ParserLanguageProvider`, `EnglishLanguageProvider`, their tests and the three fakes (D6).
+    - A new test story, `test-stories/refectory/` (OB-62 to OB-64), read by `scripts/__tests__/forms-real-path.test.ts` through the bundle.
+  - **Tests**: red run with the phase's source stashed. world-model failed 20, parser 1 of 2 new (the other is the written-only guard), story-loader 8 of 8, world-index 3 of 4, stdlib 4. All pass after. Mutation-verification's gaps were closed: "them" end to end, a creation-order-proof buttons case, helpers `.plural()`, and the narrowed constructor type.
+  - **Gates, 2026-11-28:**
+    - The Dungeo chain printed "949 passed". The units at `--seed 42` printed "1715 passed, 10 failed, 10 expected failures, 2 skipped, 2 transcript error(s)", the baseline's numbers and failures.
+    - `scripts/__tests__/forms-real-path.test.ts`: "Tests 6 passed (6)".
+    - `turbo run test:ci --continue`: "70 successful, 73 total". world-index, branch-tester and devkit fail only on moved pins (below).
+  - **world-index pins re-recorded** (David "a", 2026-11-28, session a1ecea), each with a dated note in its test. The figures:
+    - Fernhill's descriptions went 44/14/125 → 45/15/121, and the whole story 54/24/295 → 55/25/291.
+    - Ides of March went 5/0/70 → 5/0/68 and 14/1/387 → 15/1/380.
+    - The roles split went Fernhill 49 → 51 tool, Ides 129/0/42 → 131/0/48.
+    - Orchard's located phrases went 82 → 83, and Fernhill's first-visit list loses `lamps`.
+    - world-index: "Tests 264 passed | 1 skipped (265)".
+  - **Next (a new session):** the lens pins below (scullery's test set first), then AC-11, the World Index in both heads.
+  - **Moved pins, as found:**
+    - world-index's Incomplete corpus pins, which the census did not predict. Fernhill gains `doors` (now ambiguous across three doors) and `feed pipe` (now names the iron pipes, `feed` missing), and loses four no-object rows (`doors`, `feed pipe`, `kippers`, `lamps`). Ides of March loses `boards`, `old boards` and `doors`, and gains `old boards` as missing-word. Orchard's `old apple trees` moves from no-object to missing-word. The roles, located-phrases and CLI pins move with them.
+    - The examinable lens's number-form pins in branch-tester and devkit (orchard's 6, scullery's OB-56/OB-58, the lens fixture), which the census did predict ("leaves 0 number-form findings"). Scullery's test set describes the old behavior and changes first (ADR-395 D4).
 - **Demonstrated**: 
 - **Status**: CURRENT (since 2026-11-25)
 

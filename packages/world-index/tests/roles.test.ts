@@ -196,10 +196,11 @@ end before
   // through the story language's extractor (ADR-407 D8, census of 2026-11-22). Its
   // tagger reads nouns no article introduces and proper names, so Fernhill went
   // 25/7/43 → 49/19/73, The Alderman 7/0/18 → 54/0/25 (its suspects are named),
-  // and Ides of March 43/0/26 → 129/0/42.
+  // and Ides of March 43/0/26 → 129/0/42. With ADR-409 (David's ruling "a", 2026-11-28, session a1ecea),
+  // Fernhill's tool edges went 49 → 51 (`kippers`, `lamps`) and Ides of March's 129/0/42 → 131/0/48 (`boards`, `doors`): each now resolves to its thing.
   it('splits the corpus the way D12 says it should', () => {
     expect(edgeRoles(fernhill)).toEqual({
-      tool: 49,
+      tool: 51,
       'progression-info': 19,
       'atmosphere-info': 73,
     });
@@ -209,9 +210,9 @@ end before
       'atmosphere-info': 25,
     });
     expect(edgeRoles(idesOfMarch)).toEqual({
-      tool: 129,
+      tool: 131,
       'progression-info': 0,
-      'atmosphere-info': 42,
+      'atmosphere-info': 48,
     });
   });
 

@@ -101,11 +101,13 @@ describe('a compiled story', () => {
     // Both prose sources cross the wire (Amendment 1 D10) — the description half of
     // these figures is pinned against the pre-amendment numbers in incomplete.test.ts.
     // Re-recorded after the census of 2026-11-22 (ADR-407 D8): the English extractor
-    // was 30/15/118 as the article heuristic alone.
+    // was 30/15/118 as the article heuristic alone. Moved again with ADR-409 (David's ruling "a", 2026-11-28, session a1ecea):
+    // a plural in the prose names the singular thing by the forms the compiler
+    // wrote, so 54/24/295 became 55/25/291 (see incomplete.test.ts's corpus pin).
     expect(run.document.incomplete.counts).toEqual({
-      missingWord: 54,
-      ambiguous: 24,
-      noObject: 295,
+      missingWord: 55,
+      ambiguous: 25,
+      noObject: 291,
       undescribed: 0,
     });
   });

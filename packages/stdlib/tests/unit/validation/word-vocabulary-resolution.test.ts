@@ -307,6 +307,56 @@ describe('CommandValidator — word-level vocabulary resolution (ADR-231 D3)', (
     });
   });
 
+  describe('a written match outranks a worked-out one (ADR-409 D4)', () => {
+    /** A singular thing whose plural a locale rule worked out, as the Chord loader leaves it. */
+    function makeWorkedOut(name: string, plural: string): IFEntity {
+      const entity = author.createEntity(name, EntityType.OBJECT);
+      entity.add(new IdentityTrait({ name, singular: name, plural, nameFormOrigin: 'worked-out' }));
+      author.moveEntity(entity.id, room.id);
+      return entity;
+    }
+
+    test('`x buttons` resolves the thing whose aka says buttons, not the buttons that only work it out', () => {
+      // Made last, so only the ranking (not creation order) can put it first.
+      makeWorkedOut('red button', 'red buttons');
+      makeWorkedOut('blue button', 'blue buttons');
+      const panel = makeObject('control panel', [], ['brass buttons']);
+
+      const result = validator.validate(commandFor('if.action.examining', 'examine', 'buttons'));
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.directObject?.entity.id).toBe(panel.id);
+      }
+      expect(eventSource.getEventsByType('disambiguation_required')).toHaveLength(0);
+    });
+
+    test('a worked-out form fills the gap when nothing written names the phrase', () => {
+      const candle = makeWorkedOut('tallow candle', 'tallow candles');
+
+      const result = validator.validate(commandFor('if.action.examining', 'examine', 'candles'));
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.directObject?.entity.id).toBe(candle.id);
+      }
+    });
+
+    test('two things that both need a worked-out form still tie and ask', () => {
+      const red = makeWorkedOut('red button', 'red buttons');
+      const blue = makeWorkedOut('blue button', 'blue buttons');
+
+      const result = validator.validate(commandFor('if.action.examining', 'examine', 'buttons'));
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe('AMBIGUOUS_ENTITY');
+        const ids = (result.error.details as { ambiguousEntities?: Array<{ id: string }> }).ambiguousEntities!.map(c => c.id);
+        expect(ids.sort()).toEqual([red.id, blue.id].sort());
+      }
+    });
+  });
+
   describe('scope stays orthogonal', () => {
     test('a word-tier match in another room is not resolvable', () => {
       const otherRoom = author.createEntity('Other Room', EntityType.ROOM);

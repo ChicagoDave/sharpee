@@ -231,7 +231,7 @@ const TEST_STORY_CENSUS: ReadonlyArray<[story: string, records: number]> = [
   ['bazaar', 20],
   ['ferry', 31],
   ['lodge', 55],
-  ['orchard', 82],
+  ['orchard', 83], // 82 before ADR-409 (David's ruling "a", 2026-11-28, session a1ecea): `old apple trees` now names the apple tree, a missing-word record
   ['quay', 12],
   ['scullery', 19],
 ];

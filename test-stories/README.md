@@ -22,6 +22,7 @@ These stories exist only as test targets.
 | `orchard` | 5 | the author narrative's beats: derived rule rows, three endings, a three-way fork, seeded authoring mistakes | `scripts/__tests__/narrative-*.test.ts`; `tools/ide/web/testing-surface/tests/derived-real-path.test.ts`, `line-verdict.test.ts`; `tools/explorer-probe/tests/lens-examinable.test.js` |
 | `scullery` | 2 | what a player reads but cannot name: a plural thing and its plural alias that answer only in the plural, a thing with no description, a carried thing's text in every room | `tools/explorer-probe/tests/lens-examinable.test.js` |
 | `quay` | 2 | how a story opens: a prologue, a banner, an opening chapter card and a first room, recorded word for word | `packages/platform-browser/tests/opening-real-path.test.ts`; `scripts/__tests__/opening-baseline.test.ts`; `packages/story-loader/tests/opening-block.test.ts` (with the copies under `seeded/`) |
+| `refectory` | 1 | naming a thing in the other number: a plural thing and its plural alias answering to their worked-out singulars, and a written irregular plural | `scripts/__tests__/forms-real-path.test.ts` |
 
 A test finds this directory through its package's test configuration, never by walking up from its own file, so a published package with no test stories skips those tests.
 

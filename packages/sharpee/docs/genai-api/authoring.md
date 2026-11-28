@@ -170,7 +170,7 @@ export declare class ObjectBuilder {
     private _aliases?;
     private _location?;
     private _scenery;
-    private _grammaticalNumber?;
+    private _isPlural;
     private _lightSource?;
     private _skipValidation;
     private _traits;
@@ -203,10 +203,10 @@ export declare class ObjectBuilder {
      */
     scenery(): this;
     /**
-     * Mark the object as grammatically plural (e.g. "pygmy goats", "direction
-     * signs"). Sets the identity's `grammaticalNumber` to `'plural'` so message
-     * templates render agreeing verbs ("the goats are fixed in place") and
-     * pronouns ("take them").
+     * Mark the object's name as plural (e.g. "pygmy goats", "direction
+     * signs"). Sets the identity's `plural` to the name, so `isPlural` holds
+     * (ADR-409 D8): message templates render agreeing verbs ("the goats are
+     * fixed in place") and pronouns ("take them").
      *
      * @returns this (for chaining)
      */

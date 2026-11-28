@@ -63,12 +63,12 @@ export function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext, opts?: Nou
 
   const identity = entity.get(TraitType.IDENTITY) as IdentityTrait;
 
-  // number: mass from nounType 'mass'; plural from nounType 'plural' or
-  // grammaticalNumber 'plural'; singular otherwise.
+  // number: mass from nounType 'mass'; plural from nounType 'plural' or a
+  // plural name (ADR-409 D8); singular otherwise.
   let number: NounPhrase['number'] = 'singular';
   if (identity.nounType === 'mass') {
     number = 'mass';
-  } else if (identity.nounType === 'plural' || identity.grammaticalNumber === 'plural') {
+  } else if (identity.nounType === 'plural' || identity.isPlural) {
     number = 'plural';
   }
 

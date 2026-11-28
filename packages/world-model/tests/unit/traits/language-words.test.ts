@@ -47,7 +47,7 @@ describe('ADR-387 D2: the world carries its language words', () => {
     const surface = namingSurfaceOf(world, player, player.id);
     expect(surface.words).toEqual(FRENCH);
     expect(surface.isObserver).toBe(true);
-    expect(matchNoun(surface, { text: 'moi' })).toEqual({ tier: 'exact', wordsMatched: 1 });
+    expect(matchNoun(surface, { text: 'moi' })).toEqual({ tier: 'exact', wordsMatched: 1, workedOutWords: 0 });
     expect(matchNoun(surface, { text: 'me' })).toBeNull();
   });
 
@@ -66,8 +66,8 @@ describe('ADR-387 D2: the world carries its language words', () => {
     const { world, bag, player } = worldWith(ENGLISH);
     const surface = namingSurfaceOf(world, bag, player.id);
     expect([...vocabularyOf(surface)]).toEqual(['bag', 'holding']);
-    expect(matchNoun(surface, { text: 'bag of holding', articles: ['the'] })).toEqual({ tier: 'exact', wordsMatched: 2 });
-    expect(matchNoun(surface, { text: 'holding' })).toEqual({ tier: 'words', wordsMatched: 1 });
+    expect(matchNoun(surface, { text: 'bag of holding', articles: ['the'] })).toEqual({ tier: 'exact', wordsMatched: 2, workedOutWords: 0 });
+    expect(matchNoun(surface, { text: 'holding' })).toEqual({ tier: 'words', wordsMatched: 1, workedOutWords: 0 });
   });
 
   it('stamps the player role\'s aliases from the self words it is handed, and moves them on a switch', () => {

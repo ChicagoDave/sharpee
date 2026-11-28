@@ -41,7 +41,6 @@ describe('Story-Based Testing Verification', () => {
     expect(provider).toBeDefined();
     expect(provider.languageCode).toBe('en-US');
     expect(provider.getVerbs).toBeDefined();
-    expect(provider.lemmatize).toBeDefined();
     
     // Test that verb definitions are properly loaded
     const verbs = provider.getVerbs();

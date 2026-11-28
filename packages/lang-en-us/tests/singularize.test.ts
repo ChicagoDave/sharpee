@@ -2,7 +2,7 @@
  * singularize.test.ts — English noun number: the singular side and both forms
  * (ADR-407 D5, Amendment 4).
  *
- * The cases are the ones that sent D5 to an amendment: `lemmatize` turned
+ * The cases are the ones that sent D5 to an amendment: a stemmer turned
  * `candles` into `candl` and `shed` into `sh`. The built-graph case spawns Node
  * on `dist/`, because the vitest aliases resolve to source.
  *
@@ -22,13 +22,13 @@ import { nounExtractor } from '../src/nouns/index.js';
 const PACKAGE = join(__dirname, '..');
 
 describe('singularize gives the singular a player would type', () => {
-  it('reads the Refectory: candles, prickets and tables, where lemmatize gave candl and tabl', () => {
+  it('reads the Refectory: candles, prickets and tables, where a stemmer gave candl and tabl', () => {
     expect(singularize('candles')).toBe('candle');
     expect(singularize('prickets')).toBe('pricket');
     expect(singularize('tables')).toBe('table');
   });
 
-  it('leaves a singular alone, including the ones lemmatize cut down (shed, string, pudding)', () => {
+  it('leaves a singular alone, including the ones a stemmer cut down (shed, string, pudding)', () => {
     for (const word of ['shed', 'string', 'pudding', 'candle', 'bed', 'glass', 'bus', 'iris']) {
       expect(singularize(word), word).toBe(word);
     }

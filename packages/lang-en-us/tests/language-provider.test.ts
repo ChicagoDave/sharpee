@@ -319,30 +319,19 @@ describe('EnglishLanguageProvider', () => {
   });
 
   describe('Text Processing Pipeline', () => {
-    it('should lemmatize and identify ignore words', () => {
+    it('should identify ignore words', () => {
       const inputs = [
-        { text: 'please taking boxes', expectedLemma: 'tak', expectedIgnore: true },
-        { text: 'just dropped keys', expectedLemma: 'drop', expectedIgnore: true },
-        { text: 'really examining doors', expectedLemma: 'examin', expectedIgnore: true },
-        { text: 'looking north', expectedLemma: 'look', expectedIgnore: false }
+        { text: 'please taking boxes', expectedIgnore: true },
+        { text: 'just dropped keys', expectedIgnore: true },
+        { text: 'really examining doors', expectedIgnore: true },
+        { text: 'looking north', expectedIgnore: false }
       ];
 
-      inputs.forEach(({ text, expectedLemma, expectedIgnore }) => {
+      inputs.forEach(({ text, expectedIgnore }) => {
         const words = text.split(' ');
         const hasIgnoreWord = words.some(word => provider.isIgnoreWord(word));
-        const lemmatized = words.map(word => provider.lemmatize(word));
 
         expect(hasIgnoreWord).toBe(expectedIgnore);
-        expect(lemmatized).toContain(expectedLemma);
-      });
-    });
-
-    it('should handle complex text transformations', () => {
-      const singulars = ['mouse', 'child', 'box', 'story'];
-      singulars.forEach(singular => {
-        const plural = provider.pluralize(singular);
-        const lemmatized = provider.lemmatize(plural);
-        expect(lemmatized).toBe(singular);
       });
     });
 
@@ -401,7 +390,6 @@ describe('EnglishLanguageProvider', () => {
 
   describe('Error Handling', () => {
     it('should handle empty inputs gracefully', () => {
-      expect(provider.lemmatize('')).toBe('');
       expect(provider.pluralize('')).toBe('s');
       expect(provider.getIndefiniteArticle('')).toBe('a');
       expect(provider.formatList([])).toBe('');
@@ -409,14 +397,12 @@ describe('EnglishLanguageProvider', () => {
     });
 
     it('should handle special characters', () => {
-      expect(provider.lemmatize('test-ing')).toBe('test-ing');
       expect(provider.pluralize('test-case')).toBe('test-cases');
       expect(provider.isIgnoreWord('test@#$')).toBe(false);
     });
 
     it('should handle very long inputs', () => {
       const longWord = 'a'.repeat(100);
-      expect(() => provider.lemmatize(longWord)).not.toThrow();
       expect(() => provider.pluralize(longWord)).not.toThrow();
       expect(() => provider.getIndefiniteArticle(longWord)).not.toThrow();
     });

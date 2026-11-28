@@ -11,7 +11,9 @@
  * that narrows the entities worth asking about; it decides nothing itself.
  *
  * The vocabulary is `name content words + alias content words + authored
- * adjectives`. The third term is empty for every Chord story by construction:
+ * adjectives + form content words` (ADR-409: the forms the compiler wrote
+ * into the IR, never worked out here). The third term is empty for every
+ * Chord story by construction:
  * Chord has no adjective syntax, and the modifier a player types matches a
  * name word just as well. The surface carries no entity type: the parser's
  * type fallback (`the room`) is not a name an author wrote, and the view
@@ -41,6 +43,7 @@ import { STDLIB_MANIFEST, type IREntity, type StoryIR } from '@sharpee/chord';
 import {
   deriveNameVocabulary,
   matchNoun,
+  namingFormsOf,
   vocabularyOf,
   type NamingSurface,
   type NounMatchTier,
@@ -71,10 +74,20 @@ export interface VocabularyIndex {
  * @returns its name and aliases as a naming surface
  */
 export function irNamingSurface(entity: IREntity, words: NamingSurface['words']): NamingSurface {
+  const forms = entity.forms;
   return {
     name: entity.name,
     aliases: (entity.aka ?? []).filter((alias) => typeof alias === 'string' && alias.length > 0),
     adjectives: [],
+    // ADR-409 D2, D3: the forms the compiler wrote into the IR, sorted onto
+    // the surface by world-model's one rule; nothing is worked out here.
+    ...namingFormsOf({
+      name: entity.name,
+      singular: forms?.singular,
+      plural: forms?.plural,
+      origin: forms?.origin,
+      akaForms: forms?.aka,
+    }),
     isObserver: false,
     words,
   };
@@ -137,7 +150,7 @@ export function buildVocabularyIndex(ir: StoryIR): VocabularyIndex {
       if (holders === undefined) byWord.set(word, new Set([entity.id]));
       else holders.add(entity.id);
     }
-    for (const form of [surface.name, ...surface.aliases]) {
+    for (const form of [surface.name, ...surface.aliases, ...surface.writtenForms]) {
       if (form.length === 0) continue;
       const key = form.toLowerCase();
       const holders = exactForms.get(key);
@@ -149,16 +162,25 @@ export function buildVocabularyIndex(ir: StoryIR): VocabularyIndex {
 }
 
 /** The tier that outranks: exact over words. */
-const TIER_RANK: Record<NounMatchTier, number> = { exact: 2, words: 1 };
+const TIER_RANK: Record<NounMatchTier, number> = { exact: 3, words: 2 };
+
+/**
+ * A match's rank as the validator orders it: the tier, then a fully written
+ * match ahead of one that needs a worked-out form (ADR-409 D4).
+ */
+function rankOf(match: NonNullable<ReturnType<typeof matchNoun>>): number {
+  return TIER_RANK[match.tier] - (match.workedOutWords > 0 ? 1 : 0);
+}
 
 /**
  * The entities a phrase resolves to.
  *
  * The index narrows the candidates — whoever carries the phrase as a whole
  * name or alias, plus whoever answers to its first content word — and
- * `matchNoun` decides each one. The entities matched at the best tier
- * reached are the answer, so a phrase equal to a whole name or alias
- * resolves there and nowhere else, exactly as the validator ranks it.
+ * `matchNoun` decides each one. The entities matched at the best rank
+ * reached are the answer, so a phrase equal to a whole name, alias or
+ * written form resolves there and nowhere else, and a fully written match
+ * hides one that needs a worked-out form, exactly as the validator ranks it.
  *
  * @param index the story's vocabulary index
  * @param phrase the phrase as written, lowercased, without a leading article
@@ -178,7 +200,7 @@ export function resolvePhrase(index: VocabularyIndex, phrase: string): string[] 
     if (surface === undefined) continue;
     const match = matchNoun(surface, { text: phrase });
     if (match === null) continue;
-    const rank = TIER_RANK[match.tier];
+    const rank = rankOf(match);
     if (rank > best) {
       best = rank;
       named = [id];

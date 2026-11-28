@@ -243,9 +243,9 @@ export class PronounContextManager {
         }
       }
     } else {
-      // Inanimate entity - check grammatical number
+      // Inanimate entity - a plural name is "them" (ADR-409 D8)
       const identityTrait = entity.getTrait(IdentityTrait);
-      if (identityTrait?.grammaticalNumber === 'plural') {
+      if (identityTrait?.isPlural) {
         this.context.them = [entityRef];
       } else {
         this.context.it = entityRef;
@@ -279,8 +279,9 @@ export class PronounContextManager {
         }
       }
     } else {
+      // A plural name is "them" (ADR-409 D8)
       const identityTrait = entity.get('identity');
-      if (identityTrait?.grammaticalNumber === 'plural') {
+      if (identityTrait?.isPlural) {
         this.context.them = [ref];
       } else {
         this.context.it = ref;

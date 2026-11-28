@@ -152,7 +152,8 @@ create the potted plant
         expect(Object.keys(declared)).not.toContain('adjectives');
       }
     }
-    expect([...entityVocabulary(entity(balls, 'red-ball'), localeWordsOf(balls))].sort()).toEqual(['ball', 'red']);
+    // The worked-out `balls` is a word the ball answers to (ADR-409 D3), not an adjective.
+    expect([...entityVocabulary(entity(balls, 'red-ball'), localeWordsOf(balls))].sort()).toEqual(['ball', 'balls', 'red']);
   });
 
   it('says nothing about prose that names a ball by its colour', () => {
@@ -356,16 +357,22 @@ describe('D6b — the corpus pin', () => {
   // Every phrase the heuristic found is still found (AC-4); the growth is new nouns.
   // Fernhill's descriptions went 27/10/48 → 44/14/125, its response prose
   // 3/5/70 → 10/10/170.
+  //
+  // AND AGAIN with ADR-409 (David's ruling "a", 2026-11-28, session a1ecea): a thing answers to the
+  // forms the compiler wrote into the IR, so a plural in the prose names the singular
+  // thing. Fernhill's descriptions went 44/14/125 → 45/15/121: `kippers` and `lamps`
+  // now resolve, `doors` names three doors (ambiguous), and `feed pipe` names the
+  // iron pipes with `feed` missing. Its response prose did not move.
   it("finds in Fernhill's descriptions what the English extractor sees", () => {
-    expect(countsFrom(fernhill, 'description')).toEqual({ missingWord: 44, ambiguous: 14, noObject: 125 });
+    expect(countsFrom(fernhill, 'description')).toEqual({ missingWord: 45, ambiguous: 15, noObject: 121 });
   });
 
   it("finds in Fernhill's response prose what only D10 can see", () => {
     expect(countsFrom(fernhill, 'response')).toEqual({ missingWord: 10, ambiguous: 10, noObject: 170 });
     expect(deriveIncomplete(fernhill, english).counts).toEqual({
-      missingWord: 54,
-      ambiguous: 24,
-      noObject: 295,
+      missingWord: 55,
+      ambiguous: 25,
+      noObject: 291,
       undescribed: 0,
     });
   });
@@ -383,12 +390,17 @@ describe('D6b — the corpus pin', () => {
   //
   // Re-recorded with the English extractor (census, 2026-11-22): The Alderman was
   // 5/0/30 and 1/0/80, Ides of March 3/0/27 and 11/1/150.
+  //
+  // With ADR-409 (David's ruling "a", 2026-11-28, session a1ecea), Ides of March's descriptions went 5/0/70 → 5/0/68
+  // (`boards`, in two passages, resolves) and its response prose 14/1/387 → 15/1/380 (`boards` and `doors`
+  // resolve wherever they recur; `old boards` names the plot board with `old` missing). The Alderman did
+  // not move.
   it('finds what it currently finds in the other two stories, both halves', () => {
     expect(countsFrom(alderman, 'description')).toEqual({ missingWord: 6, ambiguous: 0, noObject: 68 });
     expect(countsFrom(alderman, 'response')).toEqual({ missingWord: 2, ambiguous: 0, noObject: 224 });
 
-    expect(countsFrom(idesOfMarch, 'description')).toEqual({ missingWord: 5, ambiguous: 0, noObject: 70 });
-    expect(countsFrom(idesOfMarch, 'response')).toEqual({ missingWord: 14, ambiguous: 1, noObject: 387 });
+    expect(countsFrom(idesOfMarch, 'description')).toEqual({ missingWord: 5, ambiguous: 0, noObject: 68 });
+    expect(countsFrom(idesOfMarch, 'response')).toEqual({ missingWord: 15, ambiguous: 1, noObject: 380 });
   });
 
   it('names the sharpest missing-word cases ADR-321 quotes', () => {
@@ -604,12 +616,12 @@ create the lantern
     const { noObject } = deriveIncomplete(fernhill, english);
     const firstVisit = noObject.filter((finding) => finding.site.kind === 'first-visit');
     // `dawn`, `lamps` (after the possessive *its*, GH #514's gap) and `order` joined
-    // with the English extractor (census, 2026-11-22).
+    // with the English extractor (census, 2026-11-22). `lamps` left with ADR-409 (David's ruling "a", 2026-11-28, session a1ecea):
+    // it names the oil lamp by its worked-out plural.
     expect(firstVisit.map((finding) => finding.phrase).sort()).toEqual([
       'cab',
       'dawn',
       'estate',
-      'lamps',
       'lane',
       'order',
     ]);

@@ -51,7 +51,6 @@ class MockLanguageProvider implements LanguageProvider {
   getCommonNouns() { return []; }
   getPrepositions() { return []; }
   getGrammarPatterns() { return []; }
-  lemmatize(word: string) { return word; }
   expandAbbreviation(abbr: string) { return null; }
   formatList(items: string[]) { return items.join(', '); }
   getIndefiniteArticle(noun: string) { return 'a'; }

@@ -361,16 +361,11 @@ export const CORE_TRAIT_ROUTES: ReadonlyMap<string, TraitRoute> = new Map<string
   // the field names and types are validateIR's.
   ['combatant', combatWord],
   ['weapon', combatWord],
-  [
-    'plural',
-    (entity) => {
-      const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
-      if (identity) identity.grammaticalNumber = 'plural';
-    },
-  ],
   // ADR-409 D1: every Chord thing and door is declared singular or plural,
-  // and a person may be. The declaration lowers nothing here: the IR's `forms` carries the
-  // name's singular and plural, which the runtime reads (Amendment 2).
+  // and a person may be. The declaration lowers nothing here: the IR's
+  // `forms` carries the name's singular and plural, which `buildEntity`
+  // copies onto IdentityTrait (Amendment 2, D8).
+  ['plural', qualifier],
   ['singular', qualifier],
   // Unconditional dark is the room builder's; a non-room `dark` is
   // validateIR's refusal.

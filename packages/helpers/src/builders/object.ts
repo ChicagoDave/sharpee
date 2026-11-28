@@ -33,7 +33,7 @@ export class ObjectBuilder {
   private _aliases?: string[];
   private _location?: IFEntity;
   private _scenery = false;
-  private _grammaticalNumber?: 'singular' | 'plural';
+  private _isPlural = false;
   private _lightSource?: { isLit?: boolean; fuelTurns?: number; litDescription?: string; unlitDescription?: string; detailWhenLit?: string };
   private _skipValidation = false;
   private _traits: ITrait[] = [];
@@ -87,15 +87,15 @@ export class ObjectBuilder {
   }
 
   /**
-   * Mark the object as grammatically plural (e.g. "pygmy goats", "direction
-   * signs"). Sets the identity's `grammaticalNumber` to `'plural'` so message
-   * templates render agreeing verbs ("the goats are fixed in place") and
-   * pronouns ("take them").
+   * Mark the object's name as plural (e.g. "pygmy goats", "direction
+   * signs"). Sets the identity's `plural` to the name, so `isPlural` holds
+   * (ADR-409 D8): message templates render agreeing verbs ("the goats are
+   * fixed in place") and pronouns ("take them").
    *
    * @returns this (for chaining)
    */
   plural(): this {
-    this._grammaticalNumber = 'plural';
+    this._isPlural = true;
     return this;
   }
 
@@ -146,7 +146,7 @@ export class ObjectBuilder {
       name: this.name,
       description: this._description,
       aliases: this._aliases,
-      grammaticalNumber: this._grammaticalNumber,
+      ...(this._isPlural ? { plural: this.name } : {}),
     }));
 
     if (this._scenery) {

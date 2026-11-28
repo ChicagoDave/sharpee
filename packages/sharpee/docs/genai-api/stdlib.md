@@ -2451,9 +2451,10 @@ export declare class CommandValidator implements CommandValidator {
     /** Whether the player carries or wears the entity (what `my` narrows to, ADR-385 D2). */
     private isOwnedByPlayer;
     /**
-     * Keep only the dominant (tier, wordsMatched) group of an already-sorted
-     * scored list (PIN 2: higher tier wins; within a tier, more matched
-     * words win; only true ties reach disambiguation).
+     * Keep only the dominant (tier, wordsMatched, written) group of an
+     * already-sorted scored list (PIN 2: higher tier wins; within a tier,
+     * more matched words win; then a fully written match beats one that needs
+     * a worked-out form, ADR-409 D4; only true ties reach disambiguation).
      */
     private dominantMatches;
     /**

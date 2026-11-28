@@ -263,7 +263,9 @@ end before
 
     const signs = world.getEntity('direction-signs')!;
     const identity = signs.get(TraitType.IDENTITY) as IdentityTrait;
-    expect((identity as unknown as Record<string, unknown>).grammaticalNumber).toBe('plural');
+    // ADR-409 D8: the declaration fills both forms; `plural` makes the name the plural.
+    expect(identity.isPlural).toBe(true);
+    expect(identity.singular).toBe('direction sign');
     expect(signs.has(TraitType.SCENERY)).toBe(true);
   });
 

@@ -94,13 +94,6 @@ class MockLanguageProvider implements ParserLanguageProvider {
     ];
   }
 
-  lemmatize(word: string): string {
-    // Simple mock lemmatization
-    if (word.endsWith('ing')) return word.slice(0, -3);
-    if (word.endsWith('s')) return word.slice(0, -1);
-    return word;
-  }
-
   expandAbbreviation(abbreviation: string): string | null {
     const abbrevs: Record<string, string> = {
       'n': 'north',

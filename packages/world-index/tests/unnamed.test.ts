@@ -171,7 +171,8 @@ describe('D13 — a thing the mechanics need that nothing announces', () => {
   it('still reports the same thing when a non-playable person holds it', () => {
     const carriedByNpc = compileSource(carriedKey('Morgan'));
     const finding = unnamed(carriedByNpc).find((candidate) => candidate.id === 'brass-key');
-    expect(finding).toMatchObject({ name: 'brass key', vocabulary: ['brass', 'key'] });
+    // The worked-out `keys` is a word the thing answers to (ADR-409 D3).
+    expect(finding).toMatchObject({ name: 'brass key', vocabulary: ['brass', 'key', 'keys'] });
   });
 
   // FAULT INJECTION (the ADR's acceptance method): rename a thing to a word the story
@@ -181,9 +182,12 @@ describe('D13 — a thing the mechanics need that nothing announces', () => {
     const key = entity(faulted, 'winding-key');
     key.name = 'zarquon';
     key.aka = [];
+    // The renamed thing's forms go with its old name (ADR-409 D2): left on, they
+    // would still name it as `winding keys`.
+    key.forms = { singular: 'zarquon', plural: 'zarquons', origin: 'worked-out', aka: [] };
 
     const finding = unnamed(faulted).find((candidate) => candidate.id === 'winding-key');
-    expect(finding).toMatchObject({ name: 'zarquon', role: 'tool', vocabulary: ['zarquon'] });
+    expect(finding).toMatchObject({ name: 'zarquon', role: 'tool', vocabulary: ['zarquon', 'zarquons'] });
   });
 
   // THE SHARP CASE (D13 × D14). A thing ON the chain that nothing announces is not a
@@ -193,6 +197,7 @@ describe('D13 — a thing the mechanics need that nothing announces', () => {
     const door = entity(faulted, 'cellar-door');
     door.name = 'zarquon';
     door.aka = [];
+    door.forms = { singular: 'zarquon', plural: 'zarquons', origin: 'worked-out', aka: [] };
 
     const finding = unnamed(faulted).find((candidate) => candidate.id === 'cellar-door');
     expect(finding).toMatchObject({ name: 'zarquon', role: 'progression-info' });

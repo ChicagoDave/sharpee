@@ -151,17 +151,24 @@ export class ReadingNamer {
     return { ids: new Set(admitted), exact };
   }
 
-  /** An ungated item names every entity in the world the matcher names, at the best tier reached. */
+  /**
+   * An ungated item names every entity in the world the matcher names, at
+   * the best tier reached; at the words tier, a fully written match names
+   * ahead of one that needs a worked-out form (ADR-409 D4).
+   */
   private namesInWorld(query: NounQuery): ItemNames {
     const world = this.world!;
     const exactIds = new Set<string>();
-    const wordIds = new Set<string>();
+    const writtenWordIds = new Set<string>();
+    const workedOutWordIds = new Set<string>();
     for (const entity of world.getAllEntities()) {
       const match = matchNoun(namingSurfaceOf(world, entity, this.actorId), query);
       if (!match) continue;
-      (match.tier === 'exact' ? exactIds : wordIds).add(entity.id);
+      if (match.tier === 'exact') exactIds.add(entity.id);
+      else (match.workedOutWords > 0 ? workedOutWordIds : writtenWordIds).add(entity.id);
     }
     if (exactIds.size > 0) return { ids: exactIds, exact: true };
-    return { ids: wordIds, exact: false };
+    if (writtenWordIds.size > 0) return { ids: writtenWordIds, exact: false };
+    return { ids: workedOutWordIds, exact: false };
   }
 }

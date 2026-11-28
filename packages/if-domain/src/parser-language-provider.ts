@@ -110,13 +110,6 @@ export interface ParserLanguageProvider extends LanguageProvider {
   getGrammarPatterns(): LanguageGrammarPattern[];
 
   /**
-   * Lemmatize a word (reduce to base form)
-   * @param word The word to lemmatize
-   * @returns The base form of the word
-   */
-  lemmatize(word: string): string;
-
-  /**
    * Format a list of items with proper conjunction
    * @param items Array of strings to format
    * @param conjunction 'and' or 'or'

@@ -11,9 +11,6 @@
  * matcher is taught both numbers (issue 836), the runtime imports this same
  * file, and a lens and the parser read number from one function.
  *
- * Not `EnglishLanguageProvider.lemmatize`: that is a stemmer (`candles` gives
- * `candl`, `shed` gives `sh`), and no runtime code calls it.
- *
  * Public interface: `singularize(noun)`, `numberForms(noun)`.
  *
  * Owner context: @sharpee/lang-en-us — English number.

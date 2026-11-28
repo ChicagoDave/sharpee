@@ -82,13 +82,16 @@ const TIER_RANK: Record<NounMatchTier, number> = { exact: MATCH_TIER_EXACT, word
 interface NameMatch {
   tier: number;
   wordsMatched: number;
+  /** True when a word came only from a worked-out form (ADR-409 D4): a fully written match outranks it. */
+  needsWorkedOutForm: boolean;
   reasons: string[];
 }
 
 /**
  * Entity match with scoring information (ADR-231 D3 tiered model).
  * `tier`/`wordsMatched` carry PIN 2's ranking (higher tier wins; within a
- * tier, more matched words win); `score` is the within-tie heuristic
+ * tier, more matched words win; then a fully written match beats one that
+ * needs a worked-out form, ADR-409 D4); `score` is the within-tie heuristic
  * (visibility/inventory/author scope priority) consumed by the normal
  * disambiguation flow.
  */
@@ -96,6 +99,7 @@ interface ScoredEntityMatch {
   entity: IFEntity;
   tier: number;
   wordsMatched: number;
+  needsWorkedOutForm: boolean;
   score: number;
   matchReasons: string[];
 }
@@ -550,9 +554,10 @@ export class CommandValidator implements CommandValidator {
       return { success: true, value: { entity: exactOutOfScope, parsed: ref, exactOutOfScope: true } as IValidatedObjectReference };
     }
 
-    // PIN 2 ranking: keep only the dominant (tier, wordsMatched) group.
-    // Higher tier wins outright; within a tier, more matched words win
-    // outright. Only true ties flow into the disambiguation path below;
+    // PIN 2 ranking: keep only the dominant (tier, wordsMatched, written)
+    // group. Higher tier wins outright; within a tier, more matched words
+    // win outright, then a fully written match (ADR-409 D4). Only true ties
+    // flow into the disambiguation path below;
     // a single survivor auto-resolves.
     const viableMatches = this.dominantMatches(scoredMatches);
 
@@ -762,7 +767,8 @@ export class CommandValidator implements CommandValidator {
     return {
       tier: TIER_RANK[match.tier],
       wordsMatched: match.wordsMatched,
-      reasons: [`${match.tier}_match`]
+      needsWorkedOutForm: match.workedOutWords > 0,
+      reasons: match.workedOutWords > 0 ? [`${match.tier}_match`, 'worked_out_form'] : [`${match.tier}_match`]
     };
   }
 
@@ -779,9 +785,10 @@ export class CommandValidator implements CommandValidator {
   }
 
   /**
-   * Keep only the dominant (tier, wordsMatched) group of an already-sorted
-   * scored list (PIN 2: higher tier wins; within a tier, more matched
-   * words win; only true ties reach disambiguation).
+   * Keep only the dominant (tier, wordsMatched, written) group of an
+   * already-sorted scored list (PIN 2: higher tier wins; within a tier,
+   * more matched words win; then a fully written match beats one that needs
+   * a worked-out form, ADR-409 D4; only true ties reach disambiguation).
    */
   private dominantMatches(scored: ScoredEntityMatch[]): ScoredEntityMatch[] {
     if (scored.length <= 1) {
@@ -789,7 +796,7 @@ export class CommandValidator implements CommandValidator {
     }
     const top = scored[0];
     return scored.filter(
-      m => m.tier === top.tier && m.wordsMatched === top.wordsMatched
+      m => m.tier === top.tier && m.wordsMatched === top.wordsMatched && m.needsWorkedOutForm === top.needsWorkedOutForm
     );
   }
 
@@ -921,15 +928,20 @@ export class CommandValidator implements CommandValidator {
         entity,
         tier: match.tier,
         wordsMatched: match.wordsMatched,
+        needsWorkedOutForm: match.needsWorkedOutForm,
         score,
         matchReasons
       });
     }
 
-    // Sort by PIN 2 rank (tier, then matched words), then heuristic score
+    // Sort by PIN 2 rank (tier, then matched words), then a fully written
+    // match ahead of a worked-out one (ADR-409 D4), then heuristic score
     scored.sort(
       (a, b) =>
-        b.tier - a.tier || b.wordsMatched - a.wordsMatched || b.score - a.score
+        b.tier - a.tier ||
+        b.wordsMatched - a.wordsMatched ||
+        Number(a.needsWorkedOutForm) - Number(b.needsWorkedOutForm) ||
+        b.score - a.score
     );
 
     return scored;
