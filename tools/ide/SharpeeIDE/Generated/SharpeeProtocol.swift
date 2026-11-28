@@ -215,6 +215,13 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         /// `playable` (ADR-327 D10) — this character may hold the player role. Who holds it
         /// is decided by the start block at runtime and is not on the IR.
         let isPlayable: Bool
+        /// The author's `aka` words, as written.
+        let aka: [String]
+        /// The name's singular and plural and the worked-out forms of its aka words
+        /// (ADR-409 D2, D3, D7.3): on every thing and door and on a declared person, absent
+        /// on rooms, regions and undeclared people. The Index shows them as the compiler
+        /// wrote them and works nothing out.
+        let forms: ComposeStoryIR.EntityForms?
         let kinds: [ComposeStoryIR.Kind]
         /// Region membership (ADR-360 D4/D5: the region's `rooms` groups and each room's
         /// `in the <region>` line) — resolved member room ids, non-empty only on
@@ -225,6 +232,28 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         /// Where a room's `room name` heading comes from (ADR-360 D8). Rooms only.
         let roomNameSource: ComposeStoryIR.TextSource?
         let span: DiagnosticSpan
+    }
+
+    /// An entity's singular and plural, and where the one that is not its name came from
+    /// (ADR-409 D3).
+    struct EntityForms: Codable, Equatable, Sendable {
+        let singular: String
+        let plural: String
+        /// The author's `of` (written) or a suffix rule (worked out).
+        let origin: ComposeStoryIR.EntityForms.Origin
+        /// Worked-out other forms of aka words; a written aka word stays in `aka`.
+        let aka: [ComposeStoryIR.AkaForm]
+
+        enum Origin: String, Codable, Equatable, Sendable {
+            case written
+            case workedOut = "worked-out"
+        }
+    }
+
+    /// One aka word and its worked-out other form (ADR-409 D2).
+    struct AkaForm: Codable, Equatable, Sendable {
+        let word: String
+        let form: String
     }
 
     /// A kind membership (`a room`, `a person`, …).

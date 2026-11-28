@@ -13,9 +13,11 @@
 //     something an author wrote — an author cannot type a dot in a phrase name — so it is
 //     neither listed nor counted;
 //   - entities and actions sort by name, case-insensitively; phrases keep the IR's order;
-//   - an empty section is omitted rather than shown empty.
+//   - an empty section is omitted rather than shown empty;
+//   - a thing's row carries what it answers to: its aka words and the forms the compiler
+//     gave it, written or worked out, read off the IR and never worked out here.
 //
-// Public interface: StoryIndex.Read, StoryIndexDocument, IndexSection, IndexRow, IndexSpan.
+// Public interface: StoryIndex.Read, StoryIndex.NamingSummary, StoryIndexDocument, IndexSection, IndexRow, IndexSpan.
 // Owner context: tools/ide — the Avalonia desktop head's shell.
 
 using System.Text.Json.Nodes;
@@ -139,7 +141,10 @@ internal static class StoryIndex
             else
             {
                 var every = string.Join(", ", kinds);
-                things.Add(new IndexRow(name, every.Length == 0 ? null : every, false, span));
+                var parts = new[] { every.Length == 0 ? null : every, NamingSummary(entity) }
+                    .Where(p => p is not null)
+                    .ToArray();
+                things.Add(new IndexRow(name, parts.Length == 0 ? null : string.Join(" · ", parts), false, span));
             }
         }
 
@@ -189,6 +194,58 @@ internal static class StoryIndex
             yield return new IndexRow(entry.Key, null, true, SpanOf((entry.Value as JsonObject)?["span"]));
         }
     }
+
+    /// <summary>
+    /// What a thing answers to besides its name: its aka words, and the forms the compiler
+    /// gave it, each marked written or worked out (ADR-409 D7.3). Ported from
+    /// SharpeeIDE/Compose/StoryIndex.swift's <c>namingSummary(of:)</c>, wording included.
+    /// </summary>
+    /// <remarks>
+    /// Read off the IR's <c>aka</c> and <c>forms</c> alone; nothing is worked out here. The
+    /// name's other form is whichever of <c>forms.singular</c> and <c>forms.plural</c> the name
+    /// is not, and it carries <c>forms.origin</c>; an aka word's form is always worked out.
+    /// Forms whose name is neither their singular nor their plural (an IR the loader refuses)
+    /// are left out rather than guessed at.
+    /// </remarks>
+    /// <param name="entity">An IR entity.</param>
+    /// <returns>
+    /// e.g. <c>aka crocks · also answers to jar (worked out), crock (worked out)</c>, or null
+    /// when the entity has no aka and no forms.
+    /// </returns>
+    internal static string? NamingSummary(JsonNode entity)
+    {
+        var parts = new List<string>();
+        var aka = StringsOf(entity["aka"]);
+        if (aka.Length > 0) parts.Add("aka " + string.Join(", ", aka));
+
+        var name = NameOf(entity);
+        if (entity["forms"] is JsonObject forms
+            && forms["singular"] is JsonValue singularValue && singularValue.TryGetValue(out string? singular)
+            && forms["plural"] is JsonValue pluralValue && pluralValue.TryGetValue(out string? plural)
+            && (name == singular || name == plural))
+        {
+            var other = name == plural ? singular : plural;
+            var written = forms["origin"] is JsonValue origin && origin.TryGetValue(out string? o) && o == "written";
+            var answers = new List<string>();
+            if (other != name) answers.Add($"{other} ({(written ? "written" : "worked out")})");
+            foreach (var akaForm in (forms["aka"] as JsonArray ?? new JsonArray()).OfType<JsonObject>())
+            {
+                if (akaForm["form"] is JsonValue formValue && formValue.TryGetValue(out string? form))
+                    answers.Add($"{form} (worked out)");
+            }
+            if (answers.Count > 0) parts.Add("also answers to " + string.Join(", ", answers));
+        }
+        return parts.Count == 0 ? null : string.Join(" · ", parts);
+    }
+
+    /// <summary>The strings of a JSON array, skipping anything that is not one.</summary>
+    private static string[] StringsOf(JsonNode? node) =>
+        (node as JsonArray ?? new JsonArray())
+            .OfType<JsonValue>()
+            .Select(v => v.TryGetValue(out string? s) ? s : null)
+            .Where(s => !string.IsNullOrEmpty(s))
+            .Select(s => s!)
+            .ToArray();
 
     private static string NameOf(JsonNode node) =>
         node["name"]?.GetValue<string>() ?? node["id"]?.GetValue<string>() ?? "(unnamed)";

@@ -293,11 +293,29 @@
     - devkit `lens-phrase-place.test.ts`: the orchard case read only number-form findings, and none remain. David ruled "a": it was widened to place all 38 orchard findings. The fall-through to the resolved form keeps its unit case until Phase 5's Singular/plural finding brings real rows back.
     - `pnpm exec turbo run test:ci --continue`: "Tasks: 73 successful, 73 total".
     - Remaining: AC-11 (the World Index in both heads), then the Demonstrated line and the flip.
+  - **AC-11 built (2026-11-28, session 1facc0).** David ruled "a": the forms show on the Index tab's Things rows. The World tab has no per-thing list, and its `world-index` document carries no aka or forms, so no `packages/` change was made.
+    - `tools/repokit/src/commands/protocol-projection.ts`: `IdeIREntity` gains `aka` and `forms` (`IdeIREntityForms`, `IdeIRAkaForm`), and `protocol-spec.ts` emits them. `./repokit protocol` regenerated both heads, and `./repokit protocol --check` reports them matching.
+    - `SharpeeIDE/Compose/StoryIndex.swift` `namingSummary(of:)` and `PaneHost/Shell/StoryIndex.cs` `NamingSummary` use the same wording. Each reads `aka` and `forms` off the IR and works nothing out. A thing's row reads `thing · aka crocks · also answers to jar (worked out), crock (worked out)`, and the mouse's reads `thing · also answers to mice (written)`.
+    - The real-path tests are `SharpeeIDETests/IndexNamingRealPathTests.swift` and `PaneHost.Tests/IndexNamingRealPathTests.cs`, 3 cases each. Each runs a real `compose --json` of scullery and refectory through the in-repo devkit CLI. Two hand-written IR fixtures gained `"aka":[]`, and two Swift memberwise initializers gained `aka: [], forms: nil`.
+    - Gates: the SharpeeIDE scheme "Executed 640 tests, with 0 failures"; PaneHost.Tests, with the three capability env vars set, "Passed: 173, Total: 173"; repokit "Tests 143 passed | 1 skipped (144)", and its typecheck is clean.
+    - Remaining: the Demonstrated line and the flip.
+  - **Demonstration run (2026-11-28, session 1facc0), after `./repokit build dungeo`:**
+    - `printf 'examine candle\nexamine pricket\nexamine candles\nexamine mice\n' | ./sharpee play test-stories/refectory` printed "Tallow candles, each one pressed onto an iron pricket." for `candle`, `pricket` and `candles`, and "A small grey mouse with one torn ear." for `mice`.
+    - `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` printed "949 passed".
+    - `node dist/cli/sharpee.js --test --seed 42 stories/dungeo/tests/transcripts/*.transcript` printed "1715 passed, 10 failed, 10 expected failures, 2 skipped, 2 transcript error(s)". The failures are in adr-287-fenced-literals, dam-puzzle, flooding and troll-interactions, and the 2 errors are force-forest-ambience and force-villain-killed refusing seed 42 for their pin of 4242. These are the baseline's.
+    - `pnpm exec turbo run test:ci --continue` printed "Tasks: 73 successful, 73 total".
+    - AC-8: a grep for `@sharpee/lang-en-us|pluralize|singularize` over the src of chord, story-loader, world-model, if-domain and world-index finds only comments and the provider interface's `pluralize` declaration. A grep for suffix literals finds `verbLemmas` in `packages/chord/src/parser.ts:218` and `analyzer.ts:773`, an English `-ies`/`-es`/`-s` verb-lemma rule from ADR-329 (728db25f2) that predates this plan. David ruled "a" (2026-11-28): it is outside AC-8's scope, which covers ADR-409's number-form rules. It is filed as #848.
   - **Moved pins, as found:**
     - world-index's Incomplete corpus pins, which the census did not predict. Fernhill gains `doors` (now ambiguous across three doors) and `feed pipe` (now names the iron pipes, `feed` missing), and loses four no-object rows (`doors`, `feed pipe`, `kippers`, `lamps`). Ides of March loses `boards`, `old boards` and `doors`, and gains `old boards` as missing-word. Orchard's `old apple trees` moves from no-object to missing-word. The roles, located-phrases and CLI pins move with them.
     - The examinable lens's number-form pins in branch-tester and devkit (orchard's 6, scullery's OB-56/OB-58, the lens fixture), which the census did predict ("leaves 0 number-form findings"). Scullery's test set describes the old behavior and changes first (ADR-395 D4).
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-25)
+- **Demonstrated**: 2026-11-28, session 1facc0, after `./repokit build dungeo`. [reported by session, unverified]
+  - The new noun-match cases failed against the pre-phase source (world-model failed 20) and pass after: `@sharpee/world-model` "Tests 1701 passed (1701)" (session a1ecea).
+  - `printf 'examine candle\nexamine pricket\nexamine candles\nexamine mice\n' | ./sharpee play test-stories/refectory` printed "Tallow candles, each one pressed onto an iron pricket." for `candle` and `pricket`.
+  - The Dungeo chain printed "949 passed". The units at `--seed 42` printed "1715 passed, 10 failed, 10 expected failures, 2 skipped, 2 transcript error(s)", with the baseline's failing transcripts and its two seed refusals.
+  - `pnpm exec turbo run test:ci --continue` printed "Tasks: 73 successful, 73 total".
+  - AC-11 in both heads: the SharpeeIDE scheme "Executed 640 tests, with 0 failures" and PaneHost.Tests "Passed: 173, Total: 173", each with its IndexNamingRealPathTests.
+  - AC-8 holds for the number-form rules. The verb-lemma rule in chord is #848, out of scope (David "a").
+- **Status**: DONE
 
 ### Phase 5: The lens names what to write and offers the edit, and the records close
 - **Tier**: Medium
@@ -336,4 +354,4 @@
   - The SharpeeIDE scheme reports TEST SUCCEEDED, and PaneHost.Tests passes.
   - `gh issue view 836 --json state` reads CLOSED.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-28)

@@ -54,7 +54,7 @@ final class ComposeDiagnosticsTests: XCTestCase {
          "ir":{"format":"story language 2","languageVersion":"3.0.0",
                "meta":{"title":"Probe","fields":{"id":"probe","storyVersion":"1.0.0",
                                                  "authors":["Tests"],"testers":[],"themes":[]}},
-               "entities":[{"id":"lab","name":"Lab","article":"the","isPlayable":false,
+               "entities":[{"id":"lab","name":"Lab","article":"the","aka":[],"isPlayable":false,
                             "kinds":[{"name":"room","config":[],"condition":null,
                                       "span":{"line":6,"column":3,"endLine":6,"endColumn":9}}],
                             "traits":[],"span":{"line":5,"column":1,"endLine":8,"endColumn":15}}],

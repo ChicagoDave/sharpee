@@ -95,6 +95,9 @@ export const PROTOCOL_SPEC: ProtocolSpec = {
     { ts: 'IdeIRStoryFields', as: 'Fields', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRGrammarFile', as: 'GrammarFile', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIREntity', as: 'Entity', nestUnder: 'ComposeStoryIR' },
+    // ADR-409 D7.3 — the forms the Index shows on each thing.
+    { ts: 'IdeIREntityForms', as: 'EntityForms', nestUnder: 'ComposeStoryIR' },
+    { ts: 'IdeIRAkaForm', as: 'AkaForm', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRKind', as: 'Kind', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRContainedMember', as: 'ContainedMember', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRTextSource', as: 'TextSource', nestUnder: 'ComposeStoryIR' },

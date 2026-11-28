@@ -8,10 +8,13 @@
 // The Rooms section also carries the room lens: where each room's heading and
 // description come from, read off the IR's text-source fields and never
 // re-derived here (ADR-360 D8, ADR-322 D8).
+// The Things section carries what each thing answers to: its aka words and
+// the forms the compiler gave it, written or worked out, read off the IR's
+// `aka` and `forms` and never worked out here (ADR-409 D7.3).
 // Pure and view-free; IndexView renders the sections, BuildController prints
 // the report.
 // Public interface: StoryStats, StoryIndex.stats(of:), buildReport(for:),
-// sections(of:), roomLens(of:), IndexSection, IndexRow, RoomLens.
+// sections(of:), roomLens(of:), namingSummary(of:), IndexSection, IndexRow, RoomLens.
 // Owner context: tools/ide — Compose.
 
 import Foundation
@@ -213,8 +216,9 @@ enum StoryIndex {
                                        detail: entity.isPlayable ? "playable" : nil,
                                        span: entity.span))
             } else {
+                let parts = [kinds.isEmpty ? nil : kinds, namingSummary(of: entity)].compactMap { $0 }
                 things.append(IndexRow(title: entity.name,
-                                       detail: kinds.isEmpty ? nil : kinds,
+                                       detail: parts.isEmpty ? nil : parts.joined(separator: " · "),
                                        span: entity.span))
             }
         }
@@ -233,6 +237,42 @@ enum StoryIndex {
         return all.compactMap { kind, rows in
             rows.isEmpty ? nil : IndexSection(kind: kind, rows: rows)
         }
+    }
+
+    /// What a thing answers to besides its name: its aka words, and the forms
+    /// the compiler gave it, each marked written or worked out (ADR-409 D7.3).
+    ///
+    /// Read off the IR's `aka` and `forms` alone; nothing is worked out here.
+    /// The name's other form is whichever of `forms.singular` and
+    /// `forms.plural` the name is not, and it carries `forms.origin`; an aka
+    /// word's form is always worked out (a written one stays in `aka`).
+    ///
+    /// - Parameter entity: an IR entity.
+    /// - Returns: e.g. `aka crocks · also answers to jar (worked out), crock
+    ///   (worked out)`, or nil when the entity has no aka and no forms. Forms
+    ///   whose name is neither their singular nor their plural (an IR the
+    ///   loader refuses) are left out rather than guessed at.
+    static func namingSummary(of entity: ComposeStoryIR.Entity) -> String? {
+        let name: String = entity.name
+        var parts: [String] = []
+        if !entity.aka.isEmpty {
+            parts.append("aka " + entity.aka.joined(separator: ", "))
+        }
+        if let forms = entity.forms {
+            let isPlural: Bool = name == forms.plural
+            let isSingular: Bool = name == forms.singular
+            if isPlural || isSingular {
+                let other: String = isPlural ? forms.singular : forms.plural
+                let marker: String = forms.origin == .written ? "written" : "worked out"
+                var answers: [String] = []
+                if other != name { answers.append("\(other) (\(marker))") }
+                for akaForm in forms.aka { answers.append("\(akaForm.form) (worked out)") }
+                if !answers.isEmpty {
+                    parts.append("also answers to " + answers.joined(separator: ", "))
+                }
+            }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// The room lens for `entity`, read off its two text-source fields.

@@ -377,6 +377,19 @@ public sealed record ComposeStoryIREntity
     [JsonPropertyName("isPlayable")]
     public required bool IsPlayable { get; init; }
 
+    /// <summary>The author's `aka` words, as written.</summary>
+    [JsonPropertyName("aka")]
+    public required IReadOnlyList<string> Aka { get; init; }
+
+    /// <summary>
+    /// The name's singular and plural and the worked-out forms of its aka words (ADR-409 D2,
+    /// D3, D7.3): on every thing and door and on a declared person, absent on rooms, regions
+    /// and undeclared people. The Index shows them as the compiler wrote them and works nothing
+    /// out.
+    /// </summary>
+    [JsonPropertyName("forms")]
+    public ComposeStoryIREntityForms? Forms { get; init; }
+
     [JsonPropertyName("kinds")]
     public required IReadOnlyList<ComposeStoryIRKind> Kinds { get; init; }
 
@@ -398,6 +411,37 @@ public sealed record ComposeStoryIREntity
 
     [JsonPropertyName("span")]
     public required DiagnosticSpan Span { get; init; }
+}
+
+/// <summary>
+/// An entity's singular and plural, and where the one that is not its name came from (ADR-409
+/// D3).
+/// </summary>
+public sealed record ComposeStoryIREntityForms
+{
+    [JsonPropertyName("singular")]
+    public required string Singular { get; init; }
+
+    [JsonPropertyName("plural")]
+    public required string Plural { get; init; }
+
+    /// <summary>The author's `of` (written) or a suffix rule (worked out).</summary>
+    [JsonPropertyName("origin")]
+    public required ComposeStoryIREntityFormsOrigin Origin { get; init; }
+
+    /// <summary>Worked-out other forms of aka words; a written aka word stays in `aka`.</summary>
+    [JsonPropertyName("aka")]
+    public required IReadOnlyList<ComposeStoryIRAkaForm> Aka { get; init; }
+}
+
+/// <summary>One aka word and its worked-out other form (ADR-409 D2).</summary>
+public sealed record ComposeStoryIRAkaForm
+{
+    [JsonPropertyName("word")]
+    public required string Word { get; init; }
+
+    [JsonPropertyName("form")]
+    public required string Form { get; init; }
 }
 
 /// <summary>A kind membership (`a room`, `a person`, …).</summary>
@@ -461,6 +505,16 @@ public sealed record ComposeStoryIRPhraseEntry
 {
     [JsonPropertyName("span")]
     public DiagnosticSpan? Span { get; init; }
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum ComposeStoryIREntityFormsOrigin
+{
+    [JsonStringEnumMemberName("written")]
+    Written,
+
+    [JsonStringEnumMemberName("worked-out")]
+    WorkedOut,
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

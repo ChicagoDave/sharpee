@@ -91,6 +91,15 @@ export interface IdeIREntity {
    * holds it is decided by the start block at runtime and is not on the IR.
    */
   isPlayable: boolean;
+  /** The author's `aka` words, as written. */
+  aka: string[];
+  /**
+   * The name's singular and plural and the worked-out forms of its aka words
+   * (ADR-409 D2, D3, D7.3): on every thing and door and on a declared person,
+   * absent on rooms, regions and undeclared people. The Index shows them as
+   * the compiler wrote them and works nothing out.
+   */
+  forms?: IdeIREntityForms;
   kinds: IdeIRKind[];
   /**
    * Region membership (ADR-360 D4/D5: the region's `rooms` groups and each
@@ -103,6 +112,22 @@ export interface IdeIREntity {
   /** Where a room's `room name` heading comes from (ADR-360 D8). Rooms only. */
   roomNameSource?: IdeIRTextSource;
   span: Span;
+}
+
+/** An entity's singular and plural, and where the one that is not its name came from (ADR-409 D3). */
+export interface IdeIREntityForms {
+  singular: string;
+  plural: string;
+  /** The author's `of` (written) or a suffix rule (worked out). */
+  origin: 'written' | 'worked-out';
+  /** Worked-out other forms of aka words; a written aka word stays in `aka`. */
+  aka: readonly IdeIRAkaForm[];
+}
+
+/** One aka word and its worked-out other form (ADR-409 D2). */
+export interface IdeIRAkaForm {
+  word: string;
+  form: string;
 }
 
 /**

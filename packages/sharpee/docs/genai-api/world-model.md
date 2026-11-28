@@ -2616,7 +2616,7 @@ export declare class IdentityTrait implements ITrait {
      * Defaults to the entity name if not set.
      */
     pointsDescription?: string;
-    constructor(data?: Partial<IdentityTrait>);
+    constructor(data?: Omit<Partial<IdentityTrait>, 'isPlural' | 'type'>);
 }
 ```
 
